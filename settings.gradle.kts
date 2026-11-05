@@ -13,3 +13,4 @@ rootProject.name = "dockerfile-inventory"
 
 // One module per pipeline stage, added when its phase starts (see BACKLOG.md).
 include("discovery")
+include("facts")

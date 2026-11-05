@@ -1,6 +1,6 @@
 # Phase 1 — Parse and normalise: plan
 
-Status: planned 5 Nov; slices below are built test-first in order, each committed when `check` is green.
+Status: slice 1 done. Slices below are built test-first in order, each committed when `check` is green.
 
 Phase 1 parses each unique Dockerfile blob once with `rewrite-docker`, reduces it to an `ImageFacts` record and
 two normal-form hashes, and publishes the parse-failure and opaque-`RUN` rates. Module: `facts`. Input: the
@@ -19,14 +19,23 @@ discovery output directory (`blobs/`, `manifest.jsonl`). It reads those files an
 - `Docker.Run.getCommand()`: `ShellForm` (one `Literal`), `ExecForm` (`List<Literal>`), `HeredocForm`; `getFlags()`
   carries `--mount`.
 - `Arg`, `Env` (pairs), `User` (user, group), `Expose` (`Port`s), `Entrypoint`, `Cmd`, `Onbuild`.
-- There is no shell AST: a shell-form `RUN` is one string.
+- There is no shell AST: a shell-form `RUN` is one string, with backslash-newline continuations left in.
+
+Found by probing (slice 1), not documented:
+
+- Syntax errors do not throw and add no marker: they go to the `ExecutionContext` error handler as
+  `DockerParsingException`, and a tree is still returned. A file with no `FROM` is such an error.
+- **A line the grammar does not recognise (`RUNN echo`) is silently appended to the previous instruction's last
+  argument**, e.g. the `FROM` image name becomes `ubi9\nRUNN echo typo`. `FactsParser` treats any literal holding a
+  newline not preceded by a backslash as a parse failure. Worth an upstream issue.
+- The `# syntax=` parser directive is not visible in the tree; the extractor reads it from the text.
 
 ## Decisions taken without asking (say if any is wrong)
 
 | # | Decision | Why |
 | --- | --- | --- |
 | D1 | Import `org.openrewrite:rewrite-bom` 8.90.4 (latest, 24 Aug 2026) instead of the recipe BOM, whose rewrite is 8.83.0 | Only core modules are needed; newest parser fixes |
-| D2 | Only `FactsParser`, the adapter, imports `org.openrewrite`; everything after it works on our own records | `rewrite-docker` APIs are marked unstable |
+| D2 | Only `FactsParser` and `FactExtractor` import `org.openrewrite`; everything after them works on our own records | `rewrite-docker` APIs are marked unstable |
 | D3 | Facts describe the final stage (the image that ships); package calls are kept for every stage with the stage index; the signature uses final-stage packages | Builder stages do not reach the image |
 | D4 | Base family = last path segment of the image name (`registry/ubi9/ubi-minimal` gives `ubi-minimal`); major = leading digits of the tag (`9.4-1227` gives `9`) | Simple, explainable; refined once Phase 2 shows real names |
 | D5 | User kind: `root` when there is no `USER`, or it is `root` or `0`; `numeric` for other digits; `named` otherwise; `unresolved` when it holds a variable ARG cannot resolve | Phase 3's arbitrary-UID rule needs numeric versus named |
@@ -40,8 +49,9 @@ discovery output directory (`blobs/`, `manifest.jsonl`). It reads those files an
 `facts` module; `FactsParser.parse(blobSha, text)` returns a parsed `Docker.File` or a `ParseFailure(sha, message)`.
 
 1. A minimal `FROM ubi9/ubi-minimal` parses to a file with one stage.
-2. Text the grammar rejects becomes a `ParseFailure` carrying the message, not an exception.
-3. Many inputs in one call keep each result tied to its blob SHA.
+2. Text the grammar rejects becomes a `Failed` result carrying the message, not an exception.
+3. A line glued onto the previous argument is a failure; continuations and heredocs are not.
+(Planned "many inputs in one call" dropped: the adapter parses one blob per call.)
 
 ## Slice 2 — Shell tokeniser
 

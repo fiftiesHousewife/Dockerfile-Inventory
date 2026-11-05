@@ -1,6 +1,7 @@
 # The one version catalogue, shared by build-logic and every module.
 [versions]
-openrewrite-bom = "3.31.0"
+rewrite = "8.90.4"
+jetbrains-annotations = "26.1.0"
 junit = "6.1.0-RC1"
 assertj = "4.0.0-M1"
 jspecify = "1.0.0"
@@ -9,10 +10,13 @@ jacoco = "0.8.14"
 jackson = "2.20.0"
 
 [libraries]
-# Parsing (Phase 1): rewrite-docker is managed by the recipe BOM, which imports rewrite-bom.
-openrewrite-recipe-bom = { module = "org.openrewrite.recipe:rewrite-recipe-bom", version.ref = "openrewrite-bom" }
-openrewrite-docker = { module = "org.openrewrite:rewrite-docker" }
-openrewrite-test = { module = "org.openrewrite:rewrite-test" }
+# Parsing (Phase 1). Core rewrite modules only, so the core BOM, not the recipe BOM. Pin exactly: the
+# rewrite-docker APIs are marked unstable, and an upgrade is its own change (AGENTS.md).
+rewrite-bom = { module = "org.openrewrite:rewrite-bom", version.ref = "rewrite" }
+rewrite-core = { module = "org.openrewrite:rewrite-core" }
+rewrite-docker = { module = "org.openrewrite:rewrite-docker" }
+# rewrite's classes carry @Language; without the annotation on the classpath javac warns, and -Werror fails.
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 
 # JSON for GitHub REST and GraphQL responses and the JSONL outputs.
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
