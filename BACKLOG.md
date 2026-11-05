@@ -12,8 +12,8 @@ and one line when its gate is met.
   - Blocked on the GHE token: slice 3 recorded fixtures; slice 4 pilot and full run.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
-  published.
-  - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms.
+  published. Code complete; the gate waits on a discovery run.
+  - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms; slice 6, the facts run and rates.
   - To raise upstream (rewrite-docker 8.90.4): an unrecognised line is appended to the previous argument
     silently; a `# syntax=` line after the first instruction is rejected, though Docker reads it as a comment.
 

@@ -1,6 +1,6 @@
 # Phase 1 — Parse and normalise: plan
 
-Status: slices 1 to 5 done. Slices below are built test-first in order, each committed when `check` is green.
+Status: all six slices built (5-6 Nov). The gate (rates published) waits on discovery output from the pilot. Slices below are built test-first in order, each committed when `check` is green.
 
 Phase 1 parses each unique Dockerfile blob once with `rewrite-docker`, reduces it to an `ImageFacts` record and
 two normal-form hashes, and publishes the parse-failure and opaque-`RUN` rates. Module: `facts`. Input: the
@@ -134,6 +134,10 @@ RUNs and opaque RUNs and their rate, unresolved `FROM` per organisation (D8), Bu
 2. Rerun parses nothing new.
 3. Rates computed from the rows.
 4. `FactsMain` from the environment (`DISCOVERY_DIR`, `OUT_DIR`).
+
+As built: discovery's unfinished `*.part` blobs are skipped; `rates.json` is rewritten from every row each run;
+unresolved `FROM` counts distinct blobs per organisation. Checked end to end with `./gradlew :facts:run` on a
+hand-made discovery directory. `FactsMain` is untested, like `DiscoveryMain`.
 
 ## Open questions (not blocking)
 

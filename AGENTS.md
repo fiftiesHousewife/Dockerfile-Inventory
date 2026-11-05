@@ -32,12 +32,15 @@ discovery/                  Phase 0: repos -> trees at the released commit -> Do
                             GitHub (interface) / GitHubHttp: REST trees and orgs, GraphQL repos and blobs
                             RepoScan: one repository; Discovery: the run; DiscoveryOutput: the files
                             run: GHE_API_URL, GHE_TOKEN, OUT_DIR, [RELEASE_INDEX], [CONCURRENCY] ./gradlew :discovery:run
+facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, normal-form hashes, rates
+                            FactsParser and FactExtractor are the only classes that import org.openrewrite;
+                            ShellTokeniser and PackageCalls read RUN bodies; FactsRun: the run
+                            run: DISCOVERY_DIR, OUT_DIR ./gradlew :facts:run
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
 
 ```
-facts/        Phase 1: parse blobs with rewrite-docker, shell tokeniser, ImageFacts, normal forms
 lineage/      Phase 1b: Artifactory AQL + REST, layer-prefix family tree, Dockerfile links, effective fold
 report/       Phase 2: four-pass clustering, archetype counts, Oracle export
 rules/        Phase 3: detect-only recipes, then auto-fixes; depends on facts and renderer

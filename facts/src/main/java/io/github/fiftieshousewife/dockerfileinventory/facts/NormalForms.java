@@ -29,7 +29,7 @@ public final class NormalForms {
     }
 
     /** Readable, so a surprising cluster can be explained; hashed for grouping. */
-    static String signature(ImageFacts facts) {
+    public static String signature(ImageFacts facts) {
         int last = facts.stageCount() - 1;
         List<PackageCall> installs = facts.packageCalls().stream()
                 .filter(c -> c.stage() == last && !c.call().packages().isEmpty())

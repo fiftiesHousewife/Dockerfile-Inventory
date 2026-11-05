@@ -13,7 +13,7 @@ The full plan, with each phase's gate, is the
 | Stage | Module | State |
 | --- | --- | --- |
 | 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; waiting on a GHE token for the pilot run |
-| 1. Parse each Dockerfile into facts | `facts` | In progress: parser in place |
+| 1. Parse each Dockerfile into facts | `facts` | Built; its rates need a discovery run |
 | 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Not started |
 | 2. Cluster into archetypes; estate report | `report` | Not started |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Not started |
@@ -58,6 +58,22 @@ are retried.
 | `blobs/<sha>` | Each distinct Dockerfile's text, stored once however many repositories copy it |
 | `repos.jsonl` | One line per repository per run: outcome (`SCANNED`, `EMPTY`, `TRUNCATED`, `RELEASE_COMMIT_MISSING`, `FAILED`), commit, archived and fork flags, Dockerfile count |
 | `blob-findings.jsonl` | Dockerfiles that could not be stored: binary, too large, or not found |
+
+## Parse the Dockerfiles
+
+```bash
+export DISCOVERY_DIR=/data/inventory     # discovery's OUT_DIR
+export OUT_DIR=/data/facts
+./gradlew :facts:run
+```
+
+Each distinct Dockerfile is parsed once; a rerun parses only new ones.
+
+| File | Contents |
+| --- | --- |
+| `facts.jsonl` | One line per Dockerfile: base image, package-manager calls per stage, final user and whether it is root, numeric or named, exposed ports, entrypoint form, BuildKit features, `RUN` counts, and two hashes for grouping (cosmetic and functional duplicates) |
+| `parse-failures.jsonl` | Dockerfiles the parser rejected, with the reason |
+| `rates.json` | Parse-failure rate, the share of `RUN`s too complex to read, unresolved `FROM` per organisation, BuildKit feature use |
 
 ## Contributing
 
