@@ -1,0 +1,23 @@
+# The one version catalogue, shared by build-logic and every module.
+[versions]
+openrewrite-bom = "3.31.0"
+junit = "6.1.0-RC1"
+assertj = "4.0.0-M1"
+jspecify = "1.0.0"
+spotbugs-plugin = "6.5.4"
+jacoco = "0.8.14"
+
+[libraries]
+# Parsing (Phase 1): rewrite-docker is managed by the recipe BOM, which imports rewrite-bom.
+openrewrite-recipe-bom = { module = "org.openrewrite.recipe:rewrite-recipe-bom", version.ref = "openrewrite-bom" }
+openrewrite-docker = { module = "org.openrewrite:rewrite-docker" }
+openrewrite-test = { module = "org.openrewrite:rewrite-test" }
+
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+
+[plugins]
+spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs-plugin" }
