@@ -6,6 +6,15 @@ and one line when its gate is met.
 ## Active
 
 - Phase 0 — Discovery. Gate: coverage reconciled against Artifactory; gap list published.
+  - Done: organisation and repository enumeration, release-index scoping with default-branch fallback,
+    tree listing, Dockerfile matching, GraphQL blob fetch in batches of 50, blob dedupe, resumable
+    JSONL outputs, rate-limit retries.
+  - Next: replace hand-written GHE fixtures with recorded responses once the scanner token exists.
+  - Next: clone fallback for `TRUNCATED` repositories.
+  - Next: no-Dockerfile signals (`nodockerfile.jsonl`): Jib, buildpacks, `-f` paths in pipeline YAML.
+  - Next: CODEOWNERS owner per repository.
+  - Next: Artifactory reconciliation (`gaps.jsonl`).
+  - Next: pilot run on one organisation; hand-check five repositories.
 
 ## Queued
 

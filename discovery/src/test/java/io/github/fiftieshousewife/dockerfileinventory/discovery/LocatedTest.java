@@ -9,7 +9,7 @@ class LocatedTest {
 
     @Test
     void keepsTheBlobShaAsTheIdentity() {
-        Located located = new Located("org/repo", "v1.2", "abc123", "docker/Dockerfile", "f00d");
+        Located located = new Located("org/repo", "abc123", Scope.RELEASED, "docker/Dockerfile", "f00d");
 
         assertThat(located.blobSha()).isEqualTo("f00d");
     }
@@ -17,7 +17,7 @@ class LocatedTest {
     @Test
     void refusesAMissingBlobSha() {
         assertThatNullPointerException()
-                .isThrownBy(() -> new Located("org/repo", "main", "abc123", "Dockerfile", null))
+                .isThrownBy(() -> new Located("org/repo", "abc123", Scope.RELEASED, "Dockerfile", null))
                 .withMessage("blobSha");
     }
 }

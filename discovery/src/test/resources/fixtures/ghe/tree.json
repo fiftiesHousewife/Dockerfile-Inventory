@@ -1,0 +1,9 @@
+{
+  "sha": "9fb037999f264ba9a7fc6274d15fa3ae2ab98312",
+  "url": "https://ghe.example/api/v3/repos/payments/ledger-api/trees/9fb037999f264ba9a7fc6274d15fa3ae2ab98312",
+  "tree": [
+    {"path": "Dockerfile", "mode": "100644", "type": "blob", "size": 412, "sha": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"},
+    {"path": "src", "mode": "040000", "type": "tree", "sha": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c"}
+  ],
+  "truncated": false
+}

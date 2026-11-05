@@ -6,12 +6,17 @@ assertj = "4.0.0-M1"
 jspecify = "1.0.0"
 spotbugs-plugin = "6.5.4"
 jacoco = "0.8.14"
+jackson = "2.20.0"
 
 [libraries]
 # Parsing (Phase 1): rewrite-docker is managed by the recipe BOM, which imports rewrite-bom.
 openrewrite-recipe-bom = { module = "org.openrewrite.recipe:rewrite-recipe-bom", version.ref = "openrewrite-bom" }
 openrewrite-docker = { module = "org.openrewrite:rewrite-docker" }
 openrewrite-test = { module = "org.openrewrite:rewrite-test" }
+
+# JSON for GitHub REST and GraphQL responses and the JSONL outputs.
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 

@@ -1,0 +1,4 @@
+[
+  {"login": "payments", "id": 11, "url": "https://ghe.example/api/v3/orgs/payments"},
+  {"login": "platform", "id": 42, "url": "https://ghe.example/api/v3/orgs/platform"}
+]

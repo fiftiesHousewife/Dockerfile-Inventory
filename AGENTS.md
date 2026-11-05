@@ -20,6 +20,9 @@ build-logic/                included build: the inventory.java convention plugin
                             JaCoCo gate, SpotBugs); every module applies it and nothing else
 gradle/libs.versions.toml   the one version catalogue, shared by build-logic and every module
 discovery/                  Phase 0: repos -> trees at the released commit -> Dockerfile blobs, once per SHA
+                            GitHub (interface) / GitHubHttp: REST trees and orgs, GraphQL repos and blobs
+                            RepoScan: one repository; Discovery: the run; DiscoveryOutput: the files
+                            run: GHE_API_URL, GHE_TOKEN, OUT_DIR, [RELEASE_INDEX], [CONCURRENCY] ./gradlew :discovery:run
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
@@ -40,6 +43,10 @@ converter/    Phase 5: LST -> model -> generated builder class, round-trip gate
 ./gradlew :discovery:test             # one module's tests
 ./gradlew :discovery:test --tests '*DockerfilePathsTest'
 ```
+
+Inside Claude Code's sandbox use `./gradlew-claude` (gitignored; copy it from clean-logging if missing): the
+sandbox only lets traffic out through the proxy in `$https_proxy`, which the JVM ignores, so Gradle fails with
+`UnknownHostException` until the proxy and its credentials are passed as system properties.
 
 Compiler warnings fail the build (`-Xlint:all -Werror`), as does a SpotBugs finding at medium
 confidence or line coverage under `inventory.minLineCoverage` (80%).

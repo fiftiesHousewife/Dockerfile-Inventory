@@ -1,0 +1,5 @@
+{"data": {"organization": {"repositories": {
+  "pageInfo": {"hasNextPage": false, "endCursor": null},
+  "nodes": [
+    {"nameWithOwner": "payments/empty", "isArchived": true, "isFork": true, "pushedAt": null, "defaultBranchRef": null}
+  ]}}}}

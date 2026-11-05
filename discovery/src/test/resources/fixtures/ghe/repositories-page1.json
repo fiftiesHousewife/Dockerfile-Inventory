@@ -1,0 +1,6 @@
+{"data": {"organization": {"repositories": {
+  "pageInfo": {"hasNextPage": true, "endCursor": "Y3Vyc29yOjE="},
+  "nodes": [
+    {"nameWithOwner": "payments/ledger-api", "isArchived": false, "isFork": false, "pushedAt": "2026-10-30T09:12:00Z",
+     "defaultBranchRef": {"name": "main", "target": {"oid": "1111111111111111111111111111111111111111"}}}
+  ]}}}}

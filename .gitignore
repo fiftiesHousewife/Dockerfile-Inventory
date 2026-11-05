@@ -53,3 +53,6 @@ bin/
 ### Pipeline output from local runs (manifests, blob store, reports) ###
 /out/
 /work/
+
+### Claude Code: proxy-aware gradlew (only useful inside the sandbox) ###
+gradlew-claude
