@@ -1,6 +1,6 @@
 # Phase 1 — Parse and normalise: plan
 
-Status: slices 1 and 2 done. Slices below are built test-first in order, each committed when `check` is green.
+Status: slices 1 to 3 done. Slices below are built test-first in order, each committed when `check` is green.
 
 Phase 1 parses each unique Dockerfile blob once with `rewrite-docker`, reduces it to an `ImageFacts` record and
 two normal-form hashes, and publishes the parse-failure and opaque-`RUN` rates. Module: `facts`. Input: the
@@ -84,6 +84,11 @@ opaque, so rule S3 (`curl | sh`) must match the raw `RUN` text, not tokenised co
    `apk add --no-cache` counts as clean.
 5. Non-install calls (`dnf update`, `microdnf upgrade`) are recorded with no packages.
 6. Unknown commands produce no calls.
+
+As built: a clean counts only after the install and within the manager's family (`dnf`, `yum`, `microdnf`
+share the RPM caches); `apt-get clean` does not count, as it leaves `/var/lib/apt/lists`; packages are recorded
+only for `install`, `add` and `reinstall`. Test 3 (flags with `=`) held by construction and is covered by the
+flag cases in test 2.
 
 ## Slice 4 — Fact extraction
 
