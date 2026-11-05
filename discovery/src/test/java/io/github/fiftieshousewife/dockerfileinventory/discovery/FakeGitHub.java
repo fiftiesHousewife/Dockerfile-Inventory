@@ -11,9 +11,11 @@ final class FakeGitHub implements GitHub {
 
     final Map<String, List<Repository>> repositoriesByOrg = new LinkedHashMap<>();
     final Map<String, Tree> trees = new LinkedHashMap<>();
+    final Map<String, Tree> listings = new LinkedHashMap<>();
     final Map<String, BlobText> blobs = new LinkedHashMap<>();
     final List<String> failingRepositories = new ArrayList<>();
     final List<String> treeCalls = new CopyOnWriteArrayList<>();
+    final List<String> treeRequests = new CopyOnWriteArrayList<>();
     final List<List<BlobRequest>> blobCalls = new CopyOnWriteArrayList<>();
 
     FakeGitHub repository(String org, Repository repository) {
@@ -23,6 +25,12 @@ final class FakeGitHub implements GitHub {
 
     FakeGitHub tree(String repository, String commit, Tree tree) {
         trees.put(repository + "@" + commit, tree);
+        return this;
+    }
+
+    /** A non-recursive listing: only the direct children of {@code sha}. */
+    FakeGitHub listing(String repository, String sha, Tree tree) {
+        listings.put(repository + "@" + sha, tree);
         return this;
     }
 
@@ -39,8 +47,16 @@ final class FakeGitHub implements GitHub {
         return new Tree(false, List.of(entries));
     }
 
+    static Tree truncated(Tree.Entry... entries) {
+        return new Tree(true, List.of(entries));
+    }
+
     static Tree.Entry file(String path, String sha) {
         return new Tree.Entry(path, "blob", sha);
+    }
+
+    static Tree.Entry dir(String path, String sha) {
+        return new Tree.Entry(path, "tree", sha);
     }
 
     @Override
@@ -54,12 +70,13 @@ final class FakeGitHub implements GitHub {
     }
 
     @Override
-    public Optional<Tree> tree(String repository, String commitSha) {
+    public Optional<Tree> tree(String repository, String sha, boolean recursive) {
         treeCalls.add(repository);
+        treeRequests.add(repository + " " + sha + (recursive ? " recursive" : " listing"));
         if (failingRepositories.contains(repository)) {
             throw new GitHubException("GET tree for " + repository + " returned 502");
         }
-        return Optional.ofNullable(trees.get(repository + "@" + commitSha));
+        return Optional.ofNullable((recursive ? trees : listings).get(repository + "@" + sha));
     }
 
     @Override

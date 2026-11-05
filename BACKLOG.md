@@ -8,7 +8,7 @@ and one line when its gate is met.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index
   coverage reported; pilot hand check matches.
   - Done: slice 1 (enumeration, release-index scoping, tree listing, blob fetch and dedupe, resume, rate limits).
-  - Next: slice 2, walk subtrees of truncated trees.
+  - Done: slice 2, walk subtrees of truncated trees (depth limit 8; submodules kept, not listed).
   - Blocked on the GHE token: slice 3 recorded fixtures; slice 4 pilot and full run.
 
 ## Queued

@@ -61,10 +61,23 @@ class RepoScanTest {
     }
 
     @Test
-    void reportsATruncatedTreeButKeepsWhatItListed() {
-        gitHub.tree("pay/mono", HEAD, new Tree(true, List.of(file("svc/Dockerfile", "d1"))));
+    void findsDockerfilesInEverySubtreeOfATruncatedRepository() {
+        gitHub.tree("pay/mono", HEAD, new Tree(true, List.of(file("a/Dockerfile", "d1"))))
+                .listing("pay/mono", HEAD, tree(FakeGitHub.dir("a", "t-a"), FakeGitHub.dir("b", "t-b")))
+                .tree("pay/mono", "t-a", tree(file("Dockerfile", "d1")))
+                .tree("pay/mono", "t-b", tree(file("Dockerfile", "d2")));
 
         RepoScan.Result result = new RepoScan(gitHub, ReleaseIndex.empty()).scan(repo("pay/mono", HEAD));
+
+        assertThat(result.outcome().status()).isEqualTo(RepoOutcome.Status.SCANNED);
+        assertThat(result.found()).extracting(Located::path).containsExactly("a/Dockerfile", "b/Dockerfile");
+    }
+
+    @Test
+    void reportsATreeStillTruncatedPastTheDepthLimitButKeepsWhatItListed() {
+        gitHub.tree("pay/mono", HEAD, new Tree(true, List.of(file("svc/Dockerfile", "d1"))));
+
+        RepoScan.Result result = new RepoScan(new TreeWalk(gitHub, 0), ReleaseIndex.empty()).scan(repo("pay/mono", HEAD));
 
         assertThat(result.outcome().status()).isEqualTo(RepoOutcome.Status.TRUNCATED);
         assertThat(result.found()).hasSize(1);

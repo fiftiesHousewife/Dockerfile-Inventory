@@ -82,8 +82,9 @@ public final class GitHubHttp implements GitHub {
     }
 
     @Override
-    public Optional<Tree> tree(String repository, String commitSha) {
-        return rest("v3/repos/%s/git/trees/%s?recursive=1".formatted(repository, commitSha)).map(GitHubHttp::tree);
+    public Optional<Tree> tree(String repository, String sha, boolean recursive) {
+        return rest("v3/repos/%s/git/trees/%s%s".formatted(repository, sha, recursive ? "?recursive=1" : ""))
+                .map(GitHubHttp::tree);
     }
 
     @Override

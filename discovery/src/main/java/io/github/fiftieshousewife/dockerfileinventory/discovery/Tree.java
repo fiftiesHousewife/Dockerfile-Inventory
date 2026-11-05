@@ -14,5 +14,15 @@ public record Tree(boolean truncated, List<Entry> entries) {
         public boolean isBlob() {
             return "blob".equals(type);
         }
+
+        /** This entry as seen from the parent directory {@code prefix}. */
+        Entry under(String prefix) {
+            return new Entry(prefix + "/" + path, type, sha);
+        }
+
+        /** A directory. Submodules are type {@code commit} and are neither blobs nor trees. */
+        public boolean isTree() {
+            return "tree".equals(type);
+        }
     }
 }

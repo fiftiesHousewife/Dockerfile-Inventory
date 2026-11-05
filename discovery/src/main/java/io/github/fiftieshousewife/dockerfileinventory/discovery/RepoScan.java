@@ -3,7 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 import java.util.List;
 import java.util.Optional;
 
-/** Lists one repository's tree at its released commit (or default branch head) and picks out the Dockerfiles. */
+/** Walks one repository's tree at its released commit (or default branch head) and picks out the Dockerfiles. */
 final class RepoScan {
 
     record Result(RepoOutcome outcome, List<Located> found) {
@@ -13,11 +13,15 @@ final class RepoScan {
         }
     }
 
-    private final GitHub gitHub;
+    private final TreeWalk walk;
     private final ReleaseIndex releases;
 
     RepoScan(GitHub gitHub, ReleaseIndex releases) {
-        this.gitHub = gitHub;
+        this(new TreeWalk(gitHub), releases);
+    }
+
+    RepoScan(TreeWalk walk, ReleaseIndex releases) {
+        this.walk = walk;
         this.releases = releases;
     }
 
@@ -28,7 +32,7 @@ final class RepoScan {
         if (commit == null) {
             return result(repository, RepoOutcome.Status.EMPTY, scope, null, List.of(), "no commits");
         }
-        Optional<Tree> tree = gitHub.tree(repository.nameWithOwner(), commit);
+        Optional<Tree> tree = walk.walk(repository.nameWithOwner(), commit);
         if (tree.isEmpty()) {
             return released.isPresent()
                     ? result(repository, RepoOutcome.Status.RELEASE_COMMIT_MISSING, scope, commit, List.of(),

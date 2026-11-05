@@ -1,6 +1,6 @@
 # Phase 0 — Discovery: plan
 
-Status: slice 1 done (`b7d54f1`). Slices 2 to 4 below; slice 2 is unblocked, slices 3 and 4 wait on the GHE token.
+Status: slices 1 and 2 done. Slices 3 and 4 wait on the GHE token.
 
 ## Scope (settled 5 Nov)
 
@@ -20,7 +20,12 @@ persistent volume, so resume works across pod restarts.
 `TRUNCATED` except past the depth limit; release-index coverage is reported (released versus default-branch
 scope); the pilot's hand check matches.
 
-## Slice 2 — Truncated trees: walk subtrees
+## Slice 2 — Truncated trees: walk subtrees (done)
+
+As built: test 4 folded into a submodule test (entries of type `commit` are kept, never listed as trees);
+test 8 passed on first run because its branch was written during the interface refactor, so it was checked
+by mutation instead; refactoring added one test, a subtree that vanishes mid-scan fails the repository as a
+`GitHubException` instead of aborting the run.
 
 When the recursive listing comes back truncated, list the root non-recursively, then each subtree recursively,
 splitting a subtree one level further only when its own recursive listing is truncated. HTTP only.

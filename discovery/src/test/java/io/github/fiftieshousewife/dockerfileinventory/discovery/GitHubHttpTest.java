@@ -70,7 +70,7 @@ class GitHubHttpTest {
     void readsARecursiveTree() {
         route("/api/v3/repos/payments/ledger-api/git/trees/abc", exchange -> respond(exchange, 200, "tree.json"));
 
-        Tree tree = gitHub.tree("payments/ledger-api", "abc").orElseThrow();
+        Tree tree = gitHub.tree("payments/ledger-api", "abc", true).orElseThrow();
 
         assertThat(tree.truncated()).isFalse();
         assertThat(tree.entries()).extracting(Tree.Entry::path, Tree.Entry::isBlob)
@@ -80,10 +80,19 @@ class GitHubHttpTest {
     }
 
     @Test
+    void listsOnlyDirectChildrenWhenNotRecursive() {
+        route("/api/v3/repos/payments/ledger-api/git/trees/abc", exchange -> respond(exchange, 200, "tree.json"));
+
+        gitHub.tree("payments/ledger-api", "abc", false);
+
+        assertThat(requests).containsExactly("GET /api/v3/repos/payments/ledger-api/git/trees/abc");
+    }
+
+    @Test
     void treatsAnEmptyRepositoryAsNoTree() {
         route("/api/v3/repos/payments/empty/git/trees/abc", exchange -> respondText(exchange, 409, "{\"message\":\"Git Repository is empty.\"}"));
 
-        assertThat(gitHub.tree("payments/empty", "abc")).isEmpty();
+        assertThat(gitHub.tree("payments/empty", "abc", true)).isEmpty();
     }
 
     @Test
@@ -133,7 +142,7 @@ class GitHubHttpTest {
             }
         });
 
-        assertThat(gitHub.tree("payments/ledger-api", "abc")).isPresent();
+        assertThat(gitHub.tree("payments/ledger-api", "abc", true)).isPresent();
         assertThat(calls).hasValue(2);
     }
 
@@ -142,7 +151,7 @@ class GitHubHttpTest {
         route("/api/v3/repos/payments/ledger-api/git/trees/abc", exchange -> respondText(exchange, 502, "Bad Gateway"));
 
         assertThatExceptionOfType(GitHubException.class)
-                .isThrownBy(() -> gitHub.tree("payments/ledger-api", "abc"))
+                .isThrownBy(() -> gitHub.tree("payments/ledger-api", "abc", true))
                 .withMessageContaining("returned 502");
     }
 
