@@ -1,6 +1,6 @@
 # Phase 1 — Parse and normalise: plan
 
-Status: slices 1 to 4 done. Slices below are built test-first in order, each committed when `check` is green.
+Status: slices 1 to 5 done. Slices below are built test-first in order, each committed when `check` is green.
 
 Phase 1 parses each unique Dockerfile blob once with `rewrite-docker`, reduces it to an `ImageFacts` record and
 two normal-form hashes, and publishes the parse-failure and opaque-`RUN` rates. Module: `facts`. Input: the
@@ -118,6 +118,11 @@ as the default protocol. Clean calls (`microdnf clean all`) appear in the packag
    differing only in those ways hash equal.
 2. Signature (D3, D4, D5): equal for functionally equal files with different package order, different for a
    different package set or user kind.
+
+As built: the signature is a readable `|`-joined string (hashed for grouping), so a surprising cluster can be
+explained. Packages come from final-stage calls that name packages; versions written into package names are
+kept, so `git` and `git-2.43.5` differ. Text-normal treats heredoc body lines like instructions, which can only
+merge files whose bodies differ in comments.
 
 ## Slice 6 — Facts run
 
