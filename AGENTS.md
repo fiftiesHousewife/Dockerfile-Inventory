@@ -5,6 +5,15 @@ Notes for anyone (human or agent) changing the pipeline. The plan, with its phas
 [BACKLOG.md](BACKLOG.md) (keep it current). The [README](README.md) is for people *running* the
 pipeline or reading its output and must stay free of anything below.
 
+## How work proceeds
+
+1. **Plan before each phase, and before each slice of one.** Write `docs/plans/phase-<n>.md`: scope, design,
+   the test list in the order the tests will be written, and open questions. Resolve the open questions with
+   the project owner before writing code; an assumption that changes the design is a question, not a default.
+2. **Test-drive.** One failing test, run and seen to fail for the right reason; the least code to pass;
+   refactor with the tests green; repeat. Never write code and its tests in one batch.
+3. **Gate.** `./gradlew check` green, then update BACKLOG.md and the plan's status, then commit.
+
 ## What this repo is
 
 A batch pipeline that inventories every Dockerfile in a GitHub Enterprise estate (about 20,000) at its
@@ -63,7 +72,7 @@ and the next reads it, so any stage can be rerun alone and its input inspected b
 
 ```
 release index (repo -> commit) ─┐
-GHE organisations + repos ──────┴─► discovery ─► manifest.jsonl, blobs/<sha>, nodockerfile.jsonl
+GHE organisations + repos ──────┴─► discovery ─► manifest.jsonl, repos.jsonl, blobs/<sha>
                                                    │
                                      facts ◄───────┘ ─► facts.jsonl, parse-failures.jsonl
 Artifactory AQL + REST ─► lineage ─► images.jsonl, lineage.jsonl, links.jsonl, effective.jsonl
