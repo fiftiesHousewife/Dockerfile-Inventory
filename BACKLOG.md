@@ -11,9 +11,11 @@ and one line when its gate is met.
   - Done: slice 2, walk subtrees of truncated trees (depth limit 8; submodules kept, not listed).
   - Blocked on the GHE token: slice 3 recorded fixtures; slice 4 pilot and full run.
 
+- Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
+  published.
+
 ## Queued
 
-- Phase 1 — Parse and normalise. Gate: parse-failure and opaque-`RUN` rates published.
 - Phase 1b — Lineage and effective images. Gate: lineage for at least 95% of Artifactory images;
   images matched to Dockerfiles by fingerprint, unmatched images published as the gap list.
 - Phase 2 — Cluster and report. Gate: written decision, base-image route or DSL route.
