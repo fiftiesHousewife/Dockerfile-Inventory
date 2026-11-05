@@ -11,7 +11,7 @@ val libs = versionCatalogs.named("libs")
 fun lib(alias: String) = libs.findLibrary(alias).orElseThrow { IllegalStateException("missing library: $alias") }
 fun ver(alias: String) = libs.findVersion(alias).orElseThrow { IllegalStateException("missing version: $alias") }.requiredVersion
 
-val javaRelease = providers.gradleProperty("inventory.javaRelease").orElse("21").get().toInt()
+val javaRelease = providers.gradleProperty("inventory.javaRelease").orElse("25").get().toInt()
 
 java {
     toolchain {

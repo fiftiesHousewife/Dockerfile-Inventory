@@ -16,7 +16,7 @@ pipeline or reading its output and must stay free of anything below.
 
 ## What this repo is
 
-A batch pipeline that inventories every Dockerfile in a GitHub Enterprise estate (about 20,000) at its
+A Java 25 batch pipeline that inventories every Dockerfile in a GitHub Enterprise estate (about 20,000) at its
 last-released commit, parses each unique one with OpenRewrite's `rewrite-docker`, links images to their
 bases through Artifactory, and reports archetypes and rule findings. Later phases add fix recipes, a
 Dockerfile DSL with a shared renderer, and a Dockerfile-to-DSL converter. It runs as a job in a RHEL pod
@@ -128,7 +128,7 @@ Enforced by tools (thresholds in `build-logic/` and `gradle.properties`):
 | No compiler warnings | `javac -Xlint:all -Werror` |
 | No SpotBugs findings at medium confidence | SpotBugs |
 | Line coverage at least 80% per module | JaCoCo |
-| Java 21 language level | Gradle toolchain (`inventory.javaRelease`) |
+| Java 25 (newest LTS) language level | Gradle toolchain (`inventory.javaRelease`) |
 | UTF-8, LF, 4-space indent, 120-character lines | `.editorconfig`, `.gitattributes` |
 
 And by hand, since no tool checks them:

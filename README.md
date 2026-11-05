@@ -22,7 +22,7 @@ The full plan, with each phase's gate, is the
 
 ## Requirements
 
-- JDK 21 (Gradle downloads one if none is installed).
+- JDK 25, the newest long-term-support release. Gradle finds an installed JDK 25; it does not download one.
 - For discovery: a GitHub Enterprise token that can read every organisation's repositories, and optionally the
   release index exported from the release database.
 
