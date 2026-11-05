@@ -13,8 +13,9 @@ and one line when its gate is met.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published.
-  - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls.
-  - To raise upstream: rewrite-docker 8.90.4 appends an unrecognised line to the previous argument silently.
+  - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction.
+  - To raise upstream (rewrite-docker 8.90.4): an unrecognised line is appended to the previous argument
+    silently; a `# syntax=` line after the first instruction is rejected, though Docker reads it as a comment.
 
 ## Queued
 

@@ -1,44 +1,133 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.openrewrite.docker.DockerIsoVisitor;
 import org.openrewrite.docker.tree.Docker;
 
 /** Reduces a parsed Dockerfile to {@link ImageFacts}. With {@link FactsParser}, the only code that sees rewrite types. */
 public final class FactExtractor {
 
+    /** What a stage built {@code FROM} an earlier stage's name starts with. */
+    private record Inherited(String user, List<String> ports, EntrypointForm entrypoint) {
+        static final Inherited NONE = new Inherited(null, List.of(), EntrypointForm.NONE);
+    }
+
+    private static final Pattern DIRECTIVE = Pattern.compile("#\\s*(\\w+)\\s*=.*");
+
+    /** By port number, then text, so {@code 53/udp} sorts before {@code 8080}; variables sort last. */
+    private static final Comparator<String> PORT_ORDER = Comparator
+            .comparingInt((String p) -> p.matches("\\d+.*") ? Integer.parseInt(p.replaceFirst("\\D.*", "")) : Integer.MAX_VALUE)
+            .thenComparing(Comparator.naturalOrder());
+
     private FactExtractor() {
     }
 
     public static ImageFacts extract(Docker.File file) {
+        Map<String, String> globalArgs = globalArgs(file);
+        Map<String, Inherited> byStageName = new HashMap<>();
+        RunTally runs = new RunTally();
+        StageScan last = null;
+        List<Docker.Stage> stages = file.getStages();
+        for (int index = 0; index < stages.size(); index++) {
+            Docker.Stage stage = stages.get(index);
+            Docker.From from = stage.getFrom();
+            last = new StageScan(byStageName.getOrDefault(text(from.getImageName(), globalArgs), Inherited.NONE), globalArgs);
+            for (Docker.Instruction instruction : stage.getInstructions()) {
+                last.accept(instruction);
+                if (instruction instanceof Docker.Run run) {
+                    runs.add(index, run);
+                }
+            }
+            Docker.From.As as = from.getAs();
+            if (as != null) {
+                byStageName.put(as.getName().getText(), last.result());
+            }
+        }
+        Inherited end = last == null ? Inherited.NONE : last.result();
+        return new ImageFacts(stages.size(), finalBase(file, globalArgs), runs.calls, runs.runs, runs.opaque,
+                end.user(), kind(end.user()), end.ports(), end.entrypoint(),
+                List.copyOf(buildKitFeatures(file)));
+    }
+
+    private static Map<String, String> globalArgs(Docker.File file) {
         Map<String, String> globalArgs = new HashMap<>();
         file.getGlobalArgs().forEach(arg -> {
-            if (arg.getValue() != null) {
-                globalArgs.put(arg.getName().getText(), text(arg.getValue(), globalArgs));
+            Docker.Argument value = arg.getValue();
+            if (value != null) {
+                globalArgs.put(arg.getName().getText(), text(value, globalArgs));
             }
         });
-        List<StagedCall> calls = new ArrayList<>();
-        int runs = 0;
-        int opaque = 0;
-        List<Docker.Stage> stages = file.getStages();
-        for (int stage = 0; stage < stages.size(); stage++) {
-            for (Docker.Instruction instruction : stages.get(stage).getInstructions()) {
-                if (instruction instanceof Docker.Run run) {
-                    runs++;
-                    Optional<List<List<String>>> commands = commands(run);
-                    if (commands.isEmpty()) {
-                        opaque++;
-                    }
-                    int index = stage;
-                    commands.ifPresent(c -> PackageCalls.of(c).forEach(call -> calls.add(new StagedCall(index, call))));
+        return globalArgs;
+    }
+
+    /** One stage's walk: its variable scope, and the user, entrypoint and ports it ends with. */
+    private static final class StageScan {
+
+        private final Map<String, String> globalArgs;
+        private final Map<String, String> vars = new HashMap<>();
+        private final Set<String> ports = new TreeSet<>(PORT_ORDER);
+        private String user;
+        private EntrypointForm entrypoint;
+
+        StageScan(Inherited inherited, Map<String, String> globalArgs) {
+            this.globalArgs = globalArgs;
+            this.user = inherited.user();
+            this.entrypoint = inherited.entrypoint();
+            this.ports.addAll(inherited.ports());
+        }
+
+        void accept(Docker.Instruction instruction) {
+            switch (instruction) {
+                case Docker.Arg arg -> arg(arg);
+                case Docker.Env env -> env.getPairs().forEach(p -> vars.put(p.getKey().getText(), text(p.getValue(), vars)));
+                case Docker.User u -> user = text(u.getUser(), vars);
+                case Docker.Entrypoint e ->
+                        entrypoint = e.getCommand() instanceof Docker.ExecForm ? EntrypointForm.EXEC : EntrypointForm.SHELL;
+                case Docker.Expose expose -> expose.getPorts().forEach(p -> ports.add(p.getText().replaceFirst("/tcp$", "")));
+                default -> {
                 }
             }
         }
-        return new ImageFacts(stages.size(), finalBase(file, globalArgs), calls, runs, opaque);
+
+        /** An {@code ARG} without a default inside a stage takes the global default, as Docker does. */
+        private void arg(Docker.Arg arg) {
+            String name = arg.getName().getText();
+            Docker.Argument declared = arg.getValue();
+            String value = declared == null ? globalArgs.get(name) : text(declared, vars);
+            if (value != null) {
+                vars.put(name, value);
+            }
+        }
+
+        Inherited result() {
+            return new Inherited(user, List.copyOf(ports), entrypoint);
+        }
+    }
+
+    /** Every {@code RUN}: its package calls by stage, and how many the tokeniser declined. */
+    private static final class RunTally {
+
+        private final List<StagedCall> calls = new ArrayList<>();
+        private int runs;
+        private int opaque;
+
+        void add(int stage, Docker.Run run) {
+            runs++;
+            Optional<List<List<String>>> commands = commands(run);
+            if (commands.isEmpty()) {
+                opaque++;
+            }
+            commands.ifPresent(c -> PackageCalls.of(c).forEach(call -> calls.add(new StagedCall(stage, call))));
+        }
     }
 
     /** The final stage's base; a stage built {@code FROM} an earlier stage's name takes that stage's base. */
@@ -48,8 +137,9 @@ public final class FactExtractor {
         for (Docker.Stage stage : file.getStages()) {
             BaseImage from = base(stage.getFrom(), args);
             base = from.tag() == null && from.digest() == null ? byStageName.getOrDefault(from.name(), from) : from;
-            if (stage.getFrom().getAs() != null) {
-                byStageName.put(stage.getFrom().getAs().getName().getText(), base);
+            Docker.From.As as = stage.getFrom().getAs();
+            if (as != null) {
+                byStageName.put(as.getName().getText(), base);
             }
         }
         return base;
@@ -60,9 +150,11 @@ public final class FactExtractor {
      * carries a tag would keep the tag in the name. The reference is rebuilt, substituted, then split here.
      */
     static BaseImage base(Docker.From from, Map<String, String> args) {
+        Docker.Argument tag = from.getTag();
+        Docker.Argument digest = from.getDigest();
         String reference = text(from.getImageName(), args)
-                + (from.getTag() == null ? "" : ":" + text(from.getTag(), args))
-                + (from.getDigest() == null ? "" : "@" + text(from.getDigest(), args));
+                + (tag == null ? "" : ":" + text(tag, args))
+                + (digest == null ? "" : "@" + text(digest, args));
         return split(reference);
     }
 
@@ -74,6 +166,55 @@ public final class FactExtractor {
         boolean hasTag = colon > nameAndTag.lastIndexOf('/');
         return new BaseImage(hasTag ? nameAndTag.substring(0, colon) : nameAndTag,
                 hasTag ? nameAndTag.substring(colon + 1) : null, digest);
+    }
+
+    /** Features a builder without BuildKit cannot run: heredocs, {@code RUN --mount}, a {@code # syntax=} directive. */
+    static Set<String> buildKitFeatures(Docker.File file) {
+        Set<String> features = new TreeSet<>();
+        new DockerIsoVisitor<Integer>() {
+            @Override
+            public Docker.HeredocForm visitHeredocForm(Docker.HeredocForm heredoc, Integer p) {
+                features.add("heredoc");
+                return heredoc;
+            }
+
+            @Override
+            public Docker.Run visitRun(Docker.Run run, Integer p) {
+                List<Docker.Flag> flags = run.getFlags();
+                if (flags != null && flags.stream().anyMatch(f -> f.getName().replace("-", "").equals("mount"))) {
+                    features.add("run-mount");
+                }
+                return super.visitRun(run, p);
+            }
+        }.visit(file, 0);
+        if (hasSyntaxDirective(file.printAll())) {
+            features.add("syntax-directive");
+        }
+        return features;
+    }
+
+    /** Docker reads parser directives only from the leading {@code # key=value} lines, before any other line. */
+    static boolean hasSyntaxDirective(String text) {
+        for (String line : text.lines().toList()) {
+            var directive = DIRECTIVE.matcher(line);
+            if (!directive.matches()) {
+                return false;
+            }
+            if (directive.group(1).equalsIgnoreCase("syntax")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static UserKind kind(String user) {
+        if (user == null || user.equals("root") || user.equals("0")) {
+            return UserKind.ROOT;
+        }
+        if (user.contains("${")) {
+            return UserKind.UNRESOLVED;
+        }
+        return user.chars().allMatch(Character::isDigit) ? UserKind.NUMERIC : UserKind.NAMED;
     }
 
     /**

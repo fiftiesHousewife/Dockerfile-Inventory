@@ -1,6 +1,6 @@
 # Phase 1 — Parse and normalise: plan
 
-Status: slices 1 to 3 done. Slices below are built test-first in order, each committed when `check` is green.
+Status: slices 1 to 4 done. Slices below are built test-first in order, each committed when `check` is green.
 
 Phase 1 parses each unique Dockerfile blob once with `rewrite-docker`, reduces it to an `ImageFacts` record and
 two normal-form hashes, and publishes the parse-failure and opaque-`RUN` rates. Module: `facts`. Input: the
@@ -29,6 +29,8 @@ Found by probing (slice 1), not documented:
   argument**, e.g. the `FROM` image name becomes `ubi9\nRUNN echo typo`. `FactsParser` treats any literal holding a
   newline not preceded by a backslash as a parse failure. Worth an upstream issue.
 - The `# syntax=` parser directive is not visible in the tree; the extractor reads it from the text.
+- **A `# syntax=` line after the first instruction is rejected as a syntax error**, though Docker reads it as an
+  ordinary comment, so a valid Dockerfile fails to parse. A test records it, to delete when fixed upstream.
 
 ## Decisions taken without asking (say if any is wrong)
 
@@ -103,6 +105,12 @@ flag cases in test 2.
 7. Exposed ports, sorted and deduplicated.
 8. Entrypoint form: `shell`, `exec` or `none`, from the last `ENTRYPOINT` of the final stage.
 9. BuildKit features: `heredoc`, `run-mount`, `syntax-directive`.
+
+As built: the parser splits name, tag and digest before variables are substituted, so the extractor rebuilds the
+reference, substitutes, and splits it itself (a tag carried in an ARG default; a registry port is not a tag).
+Inside a stage, variables come from in-stage `ARG` (a bare `ARG NAME` takes the global default) and `ENV`; user,
+entrypoint and exposed ports carry over to a stage built `FROM` an earlier stage. `/tcp` is dropped from ports
+as the default protocol. Clean calls (`microdnf clean all`) appear in the package calls as calls themselves.
 
 ## Slice 5 — Normal forms
 

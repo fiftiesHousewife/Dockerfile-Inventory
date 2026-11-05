@@ -107,4 +107,77 @@ class FactExtractorTest {
         assertThat(facts.runs()).isEqualTo(3);
         assertThat(facts.opaqueRuns()).isEqualTo(2);
     }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', nullValues = "-", value = {
+        "FROM ubi9                                    | -    | ROOT",
+        "FROM ubi9\\nUSER root                        | root | ROOT",
+        "FROM ubi9\\nUSER 0:0                         | 0    | ROOT",
+        "FROM ubi9\\nUSER 1001                        | 1001 | NUMERIC",
+        "FROM ubi9\\nUSER 1001:0                      | 1001 | NUMERIC",
+        "FROM ubi9\\nUSER appuser                     | appuser | NAMED",
+        "FROM ubi9\\nARG APP_UID=1001\\nUSER ${APP_UID} | 1001 | NUMERIC",
+        "FROM ubi9\\nENV APP_UID=1002\\nUSER $APP_UID   | 1002 | NUMERIC",
+        "FROM ubi9\\nARG APP_UID\\nUSER $APP_UID       | ${APP_UID} | UNRESOLVED",
+        "FROM ubi9\\nUSER 1001\\nUSER appuser         | appuser | NAMED",
+        "FROM ubi9 AS base\\nUSER 1001\\nFROM base     | 1001 | NUMERIC",
+        "FROM ubi9 AS build\\nUSER 1001\\nFROM ubi9    | -    | ROOT",
+    })
+    void readsTheFinalUserAndItsKind(String dockerfile, String user, UserKind kind) {
+        ImageFacts facts = facts(dockerfile.replace("\\n", "\n") + "\n");
+
+        assertThat(facts.finalUser()).isEqualTo(user);
+        assertThat(facts.userKind()).isEqualTo(kind);
+    }
+
+    @Test
+    void readsExposedPortsSortedWithoutDuplicates() {
+        ImageFacts facts = facts("""
+                FROM ubi9 AS base
+                EXPOSE 9090
+                FROM base
+                EXPOSE 8443/tcp 8080 53/udp
+                EXPOSE 8080/tcp
+                """);
+
+        assertThat(facts.exposedPorts()).containsExactly("53/udp", "8080", "8443", "9090");
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "FROM ubi9                                                          | NONE",
+        "FROM ubi9\\nENTRYPOINT [\"java\", \"-jar\", \"/opt/app.jar\"]          | EXEC",
+        "FROM ubi9\\nENTRYPOINT java -jar /opt/app.jar                      | SHELL",
+        "FROM ubi9\\nENTRYPOINT java -jar /a.jar\\nENTRYPOINT [\"/run.sh\"] | EXEC",
+        "FROM ubi9 AS base\\nENTRYPOINT [\"/run.sh\"]\\nFROM base          | EXEC",
+    })
+    void readsTheEntrypointForm(String dockerfile, EntrypointForm form) {
+        assertThat(facts(dockerfile.replace("\\n", "\n") + "\n").entrypointForm()).isEqualTo(form);
+    }
+
+    @Test
+    void notesBuildKitFeaturesInUse() {
+        ImageFacts facts = facts("""
+                # syntax=docker/dockerfile:1.7
+                FROM ubi9
+                RUN --mount=type=cache,target=/var/cache/dnf dnf install -y git
+                RUN <<EOF
+                echo hi
+                EOF
+                """);
+
+        assertThat(facts.buildKitFeatures()).containsExactly("heredoc", "run-mount", "syntax-directive");
+    }
+
+    @Test
+    void ignoresASyntaxLineAfterAnOrdinaryComment() {
+        assertThat(facts("# base image for payments\n# syntax=docker/dockerfile:1\nFROM ubi9\n").buildKitFeatures()).isEmpty();
+    }
+
+    @Test
+    void recordsTheParserRejectingASyntaxLineAfterAnInstruction() {
+        assertThat(new FactsParser().parse("sha", "FROM ubi9\n# syntax=docker/dockerfile:1\nRUN echo\n"))
+                .as("rewrite-docker 8.90.4 rejects what Docker reads as a comment; delete this test when fixed upstream")
+                .isInstanceOf(ParseResult.Failed.class);
+    }
 }
