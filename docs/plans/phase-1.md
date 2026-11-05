@@ -18,7 +18,7 @@ discovery output directory (`blobs/`, `manifest.jsonl`). It reads those files an
   what ARG substitution needs.
 - `Docker.Run.getCommand()`: `ShellForm` (one `Literal`), `ExecForm` (`List<Literal>`), `HeredocForm`; `getFlags()`
   carries `--mount`.
-- `Arg`, `Env` (pairs), `User` (user, group), `Expose` (`Port`s), `Entrypoint`, `Cmd`, `Healthcheck`, `Onbuild`.
+- `Arg`, `Env` (pairs), `User` (user, group), `Expose` (`Port`s), `Entrypoint`, `Cmd`, `Onbuild`.
 - There is no shell AST: a shell-form `RUN` is one string.
 
 ## Decisions taken without asking (say if any is wrong)
@@ -33,6 +33,7 @@ discovery output directory (`blobs/`, `manifest.jsonl`). It reads those files an
 | D6 | A final stage `FROM <earlier stage>` takes that stage's base | Multi-stage chains end on a real image |
 | D7 | Heredoc and `RUN --mount` are counted as used; whether they build is not knowable from source, so "evidence Buildah supports it" is reported as usage only | The Decisions table assumed more than source shows |
 | D8 | Unresolved `FROM` is counted per organisation using `manifest.jsonl` | Organisations are the only grouping left |
+| D9 | No healthcheck fact (decided by you, 5 Nov) | OpenShift ignores `HEALTHCHECK`; its rule was dropped |
 
 ## Slice 1 — Module and parser adapter
 
@@ -81,8 +82,7 @@ Pure Java; no OpenRewrite.
 6. Final user and user kind (D5), including `USER ${APP_UID}` with an ARG default.
 7. Exposed ports, sorted and deduplicated.
 8. Entrypoint form: `shell`, `exec` or `none`, from the last `ENTRYPOINT` of the final stage.
-9. Healthcheck present (not `HEALTHCHECK NONE`).
-10. BuildKit features: `heredoc`, `run-mount`, `syntax-directive`.
+9. BuildKit features: `heredoc`, `run-mount`, `syntax-directive`.
 
 ## Slice 5 — Normal forms
 
