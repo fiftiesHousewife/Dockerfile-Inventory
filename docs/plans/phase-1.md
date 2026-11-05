@@ -1,6 +1,6 @@
 # Phase 1 — Parse and normalise: plan
 
-Status: slice 1 done. Slices below are built test-first in order, each committed when `check` is green.
+Status: slices 1 and 2 done. Slices below are built test-first in order, each committed when `check` is green.
 
 Phase 1 parses each unique Dockerfile blob once with `rewrite-docker`, reduces it to an `ImageFacts` record and
 two normal-form hashes, and publishes the parse-failure and opaque-`RUN` rates. Module: `facts`. Input: the
@@ -66,7 +66,12 @@ Pure Java; no OpenRewrite.
 6. Opaque: `if`, `case`, `for`, `while`, `$( )`, backticks, `( )` subshells, `{ }` groups, function definitions,
    heredocs (`<<`), pipes into a shell (`| sh`, `| bash`).
 7. Pipes between other commands split like `;` (each side is a command).
-8. Comments (`#` at a word start) end the line.
+8. Comments (`#` at a word start) end the line; an unescaped newline separates commands.
+
+As built, beyond the list: redirections (`> /dev/null`, `2>&1`, `>>file`) are dropped with their targets, so
+they never look like package names; a quoted word is never taken for a redirection; an unclosed quote and
+command substitution inside double quotes are opaque. Note for Phase 3: a pipe into a shell makes the body
+opaque, so rule S3 (`curl | sh`) must match the raw `RUN` text, not tokenised commands.
 
 ## Slice 3 — Package calls
 
