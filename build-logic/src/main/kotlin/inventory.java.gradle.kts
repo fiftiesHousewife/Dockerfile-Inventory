@@ -20,6 +20,7 @@ java {
 }
 
 dependencies {
+    "spotbugsSlf4j"(lib("slf4j-simple"))
     "compileOnly"(lib("jspecify"))
     "testImplementation"(lib("junit-jupiter"))
     "testImplementation"(lib("assertj-core"))

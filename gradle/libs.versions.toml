@@ -7,6 +7,10 @@ assertj = "3.27.7"
 jspecify = "1.0.1"
 spotbugs-plugin = "6.5.13"
 spotbugs = "4.10.5"
+slf4j = "2.0.20"
+versions-plugin = "0.67.0"
+# Read by settings.gradle.kts, whose plugins block cannot use this catalogue.
+foojay-resolver = "1.0.0"
 jacoco = "0.8.16"
 jackson = "3.2.4"
 
@@ -28,6 +32,15 @@ jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+
+# Gradle plugins used by build-logic. Declared as libraries so build-logic can depend on them and the
+# up-to-date check (inventory.dependency-updates) can see them.
+spotbugs-gradle-plugin = { module = "com.github.spotbugs.snom:spotbugs-gradle-plugin", version.ref = "spotbugs-plugin" }
+gradle-versions-plugin = { module = "io.github.ben-manes:gradle-versions-plugin", version.ref = "versions-plugin" }
+foojay-resolver = { module = "org.gradle.toolchains:foojay-resolver", version.ref = "foojay-resolver" }
+
+# SpotBugs logs through slf4j-simple at a version its plugin pins; pinned here so it stays current.
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
 spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs-plugin" }

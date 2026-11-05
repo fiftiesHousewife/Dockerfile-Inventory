@@ -104,10 +104,18 @@ image from `lineage`, and each finding names the Dockerfile in the chain that sh
 
 ## Common changes
 
-**Every version lives in `gradle/libs.versions.toml`**, including `rewrite-docker` (through the
-recipe BOM). Outside it by necessity: the Gradle version (`gradle-wrapper.properties`) and Kotlin
-(embedded in Gradle, used by `kotlin-dsl`). Pin `rewrite-docker` exactly; an upgrade is its own
-change, with the Phase 1 parse-failure rate compared before and after on the fixture corpus.
+**Every version lives in `gradle/libs.versions.toml`**, including `rewrite-docker` (through `rewrite-bom`), the
+Gradle plugins `build-logic` uses, and the toolchain resolver (which `settings.gradle.kts` reads from the file).
+Outside it by necessity: the Gradle version (`gradle-wrapper.properties`), the JDK (`inventory.javaRelease` in
+`gradle.properties`) and Kotlin (embedded in Gradle, used by `kotlin-dsl`).
+
+**`check` fails when anything is behind its newest stable release** (`verifyUpToDate`, from the root
+`inventory.dependency-updates` plugin): every module's libraries and BOMs, JaCoCo and SpotBugs, build-logic's
+plugins, Gradle, and the JDK against the newest LTS. Pre-releases are ignored. A dependency the check cannot
+resolve, or a version lookup that fails, fails the build too: a check that cannot look must not pass. To clear
+it, bump the version it names and run `./gradlew check`; `rewrite-docker` bumps compare Phase 1 parse-failure
+rates before and after. Offline: `./gradlew check -x verifyUpToDate`. Its comparison logic is tested in
+`build-logic/src/test`.
 
 **Add a module.** `include("<name>")` in `settings.gradle.kts`, a `build.gradle.kts` applying
 `id("inventory.java")`, a row in the layout above, and the phase's entry in BACKLOG.md moved to Active.
