@@ -156,6 +156,15 @@ class GitHubHttpTest {
     }
 
     @Test
+    void failsAsAGitHubErrorOnUnreadableJson() {
+        route("/api/v3/repos/payments/ledger-api/git/trees/abc", exchange -> respondText(exchange, 200, "<html>proxy login</html>"));
+
+        assertThatExceptionOfType(GitHubException.class)
+                .isThrownBy(() -> gitHub.tree("payments/ledger-api", "abc", true))
+                .withMessageContaining("unreadable JSON");
+    }
+
+    @Test
     void writesGraphqlStringLiteralsEscaped() {
         assertThat(GitHubHttp.blobQuery(List.of(new BlobRequest("pay/a\"b", "f00d"))))
                 .contains("bf00d: repository(owner: \"pay\", name: \"a\\\"b\")");

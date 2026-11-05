@@ -69,6 +69,7 @@ tasks.named("check") {
 }
 
 spotbugs {
+    toolVersion.set(ver("spotbugs"))
     ignoreFailures.set(false)
     effort.set(com.github.spotbugs.snom.Effort.DEFAULT)
     reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)

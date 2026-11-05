@@ -1,6 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -106,15 +106,7 @@ final class DiscoveryOutput {
             return List.of();
         }
         try (Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)) {
-            return lines.filter(l -> !l.isBlank()).map(l -> parse(l, type)).toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private <T> T parse(String line, Class<T> type) {
-        try {
-            return json.readValue(line, type);
+            return lines.filter(l -> !l.isBlank()).map(l -> json.readValue(l, type)).toList();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

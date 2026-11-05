@@ -1,8 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -63,7 +64,7 @@ public final class GitHubHttp implements GitHub {
             if (page.isEmpty()) {
                 return logins;
             }
-            page.forEach(org -> logins.add(org.path("login").asText()));
+            page.forEach(org -> logins.add(org.path("login").asString()));
             since = page.get(page.size() - 1).path("id").asLong();
         }
     }
@@ -76,7 +77,7 @@ public final class GitHubHttp implements GitHub {
             ObjectNode variables = json.createObjectNode().put("org", organization).put("cursor", cursor);
             JsonNode page = graphql(REPOSITORIES_QUERY, variables).path("organization").path("repositories");
             page.path("nodes").forEach(node -> repositories.add(repository(node)));
-            cursor = page.path("pageInfo").path("hasNextPage").asBoolean() ? page.path("pageInfo").path("endCursor").asText() : null;
+            cursor = page.path("pageInfo").path("hasNextPage").asBoolean() ? page.path("pageInfo").path("endCursor").asString() : null;
         } while (cursor != null);
         return repositories;
     }
@@ -97,7 +98,7 @@ public final class GitHubHttp implements GitHub {
         for (BlobRequest request : requests) {
             JsonNode object = data.path(alias(request)).path("object");
             if (object.isObject()) {
-                blobs.add(new BlobText(request.sha(), object.path("text").textValue(),
+                blobs.add(new BlobText(request.sha(), object.path("text").stringValue(null),
                         object.path("isTruncated").asBoolean(), object.path("isBinary").asBoolean()));
             }
         }
@@ -131,18 +132,18 @@ public final class GitHubHttp implements GitHub {
     private static Repository repository(JsonNode node) {
         JsonNode branch = node.path("defaultBranchRef");
         return new Repository(
-                node.path("nameWithOwner").asText(),
-                branch.path("name").textValue(),
-                branch.path("target").path("oid").textValue(),
+                node.path("nameWithOwner").asString(),
+                branch.path("name").stringValue(null),
+                branch.path("target").path("oid").stringValue(null),
                 node.path("isArchived").asBoolean(),
                 node.path("isFork").asBoolean(),
-                node.path("pushedAt").textValue());
+                node.path("pushedAt").stringValue(null));
     }
 
     private static Tree tree(JsonNode node) {
         List<Tree.Entry> entries = new ArrayList<>();
         node.path("tree").forEach(e -> entries.add(
-                new Tree.Entry(e.path("path").asText(), e.path("type").asText(), e.path("sha").asText())));
+                new Tree.Entry(e.path("path").asString(), e.path("type").asString(), e.path("sha").asString())));
         return new Tree(node.path("truncated").asBoolean(), entries);
     }
 
@@ -200,7 +201,7 @@ public final class GitHubHttp implements GitHub {
     private JsonNode parse(HttpResponse<String> response) {
         try {
             return json.readTree(response.body());
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new GitHubException("unreadable JSON from " + response.uri(), e);
         }
     }
