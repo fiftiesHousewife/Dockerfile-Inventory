@@ -81,6 +81,16 @@ class HistoryNormaliserTest {
         assertThat(normalise("/bin/sh -c #(nop) LABEL vcs-ref=6").builderAdded()).isFalse();
     }
 
+    @Test
+    void aFromCommentBecomesTheBaseReference() {
+        assertThat(HistoryNormaliser.normalise(new HistoryStep("/bin/sh -c #(nop) EXPOSE 8080",
+                "FROM registry.access.redhat.com/ubi9/s2i-base:9.8-1779892026", true, null)))
+                .isEqualTo(new NormalStep("EXPOSE", "8080", "registry.access.redhat.com/ubi9/s2i-base:9.8-1779892026",
+                        false));
+        assertThat(HistoryNormaliser.normalise(new HistoryStep("/bin/sh -c make", "built by hand", false, null)).from())
+                .isNull();
+    }
+
     private static NormalStep normalise(String createdBy) {
         return HistoryNormaliser.normalise(new HistoryStep(createdBy, null, false, null));
     }

@@ -6,4 +6,8 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
  * {@code builderAdded} marks steps a build service adds that no Dockerfile has.
  */
 public record NormalStep(String keyword, String text, String from, boolean builderAdded) {
+
+    NormalStep withFrom(String reference) {
+        return new NormalStep(keyword, text, reference, builderAdded);
+    }
 }

@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -12,6 +13,7 @@ public final class HistoryNormaliser {
 
     private static final String SHELL = "/bin/sh -c ";
     private static final String NOP = "#(nop) ";
+    private static final String FROM = "FROM ";
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 
     /** Text a build service puts before every {@code RUN} (Q13): Konflux's hermetic-build environment. */
@@ -25,7 +27,13 @@ public final class HistoryNormaliser {
     }
 
     public static NormalStep normalise(HistoryStep step) {
-        String text = collapse(step.createdBy() == null ? "" : step.createdBy());
+        NormalStep instruction = instruction(collapse(step.createdBy() == null ? "" : step.createdBy()));
+        String comment = step.comment();
+        return comment != null && comment.startsWith(FROM) ? instruction.withFrom(comment.substring(FROM.length()))
+                : instruction;
+    }
+
+    private static NormalStep instruction(String text) {
         if (!text.startsWith(SHELL)) {
             return new NormalStep("OTHER", text, null, false);
         }
@@ -37,7 +45,11 @@ public final class HistoryNormaliser {
         int space = instruction.indexOf(' ');
         String keyword = space < 0 ? instruction : instruction.substring(0, space);
         String value = space < 0 ? "" : instruction.substring(space + 1);
-        return switch (keyword) {
+        return metadata(keyword, value).orElseGet(() -> new NormalStep("OTHER", text, null, false));
+    }
+
+    private static Optional<NormalStep> metadata(String keyword, String value) {
+        return Optional.ofNullable(switch (keyword) {
             case "COPY", "ADD" -> {
                 String destination = destination(value);
                 yield new NormalStep(keyword, destination, null, BUILDINFO.stream().anyMatch(destination::startsWith));
@@ -49,8 +61,8 @@ public final class HistoryNormaliser {
             case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
             case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD" ->
                     new NormalStep(keyword, value, null, false);
-            default -> new NormalStep("OTHER", text, null, false);
-        };
+            default -> null;
+        });
     }
 
     /** {@code dir:<hash> in <dest>}: the hash is of the content, so only the destination is comparable. */
