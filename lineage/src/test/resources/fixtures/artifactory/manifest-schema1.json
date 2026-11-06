@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "name": "team/legacy",
+  "tag": "0.9",
+  "architecture": "amd64",
+  "fsLayers": [{"blobSum": "sha256:9999999999999999999999999999999999999999999999999999999999999999"}],
+  "history": [{"v1Compatibility": "{\"id\":\"abc\",\"container_config\":{\"Cmd\":[\"/bin/sh\"]}}"}]
+}

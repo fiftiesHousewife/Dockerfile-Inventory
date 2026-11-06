@@ -54,4 +54,13 @@ class ImageNodesTest {
         assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/arm", "1.0"))
                 .isEqualTo(new Resolved.Skipped(Resolved.Reason.NO_AMD64, "docker-local/team/arm:1.0"));
     }
+
+    @Test
+    void aSchema1ManifestIsSkipped() {
+        FakeArtifactory artifactory = new FakeArtifactory().manifest("docker-local", "team/legacy", "0.9",
+                "application/vnd.docker.distribution.manifest.v1+prettyjws", "manifest-schema1.json");
+
+        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/legacy", "0.9"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.SCHEMA_1, "docker-local/team/legacy:0.9"));
+    }
 }

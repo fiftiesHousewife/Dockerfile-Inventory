@@ -15,6 +15,9 @@ public final class ImageNodes {
 
     public static Resolved resolve(Artifactory artifactory, String repository, String image, String tag) {
         JsonNode manifest = JSON.readTree(artifactory.manifest(repository, image, tag).orElseThrow().body());
+        if (manifest.path("schemaVersion").asInt() == 1) {
+            return new Resolved.Skipped(Resolved.Reason.SCHEMA_1, reference(repository, image, tag));
+        }
         if (manifest.has("manifests")) {
             Optional<String> amd64 = amd64(manifest);
             if (amd64.isEmpty()) {
