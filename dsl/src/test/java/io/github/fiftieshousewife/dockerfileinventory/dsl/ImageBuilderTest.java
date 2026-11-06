@@ -78,6 +78,15 @@ class ImageBuilderTest {
         assertThat(built.raw()).containsExactly(new Instruction.Raw("HEALTHCHECK NONE", "OpenShift probes instead"));
     }
 
+    @Test
+    void aBuildArgumentIsDeclaredInTheStageSoALabelCanUseIt() {
+        String text = DockerfileRenderer.render(valid().arg("REVISION")
+                .label("org.opencontainers.image.revision", "${REVISION}").build(POLICY).dockerfile(), Target.DEFAULT);
+
+        assertThat(text).containsSubsequence("ARG REVISION\n",
+                "LABEL org.opencontainers.image.revision=\"${REVISION}\"");
+    }
+
     private static List<String> breaches(ImageBuilder builder) {
         try {
             builder.build(POLICY);

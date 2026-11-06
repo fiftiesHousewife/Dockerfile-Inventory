@@ -90,6 +90,11 @@ public final class ImageBuilder {
         return add(new Instruction.Copy(List.of(source), destination, null, stage));
     }
 
+    /** A build argument with no default, declared in the current stage so its instructions can use it. */
+    public ImageBuilder arg(String name) {
+        return add(new Instruction.Arg(name, null));
+    }
+
     public ImageBuilder env(String name, String value) {
         return add(new Instruction.Env(Map.of(name, value)));
     }
