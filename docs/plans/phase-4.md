@@ -63,5 +63,12 @@ invariant breach in a test.
    acceptance test leaves out I1, since package pinning is not an invariant. Breaking a golden on purpose first
    did not fail it: Gradle did not know `rules`' tests read `../dsl` files and treated them as up to date. The
    goldens, and `testdata/` for `facts` and `lineage`, are now declared test inputs, and the broken golden fails.
-   Known gap for later: the builder does not merge adjacent `RUN`s, so H3 holds only because the goldens put
-   another instruction between them.
+
+6. **Merge adjacent `RUN`s (H3), 6 Nov.** `build()` joins `RUN`s that follow each other in one stage into one
+   `RUN` with `&&`, so H3 holds by construction. `model()` keeps them as written, for Phase 5. A `RUN` whose
+   commands change shell state for what follows (`cd`, `export`, `source`, `.`, `set`, `umask`) is not joined to
+   the next, since joining would carry that state into it. Tests, in order:
+   19. Adjacent `RUN`s in a stage, including an install and the group-0 step, render as one `RUN`.
+   20. `RUN`s separated by another instruction, or in different stages, stay apart.
+   21. A `RUN` that changes shell state is not joined to the `RUN` after it.
+   22. `model()` keeps adjacent `RUN`s as written.

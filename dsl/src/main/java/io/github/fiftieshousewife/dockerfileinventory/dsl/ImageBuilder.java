@@ -27,6 +27,7 @@ public final class ImageBuilder {
     private static final Pattern APT_INSTALL = Pattern.compile("\\bapt(-get)?\\s+(-\\S+\\s+)*install\\b");
     private static final Pattern APT_CLEAN = Pattern.compile("rm\\s+-rf\\s+/var/lib/apt/lists");
     private static final Pattern APK_ADD = Pattern.compile("\\bapk\\s+add\\b");
+    private static final java.util.Set<String> STATEFUL = java.util.Set.of("cd", "export", "source", ".", "set", "umask");
     private static final Pattern APK_CLEAN = Pattern.compile("--no-cache|rm\\s+-rf\\s+/var/cache/apk");
 
     private static final class Draft {
@@ -274,7 +275,42 @@ public final class ImageBuilder {
                 instructions.add(instruction);
             }
         }
-        return new Stage(draft.name, draft.base, draft.fromStage, instructions);
+        return new Stage(draft.name, draft.base, draft.fromStage, merged(instructions));
+    }
+
+    /**
+     * Joins {@code RUN}s that follow each other into one {@code RUN} with {@code &&}, so H3 holds by construction.
+     * A {@code RUN} that changes shell state for what follows is not joined to the next: joining would carry its
+     * {@code cd} or {@code export} into commands that never saw it.
+     */
+    static List<Instruction> merged(List<Instruction> instructions) {
+        List<Instruction> merged = new ArrayList<>();
+        for (Instruction instruction : instructions) {
+            if (instruction instanceof Instruction.Run run && !merged.isEmpty()
+                    && merged.getLast() instanceof Instruction.Run previous && !changesShellState(previous)) {
+                List<String> commands = new ArrayList<>(commands(previous));
+                commands.addAll(commands(run));
+                merged.set(merged.size() - 1, new Instruction.Run(new RunBody.Shell(commands)));
+            } else {
+                merged.add(instruction);
+            }
+        }
+        return merged;
+    }
+
+    private static List<String> commands(Instruction.Run run) {
+        return switch (run.body()) {
+            case RunBody.Install install -> PackageInstallRenderer.commands(install.install());
+            case RunBody.Shell shell -> shell.commands();
+        };
+    }
+
+    private static boolean changesShellState(Instruction.Run run) {
+        return commands(run).stream()
+                .flatMap(command -> Arrays.stream(command.split("&&|;|\\|\\|")))
+                .map(String::strip)
+                .map(command -> command.split("\\s+", 2)[0])
+                .anyMatch(STATEFUL::contains);
     }
 
     private static java.util.Optional<String> uncleanedInstall(Instruction instruction) {
