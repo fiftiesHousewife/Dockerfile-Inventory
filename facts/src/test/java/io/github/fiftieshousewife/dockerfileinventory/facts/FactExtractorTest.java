@@ -207,4 +207,30 @@ class FactExtractorTest {
 
         assertThat(facts.packageCalls().getFirst().call().packages()).containsExactly("php", "php-fpm");
     }
+
+    @Test
+    void aStageArgWithSeveralNamesStillTakesTheGlobalDefault() {
+        ImageFacts facts = facts("""
+                ARG APP_UID=1001
+                FROM ubi9/ubi
+                ARG APP_UID BUILD
+                USER $APP_UID
+                """);
+
+        assertThat(facts.userKind()).isEqualTo(UserKind.NUMERIC);
+    }
+
+    @Test
+    void anArgSettingSeveralValuesSetsEachOfThem() {
+        ImageFacts facts = facts("""
+                ARG REG=quay.io TAG="9"
+                FROM $REG/ubi9/ubi:$TAG
+                ARG UID=1001 GROUP=0
+                USER $UID:$GROUP
+                """);
+
+        assertThat(facts.base().name()).isEqualTo("quay.io/ubi9/ubi");
+        assertThat(facts.base().tag()).isEqualTo("9");
+        assertThat(facts.userKind()).isEqualTo(UserKind.NUMERIC);
+    }
 }

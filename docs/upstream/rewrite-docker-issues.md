@@ -140,3 +140,15 @@ Expected: a `RUN` whose command reads the heredoc, as BuildKit runs it. Actual: 
 expecting {<EOF>, 'FROM'}`; the body's lines are then read as instructions. Only `RUN <<EOF` (the heredoc as the
 script) and `COPY <<EOF` parse. Seen in at least 4 `openshift` files (bootc kernel arguments, systemd units).
 Workaround: none safe; the file is counted as a parse failure.
+
+## 12. `ARG A=1 B=2` is one argument whose value is `1 B=2`
+
+```dockerfile
+FROM ubi9
+ARG A=1 B=2
+```
+
+Expected: two build arguments, `A` (1) and `B` (2). Actual: one `Docker.Arg`, name `A`, value `1 B=2`; `B` is lost.
+The same family as issue 4 (`LABEL`). Found through a workaround for issue 10, which writes `ARG A=$A B=$B`.
+Workaround: `FactExtractor` reads an `ARG`'s names and values from its text.
+

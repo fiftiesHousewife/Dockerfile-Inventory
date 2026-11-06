@@ -16,6 +16,9 @@ import org.openrewrite.docker.tree.Docker;
 /** Reduces a parsed Dockerfile to {@link ImageFacts}. With {@link FactsParser}, the only code that sees rewrite types. */
 public final class FactExtractor {
 
+    private static final java.util.regex.Pattern REFERENCE =
+            java.util.regex.Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
+
     /** What a stage built {@code FROM} an earlier stage's name starts with. */
     private record Inherited(String user, List<String> ports, EntrypointForm entrypoint) {
         static final Inherited NONE = new Inherited(null, List.of(), EntrypointForm.NONE);
@@ -60,13 +63,68 @@ public final class FactExtractor {
 
     private static Map<String, String> globalArgs(Docker.File file) {
         Map<String, String> globalArgs = new HashMap<>();
-        file.getGlobalArgs().forEach(arg -> {
-            Docker.Argument value = arg.getValue();
-            if (value != null) {
-                globalArgs.put(arg.getName().getText(), text(value, globalArgs));
+        file.getGlobalArgs().forEach(arg -> argPairs(arg).forEach((name, value) -> {
+            if (value != null && !ownName(value, name)) {
+                globalArgs.put(name, substituted(value, globalArgs));
             }
-        });
+        }));
         return globalArgs;
+    }
+
+    /**
+     * An {@code ARG}'s names and their values as written, in order; null for a name without one. Read from the text,
+     * as rewrite-docker 8.90.4 folds {@code ARG A=1 B=2} into one name whose value is {@code 1 B=2} (upstream issue
+     * 12). Words split on whitespace outside quotes; quotes are removed.
+     */
+    static Map<String, String> argPairs(Docker.Arg arg) {
+        String written = arg.getName().getText()
+                + (arg.getValue() == null ? "" : "=" + text(arg.getValue(), Map.of()));
+        Map<String, String> pairs = new java.util.LinkedHashMap<>();
+        for (String word : words(written)) {
+            int eq = word.indexOf('=');
+            pairs.put(eq < 0 ? word : word.substring(0, eq), eq < 0 ? null : unquoted(word.substring(eq + 1)));
+        }
+        return pairs;
+    }
+
+    private static List<String> words(String text) {
+        List<String> words = new ArrayList<>();
+        StringBuilder word = new StringBuilder();
+        char quote = 0;
+        for (char c : text.toCharArray()) {
+            if (quote == 0 && Character.isWhitespace(c)) {
+                if (!word.isEmpty()) {
+                    words.add(word.toString());
+                    word.setLength(0);
+                }
+                continue;
+            }
+            if (c == '"' || c == '\'') {
+                quote = quote == 0 ? c : quote == c ? 0 : quote;
+            }
+            word.append(c);
+        }
+        if (!word.isEmpty()) {
+            words.add(word.toString());
+        }
+        return words;
+    }
+
+    private static String unquoted(String value) {
+        boolean quoted = value.length() >= 2 && (value.startsWith("\"") && value.endsWith("\"")
+                || value.startsWith("'") && value.endsWith("'"));
+        return quoted ? value.substring(1, value.length() - 1) : value;
+    }
+
+    /** A default that is only the argument's own name ({@code A=$A}, how the parser's retry writes {@code ARG A B}). */
+    private static boolean ownName(String value, String name) {
+        return value.equals("$" + name) || value.equals("${" + name + "}");
+    }
+
+    /** {@code $NAME} and {@code ${NAME}} replaced from {@code vars}; an unknown one stays as written. */
+    private static String substituted(String value, Map<String, String> vars) {
+        return REFERENCE.matcher(value).replaceAll(m -> java.util.regex.Matcher.quoteReplacement(
+                vars.getOrDefault(m.group(1) != null ? m.group(1) : m.group(2), m.group())));
     }
 
     /** One stage's walk: its variable scope, and the user, entrypoint and ports it ends with. */
@@ -98,14 +156,18 @@ public final class FactExtractor {
             }
         }
 
-        /** An {@code ARG} without a default inside a stage takes the global default, as Docker does. */
+        /**
+         * Each name an {@code ARG} declares: without a default (or one that is only its own name) it takes the global
+         * default inside a stage, as Docker does.
+         */
         private void arg(Docker.Arg arg) {
-            String name = arg.getName().getText();
-            Docker.Argument declared = arg.getValue();
-            String value = declared == null ? globalArgs.get(name) : text(declared, vars);
-            if (value != null) {
-                vars.put(name, value);
-            }
+            argPairs(arg).forEach((name, declared) -> {
+                String value = declared == null || ownName(declared, name) ? globalArgs.get(name)
+                        : substituted(declared, vars);
+                if (value != null) {
+                    vars.put(name, value);
+                }
+            });
         }
 
         Inherited result() {
