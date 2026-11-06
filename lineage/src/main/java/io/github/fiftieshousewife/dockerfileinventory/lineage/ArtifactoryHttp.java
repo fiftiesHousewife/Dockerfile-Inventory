@@ -8,6 +8,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +78,13 @@ public final class ArtifactoryHttp implements Artifactory {
     public Optional<String> blob(String repository, String image, String digest) {
         return get("api/docker/%s/v2/%s/blobs/%s".formatted(repository, image, digest), "*/*")
                 .map(HttpResponse::body);
+    }
+
+    @Override
+    public Optional<Instant> lastPushed(String repository, String image, String tag) {
+        return get("api/storage/%s/%s/%s".formatted(repository, image, tag), "application/json")
+                .map(r -> json.readTree(r.body()).path("lastModified").stringValue(null))
+                .map(t -> OffsetDateTime.parse(t).toInstant());
     }
 
     /**

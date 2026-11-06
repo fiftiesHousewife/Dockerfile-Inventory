@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,4 +21,7 @@ public interface Artifactory {
 
     /** A blob's text (lineage only fetches image configs); empty when it no longer exists. */
     Optional<String> blob(String repository, String image, String digest);
+
+    /** When a tag was last pushed, for the gap list; empty when the tag no longer exists. */
+    Optional<Instant> lastPushed(String repository, String image, String tag);
 }

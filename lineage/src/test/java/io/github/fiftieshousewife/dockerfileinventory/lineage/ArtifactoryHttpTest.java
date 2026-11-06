@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -110,6 +111,15 @@ class ArtifactoryHttpTest {
         assertThat(artifactory.blob("docker-local", "team/app", digest)).hasValueSatisfying(
                 text -> assertThat(text).contains("\"diff_ids\""));
         assertThat(artifactory.blob("docker-local", "team/app", "sha256:gone")).isEmpty();
+    }
+
+    @Test
+    void readsLastPushFromTheStorageApi() {
+        route("/artifactory/api/storage/docker-local/team/app/1.0", exchange -> respond(exchange, 200, "storage-tag.json"));
+
+        assertThat(artifactory.lastPushed("docker-local", "team/app", "1.0"))
+                .contains(Instant.parse("2026-10-02T09:15:00Z"));
+        assertThat(artifactory.lastPushed("docker-local", "team/app", "gone")).isEmpty();
     }
 
     private interface Handler {

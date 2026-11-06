@@ -1,0 +1,14 @@
+{
+  "repo": "docker-local",
+  "path": "/team/app/1.0",
+  "created": "2026-10-02T10:14:58.120+01:00",
+  "createdBy": "tekton",
+  "lastModified": "2026-10-02T10:15:00.000+01:00",
+  "modifiedBy": "tekton",
+  "lastUpdated": "2026-10-02T10:15:00.000+01:00",
+  "children": [
+    {"uri": "/manifest.json", "folder": false},
+    {"uri": "/sha256__cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "folder": false}
+  ],
+  "uri": "https://artifactory.example.com/artifactory/api/storage/docker-local/team/app/1.0"
+}
