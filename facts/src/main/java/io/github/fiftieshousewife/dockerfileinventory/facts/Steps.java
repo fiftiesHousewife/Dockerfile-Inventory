@@ -140,6 +140,7 @@ public final class Steps {
     /** One line, as Buildah records it: backslash-newline continuations joined and comment lines inside dropped. */
     static String joined(String instruction) {
         List<String> kept = instruction.lines()
+                .map(String::stripTrailing)
                 .map(line -> line.endsWith("\\") ? line.substring(0, line.length() - 1) : line)
                 .filter(line -> !line.strip().startsWith("#"))
                 .toList();

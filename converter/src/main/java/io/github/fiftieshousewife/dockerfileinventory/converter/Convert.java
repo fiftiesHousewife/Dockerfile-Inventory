@@ -112,14 +112,18 @@ public final class Convert {
                 .orElseGet(() -> new Instruction.Run(new RunBody.Shell(List.of(command))));
     }
 
-    /** Docker removes a backslash-newline before it reads an instruction, inside quotes too. */
+    /**
+     * Docker removes a backslash-newline before it reads an instruction, inside quotes too, and a backslash followed
+     * only by spaces or tabs before the newline counts.
+     */
     static String withoutContinuations(String text) {
-        return text.replaceAll("\\\\\\r?\\n", "");
+        return text.replaceAll("\\\\[ \\t]*\\r?\\n", "");
     }
 
     /** One line: continuations joined, comment lines inside dropped (Docker drops them), whitespace collapsed. */
     static String joined(String text) {
         return text.lines()
+                .map(String::stripTrailing)
                 .map(line -> line.endsWith("\\") ? line.substring(0, line.length() - 1) : line)
                 .filter(line -> !line.strip().startsWith("#"))
                 .collect(Collectors.joining(" "))

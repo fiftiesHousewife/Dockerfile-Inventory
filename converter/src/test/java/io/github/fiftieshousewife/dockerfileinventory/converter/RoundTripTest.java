@@ -57,4 +57,13 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void aBackslashFollowedByTrailingSpacesContinuesTheLineAsDockerReadsIt() {
+        String original = "FROM ubi9\nLABEL Version=\"1.4\" \\ \n      Release=\"8\"\n";
+
+        assertThat(Convert.of(Parsed.of(original)).model().stages().getFirst().instructions())
+                .containsExactly(new Instruction.Label(java.util.Map.of("Version", "1.4", "Release", "8")));
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

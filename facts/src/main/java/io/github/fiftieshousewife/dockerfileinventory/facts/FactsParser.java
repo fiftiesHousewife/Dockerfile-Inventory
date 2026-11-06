@@ -153,7 +153,7 @@ public final class FactsParser {
         List<String> lines = List.of(text.split("\n", -1));
         for (int i = 0; i < lines.size() - 1; i++) {
             String line = lines.get(i);
-            if (!line.endsWith("\\") && !line.strip().startsWith("#")) {
+            if (!line.stripTrailing().endsWith("\\") && !line.strip().startsWith("#")) {
                 return lines.subList(i + 1, lines.size()).stream()
                         .map(String::strip)
                         .filter(next -> !next.isEmpty())

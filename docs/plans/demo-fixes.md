@@ -56,3 +56,10 @@ F6. 12. The glued-line message names the first non-blank line.
 Tests, in order: 14. a double-quoted value continued over lines has no backslash words; 15. legacy `LABEL` steps
 give one key; 16. the source extensions are not Dockerfiles; 17. a failing file with `{%` or `{{ ... }}` is a
 template, one that parses with `{{.Id}}` is not; 18. the rates count templates apart; 19. the thermostat case.
+
+As built (second round): the `InMemoryDiffEntry` failure was ours. OpenRewrite reports a file it cannot print back
+through its bundled JGit, which needs `slf4j-api` at runtime; `facts`, `rules` and `converter` now carry it, and
+the adapter treats the `ParseError` tree the parser then returns as a failure with its own message. The thermostat
+case was a backslash followed by a space before the newline, which Docker reads as a continuation; the converter,
+facts' steps, the merged-line check and rule S3 all now accept trailing spaces or tabs after the backslash.
+Lineage's history normaliser reads the legacy `LABEL key value` form as facts now does, keeping the contract.

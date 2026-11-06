@@ -37,8 +37,8 @@ public final class PipeToShell implements Rule {
                 .toList();
     }
 
-    /** The instruction as one line: backslash-newline continuations joined. */
+    /** The instruction as one line: continuations joined, a backslash with trailing spaces or tabs included. */
     static String joined(String instruction) {
-        return instruction.replaceAll("\\\\\\r?\\n", " ");
+        return instruction.replaceAll("\\\\[ \\t]*\\r?\\n", " ");
     }
 }

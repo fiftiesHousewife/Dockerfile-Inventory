@@ -135,6 +135,12 @@ class StepsTest {
                 """)).containsExactly(new Step("LABEL", "MAINTAINER"));
     }
 
+    @Test
+    void aBackslashFollowedByTrailingSpacesContinuesTheLine() {
+        assertThat(steps("FROM ubi9\nRUN make \\  \n    && make install\n"))
+                .containsExactly(new Step("RUN", "make && make install"));
+    }
+
     static List<Step> steps(String dockerfile) {
         ParseResult parsed = new FactsParser().parse("sha", dockerfile);
         assertThat(parsed).isInstanceOf(ParseResult.Parsed.class);
