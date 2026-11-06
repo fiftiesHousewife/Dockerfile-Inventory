@@ -80,13 +80,16 @@ if [[ -z $(docker ps -q -f name=^$JCR$) ]]; then
         -e JF_SHARED_DATABASE_USERNAME=artifactory -e JF_SHARED_DATABASE_PASSWORD=artifactory \
         "$JCR_IMAGE" >/dev/null
 fi
-printf 'waiting for JCR to answer (a first start takes a few minutes)'
-for _ in $(seq 120); do
-    [[ $(curl -s "$API/api/system/ping" || true) == OK ]] && break
-    printf '.'; sleep 5
-done
-[[ $(curl -s "$API/api/system/ping" || true) == OK ]] || die "JCR did not start; scripts/jcr-diagnose.sh says why"
-echo " up"
+wait_for_jcr() {
+    printf 'waiting for JCR to answer (a first start takes a few minutes)'
+    for _ in $(seq 120); do
+        [[ $(curl -s "$API/api/system/ping" || true) == OK ]] && break
+        printf '.'; sleep 5
+    done
+    [[ $(curl -s "$API/api/system/ping" || true) == OK ]] || die "JCR did not start; scripts/jcr-diagnose.sh says why"
+    echo " up"
+}
+wait_for_jcr
 
 repository_exists() {
     curl -s -u "admin:$ADMIN_PASSWORD" "$API/api/repositories?type=local&packageType=docker" \
@@ -99,6 +102,18 @@ if ! repository_exists; then
         "$API/api/repositories/$REPOSITORY" \
         -d "{\"key\":\"$REPOSITORY\",\"rclass\":\"local\",\"packageType\":\"docker\",\"dockerApiVersion\":\"V2\"}" || true)
     echo "creating $REPOSITORY through the API: $reply"
+fi
+if ! repository_exists; then
+    # The free edition refuses the repositories API (Pro only), but applies a configuration file it finds at start.
+    echo "creating $REPOSITORY from artifactory.config.import.yml instead, and restarting JCR"
+    docker exec -i $JCR sh -c 'cat > /var/opt/jfrog/artifactory/etc/artifactory/artifactory.config.import.yml' <<YAML
+localRepositories:
+  $REPOSITORY:
+    type: docker
+    dockerApiVersion: V2
+YAML
+    docker restart $JCR >/dev/null
+    wait_for_jcr
 fi
 if ! repository_exists; then
     echo "JCR would not create the repository through its API. In http://localhost:$JCR_PORT/ui (admin / $ADMIN_PASSWORD):"
