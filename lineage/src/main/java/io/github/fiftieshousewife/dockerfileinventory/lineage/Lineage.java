@@ -30,12 +30,23 @@ public final class Lineage {
         }
         Map<String, Parent> parents = new HashMap<>();
         for (Resolved.Node node : nodes) {
-            parents.put(node.configDigest(), parent(chains.get(node.configDigest()), byChain));
+            parents.put(node.configDigest(), parent(node, chains.get(node.configDigest()), byChain));
         }
         return parents;
     }
 
-    private static Parent parent(List<String> chain, Map<String, List<Resolved.Node>> byChain) {
+    /**
+     * Longest layer prefix first. Equal layers count only for an image whose history is a strict prefix of this
+     * one's: a child that adds only {@code USER}, {@code LABEL} or {@code ENV} makes no layer, and Buildah copies
+     * the base's history into the child unchanged.
+     */
+    private static Parent parent(Resolved.Node node, List<String> chain, Map<String, List<Resolved.Node>> byChain) {
+        List<Resolved.Node> sameLayers = byChain.get(chain.getLast()).stream()
+                .filter(other -> isStrictPrefix(other.config().history(), node.config().history()))
+                .toList();
+        if (!sameLayers.isEmpty()) {
+            return new Parent.Of(sameLayers.getFirst().configDigest());
+        }
         for (int length = chain.size() - 1; length >= 1; length--) {
             List<Resolved.Node> candidates = byChain.get(chain.get(length - 1));
             if (candidates != null) {
@@ -43,6 +54,10 @@ public final class Lineage {
             }
         }
         return new Parent.Root();
+    }
+
+    static boolean isStrictPrefix(List<HistoryStep> prefix, List<HistoryStep> history) {
+        return prefix.size() < history.size() && history.subList(0, prefix.size()).equals(prefix);
     }
 
     /** OCI chain IDs: the first is the first diff ID; each next is {@code sha256(previous + " " + diffId)}. */

@@ -36,6 +36,17 @@ class LineageTest {
                 .containsEntry("worker", new Parent.Of("base"));
     }
 
+    @Test
+    void aChildThatAddsOnlyMetadataTakesTheImageWithTheSameLayersWhoseHistoryPrecedesItsOwn() {
+        Map<String, Parent> parents = Lineage.of(List.of(
+                node("app", List.of("L1", "L2"), List.of("ADD base", "RUN install", "META USER 1001")),
+                node("base", List.of("L1", "L2"), List.of("ADD base", "RUN install"))));
+
+        assertThat(parents)
+                .containsEntry("app", new Parent.Of("base"))
+                .containsEntry("base", new Parent.Root());
+    }
+
     private static Resolved.Node node(String digest, String... layers) {
         return node(digest, List.of(layers), List.of());
     }
