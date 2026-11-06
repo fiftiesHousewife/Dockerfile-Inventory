@@ -244,4 +244,21 @@ class FactExtractorTest {
         assertThat(facts.packageCalls()).extracting(c -> c.call().packages()).containsExactly(List.of("git", "curl"));
         assertThat(facts.opaqueRuns()).isZero();
     }
+
+    @Test
+    void aRunUnderPowershellIsCountedAsAnotherShellNotReadAndNotUnreadable() {
+        ImageFacts facts = facts("""
+                FROM mcr.microsoft.com/windows/servercore:ltsc2022 AS windows
+                SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
+                RUN Write-Host ('Downloading {0} ...' -f $url); Invoke-WebRequest -Uri $url -OutFile 'x.zip'
+                FROM alpine:3.20
+                RUN apk add --no-cache git
+                """);
+
+        assertThat(facts).satisfies(f -> {
+            assertThat(f.runs()).isEqualTo(1);
+            assertThat(f.opaqueRuns()).isZero();
+            assertThat(f.otherShellRuns()).isEqualTo(1);
+        });
+    }
 }

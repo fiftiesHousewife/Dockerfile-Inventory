@@ -93,7 +93,7 @@ public record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<
                 new Base(base.path("name").stringValue(null), base.path("tag").stringValue(null),
                         base.path("digest").stringValue(null)),
                 packages, managers, facts.path("userKind").asString(), facts.path("runs").asInt(),
-                facts.path("opaqueRuns").asInt(), locations);
+                facts.path("opaqueRuns").asInt(), locations, facts.path("otherShellRuns").asInt());
     }
 
     static List<JsonNode> lines(Path file) {

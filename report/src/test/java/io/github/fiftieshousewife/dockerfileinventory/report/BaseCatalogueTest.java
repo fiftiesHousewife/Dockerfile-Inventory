@@ -57,6 +57,6 @@ class BaseCatalogueTest {
 
     static Dockerfile dockerfile(String sha, Base base, int locations) {
         return new Dockerfile(sha, "t-" + sha, "s-" + sha, "sig", base, Set.of(), Set.of(), "ROOT", 0, 0,
-                PassesTest.locations(sha, locations));
+                PassesTest.locations(sha, locations), 0);
     }
 }

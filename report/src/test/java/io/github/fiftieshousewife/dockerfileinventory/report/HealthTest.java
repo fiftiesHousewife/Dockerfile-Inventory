@@ -13,7 +13,7 @@ class HealthTest {
     @Test
     void eachMetricIsGoodAtOrBetterThanItsGoodThresholdActWhenWorseThanItsActThresholdAndWatchBetween() {
         Summary summary = new Summary(100, 0, List.of(), 0, 0, 0, 0.01, 0.16, 0.5, 0.0,
-                Map.of(), Map.of("ROOT", 31, "NUMERIC", 69), false, 0.95, 0);
+                Map.of(), Map.of("ROOT", 31, "NUMERIC", 69), false, 0.95, 0, 0);
 
         assertThat(Health.of(summary)).extracting(Metric::name, Metric::state).containsExactly(
                 org.assertj.core.groups.Tuple.tuple("Parse failures", State.GOOD),

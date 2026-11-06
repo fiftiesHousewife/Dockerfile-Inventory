@@ -5,7 +5,7 @@ import java.util.List;
 /** What one Dockerfile builds, reduced to the facts clustering and rules need. Describes the final stage. */
 public record ImageFacts(int stageCount, BaseImage base, List<StagedCall> packageCalls, int runs, int opaqueRuns,
                          String finalUser, UserKind userKind, List<String> exposedPorts,
-                         EntrypointForm entrypointForm, List<String> buildKitFeatures) {
+                         EntrypointForm entrypointForm, List<String> buildKitFeatures, int otherShellRuns) {
 
     public ImageFacts {
         packageCalls = List.copyOf(packageCalls);

@@ -14,7 +14,7 @@ class DashboardTest {
             List.of(new PassCount("blob", 900, 1234), new PassCount("text-normal", 700, 1234),
                     new PassCount("signature", 400, 1234)),
             350, 42, 311, 0.02, 0.15, 0.25, 0.1, Map.of("microdnf", 800), Map.of("ROOT", 600, "NUMERIC", 634),
-            false, 0.9, 3);
+            false, 0.9, 3, 0);
     private static final Ranking RANKING = new Ranking(List.of(new Archetype(1, "k", 50, List.of("b"),
             "ubi-minimal:9|<script>alert(1)</script>|git", "b", List.of("org/repo"))), 1234, 42, 311);
     private static final List<BaseRow> BASES = List.of(
@@ -44,7 +44,7 @@ class DashboardTest {
         assertThat(Dashboard.render(SUMMARY, RANKING, List.of(), BASES, Optional.empty()))
                 .contains("as written in the Dockerfile");
         Summary effective = new Summary(1234, 2, SUMMARY.passes(), 350, 42, 311, 0.02, 0.15, 0.25, 0.1,
-                SUMMARY.managers(), SUMMARY.users(), true, 0.9, 3);
+                SUMMARY.managers(), SUMMARY.users(), true, 0.9, 3, 0);
         assertThat(Dashboard.render(effective, RANKING, List.of(), BASES, Optional.empty()))
                 .contains("effective, from the built images");
     }
@@ -217,5 +217,15 @@ class DashboardTest {
                         + "org/app</p><details><summary>Example: org/app: Dockerfile</summary>"
                         + "<pre>FROM ubi9\nRUN echo &lt;hi&gt;\n</pre></details></div>")
                 .doesNotContain("<th>Signature</th>");
+    }
+
+    @Test
+    void theRatesSayHowManyRunsAreInAnotherShell() {
+        Summary windows = new Summary(10, 0, List.of(new PassCount("blob", 1, 10), new PassCount("text-normal", 1, 10),
+                new PassCount("signature", 1, 10)), 1, 1, 1, 0, 0, 0, 0, Map.of(), Map.of(), false, 0, 0, 7);
+
+        assertThat(Dashboard.render(windows, RANKING, List.of(), BASES, Optional.empty()))
+                .contains("<tr><td>RUN instructions in another shell (PowerShell, cmd), not read</td>"
+                        + "<td class=\"num\">7</td></tr>");
     }
 }

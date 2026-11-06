@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -18,6 +19,7 @@ public final class FactExtractor {
 
     /** A backslash ending a line inside an instruction, which joins the next line to it. */
     private static final java.util.regex.Pattern CONTINUATION = java.util.regex.Pattern.compile("\\\\[ \\t]*\\r?\\n");
+    private static final Set<String> OTHER_SHELLS = Set.of("powershell", "pwsh", "cmd");
     private static final java.util.regex.Pattern REFERENCE =
             java.util.regex.Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
 
@@ -46,10 +48,13 @@ public final class FactExtractor {
             Docker.Stage stage = stages.get(index);
             Docker.From from = stage.getFrom();
             last = new StageScan(byStageName.getOrDefault(text(from.getImageName(), globalArgs), Inherited.NONE), globalArgs);
+            boolean otherShell = false;
             for (Docker.Instruction instruction : stage.getInstructions()) {
                 last.accept(instruction);
-                if (instruction instanceof Docker.Run run) {
-                    runs.add(index, run, last.vars);
+                if (instruction instanceof Docker.Shell shell) {
+                    otherShell = otherShell(shell);
+                } else if (instruction instanceof Docker.Run run) {
+                    runs.add(index, run, last.vars, otherShell);
                 }
             }
             Docker.From.As as = from.getAs();
@@ -60,7 +65,7 @@ public final class FactExtractor {
         Inherited end = last == null ? Inherited.NONE : last.result();
         return new ImageFacts(stages.size(), finalBase(file, globalArgs), runs.calls, runs.runs, runs.opaque,
                 end.user(), kind(end.user()), end.ports(), end.entrypoint(),
-                List.copyOf(buildKitFeatures(file)));
+                List.copyOf(buildKitFeatures(file)), runs.otherShell);
     }
 
     private static Map<String, String> globalArgs(Docker.File file) {
@@ -187,9 +192,18 @@ public final class FactExtractor {
         private final List<StagedCall> calls = new ArrayList<>();
         private int runs;
         private int opaque;
+        private int otherShell;
 
-        /** Package variables expand from the stage's {@code ARG} and {@code ENV} and the RUN's own assignments. */
-        void add(int stage, Docker.Run run, Map<String, String> stageVariables) {
+        /**
+         * Package variables expand from the stage's {@code ARG} and {@code ENV} and the RUN's own assignments. A RUN
+         * under another shell (PowerShell, cmd) is counted apart (the owner's choice, 6 Nov), neither read nor
+         * unreadable.
+         */
+        void add(int stage, Docker.Run run, Map<String, String> stageVariables, boolean underOtherShell) {
+            if (underOtherShell) {
+                otherShell++;
+                return;
+            }
             runs++;
             Optional<List<List<String>>> commands = commands(run);
             if (commands.isEmpty()) {
@@ -200,6 +214,17 @@ public final class FactExtractor {
             commands.ifPresent(c -> PackageCalls.of(c, variables)
                     .forEach(call -> calls.add(new StagedCall(stage, call))));
         }
+    }
+
+    /** A {@code SHELL} that is not a POSIX shell: PowerShell, pwsh or cmd, as Windows images use. */
+    static boolean otherShell(Docker.Shell shell) {
+        if (shell.getArguments().isEmpty()) {
+            return false;
+        }
+        String program = text(shell.getArguments().getFirst(), Map.of()).replace("\"", "").replace("'", "")
+                .strip().toLowerCase(Locale.ROOT);
+        String name = program.substring(Math.max(program.lastIndexOf('/'), program.lastIndexOf('\\')) + 1);
+        return OTHER_SHELLS.contains(name.replaceFirst("\\.exe$", ""));
     }
 
     /** The final stage's base; a stage built {@code FROM} an earlier stage's name takes that stage's base. */

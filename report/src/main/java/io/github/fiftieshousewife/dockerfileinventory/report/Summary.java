@@ -15,7 +15,8 @@ import java.util.stream.Stream;
 public record Summary(int locations, int missing, List<PassCount> passes, int nearDuplicateGroups, int k80, int k95,
                       double parseFailureRate, double opaqueRunRate, double pinnedShare, double eolShare,
                       Map<String, Integer> managers,
-                      Map<String, Integer> users, boolean effectiveUsers, double releasedShare, int templates) {
+                      Map<String, Integer> users, boolean effectiveUsers, double releasedShare, int templates,
+                      int otherShellRuns) {
 
     public Summary {
         passes = List.copyOf(passes);
@@ -49,7 +50,8 @@ public record Summary(int locations, int missing, List<PassCount> passes, int ne
                 ranking.k95(), share(estate.failures().size() - templates, blobs - templates), share(opaque, runs),
                 share(pinned, baseLocations), share(eol, baseLocations), managers, users,
                 !estate.effectiveUsers().isEmpty(),
-                share(released, all.size()), templates);
+                share(released, all.size()), templates,
+                estate.dockerfiles().stream().mapToInt(Dockerfile::otherShellRuns).sum());
     }
 
     private static double share(long part, long whole) {

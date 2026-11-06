@@ -52,7 +52,7 @@ class ArchetypeCardsTest {
         Dockerfile file = new Dockerfile("b1", "t", "s", signature, new Base("ubi9/ubi-minimal", "9.4", null),
                 Set.of(), Set.of(), "NUMERIC", 0, 0,
                 List.of(new Location("org/app", "Dockerfile", "RELEASED"),
-                        new Location("org/api", "Dockerfile", "RELEASED")));
+                        new Location("org/api", "Dockerfile", "RELEASED")), 0);
         Estate estate = new Estate(List.of(file), List.of(), List.of(), Map.of());
         List<Archetype> archetypes = IntStream.range(0, 11).mapToObj(i -> new Archetype(i + 1, "k" + i, 2,
                 List.of("b1", "b2"), signature, i == 0 ? "b1" : "gone", List.of("org/api", "org/app"))).toList();
@@ -95,7 +95,7 @@ class ArchetypeCardsTest {
                 RUN aws configure set key AKIAIOSFODNN7EXAMPLE && echo done
                 """);
         Dockerfile file = new Dockerfile("s1", "t", "s", "ubi:9|||ROOT||NONE|stages=1", new Base("ubi9", null, null),
-                Set.of(), Set.of(), "ROOT", 1, 0, List.of(new Location("org/app", "Dockerfile", "RELEASED")));
+                Set.of(), Set.of(), "ROOT", 1, 0, List.of(new Location("org/app", "Dockerfile", "RELEASED")), 0);
         Archetype archetype = new Archetype(1, "k", 1, List.of("s1"), file.signature(), "s1", List.of("org/app"));
 
         assertThat(ArchetypeCards.of(new Ranking(List.of(archetype), 1, 1, 1),
