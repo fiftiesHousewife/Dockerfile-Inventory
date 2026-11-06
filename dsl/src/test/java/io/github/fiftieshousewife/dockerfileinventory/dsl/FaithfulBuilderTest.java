@@ -62,4 +62,16 @@ class FaithfulBuilderTest {
                 COPY --from=deps --chown=app:app a b /srv/
                 """);
     }
+
+    @Test
+    void aBuilderCanStartFromAModelAndAnArgCanHaveADefault() {
+        Dockerfile model = ImageBuilder.create().globalArg("BASE", "alpine")
+                .thenStage(null, ALPINE).arg("MODE", "prod").user(0).model();
+
+        ImageBuilder again = ImageBuilder.of(model);
+
+        assertThat(again.model()).isEqualTo(model);
+        assertThat(again.check(Policy.of(List.of()))).extracting(PolicyViolation.Breach::rule).contains("S4", "S1");
+        assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).contains("ARG MODE=\"prod\"");
+    }
 }

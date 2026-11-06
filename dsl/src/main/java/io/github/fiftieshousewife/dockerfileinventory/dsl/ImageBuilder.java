@@ -68,6 +68,18 @@ public final class ImageBuilder {
         return new ImageBuilder();
     }
 
+    /** A builder holding an existing model, for checking it against the policy or continuing it. */
+    public static ImageBuilder of(Dockerfile model) {
+        ImageBuilder builder = new ImageBuilder();
+        builder.globalArgs.addAll(model.globalArgs());
+        model.stages().forEach(stage -> {
+            Draft draft = new Draft(stage.name(), stage.base(), stage.fromStage());
+            draft.instructions.addAll(stage.instructions());
+            builder.stages.add(draft);
+        });
+        return builder;
+    }
+
     /** A build argument before the first {@code FROM}, usable in any {@code FROM}. */
     public ImageBuilder globalArg(String name, String defaultValue) {
         globalArgs.add(new Instruction.Arg(name, defaultValue));
@@ -127,6 +139,11 @@ public final class ImageBuilder {
     /** A build argument with no default, declared in the current stage so its instructions can use it. */
     public ImageBuilder arg(String name) {
         return add(new Instruction.Arg(name, null));
+    }
+
+    /** A build argument with a default, declared in the current stage. */
+    public ImageBuilder arg(String name, String defaultValue) {
+        return add(new Instruction.Arg(name, defaultValue));
     }
 
     public ImageBuilder env(String name, String value) {
