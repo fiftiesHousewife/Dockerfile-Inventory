@@ -41,19 +41,35 @@ public final class Lineage {
      * the base's history into the child unchanged.
      */
     private static Parent parent(Resolved.Node node, List<String> chain, Map<String, List<Resolved.Node>> byChain) {
-        List<Resolved.Node> sameLayers = byChain.get(chain.getLast()).stream()
-                .filter(other -> isStrictPrefix(other.config().history(), node.config().history()))
-                .toList();
+        List<Resolved.Node> sameLayers = precedingHistory(node, byChain.get(chain.getLast()));
         if (!sameLayers.isEmpty()) {
-            return new Parent.Of(sameLayers.getFirst().configDigest());
+            return closest(sameLayers);
         }
         for (int length = chain.size() - 1; length >= 1; length--) {
             List<Resolved.Node> candidates = byChain.get(chain.get(length - 1));
             if (candidates != null) {
-                return new Parent.Of(candidates.getFirst().configDigest());
+                List<Resolved.Node> preceding = precedingHistory(node, candidates);
+                return closest(preceding.isEmpty() ? candidates : preceding);
             }
         }
         return new Parent.Root();
+    }
+
+    private static List<Resolved.Node> precedingHistory(Resolved.Node node, List<Resolved.Node> candidates) {
+        return candidates.stream()
+                .filter(other -> isStrictPrefix(other.config().history(), node.config().history()))
+                .toList();
+    }
+
+    /** The candidate with the longest history is the nearest ancestor; a tie is ambiguous (Q11). */
+    private static Parent closest(List<Resolved.Node> candidates) {
+        int longest = candidates.stream().mapToInt(c -> c.config().history().size()).max().orElseThrow();
+        List<String> nearest = candidates.stream()
+                .filter(c -> c.config().history().size() == longest)
+                .map(Resolved.Node::configDigest)
+                .sorted()
+                .toList();
+        return nearest.size() == 1 ? new Parent.Of(nearest.getFirst()) : new Parent.Ambiguous(nearest);
     }
 
     static boolean isStrictPrefix(List<HistoryStep> prefix, List<HistoryStep> history) {

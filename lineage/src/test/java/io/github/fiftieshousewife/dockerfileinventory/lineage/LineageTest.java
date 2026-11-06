@@ -47,6 +47,34 @@ class LineageTest {
                 .containsEntry("base", new Parent.Root());
     }
 
+    @Test
+    void twinsWithTheSameLayersAndHistoryAreNotEachOthersParentAndTheirChildIsAmbiguous() {
+        List<String> history = List.of("ADD base", "RUN install");
+        Map<String, Parent> parents = Lineage.of(List.of(
+                node("twin-b", List.of("L1", "L2"), history),
+                node("twin-a", List.of("L1", "L2"), history),
+                node("child", List.of("L1", "L2", "L3"), List.of("ADD base", "RUN install", "RUN app"))));
+
+        assertThat(parents)
+                .containsEntry("twin-a", new Parent.Root())
+                .containsEntry("twin-b", new Parent.Root())
+                .containsEntry("child", new Parent.Ambiguous(List.of("twin-a", "twin-b")));
+    }
+
+    @Test
+    void amongSameLayeredCandidatesTheParentIsTheOneWhoseHistoryLeadsToThisImage() {
+        Map<String, Parent> parents = Lineage.of(List.of(
+                node("base", List.of("L1"), List.of("ADD base")),
+                node("labelled", List.of("L1"), List.of("ADD base", "META LABEL team=x")),
+                node("on-labelled", List.of("L1", "L2"), List.of("ADD base", "META LABEL team=x", "RUN app")),
+                node("on-base", List.of("L1", "L3"), List.of("ADD base", "RUN other"))));
+
+        assertThat(parents)
+                .containsEntry("labelled", new Parent.Of("base"))
+                .containsEntry("on-labelled", new Parent.Of("labelled"))
+                .containsEntry("on-base", new Parent.Of("base"));
+    }
+
     private static Resolved.Node node(String digest, String... layers) {
         return node(digest, List.of(layers), List.of());
     }
