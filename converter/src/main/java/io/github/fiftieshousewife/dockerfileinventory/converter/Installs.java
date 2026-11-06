@@ -41,7 +41,8 @@ final class Installs {
                 && commands.get(1).subList(1, 3).equals(List.of("clean", "all"))) {
             return install(RPM.get(commands.get(0).get(0)), commands.get(0).subList(2, commands.get(0).size()));
         }
-        if (commands.size() == 1 && commands.get(0).size() > 2 && commands.get(0).subList(0, 2).equals(List.of("apk", "add"))
+        if (commands.size() == 1 && commands.get(0).size() > 2
+                && commands.get(0).subList(0, 2).equals(List.of("apk", "add"))
                 && commands.get(0).contains("--no-cache")) {
             return install(PackageManager.APK, commands.get(0).subList(2, commands.get(0).size()));
         }

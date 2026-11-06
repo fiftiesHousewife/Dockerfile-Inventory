@@ -19,15 +19,15 @@ class ConvertTest {
     void fromKeepsTagDigestAndStageNameAndAStageCanBuildOnAnEarlierOne() {
         Conversion conversion = Convert.of(Parsed.of("""
                 ARG BASE=ubi9/ubi-minimal
-                FROM registry.example.com/ubi9/ubi:9.4@%s AS build
+                FROM registry.example.com/ubi9/ubi:9.4@DIGEST AS build
                 FROM build AS test
                 FROM ${BASE}:9.4
-                """.formatted(DIGEST)));
+                """.replace("DIGEST", DIGEST)));
 
         assertThat(conversion.model().globalArgs()).containsExactly(new Instruction.Arg("BASE", "ubi9/ubi-minimal"));
         assertThat(conversion.model().stages()).extracting(Stage::name, Stage::base, Stage::fromStage).containsExactly(
-                org.assertj.core.groups.Tuple.tuple("build", new BaseImage("registry.example.com/ubi9/ubi", "9.4", DIGEST),
-                        null),
+                org.assertj.core.groups.Tuple.tuple("build",
+                        new BaseImage("registry.example.com/ubi9/ubi", "9.4", DIGEST), null),
                 org.assertj.core.groups.Tuple.tuple("test", null, "build"),
                 org.assertj.core.groups.Tuple.tuple(null, new BaseImage("${BASE}", "9.4", null), null));
     }
@@ -86,6 +86,35 @@ class ConvertTest {
                         + " && rm -rf /var/lib/apt/lists/*"),
                 shell("make && make install"),
                 new Instruction.Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "RUN with flags"));
+    }
+
+    @Test
+    void copyWithFromAndChownIsTypedAndEverythingTheModelDoesNotTypeStaysRawWithAReason() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                COPY --from=build --chown=1001:0 a b /dst/
+                COPY app /opt/
+                COPY --chmod=755 run.sh /usr/local/bin/
+                COPY ["with space", "/opt/"]
+                ADD app.tar.gz /opt/
+                ENTRYPOINT java -jar app.jar
+                CMD ./start.sh
+                EXPOSE 8080/udp
+                HEALTHCHECK NONE
+                VOLUME /data
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(
+                new Instruction.Copy(List.of("a", "b"), "/dst/", "1001:0", "build"),
+                new Instruction.Copy(List.of("app"), "/opt/", null, null),
+                new Instruction.Raw("COPY --chmod=755 run.sh /usr/local/bin/", "COPY with flag --chmod"),
+                new Instruction.Raw("COPY [\"with space\", \"/opt/\"]", "COPY in JSON form"),
+                new Instruction.Raw("ADD app.tar.gz /opt/", "ADD is not modelled"),
+                new Instruction.Raw("ENTRYPOINT java -jar app.jar", "shell-form ENTRYPOINT"),
+                new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),
+                new Instruction.Raw("EXPOSE 8080/udp", "EXPOSE with a protocol, range, variable or several ports"),
+                new Instruction.Raw("HEALTHCHECK NONE", "HEALTHCHECK is not modelled"),
+                new Instruction.Raw("VOLUME /data", "VOLUME is not modelled"));
     }
 
     private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {

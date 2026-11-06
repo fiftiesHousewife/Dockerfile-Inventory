@@ -35,19 +35,20 @@ public final class Convert {
 
     private Conversion convert() {
         List<Instruction.Arg> globalArgs = file.getGlobalArgs().stream()
-                .map(arg -> new Instruction.Arg(arg.getName().getText(),
-                        arg.getValue() == null ? null : unquote(text(arg.getValue()))))
+                .map(Convert::arg)
                 .toList();
         Set<String> earlierStages = new HashSet<>();
         List<Stage> stages = new ArrayList<>();
         for (Docker.Stage stage : file.getStages()) {
             Docker.From from = stage.getFrom();
-            String name = from.getAs() == null ? null : from.getAs().getName().getText();
+            Docker.From.As as = from.getAs();
+            Docker.Argument tag = from.getTag();
+            Docker.Argument digest = from.getDigest();
+            String name = as == null ? null : as.getName().getText();
             String image = text(from.getImageName());
-            boolean onStage = from.getTag() == null && from.getDigest() == null && earlierStages.contains(image);
-            BaseImage base = onStage ? null : new BaseImage(image,
-                    from.getTag() == null ? null : text(from.getTag()),
-                    from.getDigest() == null ? null : text(from.getDigest()));
+            boolean onStage = tag == null && digest == null && earlierStages.contains(image);
+            BaseImage base = onStage ? null : new BaseImage(image, tag == null ? null : text(tag),
+                    digest == null ? null : text(digest));
             List<Instruction> instructions = stage.getInstructions().stream().map(this::instruction).toList();
             stages.add(new Stage(name, base, onStage ? image : null, instructions));
             if (name != null) {
@@ -59,13 +60,11 @@ public final class Convert {
 
     private Instruction instruction(Docker.Instruction instruction) {
         return switch (instruction) {
-            case Docker.Arg arg -> new Instruction.Arg(arg.getName().getText(),
-                    arg.getValue() == null ? null : unquote(text(arg.getValue())));
+            case Docker.Arg arg -> arg(arg);
             case Docker.Env env -> new Instruction.Env(env(env));
             case Docker.Label label -> new Instruction.Label(Pairs.parse(afterKeyword(printed(label))));
             case Docker.Workdir workdir -> new Instruction.Workdir(unquote(text(workdir.getPath())));
-            case Docker.User user -> new Instruction.User(text(user.getUser())
-                    + (user.getGroup() == null ? "" : ":" + text(user.getGroup())));
+            case Docker.User user -> user(user);
             case Docker.Expose expose when single(expose) ->
                     new Instruction.Expose(Integer.parseInt(expose.getPorts().getFirst().getText().strip()));
             case Docker.Run run -> run(run);
@@ -73,13 +72,33 @@ public final class Convert {
                     new Instruction.Entrypoint(arguments(exec));
             case Docker.Cmd cmd when cmd.getCommand() instanceof Docker.ExecForm exec ->
                     new Instruction.Cmd(arguments(exec));
-            default -> new Instruction.Raw(printed(instruction), "not converted yet");
+            case Docker.Copy copy -> copy(printed(copy));
+            case Docker.Entrypoint entrypoint -> new Instruction.Raw(printed(entrypoint), "shell-form ENTRYPOINT");
+            case Docker.Cmd cmd -> new Instruction.Raw(printed(cmd), "shell-form CMD");
+            case Docker.Expose expose -> new Instruction.Raw(printed(expose),
+                    "EXPOSE with a protocol, range, variable or several ports");
+            default -> {
+                String text = printed(instruction);
+                String keyword = text.split("\\s", 2)[0].toUpperCase(java.util.Locale.ROOT);
+                yield new Instruction.Raw(text, keyword + " is not modelled");
+            }
         };
+    }
+
+    private static Instruction.Arg arg(Docker.Arg arg) {
+        Docker.Argument value = arg.getValue();
+        return new Instruction.Arg(arg.getName().getText(), value == null ? null : unquote(text(value)));
+    }
+
+    private static Instruction.User user(Docker.User user) {
+        Docker.Argument group = user.getGroup();
+        return new Instruction.User(text(user.getUser()) + (group == null ? "" : ":" + text(group)));
     }
 
     /** An install when it is exactly one install and its clean; other shell text as written; the rest raw (D1, D2). */
     private Instruction run(Docker.Run run) {
-        if (run.getFlags() != null && !run.getFlags().isEmpty()) {
+        List<Docker.Flag> flags = run.getFlags();
+        if (flags != null && !flags.isEmpty()) {
             return new Instruction.Raw(printed(run), "RUN with flags");
         }
         if (!(run.getCommand() instanceof Docker.ShellForm shell)) {
@@ -99,6 +118,31 @@ public final class Convert {
                 .collect(Collectors.joining(" "))
                 .replaceAll("\\s+", " ")
                 .strip();
+    }
+
+    /** {@code COPY [--from=x] [--chown=y] src... dest}; other flags and the JSON form stay raw (D2). */
+    private static Instruction copy(String text) {
+        List<String> words = new ArrayList<>(List.of(joined(text).split(" ")));
+        words.removeFirst();
+        String from = null;
+        String chown = null;
+        while (!words.isEmpty() && words.getFirst().startsWith("--")) {
+            String flag = words.removeFirst();
+            if (flag.startsWith("--from=")) {
+                from = flag.substring("--from=".length());
+            } else if (flag.startsWith("--chown=")) {
+                chown = flag.substring("--chown=".length());
+            } else {
+                return new Instruction.Raw(text, "COPY with flag " + flag.split("=", 2)[0]);
+            }
+        }
+        if (words.isEmpty() || words.getFirst().startsWith("[")) {
+            return new Instruction.Raw(text, "COPY in JSON form");
+        }
+        if (words.size() < 2) {
+            return new Instruction.Raw(text, "COPY without a source and a destination");
+        }
+        return new Instruction.Copy(words.subList(0, words.size() - 1), words.getLast(), chown, from);
     }
 
     /** rewrite-docker gives an empty {@code KEY=} the value {@code =}, and keeps a value's quotes in its text. */
