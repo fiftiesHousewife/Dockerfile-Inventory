@@ -33,4 +33,16 @@ class TextRulesTest {
                 .allSatisfy(f -> assertThat(f.toString()).doesNotContain(awsKey).doesNotContain(jwt)
                         .doesNotContain("BEGIN RSA"));
     }
+
+    @Test
+    void s3ReportsCurlOrWgetPipedToAShellAcrossContinuations() {
+        assertThat(new PipeToShell().check(Subjects.of("""
+                FROM ubi9
+                RUN curl -fsSL https://example.com/install.sh | sh
+                RUN wget -qO- https://example.com/setup \\
+                    | sudo bash -s -- --yes
+                RUN curl -o /tmp/install.sh https://example.com/install.sh && sh /tmp/install.sh
+                RUN curl -s https://example.com/data.json | jq .version
+                """))).extracting(Finding::line).containsExactly(2, 3);
+    }
 }
