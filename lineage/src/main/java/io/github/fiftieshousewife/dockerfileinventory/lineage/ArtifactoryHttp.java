@@ -24,6 +24,7 @@ public final class ArtifactoryHttp implements Artifactory {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(60);
     private static final int PAGE_SIZE = 1000;
+    private static final int MAX_ATTEMPTS = 6;
 
     /** Every manifest and index type, Docker and OCI, so a manifest list comes back as a list and not one platform. */
     private static final String MANIFEST_TYPES = String.join(", ",
@@ -122,7 +123,14 @@ public final class ArtifactoryHttp implements Artifactory {
 
     private HttpResponse<String> send(HttpRequest request) {
         try {
-            return http.send(request, HttpResponse.BodyHandlers.ofString());
+            for (int attempt = 1; ; attempt++) {
+                HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+                Optional<Duration> wait = Retry.waitBeforeRetry(response.statusCode(), response.headers());
+                if (wait.isEmpty() || attempt == MAX_ATTEMPTS) {
+                    return response;
+                }
+                Thread.sleep(wait.get());
+            }
         } catch (IOException e) {
             throw new ArtifactoryException("GET " + request.uri() + " failed", e);
         } catch (InterruptedException e) {

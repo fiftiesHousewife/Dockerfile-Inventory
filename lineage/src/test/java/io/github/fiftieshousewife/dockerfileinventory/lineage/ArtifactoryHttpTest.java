@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,6 +121,27 @@ class ArtifactoryHttpTest {
         assertThat(artifactory.lastPushed("docker-local", "team/app", "1.0"))
                 .contains(Instant.parse("2026-10-02T09:15:00Z"));
         assertThat(artifactory.lastPushed("docker-local", "team/app", "gone")).isEmpty();
+    }
+
+    @Test
+    void retriesA429AndA503AfterRetryAfterThenReturnsTheAnswer() {
+        AtomicInteger calls = new AtomicInteger();
+        route("/artifactory/api/repositories", exchange -> {
+            switch (calls.incrementAndGet()) {
+                case 1 -> slowDown(exchange, 429);
+                case 2 -> slowDown(exchange, 503);
+                default -> respond(exchange, 200, "repositories.json");
+            }
+        });
+
+        assertThat(artifactory.dockerRepositories()).containsExactly("docker-local", "base-images");
+        assertThat(calls).hasValue(3);
+    }
+
+    private static void slowDown(HttpExchange exchange, int status) throws IOException {
+        exchange.getResponseHeaders().add("Retry-After", "0");
+        exchange.sendResponseHeaders(status, -1);
+        exchange.close();
     }
 
     private interface Handler {
