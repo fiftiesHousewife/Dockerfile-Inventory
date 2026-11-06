@@ -1,6 +1,6 @@
 # Fixes from the code review of 6 Nov: plan
 
-Status: R1-R10 and R12 built 6 Nov; R11 next.
+Status: all built 6 Nov.
 
 A code review of the session's changes (`c0da31d^..HEAD`) found nine likely bugs and one rule breach, all from
 reading the code. Each is fixed test-first: a failing test from the reviewer's scenario, then the fix.
@@ -18,7 +18,7 @@ reading the code. Each is fixed test-first: a failing test from the reviewer's s
 | R9 | A digest from a build argument counts as pinned for the builders' R1 | Done 6 Nov: as planned | `dsl` |
 | R10 | Lineage's key reading treats any apostrophe as a quote, but the classic builder writes history values unquoted (`MSG=it's`) | Done 6 Nov: in lineage a quote opens only at the start of a key or value (a mid-word quote, valid but rare, now reads differently from facts; the contracts pass). Rules' copy of the key reader is gone: it uses facts' `Steps.keys`. The converter's reader returns values in the model's form, a different job, and lineage keeps its own, held to facts by the contracts | `lineage`, `rules` |
 | R12 | The converter reads `ARG` through the same folded node: `ARG A=1 B=2` becomes one argument `A` = `1 B=2`, which renders with a different meaning (found while fixing R3) | Done 6 Nov: one model `ARG` per name, names from facts' reader, values in the model's form from `Pairs`; a stage's comments stay aligned | `converter` |
-| R11 | The tokeniser expands `$B` inside a single-quoted assignment (`A='$B'`), which the shell keeps literal | Single-quoted text is not expanded | `facts` |
+| R11 | The tokeniser expands `$B` inside a single-quoted assignment (`A='$B'`), which the shell keeps literal | Done 6 Nov: a single-quoted or escaped dollar is marked while a word is read, so only the shell's own references expand | `facts` |
 
 Order: R1, R2 and R3 (a leak, a crash, wrong facts), then R4 to R11.
 

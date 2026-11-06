@@ -40,6 +40,12 @@ public final class ShellTokeniser {
     /** A pipe into one of these runs downloaded or generated code nobody can read here. */
     private static final Set<String> SHELLS = Set.of("sh", "bash", "ash", "dash", "zsh", "ksh");
 
+    /**
+     * Stands for a dollar that is literal (single-quoted or escaped) while a word is read, so an assignment's value
+     * expands only the shell's own references; it is a private-use character, so no script holds it.
+     */
+    private static final char LITERAL_DOLLAR = '\uE000';
+
     /** Inside double quotes a backslash escapes only these, as in the shell; before anything else it is kept. */
     private static final String ESCAPED_IN_DOUBLE_QUOTES = "\"\\$`";
 
@@ -76,7 +82,7 @@ public final class ShellTokeniser {
             char c = script.charAt(i);
             if (c == '\\') {
                 if (next(i) != '\n') {
-                    word.append(next(i));
+                    word.append(literal(next(i)));
                 }
                 i++;
             } else if (c == '\'' || c == '"') {
@@ -120,7 +126,7 @@ public final class ShellTokeniser {
                 opaque = true;
                 return script.length();
             }
-            word.append(script, open + 1, close);
+            word.append(script.substring(open + 1, close).replace('$', LITERAL_DOLLAR));
             wordQuoted = true;
             return close;
         }
@@ -132,7 +138,7 @@ public final class ShellTokeniser {
             } else if (c == '\\' && next(i) == '\n') {
                 i++;
             } else if (c == '\\' && ESCAPED_IN_DOUBLE_QUOTES.indexOf(next(i)) >= 0) {
-                word.append(next(i));
+                word.append(literal(next(i)));
                 i++;
             } else if (c == '\\' && i + 1 == script.length()) {
                 break;
@@ -205,13 +211,19 @@ public final class ShellTokeniser {
         return close;
     }
 
+    /** A character taken as itself: a dollar marked so that assignments do not expand it. */
+    private static char literal(char c) {
+        return c == '$' ? LITERAL_DOLLAR : c;
+    }
+
     private char next(int i) {
         return i + 1 < script.length() ? script.charAt(i + 1) : 0;
     }
 
     private void endWord() {
         if (!word.isEmpty()) {
-            String w = word.toString();
+            String marked = word.toString();
+            String w = marked.replace(LITERAL_DOLLAR, '$');
             boolean quoted = wordQuoted;
             word.setLength(0);
             wordQuoted = false;
@@ -221,7 +233,8 @@ public final class ShellTokeniser {
             } else if (!quoted && redirect.matches()) {
                 targetNext = redirect.group(2).isEmpty();
             } else if (BRANCHES.containsAll(command) && ASSIGNMENT.matcher(w).matches()) {
-                assignments.put(w.substring(0, w.indexOf('=')), expanded(w.substring(w.indexOf('=') + 1)));
+                assignments.put(w.substring(0, w.indexOf('=')),
+                        expanded(marked.substring(marked.indexOf('=') + 1)).replace(LITERAL_DOLLAR, '$'));
             } else {
                 command.add(w);
             }

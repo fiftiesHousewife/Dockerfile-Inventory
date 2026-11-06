@@ -154,4 +154,10 @@ class ShellTokeniserTest {
                 List.of("dnf", "install", "-y", "x"), List.of("c"), List.of("apk", "add", "y")));
         assertThat(ShellTokeniser.assignments(script)).containsEntry("V", "1");
     }
+
+    @Test
+    void aSingleQuotedOrEscapedDollarInAnAssignmentIsNotExpanded() {
+        assertThat(ShellTokeniser.assignments("B=x && A='$B' && C=\"$B\" && D=\\$B && E=$B"))
+                .containsEntry("A", "$B").containsEntry("C", "x").containsEntry("D", "$B").containsEntry("E", "x");
+    }
 }
