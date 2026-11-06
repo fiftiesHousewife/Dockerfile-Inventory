@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
  */
 public final class DockerfileRenderer {
 
+    /** A backslash that is not the escape of a literal dollar. */
+    private static final java.util.regex.Pattern LONE_BACKSLASH = java.util.regex.Pattern.compile("\\\\(?!\\$)");
+
     private static final String CONTINUE = " \\\n";
     private static final Pattern RUN_MOUNT = Pattern.compile("^RUN\\s+(--\\S+\\s+)*--mount=");
     private static final Pattern HEREDOC = Pattern.compile("^(RUN|COPY|ADD)\\s.*<<-?['\"]?\\w+");
@@ -89,12 +92,20 @@ public final class DockerfileRenderer {
                 .collect(Collectors.joining(CONTINUE + indent));
     }
 
-    /** Double-quoted, so spaces survive and {@code $VARIABLES} still expand as Docker expands them. */
+    /**
+     * Double-quoted, so spaces survive and {@code $VARIABLES} still expand as Docker expands them. A model value holds
+     * a literal dollar as {@code \$}, which is kept: Docker reads it inside double quotes as a plain {@code $}.
+     */
     private static String quote(String value) {
-        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        return "\"" + LONE_BACKSLASH.matcher(value).replaceAll("\\\\\\\\").replace("\"", "\\\"") + "\"";
     }
 
     private static String json(List<String> command) {
-        return command.stream().map(DockerfileRenderer::quote).collect(Collectors.joining(", ", "[", "]"));
+        return command.stream().map(DockerfileRenderer::jsonString).collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    /** A JSON string: every backslash escaped, as JSON has no {@code \$}. */
+    private static String jsonString(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 }

@@ -13,7 +13,10 @@ final class Pairs {
     private Pairs() {
     }
 
-    /** Docker's quoting: inside {@code "..."} a backslash escapes; inside {@code '...'} nothing does. */
+    /**
+     * Docker's quoting: inside {@code "..."} a backslash escapes; inside {@code '...'} nothing does. A literal dollar,
+     * single-quoted or escaped, is kept as {@code \$}, the model's form for it.
+     */
     static Map<String, String> parse(String text) {
         Map<String, String> pairs = new LinkedHashMap<>();
         StringBuilder key = new StringBuilder();
@@ -27,10 +30,10 @@ final class Pairs {
                 if (c == '\'') {
                     quote = 0;
                 } else {
-                    current.append(c);
+                    current.append(c == '$' ? "\\$" : String.valueOf(c));
                 }
             } else if (escaped) {
-                current.append(c);
+                current.append(c == '$' ? "\\$" : String.valueOf(c));
                 escaped = false;
             } else if (c == '\\') {
                 escaped = true;

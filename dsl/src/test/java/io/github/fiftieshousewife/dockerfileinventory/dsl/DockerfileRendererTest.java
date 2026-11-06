@@ -69,6 +69,20 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void anEscapedDollarStaysEscapedSoDockerReadsItLiterally() {
+        Dockerfile label = single(new Instruction.Label(Map.of("INSTALL", "docker run \\$IMAGE")));
+
+        assertThat(DockerfileRenderer.render(label, Target.DEFAULT)).contains("INSTALL=\"docker run \\$IMAGE\"");
+    }
+
+    @Test
+    void anExecFormIsJsonSoEveryBackslashIsEscaped() {
+        Dockerfile cmd = single(new Instruction.Cmd(List.of("sh", "-c", "echo \\$HOME")));
+
+        assertThat(DockerfileRenderer.render(cmd, Target.DEFAULT)).contains("[\"sh\", \"-c\", \"echo \\\\$HOME\"]");
+    }
+
+    @Test
     void renderingIsStable() {
         assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo(DockerfileRenderer.render(MODEL,
                 Target.DEFAULT));
