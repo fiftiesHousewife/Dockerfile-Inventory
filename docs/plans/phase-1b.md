@@ -29,6 +29,8 @@ or queued for curation; gap list published and reviewed.
 | Q15 | How Dockerfiles name Artifactory images in `FROM` | Mixed, not known | A `FROM` path is matched against Artifactory image names as written and with its first segment removed (a repository key); the rates say which form matched |
 | Q16 | Revision labels (slice 5) | Never present in the estate | Not read. `STRONG` comes from the release index alone |
 | Q17 | Identical Dockerfiles in several repositories | Link to the group | One link to every Dockerfile with the same steps, listing each location |
+| Q18 | ONBUILD in bases (slice 6) | Rare or none | A child of a base with `OnBuild` triggers is flagged and counted, not modelled |
+| Q19 | Fold granularity (slice 6) | Per image | One effective record per config digest; a Dockerfile's view is its newest linked image, chosen in the report |
 
 ## Decisions that follow (say if any is wrong)
 
@@ -228,6 +230,28 @@ or queued for curation; gap list published and reviewed.
    the own steps; the candidates share history, so any would do.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,
    `ENV`, labels, `WORKDIR`, `ENTRYPOINT`, `CMD` and packages; `ONBUILD` injected at the child's start.
+
+   Design: the effective values are already in each image's config (`User`, `Env`, `Labels`, `WorkingDir`,
+   `Entrypoint`, `Cmd`), since the builder folds them. What the fold adds is *who set each one*, which Phase 3's
+   effective rules need ("the final user is root, set by base X's Dockerfile"). `Fold.of(images, parents, links)`
+   gives each image an `EffectiveImage`:
+   - `chain`: itself, then each ancestor to the root, each with its `Link`.
+   - Each property's value from the image's own config, and `setBy`: the nearest image in the chain whose own
+     steps (slice 5) set it, with that image's link. Alternatively the external base named in a root's `FROM`
+     comment, when only the steps before that comment set it, or unknown when no recorded step sets it.
+   - `ENV` and labels per key, so a child overriding one key takes only that key.
+
+   Packages are not repeated here: the chain names each Dockerfile group, and the report joins them with
+   `facts.jsonl`. Tests, in order:
+   1. `ImageConfig` also reads `Env`, `WorkingDir`, `Entrypoint`, `Cmd` and `OnBuild`.
+   2. A property the image's own steps set is attributed to the image and its link.
+   3. A property the image does not set is attributed to the nearest ancestor that does.
+   4. `ENV` and labels are attributed per key; a child that overrides one key takes that key only.
+   5. A property set only before a root's `FROM` comment is attributed to the external base the comment names.
+   6. A property no recorded step sets is unknown.
+   7. An ambiguous parent is walked through its first candidate, as in slice 5.
+   8. The chain lists every ancestor with its link, and a repeated image ends the walk.
+   9. A child whose parent's config has `OnBuild` triggers is flagged `parentHasOnbuild` (Q18).
 7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with
    repository, image, tags and last push. Also `outdated-bases.jsonl` (Q12): images whose parent is not the newest
    push of that parent's image name.
