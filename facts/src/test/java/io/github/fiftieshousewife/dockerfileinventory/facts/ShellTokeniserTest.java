@@ -45,7 +45,6 @@ class ShellTokeniserTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "install_all() { echo a; }",
         "cat <<EOF > /etc/x",
         "echo 'unterminated",
         "echo $(uname -m",
@@ -188,5 +187,13 @@ class ShellTokeniserTest {
         assertThat(ShellTokeniser.assignments(files)).doesNotContainKey("f");
         assertThat(ShellTokeniser.parse("while read -r line; do echo $line; done < /tmp/list"))
                 .contains(List.of(List.of("read", "-r", "line"), List.of("echo", "$line")));
+    }
+
+    @Test
+    void aFunctionsBodyIsReadWhereItIsDefinedInEitherForm() {
+        assertThat(ShellTokeniser.parse("install() { apt-get install -y curl; }; install"))
+                .contains(List.of(List.of("apt-get", "install", "-y", "curl"), List.of("install")));
+        assertThat(ShellTokeniser.parse("function setup { apk add git; }; setup"))
+                .contains(List.of(List.of("apk", "add", "git"), List.of("setup")));
     }
 }

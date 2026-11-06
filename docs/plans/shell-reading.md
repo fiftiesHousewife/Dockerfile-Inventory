@@ -1,6 +1,6 @@
 # Reading more shell in RUN (S4): plan
 
-Status: planned 6 Nov; questions answered 6 Nov; S4a-S4c built, S4d next.
+Status: planned 6 Nov; questions answered 6 Nov; S4a-S4d built, S4e next.
 
 `docker-library` (the official images) has 870 of 2,492 shell-form `RUN`s too complex to read (35%); openshift
 2.7%, konflux-ci 2.9%, redhat-developer 4.7%. An unreadable `RUN` counts no packages, so the inventory undercounts

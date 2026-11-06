@@ -29,7 +29,7 @@ public final class ShellTokeniser {
 
     /** First words that open compound commands this reader does not follow. */
     private static final Set<String> COMPOUND = Set.of(
-            "select", "function");
+            "select");
 
     /**
      * An {@code if}'s keywords, a group's braces and a loop's: dropped, so a condition, every branch and a loop's body
@@ -108,6 +108,9 @@ public final class ShellTokeniser {
                 expectingPattern = false;
             } else if (c == '|' && (expectingPattern || caseHeader())) {
                 word.append(c);
+            } else if (c == '(' && next(i) == ')' && command.isEmpty()) {
+                word.setLength(0);
+                i++;
             } else if (c == '(' && word.isEmpty()) {
                 endCommand();
                 subshells++;
@@ -297,6 +300,9 @@ public final class ShellTokeniser {
         endWord();
         while (!command.isEmpty() && BRANCHES.contains(command.getFirst())) {
             command.removeFirst();
+        }
+        if (command.size() >= 2 && command.getFirst().equals("function")) {
+            command.subList(0, command.size() > 2 && command.get(2).equals("{") ? 3 : 2).clear();
         }
         if (!command.isEmpty() && command.getFirst().equals("for")) {
             forList(command);
