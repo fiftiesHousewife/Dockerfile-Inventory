@@ -30,7 +30,8 @@ public final class FactsParser {
     /**
      * Parses the text; if rewrite-docker rejects it, parses it again with whole-line comments blanked, as Docker
      * drops them before reading an instruction. rewrite-docker 8.90.4 rejects some valid Dockerfiles over comments
-     * (an apostrophe in a comment inside a continued {@code RUN}; a comment ending in a backslash), so this rescues
+     * (an apostrophe in a comment inside a continued {@code RUN}; a {@code # key=value} comment after the first
+     * instruction, read as a parser directive), so this rescues
      * them, keeping every line number. A file that parses first time keeps its comments.
      */
     public ParseResult parse(String blobSha, String text) {

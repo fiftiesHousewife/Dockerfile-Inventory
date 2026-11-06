@@ -68,7 +68,7 @@ class FactsParserTest {
     }
 
     @Test
-    void theRealNginxLinesWithACommentEndingInABackslashParse() throws IOException {
+    void theRealNginxLinesWithAKeyValueCommentAfterAnInstructionParse() throws IOException {
         assertThat(new FactsParser().parse("nginx", fixture("nginx-1.20-comments.Dockerfile")))
                 .isInstanceOf(ParseResult.Parsed.class);
     }
