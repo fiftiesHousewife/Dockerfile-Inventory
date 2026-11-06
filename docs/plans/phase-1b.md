@@ -113,7 +113,8 @@ or queued for curation; gap list published and reviewed.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,
    `ENV`, labels, `WORKDIR`, `ENTRYPOINT`, `CMD` and packages; `ONBUILD` injected at the child's start.
 7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with
-   repository, image, tags and last push. Also `outdated-bases.jsonl` (Q12): images whose parent is not the newest push of that parent's image name.
+   repository, image, tags and last push. Also `outdated-bases.jsonl` (Q12): images whose parent is not the newest
+   push of that parent's image name.
 8. **Run and rates**: lineage coverage, link tiers, gap count, skipped non-amd64 images.
 
 ## Phase 2 after this
