@@ -36,7 +36,9 @@ and one line when its gate is met.
 
 - Phase 2 — Cluster and report. Plan: `docs/plans/phase-2.md` (questions answered 6 Nov). Gate: written
   decision, base-image route or DSL route.
-  - Done: slice 1, `report` module and inputs.
+  - Done: slice 1, `report` module and inputs; slice 2, exact passes; slice 3, near-duplicates (MinHash, LSH);
+    slice 4, archetypes, k80 and k95; slice 5, base catalogue with the internal end-of-life list.
+  - Next: slice 6, CSV tables and DDL for Oracle.
 
 ## Queued
 

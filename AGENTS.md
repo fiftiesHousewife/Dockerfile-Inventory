@@ -51,6 +51,7 @@ lineage/                    Phase 1b: Artifactory images -> family tree -> Docke
                             ./gradlew :lineage:run
 report/                     Phase 2 (in progress): facts + manifest (+ lineage) -> passes, archetypes, bases, tables
                             Estate: every Dockerfile with its facts and locations, failures, effective users
+                            Passes, NearDuplicates (MinHash), Archetypes (k80, k95), BaseCatalogue (EolList)
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

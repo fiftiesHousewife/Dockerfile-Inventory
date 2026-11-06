@@ -1,6 +1,6 @@
 # Phase 2 — Cluster and report: plan
 
-Status: planned 6 Nov; questions answered. Slice 1 built 6 Nov. Slices are built test-first, as in the earlier phases.
+Status: planned 6 Nov; questions answered. Slices 1 to 5 built 6 Nov. Slices are built test-first, as in the earlier phases.
 
 Phase 2 produces the number that sets strategy: how many archetypes cover 80% and 95% of the estate. Roughly 300
 or fewer at 95% means golden base images first and a small DSL; a long, diverse tail means recipes first and the
@@ -55,11 +55,20 @@ agreed (the decision paper is written by people from these numbers, not by the p
    11. Empty package sets never merge through this pass.
    12. Results do not depend on input order.
 
+   As built: the first MinHash tests passed against an all-zero stub (zero agrees with zero), so they were
+   strengthened with exact Jaccard values and a pair of sets that must differ. The coefficients come from a fixed
+   seed and products are taken mod 2^61 - 1 with 128-bit multiplication. Tests 10 to 12 came after the code;
+   comparing package-less groups, or keeping the input order, each made its test fail. A merged group takes
+   the key, package set and family of its member at the most locations.
+
 4. **Archetypes.** `Archetypes.rank(groups)`: groups sorted by locations, with k80 and k95.
    13. k80 is the fewest archetypes whose locations reach 80% of all locations; k95 likewise.
    14. Ties in size order by signature, so the ranking is stable.
    15. `archetypes.json`: each archetype's rank, locations, blobs, signature, a representative blob and its
        repositories.
+
+   As built: coverage is compared in whole numbers (`covered * 100 >= percent * total`), not by rounding a
+   floating-point share. The representative is the member at the most locations.
 
 5. **Base catalogue.** `BaseCatalogue.of(estate, eolList)`: bases by locations, with family, version (major),
    digest-pinned share, and status from the internal list.
@@ -67,6 +76,9 @@ agreed (the decision paper is written by people from these numbers, not by the p
    17. Pinned share: locations whose `FROM` carries a digest.
    18. End-of-life status from the list by image path and longest matching tag prefix; no match is `unknown`.
    19. Unresolved `FROM` (an `ARG` with no default) is its own row.
+
+   As built: a tag prefix covers a tag only on a version boundary (`9` covers `9.4` and `9-1100`, not `91`). The
+   image path follows Docker's host rule, as facts' `fromPath` does.
 
 6. **Tables.** CSV files for Oracle and a DDL script (Q1): `dockerfiles.csv`, `locations.csv`, `archetypes.csv`,
    `bases.csv`, `images.csv` (from lineage when present). Values are escaped; nothing secret-shaped is written.

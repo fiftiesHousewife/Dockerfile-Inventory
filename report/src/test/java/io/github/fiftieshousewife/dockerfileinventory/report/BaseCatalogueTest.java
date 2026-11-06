@@ -42,6 +42,15 @@ class BaseCatalogueTest {
                         tuple("91", "unknown", null));
     }
 
+    @Test
+    void anUnresolvedFromIsOneRowWhateverTheVariableIsCalled() {
+        Estate estate = estate(dockerfile("a", new Base("${BASE}", null, null), 2),
+                dockerfile("b", new Base("${IMAGE}", "${TAG}", null), 1));
+
+        assertThat(BaseCatalogue.of(estate, EolList.empty()))
+                .containsExactly(new BaseRow("unresolved", null, "unresolved", 3, 0, "unknown", null));
+    }
+
     static Estate estate(Dockerfile... dockerfiles) {
         return new Estate(List.of(dockerfiles), List.of(), List.of(), Map.of());
     }
