@@ -73,7 +73,11 @@ public final class ShellTokeniser {
                 i++;
             } else if (c == '\'' || c == '"') {
                 i = quoted(i, c);
-            } else if (c == '(' || c == ')' || c == '`' || (c == '<' && next(i) == '<')) {
+            } else if (c == '$' && next(i) == '(') {
+                i = substitution(i);
+            } else if (c == '`') {
+                i = backticks(i);
+            } else if (c == '(' || c == ')' || (c == '<' && next(i) == '<')) {
                 opaque = true;
             } else if (c == '#' && word.isEmpty()) {
                 i = script.indexOf('\n', i) < 0 ? script.length() : script.indexOf('\n', i) - 1;
@@ -102,17 +106,91 @@ public final class ShellTokeniser {
      * double quotes a backslash-newline is removed, as the shell removes it; inside single quotes nothing changes.
      */
     private int quoted(int open, char quote) {
-        int close = script.indexOf(quote, open + 1);
+        if (quote == '\'') {
+            int close = script.indexOf(quote, open + 1);
+            if (close < 0) {
+                opaque = true;
+                return script.length();
+            }
+            word.append(script, open + 1, close);
+            wordQuoted = true;
+            return close;
+        }
+        for (int i = open + 1; i < script.length(); i++) {
+            char c = script.charAt(i);
+            if (c == '"') {
+                wordQuoted = true;
+                return i;
+            } else if (c == '\\' && next(i) == '\n') {
+                i++;
+            } else if (c == '\\' && i + 1 == script.length()) {
+                break;
+            } else if (c == '$' && next(i) == '(') {
+                int close = substitutionEnd(i);
+                if (close < 0) {
+                    break;
+                }
+                word.append(script, i, close + 1);
+                i = close;
+            } else if (c == '`') {
+                int close = script.indexOf('`', i + 1);
+                if (close < 0) {
+                    break;
+                }
+                word.append(script, i, close + 1);
+                i = close;
+            } else {
+                word.append(c);
+            }
+        }
+        opaque = true;
+        return script.length();
+    }
+
+    /**
+     * Appends a command substitution {@code $( ... )}, nested or quoted inside, to the current word as written: one
+     * word whose value is not known here. Returns the index of its closing parenthesis; unclosed is opaque.
+     */
+    private int substitution(int open) {
+        int close = substitutionEnd(open);
         if (close < 0) {
             opaque = true;
             return script.length();
         }
-        String span = script.substring(open + 1, close);
-        if (quote == '"' && (span.contains("$(") || span.contains("`") || span.endsWith("\\"))) {
-            opaque = true;
+        word.append(script, open, close + 1);
+        return close;
+    }
+
+    /** The index of the parenthesis closing the substitution opened at {@code open}, or -1. */
+    private int substitutionEnd(int open) {
+        int depth = 0;
+        for (int i = open + 1; i < script.length(); i++) {
+            char c = script.charAt(i);
+            if (c == '\\') {
+                i++;
+            } else if (c == '\'' || c == '"') {
+                int close = script.indexOf(c, i + 1);
+                if (close < 0) {
+                    break;
+                }
+                i = close;
+            } else if (c == '(') {
+                depth++;
+            } else if (c == ')' && --depth == 0) {
+                return i;
+            }
         }
-        word.append(quote == '"' ? span.replace("\\\n", "") : span);
-        wordQuoted = true;
+        return -1;
+    }
+
+    /** As {@link #substitution}, for the older backtick form. */
+    private int backticks(int open) {
+        int close = script.indexOf('`', open + 1);
+        if (close < 0) {
+            opaque = true;
+            return script.length();
+        }
+        word.append(script, open, close + 1);
         return close;
     }
 

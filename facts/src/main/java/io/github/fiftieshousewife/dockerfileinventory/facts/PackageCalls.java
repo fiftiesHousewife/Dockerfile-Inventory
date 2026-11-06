@@ -48,7 +48,8 @@ public final class PackageCalls {
 
     /**
      * Package calls with any word that is exactly {@code $NAME} or {@code ${NAME}} replaced by the words of that
-     * variable's value, from {@code variables}; an unknown variable stays as written.
+     * variable's value, from {@code variables}; an unknown variable, or one whose value is a command substitution,
+     * stays as written.
      */
     public static List<PackageCall> of(List<List<String>> unexpanded, Map<String, String> variables) {
         List<List<String>> commands = unexpanded.stream().map(c -> expand(c, variables)).toList();
@@ -63,7 +64,7 @@ public final class PackageCalls {
         for (String word : command) {
             var variable = VARIABLE.matcher(word);
             String value = variable.matches() ? variables.get(variable.group(1)) : null;
-            if (value == null) {
+            if (value == null || substituted(value)) {
                 words.add(word);
             } else {
                 Arrays.stream(CONTINUATION.matcher(unquote(value)).replaceAll(" ").trim().split("\\s+"))
@@ -72,6 +73,11 @@ public final class PackageCalls {
             }
         }
         return words;
+    }
+
+    /** A word holding a command substitution: its value is only known when the image is built. */
+    static boolean substituted(String word) {
+        return word.contains("$(") || word.contains("`");
     }
 
     private static String unquote(String value) {
@@ -88,7 +94,8 @@ public final class PackageCalls {
         List<String> words = new ArrayList<>();
         command.subList(1, command.size()).forEach(w -> (w.startsWith("-") ? flags : words).add(w));
         String subcommand = words.isEmpty() ? "" : words.getFirst();
-        List<String> packages = INSTALLS.contains(subcommand) ? words.subList(1, words.size()) : List.of();
+        List<String> packages = INSTALLS.contains(subcommand)
+                ? words.subList(1, words.size()).stream().filter(w -> !substituted(w)).toList() : List.of();
         boolean cleaned = (family == Family.APK && flags.contains("--no-cache"))
                 || later.stream().anyMatch(c -> cleans(c, family));
         return new PackageCall(manager, subcommand, flags, packages, cleaned);

@@ -50,13 +50,14 @@ class ShellTokeniserTest {
         "for p in a b; do echo $p; done",
         "while true; do sleep 1; done",
         "until false; do sleep 1; done",
-        "echo $(uname -m)",
-        "echo `uname -m`",
         "(cd /tmp && make)",
         "{ echo a; echo b; }",
         "install_all() { echo a; }",
         "cat <<EOF > /etc/x",
         "echo 'unterminated",
+        "echo $(uname -m",
+        "echo `date",
+        "echo \"$(date\"",
     })
     void declinesWhatItDoesNotUnderstand(String script) {
         assertThat(ShellTokeniser.parse(script)).isEmpty();
@@ -105,5 +106,22 @@ class ShellTokeniserTest {
                 + "INSTALL_PKGS=\"${INSTALL_PKGS} util-linux\" && yum install -y $INSTALL_PKGS";
 
         assertThat(ShellTokeniser.assignments(script)).containsEntry("INSTALL_PKGS", "rsync tar pgaudit util-linux");
+    }
+
+    @Test
+    void aCommandSubstitutionIsOneWordOfUnknownValueAndTheCommandsAroundItAreRead() {
+        String script = "ARCH=$(uname -m) && curl -o x https://h/$ARCH.tgz && tar xf x";
+
+        assertThat(ShellTokeniser.parse(script)).contains(List.of(
+                List.of("curl", "-o", "x", "https://h/$ARCH.tgz"), List.of("tar", "xf", "x")));
+        assertThat(ShellTokeniser.assignments(script)).containsEntry("ARCH", "$(uname -m)");
+    }
+
+    @Test
+    void substitutionsInsideDoubleQuotesNestedOrInBackticksAreWordsToo() {
+        assertThat(ShellTokeniser.parse(
+                "V=\"$(git describe --tags)\" && echo \"v=$(cat \"a b\")\" && echo $(dirname $(pwd)) && echo `date`"))
+                .contains(List.of(List.of("echo", "v=$(cat \"a b\")"), List.of("echo", "$(dirname $(pwd))"),
+                        List.of("echo", "`date`")));
     }
 }

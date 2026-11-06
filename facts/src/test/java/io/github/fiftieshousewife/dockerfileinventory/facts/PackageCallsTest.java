@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -60,5 +61,18 @@ class PackageCallsTest {
     @Test
     void ignoresOtherInstallers() {
         assertThat(calls("pip install requests && npm install -g yarn")).isEmpty();
+    }
+
+    @Test
+    void aPackageListFromACommandSubstitutionIsNotCountedOrGuessed() {
+        assertThat(calls("dnf install -y git $(cat /tmp/pkgs.txt) `cat more.txt` \"$(echo x)\""))
+                .containsExactly(new PackageCall("dnf", "install", List.of("-y"), List.of("git"), false));
+    }
+
+    @Test
+    void aVariableHoldingASubstitutionIsNotSplitIntoPackages() {
+        assertThat(PackageCalls.of(ShellTokeniser.parse("dnf install -y $PKGS").orElseThrow(),
+                Map.of("PKGS", "$(cat /tmp/pkgs.txt)")))
+                .containsExactly(new PackageCall("dnf", "install", List.of("-y"), List.of("$PKGS"), false));
     }
 }
