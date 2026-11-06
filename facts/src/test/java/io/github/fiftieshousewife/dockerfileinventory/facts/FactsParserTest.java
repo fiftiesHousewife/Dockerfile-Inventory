@@ -96,7 +96,7 @@ class FactsParserTest {
                 EOT
                 """;
 
-        assertThat(FactsParser.withoutComments(text)).isEqualTo("""
+        assertThat(RetryText.withoutComments(text)).isEqualTo("""
                 # syntax=docker/dockerfile:1
                 FROM ubi9
 
@@ -201,7 +201,7 @@ class FactsParserTest {
                 CMD ["a" , "b"]
                 """;
 
-        assertThat(FactsParser.retryText(dockerfile)).contains(
+        assertThat(RetryText.of(dockerfile)).contains(
                 "ARG DESC=\"two words\" OTHER\n", "ARG A=$A \\\n    B=$B\n", "python3 -c 'x = [\"a\" , \"b\"]'\n",
                 "CMD [\"a\", \"b\"]");
     }
@@ -240,6 +240,6 @@ class FactsParserTest {
                 + "ARG CROSSPLANE_VERSION=\nWORKDIR /workspace\n";
 
         assertThat(new FactsParser().parse("proxy", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
-        assertThat(FactsParser.retryText(dockerfile)).startsWith("ARG HTTP_PROXY=\"\"\nARG HTTPS_PROXY=\"\"\n");
+        assertThat(RetryText.of(dockerfile)).startsWith("ARG HTTP_PROXY=\"\"\nARG HTTPS_PROXY=\"\"\n");
     }
 }
