@@ -28,7 +28,8 @@ class RulesRunTest {
         Files.createDirectories(discovery.resolve("blobs"));
         Files.writeString(discovery.resolve("blobs/a"), "FROM ubi9/ubi-minimal:9.4\nRUN curl -s https://x | sh\n");
         Files.writeString(discovery.resolve("blobs/secret"), "FROM ubi9/ubi-minimal:9.4@sha256:" + "a".repeat(64)
-                + "\nENV DB_PASSWORD=hunter2\nLABEL org.opencontainers.image.revision=1 org.opencontainers.image.source=2\n");
+                + "\nENV DB_PASSWORD=hunter2\n"
+                + "LABEL org.opencontainers.image.revision=1 org.opencontainers.image.source=2\n");
         Files.writeString(discovery.resolve("blobs/bad"), "not a dockerfile\n");
         Files.writeString(discovery.resolve("blobs/half.part"), "FROM ubi9\n");
         Files.writeString(discovery.resolve("manifest.jsonl"), String.join("\n",
@@ -55,7 +56,8 @@ class RulesRunTest {
         new RulesRun(discovery, null, null, null, out).run();
 
         List<String> csv = Files.readAllLines(out.resolve("tables/findings.csv"));
-        assertThat(csv.getFirst()).isEqualTo("rule,severity,repository,path,blob_sha,line,message,value_hash,contributing");
+        assertThat(csv.getFirst())
+                .isEqualTo("rule,severity,repository,path,blob_sha,line,message,value_hash,contributing");
         assertThat(csv).filteredOn(line -> line.startsWith("S3,")).hasSize(3);
         assertThat(Files.readString(out.resolve("tables/ddl.sql"))).contains("CREATE TABLE findings");
     }
@@ -82,12 +84,30 @@ class RulesRunTest {
         }
     }
 
+    @Test
+    void withLineageOutputTheEffectiveRulesRunOverEveryImage(@TempDir Path lineage) throws IOException {
+        Files.writeString(lineage.resolve("effective.jsonl"), """
+                {"configDigest":"img","chain":[{"configDigest":"img","link":{"tier":"STRONG","blobShas":["a"]}}],\
+                "user":{"value":null,"setBy":{"kind":"Unknown"}}}
+                """);
+        Files.writeString(lineage.resolve("images.jsonl"), """
+                {"repository":"docker-local","image":"payments/api","tag":"1","configDigest":"img"}
+                """);
+
+        new RulesRun(discovery, lineage, null, null, out).run();
+
+        assertThat(lines("findings.jsonl")).filteredOn(f -> f.path("rule").asString().equals("S4"))
+                .singleElement().satisfies(f -> assertThat(f.path("blobSha").asString()).isEqualTo("a"));
+        assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("skipped"))
+                .extracting(JsonNode::asString).containsExactly("R2", "S1");
+    }
+
     private List<JsonNode> lines(String file) throws IOException {
         return Files.readAllLines(out.resolve(file)).stream().map(JSON::readTree).toList();
     }
 
     private static String location(String repository, String blob) {
-        return "{\"repository\":\"%s\",\"commitSha\":\"c\",\"scope\":\"RELEASED\",\"path\":\"Dockerfile\",\"blobSha\":\"%s\"}"
-                .formatted(repository, blob);
+        return ("{\"repository\":\"%s\",\"commitSha\":\"c\",\"scope\":\"RELEASED\","
+                + "\"path\":\"Dockerfile\",\"blobSha\":\"%s\"}").formatted(repository, blob);
     }
 }

@@ -178,38 +178,36 @@ public final class RulesRun {
     private static Map<String, String> samples(List<Finding> findings, Map<String, List<Location>> locations) {
         Map<String, String> samples = new TreeMap<>();
         findings.stream().collect(Collectors.groupingBy(Finding::rule, TreeMap::new, Collectors.toList()))
-                .forEach((rule, list) -> {
-                    Map<String, List<String>> byOrganisation = new TreeMap<>();
-                    for (Finding f : list) {
-                        for (Location l : locations.getOrDefault(f.blobSha(), List.of())) {
-                            byOrganisation.computeIfAbsent(l.repository().split("/", 2)[0], o -> new ArrayList<>())
-                                    .add(row(f.rule(), f.severity().name(), l.repository(), l.path(), f.blobSha(),
-                                            f.line() == null ? "" : f.line().toString(), f.message(), ""));
-                        }
-                    }
-                    Random random = new Random(SEED);
-                    byOrganisation.values().forEach(rows -> {
-                        Collections.sort(rows);
-                        Collections.shuffle(rows, random);
-                    });
-                    StringBuilder csv = new StringBuilder("rule,severity,repository,path,blob_sha,line,message,verdict\r\n");
-                    int taken = 0;
-                    for (int round = 0; taken < SAMPLE; round++) {
-                        boolean any = false;
-                        for (List<String> rows : byOrganisation.values()) {
-                            if (round < rows.size() && taken < SAMPLE) {
-                                csv.append(rows.get(round));
-                                taken++;
-                                any = true;
-                            }
-                        }
-                        if (!any) {
-                            break;
-                        }
-                    }
-                    samples.put(rule, csv.toString());
-                });
+                .forEach((rule, list) -> samples.put(rule, sample(list, locations)));
         return samples;
+    }
+
+    private static String sample(List<Finding> findings, Map<String, List<Location>> locations) {
+        Map<String, List<String>> byOrganisation = new TreeMap<>();
+        for (Finding f : findings) {
+            for (Location l : locations.getOrDefault(f.blobSha(), List.of())) {
+                byOrganisation.computeIfAbsent(l.repository().split("/", 2)[0], o -> new ArrayList<>())
+                        .add(row(f.rule(), f.severity().name(), l.repository(), l.path(), f.blobSha(),
+                                f.line() == null ? "" : f.line().toString(), f.message(), ""));
+            }
+        }
+        Random random = new Random(SEED);
+        byOrganisation.values().forEach(rows -> {
+            Collections.sort(rows);
+            Collections.shuffle(rows, random);
+        });
+        StringBuilder csv = new StringBuilder("rule,severity,repository,path,blob_sha,line,message,verdict\r\n");
+        int longest = byOrganisation.values().stream().mapToInt(List::size).max().orElse(0);
+        int taken = 0;
+        for (int round = 0; round < longest && taken < SAMPLE; round++) {
+            for (List<String> rows : byOrganisation.values()) {
+                if (round < rows.size() && taken < SAMPLE) {
+                    csv.append(rows.get(round));
+                    taken++;
+                }
+            }
+        }
+        return csv.toString();
     }
 
     /** One CSV line (RFC 4180): a field holding a comma, quote or line break is quoted, quotes doubled. */
