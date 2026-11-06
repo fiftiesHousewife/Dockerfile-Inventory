@@ -72,3 +72,8 @@ invariant breach in a test.
    20. `RUN`s separated by another instruction, or in different stages, stay apart.
    21. A `RUN` that changes shell state is not joined to the `RUN` after it.
    22. `model()` keeps adjacent `RUN`s as written.
+
+   As built: an install joins through its rendered commands, so the built model holds one `Shell` `RUN`; the typed
+   install stays in the builder and in `model()`. The Node golden now has two adjacent `RUN`s in its builder;
+   its committed Dockerfile shows them joined, and the Phase 3 acceptance test (H3 included) still passes.
+   Removing the shell-state guard on purpose failed test 21.

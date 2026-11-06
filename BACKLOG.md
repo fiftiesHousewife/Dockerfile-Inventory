@@ -60,7 +60,8 @@ and one line when its gate is met.
   passes the Phase 3 rules with zero findings; builders refuse each invariant breach. Phase 4b (central generator
   repository and PR job) waits on a GHE token with write access.
   - Done: model, package installs, renderer with targets, builders with policy, four goldens; the gate's tests
-    pass. Next: real archetypes as goldens after the first Phase 2 run; merge adjacent RUNs in the builder (H3).
+    pass; adjacent RUNs are joined in `build()` (H3), 6 Nov. Next: real archetypes as goldens after the first
+    Phase 2 run.
 
 - Phase 5 — Converter. Plan: `docs/plans/phase-5.md` (questions answered 6 Nov). Gate: round-trip equivalence;
   opt-in per team. Phase 5b (building and comparing images, delivering PRs) needs Buildah and Phase 4b.

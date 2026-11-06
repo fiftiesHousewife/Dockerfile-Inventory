@@ -27,7 +27,9 @@ public final class ImageBuilder {
     private static final Pattern APT_INSTALL = Pattern.compile("\\bapt(-get)?\\s+(-\\S+\\s+)*install\\b");
     private static final Pattern APT_CLEAN = Pattern.compile("rm\\s+-rf\\s+/var/lib/apt/lists");
     private static final Pattern APK_ADD = Pattern.compile("\\bapk\\s+add\\b");
-    private static final java.util.Set<String> STATEFUL = java.util.Set.of("cd", "export", "source", ".", "set", "umask");
+    /** Commands whose effect lasts into the rest of the shell, so a {@code RUN} holding one is not joined onward. */
+    private static final java.util.Set<String> STATEFUL =
+            java.util.Set.of("cd", "export", "source", ".", "set", "umask");
     private static final Pattern APK_CLEAN = Pattern.compile("--no-cache|rm\\s+-rf\\s+/var/cache/apk");
 
     private static final class Draft {

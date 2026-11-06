@@ -46,6 +46,7 @@ final class Goldens {
     static ImageBuilder nodeService() {
         return labelled(ImageBuilder.finalStage(UBI_MINIMAL))
                 .install("nodejs", "npm")
+                .run("npm config set fund false --location=global")
                 .workdir("/opt/app")
                 .copy("package.json", "/opt/app/")
                 .run("npm ci --omit=dev")

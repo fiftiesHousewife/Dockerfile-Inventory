@@ -4,7 +4,8 @@ ARG SOURCE
 LABEL org.opencontainers.image.revision="${REVISION}"
 LABEL org.opencontainers.image.source="${SOURCE}"
 RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 nodejs npm \
-    && microdnf clean all
+    && microdnf clean all \
+    && npm config set fund false --location=global
 WORKDIR /opt/app
 COPY --chown=1001:0 package.json /opt/app/
 RUN npm ci --omit=dev
