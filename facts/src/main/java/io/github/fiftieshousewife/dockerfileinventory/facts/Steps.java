@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.openrewrite.Cursor;
 import org.openrewrite.docker.tree.Docker;
 import tools.jackson.databind.JsonNode;
@@ -25,14 +26,50 @@ public final class Steps {
 
     public static List<Step> of(Docker.File file) {
         List<Step> steps = new ArrayList<>();
-        Docker.Stage last = file.getStages().getLast();
-        for (Docker.Instruction instruction : last.getInstructions()) {
+        for (Docker.Instruction instruction : finalImage(file)) {
+            if (instruction instanceof Docker.Arg) {
+                continue;
+            }
             String text = joined(instruction.printTrimmed(new Cursor(null, file)));
             int space = text.indexOf(' ');
             String keyword = (space < 0 ? text : text.substring(0, space)).toUpperCase(Locale.ROOT);
             steps.add(step(keyword, space < 0 ? "" : text.substring(space + 1)));
         }
         return steps;
+    }
+
+    /**
+     * The final stage's instructions, preceded by those of each earlier stage it is built {@code FROM} by name:
+     * their layers and history are what the final image starts with. As in Docker, a name refers only to a stage
+     * before the one that uses it, so {@code FROM app AS app} names an image, not itself.
+     */
+    private static List<Docker.Instruction> finalImage(Docker.File file) {
+        List<Docker.Stage> stages = file.getStages();
+        List<Docker.Instruction> instructions = new ArrayList<>();
+        int index = stages.size() - 1;
+        while (index >= 0) {
+            Docker.Stage stage = stages.get(index);
+            instructions.addAll(0, stage.getInstructions());
+            index = earlierStage(stage.getFrom(), stages.subList(0, index));
+        }
+        return instructions;
+    }
+
+    /** The index of the last earlier stage named as this one's base, or -1 when the base is an image. */
+    private static int earlierStage(Docker.From from, List<Docker.Stage> earlier) {
+        if (from.getTag() != null || from.getDigest() != null) {
+            return -1;
+        }
+        String name = from.getImageName().getContents().stream()
+                .map(c -> c instanceof Docker.Literal l ? l.getText() : "$")
+                .collect(Collectors.joining());
+        for (int i = earlier.size() - 1; i >= 0; i--) {
+            Docker.From.As as = earlier.get(i).getFrom().getAs();
+            if (as != null && as.getName().getText().equals(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     static Step step(String keyword, String value) {

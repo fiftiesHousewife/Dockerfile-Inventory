@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 class StepsTest {
 
@@ -71,6 +72,32 @@ class StepsTest {
                         new Step("EXPOSE", "8080"),
                         new Step("ENTRYPOINT", "[\"container-entrypoint\"]"),
                         new Step("CMD", "$STI_SCRIPTS_PATH/usage"));
+    }
+
+    @Test
+    void aFinalStageFromAnEarlierStageStartsWithItsStepsAndArgLeavesNone() {
+        assertThat(steps("""
+                ARG BASE=ubi9/ubi-minimal
+                FROM $BASE AS base
+                ARG APP=1
+                RUN microdnf install -y git
+
+                # the build stage does not reach the image
+                FROM golang:1.23 AS build
+                RUN go build ./...
+
+                FROM base
+                USER 1001
+                """)).containsExactly(new Step("RUN", "microdnf install -y git"), new Step("USER", "1001"));
+    }
+
+    @Test
+    @Timeout(value = 5, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void aStageNamedLikeItsOwnBaseIsNotItsOwnParent() {
+        assertThat(steps("""
+                FROM app AS app
+                RUN make
+                """)).containsExactly(new Step("RUN", "make"));
     }
 
     static List<Step> steps(String dockerfile) {
