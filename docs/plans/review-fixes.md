@@ -25,3 +25,15 @@ Order: R1, R2 and R3 (a leak, a crash, wrong facts), then R4 to R11.
 ## Questions
 
 1. R1: how the cards show their example Dockerfile. Answered 6 Nov: shown, with secret values hidden.
+
+## As built
+
+All twelve done 6 Nov. Rerunning openshift after them found two regressions, both fixed test-first: R4 had narrowed
+the `ARG A B` rewrite so far that an `ARG` mixing names with simple values, or continued over lines, failed again
+(2 files); and R12 read a continued `ARG`'s backslash as a name (4 conversions stopped rendering). After the fixes
+openshift's numbers match those before the review (64 parse failures, 165 unreadable RUNs, 2,730 of 2,833 round
+trips), with the review's bugs gone.
+
+One commit (R3, `1f647ca`) was pushed with SpotBugs failing, because the command chained the commit after `check`
+with `;`; the next commit fixed it, and every commit since is made only when `check` passes.
+
