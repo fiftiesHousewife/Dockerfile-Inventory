@@ -133,6 +133,13 @@ class FactsParserTest {
                 .isInstanceOf(ParseResult.Parsed.class);
     }
 
+    @Test
+    void theRealPostgresqlLinesWithALoneBackslashLineAfterACopyParse() throws IOException {
+        assertThat(new FactsParser().parse("pg", fixture("postgresql-13-lone-backslash.Dockerfile")))
+                .isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(Steps.of(parsed.file()))
+                        .extracting(Step::keyword).containsExactly("COPY", "RUN"));
+    }
+
     private static String fixture(String name) throws IOException {
         return Files.readString(Path.of("src/test/resources/fixtures/dockerfiles", name));
     }

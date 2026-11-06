@@ -36,7 +36,7 @@ public final class FactsParser {
      * Parses the text; if rewrite-docker rejects it, parses it again with whole-line comments blanked, as Docker
      * drops them before reading an instruction. rewrite-docker 8.90.4 rejects some valid Dockerfiles over comments
      * (an apostrophe in a comment inside a continued {@code RUN}; a {@code # key=value} comment after the first
-     * instruction, read as a parser directive), so this rescues
+     * instruction, read as a parser directive; a line holding only a backslash), so this rescues
      * them, keeping every line number. A file that parses first time keeps its comments.
      */
     public ParseResult parse(String blobSha, String text) {
@@ -66,7 +66,8 @@ public final class FactsParser {
      * Whole-line comments blanked, keeping the line count: inside a continued instruction a comment becomes a lone
      * backslash, which keeps the instruction going as Docker does, and elsewhere an empty line. The leading comment
      * block (where parser directives such as {@code # syntax=} live) and heredoc bodies (whose lines are the
-     * script's) are left as they are.
+     * script's) are left as they are. A line holding only a backslash outside an instruction is blanked too: Docker
+     * reads nothing from it, but rewrite-docker glues it onto the instruction before.
      */
     static String withoutComments(String text) {
         List<String> lines = new ArrayList<>(List.of(text.split("\n", -1)));
@@ -86,6 +87,10 @@ public final class FactsParser {
                 if (!leading) {
                     lines.set(i, continued ? "\\" : "");
                 }
+                continue;
+            }
+            if (stripped.equals("\\") && !continued) {
+                lines.set(i, "");
                 continue;
             }
             if (!stripped.isEmpty()) {

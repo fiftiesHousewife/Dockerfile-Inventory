@@ -74,3 +74,19 @@ ENV PASSWORD_FILE=$SECRETS/db
 
 Expected: an `EnvironmentVariable` for `$SECRETS`, as in `FROM`. Actual: one `Literal`, `$SECRETS/db`.
 Workaround: rules count a `$` outside single quotes as a variable.
+
+## 7. A line holding only a backslash is glued onto the instruction before it
+
+Docker joins a line ending in a backslash with the next one, so ` \` followed by `RUN ...` reads as ` RUN ...`;
+the instruction before has already ended.
+
+```dockerfile
+FROM ubi9
+COPY a /b
+ \
+RUN A="x"
+```
+
+Expected: a `COPY` and a `RUN`. Actual: `extraneous input '=' expecting ...` at the `RUN` (the same after `EXPOSE`).
+Seen in `sclorg/postgresql-container`, `13/Dockerfile.rhel9`, between comment lines and the `RUN`.
+Workaround: `FactsParser`'s retry blanks such a line.
