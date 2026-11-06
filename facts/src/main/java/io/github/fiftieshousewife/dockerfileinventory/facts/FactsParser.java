@@ -37,9 +37,10 @@ public final class FactsParser {
     private static final Pattern SPACE_BEFORE_COMMA = Pattern.compile("\"[ \\t]+,");
     private static final Pattern FLAG_DEFAULT =
             Pattern.compile("(--[A-Za-z-]+=\\S*?\\$\\{[A-Za-z_][A-Za-z0-9_]*):-");
-    /** {@code ARG} and two or more plain names, nothing else, not continued. */
-    private static final Pattern PLAIN_ARGS = Pattern.compile(
-            "(?i)(\\s*ARG\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\s+[A-Za-z_][A-Za-z0-9_]*)+)\\s*");
+    /** A line of an {@code ARG}: its keyword (absent on a continued line), its words, a trailing backslash. */
+    private static final Pattern ARG_LINE = Pattern.compile("(?i)(\\s*ARG\\s+)?\\s*(\\S.*?)(\\s*\\\\)?\\s*");
+    /** A plain name, or a name with a value that holds no quote, backslash or space. */
+    private static final Pattern SIMPLE_ARG_WORD = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*(=[^\"'\\\\\\s]*)?");
     private static final Pattern HEREDOC = Pattern.compile("<<-?['\"]?(\\w+)");
 
     private final DockerParser parser = DockerParser.builder().build();
@@ -106,6 +107,7 @@ public final class FactsParser {
     static String retryText(String text) {
         List<String> lines = new ArrayList<>(text.lines().toList());
         String heredoc = null;
+        boolean inArg = false;
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             if (heredoc != null) {
@@ -114,22 +116,31 @@ public final class FactsParser {
             }
             String rewritten = FLAG_DEFAULT.matcher(line.contains("[")
                     ? SPACE_BEFORE_COMMA.matcher(line).replaceAll("\",") : line).replaceAll("$1-");
-            lines.set(i, PLAIN_ARGS.matcher(rewritten).matches() ? argNames(rewritten) : rewritten);
+            var arg = ARG_LINE.matcher(rewritten);
+            boolean argLine = arg.matches() && (inArg || arg.group(1) != null);
+            if (argLine) {
+                rewritten = argNames(arg);
+            }
+            inArg = argLine && arg.group(3) != null;
+            lines.set(i, rewritten);
             var opens = HEREDOC.matcher(line);
             heredoc = opens.find() ? opens.group(1) : null;
         }
         return String.join("\n", lines).concat(text.endsWith("\n") ? "\n" : "").transform(FactsParser::withoutComments);
     }
 
-    /** {@code ARG A B}: each name given {@code =$NAME}. */
-    private static String argNames(String line) {
-        var arg = PLAIN_ARGS.matcher(line);
-        if (!arg.matches()) {
-            return line;
+    /**
+     * One line of an {@code ARG}, its first or a continued one: when every word is a plain name or a simple
+     * {@code NAME=value}, each plain name is given {@code =$NAME}; the trailing backslash is kept.
+     */
+    private static String argNames(java.util.regex.Matcher arg) {
+        String[] words = arg.group(2).trim().split("\\s+");
+        if (!java.util.Arrays.stream(words).allMatch(w -> SIMPLE_ARG_WORD.matcher(w).matches())) {
+            return arg.group();
         }
-        return arg.group(1) + java.util.Arrays.stream(arg.group(2).trim().split("\\s+"))
-                .map(name -> name + "=$" + name)
-                .collect(Collectors.joining(" "));
+        return arg.group(0).substring(0, arg.start(2)) + java.util.Arrays.stream(words)
+                .map(w -> w.contains("=") ? w : w + "=$" + w)
+                .collect(Collectors.joining(" ")) + (arg.group(3) == null ? "" : arg.group(3));
     }
 
     /**

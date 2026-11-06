@@ -189,7 +189,7 @@ class FactsParserTest {
     }
 
     @Test
-    void theRetrysRewritesLeaveHeredocBodiesQuotedArgsAndContinuedLinesAlone() {
+    void theRetrysRewritesLeaveHeredocBodiesAndQuotedArgsAloneAndKeepAContinuedArgsBackslashes() {
         String dockerfile = """
                 FROM ubi9
                 ARG DESC="two words" OTHER
@@ -202,7 +202,7 @@ class FactsParserTest {
                 """;
 
         assertThat(FactsParser.retryText(dockerfile)).contains(
-                "ARG DESC=\"two words\" OTHER\n", "ARG A \\\n    B\n", "python3 -c 'x = [\"a\" , \"b\"]'\n",
+                "ARG DESC=\"two words\" OTHER\n", "ARG A=$A \\\n    B=$B\n", "python3 -c 'x = [\"a\" , \"b\"]'\n",
                 "CMD [\"a\", \"b\"]");
     }
 
@@ -220,5 +220,17 @@ class FactsParserTest {
         assertThat(new FactsParser().parse("tpl", "FROM ubi9\nENV V={{ spec.version }}\nCMD [\"a\" , \"b\"]\n"))
                 .isInstanceOfSatisfying(ParseResult.Failed.class,
                         failed -> assertThat(failed.message()).startsWith(FactsParser.TEMPLATE));
+    }
+
+    @Test
+    void anArgMixingNamesAndSimpleValuesOrContinuedOverLinesParses() {
+        assertThat(new FactsParser().parse("mixed", """
+                FROM golang:1.22
+                ARG GIT_TAG GIT_COMMIT TARGETARCH CGO_ENABLED=0
+                ARG JENKINS_LTS \\
+                    CI_UPSTREAM_COMMIT \\
+                    CI_UPSTREAM_URL
+                RUN make build
+                """)).isInstanceOf(ParseResult.Parsed.class);
     }
 }

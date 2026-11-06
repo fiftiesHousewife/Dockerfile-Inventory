@@ -64,7 +64,7 @@ public final class FactExtractor {
     private static Map<String, String> globalArgs(Docker.File file) {
         Map<String, String> globalArgs = new HashMap<>();
         file.getGlobalArgs().forEach(arg -> argPairs(arg).forEach((name, value) -> {
-            if (value != null && !ownName(value, name)) {
+            if (value != null) {
                 globalArgs.put(name, substituted(value, globalArgs));
             }
         }));
@@ -74,7 +74,8 @@ public final class FactExtractor {
     /**
      * An {@code ARG}'s names and their values as written, in order; null for a name without one. Read from the text,
      * as rewrite-docker 8.90.4 folds {@code ARG A=1 B=2} into one name whose value is {@code 1 B=2} (upstream issue
-     * 12). Words split on whitespace outside quotes; quotes are removed.
+     * 12). Words split on whitespace outside quotes; quotes are removed. A default that is only the name's own
+     * reference ({@code A=$A}, how the parser's retry writes {@code ARG A B}) is no default.
      */
     public static Map<String, String> argPairs(Docker.Arg arg) {
         Docker.Argument value = arg.getValue();
@@ -82,7 +83,9 @@ public final class FactExtractor {
         Map<String, String> pairs = new java.util.LinkedHashMap<>();
         for (String word : words(written)) {
             int eq = word.indexOf('=');
-            pairs.put(eq < 0 ? word : word.substring(0, eq), eq < 0 ? null : unquoted(word.substring(eq + 1)));
+            String name = eq < 0 ? word : word.substring(0, eq);
+            String declared = eq < 0 ? null : unquoted(word.substring(eq + 1));
+            pairs.put(name, declared == null || ownName(declared, name) ? null : declared);
         }
         return pairs;
     }
@@ -157,12 +160,12 @@ public final class FactExtractor {
         }
 
         /**
-         * Each name an {@code ARG} declares: without a default (or one that is only its own name) it takes the global
-         * default inside a stage, as Docker does.
+         * Each name an {@code ARG} declares: without a default it takes the global default inside a stage, as
+         * Docker does.
          */
         private void arg(Docker.Arg arg) {
             argPairs(arg).forEach((name, declared) -> {
-                String value = declared == null || ownName(declared, name) ? globalArgs.get(name)
+                String value = declared == null ? globalArgs.get(name)
                         : substituted(declared, vars);
                 if (value != null) {
                     vars.put(name, value);
