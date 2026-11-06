@@ -101,7 +101,7 @@ public final class Steps {
      * a backslash escapes the next character outside single quotes. The same rule as lineage's
      * {@code HistoryNormaliser}; the contract in {@code testdata/contracts/} holds the two together.
      */
-    static List<String> keys(String pairs) {
+    public static List<String> keys(String pairs) {
         List<String> keys = new ArrayList<>();
         StringBuilder key = new StringBuilder();
         boolean inKey = true;

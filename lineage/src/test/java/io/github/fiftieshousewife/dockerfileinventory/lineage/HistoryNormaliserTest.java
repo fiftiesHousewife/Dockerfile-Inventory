@@ -50,6 +50,11 @@ class HistoryNormaliserTest {
     }
 
     @Test
+    void anApostropheInsideAnUnquotedValueFromTheClassicBuilderIsNotAQuote() {
+        assertThat(normalise(NOP + "ENV MSG=it's HOME=/x").text()).isEqualTo("HOME MSG");
+    }
+
+    @Test
     void envGivesItsKeyNamesInBothTheKeyValueAndTheLegacyForm() {
         assertThat(normalise("/bin/sh -c #(nop) ENV PYTHON_VERSION=3.11     PATH=$HOME/.local/bin/:$PATH"))
                 .isEqualTo(new NormalStep("ENV", "PATH PYTHON_VERSION", null, false));

@@ -73,7 +73,8 @@ public final class HistoryNormaliser {
     /**
      * The keys of {@code key=value} pairs, sorted. Words split on whitespace outside quotes; quotes are removed and
      * a backslash escapes the next character outside single quotes, so a quoted key or a value holding spaces or
-     * quotes stays whole.
+     * quotes stays whole. A quote opens only at the start of a key or value: the classic builder writes values
+     * unquoted, so {@code MSG=it's} holds an apostrophe, not a quote.
      */
     static List<String> keys(String pairs) {
         List<String> keys = new ArrayList<>();
@@ -81,7 +82,10 @@ public final class HistoryNormaliser {
         boolean inKey = true;
         char quote = 0;
         boolean escaped = false;
+        char previous = ' ';
         for (char c : pairs.toCharArray()) {
+            boolean opens = quote == 0 && (Character.isWhitespace(previous) || previous == '=');
+            previous = c;
             if (quote == '\'') {
                 if (c == '\'') {
                     quote = 0;
@@ -95,9 +99,9 @@ public final class HistoryNormaliser {
                 }
             } else if (c == '\\') {
                 escaped = true;
-            } else if (c == '"') {
+            } else if (c == '"' && (quote == '"' || opens)) {
                 quote = quote == '"' ? 0 : '"';
-            } else if (c == '\'' && quote == 0) {
+            } else if (c == '\'' && opens) {
                 quote = '\'';
             } else if (quote == 0 && Character.isWhitespace(c)) {
                 addIfAny(keys, key);
