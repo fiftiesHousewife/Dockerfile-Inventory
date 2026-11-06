@@ -107,3 +107,9 @@ Questions, answered 6 Nov:
    safe. Jinja's form is narrower: `{%` anywhere, or `{{` followed by a space and a dotted name
    (`{{ spec.version }}`); Go templates start with a dot (`{{.Id}}`, `{{ .Id }}`). (a) Call a parsing file a
    template when it holds Jinja's form; (b) keep "never".
+
+As built (fourth round): the single-quote gap was in four places, not one: the converter's `Pairs`, facts' steps,
+lineage's history normaliser (which must match facts' steps) and the rules' label keys (rule I1 would have
+counted `run` and `-i` as labels). The renderer keeps `\$` in double-quoted values but escapes every backslash in
+an exec form, which is JSON and has no `\$`. A parsing template is reported with "it parses, as its markers happen
+to be valid Dockerfile text" in place of the parser's message.

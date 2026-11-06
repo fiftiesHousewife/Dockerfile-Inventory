@@ -8,11 +8,13 @@ import java.util.function.Function;
 
 /**
  * The exact collapse passes, cheapest first: blob SHA, text-normal hash, signature hash. Parse failures have no
- * hashes: they stay one group each until the signature pass, which puts them all in one group (D5).
+ * hashes: they stay one group each until the signature pass, which puts them all in one group (D5), and templates
+ * in another.
  */
 public final class Passes {
 
     static final String PARSE_FAILURES = "parse-failures";
+    static final String TEMPLATES = "templates";
 
     private Passes() {
     }
@@ -36,15 +38,23 @@ public final class Passes {
         byKey.forEach((k, members) -> groups.add(new Group(k, members.stream().map(Dockerfile::blobSha).toList(),
                 members.stream().mapToInt(d -> d.locations().size()).sum(),
                 members.getFirst().finalPackages(), family(members.getFirst().base()))));
-        if (failuresTogether && !estate.failures().isEmpty()) {
-            groups.add(new Group(PARSE_FAILURES, estate.failures().stream().map(Failure::blobSha).toList(),
-                    estate.failures().stream().mapToInt(f -> f.locations().size()).sum(), java.util.Set.of(),
-                    PARSE_FAILURES));
-        } else {
-            estate.failures().forEach(f -> groups.add(new Group(f.blobSha(), List.of(f.blobSha()),
-                    f.locations().size(), java.util.Set.of(), PARSE_FAILURES)));
-        }
+        Map<String, List<Failure>> failures = new LinkedHashMap<>();
+        estate.failures().forEach(f -> failures.computeIfAbsent(kind(f), k -> new ArrayList<>()).add(f));
+        failures.forEach((kind, members) -> {
+            if (failuresTogether) {
+                groups.add(new Group(kind, members.stream().map(Failure::blobSha).toList(),
+                        members.stream().mapToInt(f -> f.locations().size()).sum(), java.util.Set.of(), kind));
+            } else {
+                members.forEach(f -> groups.add(new Group(f.blobSha(), List.of(f.blobSha()), f.locations().size(),
+                        java.util.Set.of(), kind)));
+            }
+        });
         return groups;
+    }
+
+    /** A template saved under a Dockerfile's name is not a parser's failure, so it is grouped apart. */
+    private static String kind(Failure failure) {
+        return failure.message().startsWith(Summary.TEMPLATE) ? TEMPLATES : PARSE_FAILURES;
     }
 
     /** The facts stage's D4: the last path segment of the base's name. */

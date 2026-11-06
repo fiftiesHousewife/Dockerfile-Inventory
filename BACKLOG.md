@@ -10,8 +10,8 @@ and one line when its gate is met.
   - Done: slice 1 (enumeration, release-index scoping, tree listing, blob fetch and dedupe, resume, rate limits).
   - Done: slice 2, walk subtrees of truncated trees (depth limit 8; submodules kept, not listed).
   - Blocked on the GHE token: slice 3 recorded fixtures; slice 4 pilot and full run.
-  - Done 6 Nov: fourteen fixes from runs on public `sclorg` repositories, across discovery, facts, rules and the
-    converter (`docs/plans/demo-fixes.md`, F1-F14); discovery now skips non-Dockerfile extensions, third-party
+  - Done 6 Nov: eighteen fixes from runs on public `sclorg` repositories, across discovery, facts, rules and the
+    converter (`docs/plans/demo-fixes.md`, F1-F18); discovery now skips non-Dockerfile extensions, third-party
     copies and symlinks.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates

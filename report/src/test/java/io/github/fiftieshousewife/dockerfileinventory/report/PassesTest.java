@@ -33,6 +33,17 @@ class PassesTest {
         assertThat(Passes.family(new Base("${BASE}", null, null))).isEqualTo("unresolved");
     }
 
+    @Test
+    void templatesFormTheirOwnGroupApartFromParseFailures() {
+        Estate estate = new Estate(List.of(), List.of(failure("bad-1", 1),
+                new Failure("tpl-1", Summary.TEMPLATE + " (FROM {{ spec.base }})", locations("tpl-1", 2))),
+                List.of(), Map.of());
+
+        assertThat(Passes.signatureGroups(estate)).containsExactly(
+                new Group("parse-failures", List.of("bad-1"), 1, Set.of(), "parse-failures"),
+                new Group("templates", List.of("tpl-1"), 2, Set.of(), "templates"));
+    }
+
     static Dockerfile dockerfile(String sha, String textHash, String signatureHash, int locations) {
         return new Dockerfile(sha, textHash, signatureHash, "ubi-minimal:9|microdnf|git|ROOT||NONE|stages=1",
                 new Base("ubi9/ubi-minimal", "9.4", null), Set.of("git"), Set.of("microdnf"), "ROOT", 1, 0,
