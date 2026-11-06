@@ -187,4 +187,22 @@ class FactsParserTest {
         assertThat(new FactsParser().parse("go", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
         assertThat(FactExtractorTest.facts(dockerfile).base().name()).isEqualTo("golang");
     }
+
+    @Test
+    void theRetrysRewritesLeaveHeredocBodiesQuotedArgsAndContinuedLinesAlone() {
+        String dockerfile = """
+                FROM ubi9
+                ARG DESC="two words" OTHER
+                ARG A \\
+                    B
+                RUN <<EOF
+                python3 -c 'x = ["a" , "b"]'
+                EOF
+                CMD ["a" , "b"]
+                """;
+
+        assertThat(FactsParser.retryText(dockerfile)).contains(
+                "ARG DESC=\"two words\" OTHER\n", "ARG A \\\n    B\n", "python3 -c 'x = [\"a\" , \"b\"]'\n",
+                "CMD [\"a\", \"b\"]");
+    }
 }
