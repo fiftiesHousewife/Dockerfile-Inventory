@@ -44,9 +44,11 @@ and one line when its gate is met.
   - Code complete. The gate (the written decision) needs real discovery and facts runs. Open: how the tables
     reach Oracle (Q1).
 
+- Phase 3 — Quality rules. Plan (detect-only): `docs/plans/phase-3.md` (questions answered 6 Nov). Gate:
+  false-positive rate per rule below threshold before auto-fix.
+
 ## Queued
 
-- Phase 3 — Quality rules. Gate: false-positive rate per rule below threshold before auto-fix.
 - Phase 4 — DSL, builders, renderer.
 - Phase 5 — Converter. Gate: round-trip equivalence; opt-in per team.
 
