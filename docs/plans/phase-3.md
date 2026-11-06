@@ -1,6 +1,6 @@
 # Phase 3 — Quality rules, detect-only: plan
 
-Status: planned 6 Nov; questions answered. This plan covers detection. Fixes are enabled one rule at a time only
+Status: planned 6 Nov; questions answered. Slices 1 and 2 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
 after people have classified a sample of that rule's findings (the false-positive gate), and H1's fix renders
 through Phase 4's renderer, so fixes get their own plan.
 
@@ -58,6 +58,11 @@ decision: security, then speed of remediation, then hygiene.
    5. H2: shell-form final entrypoint.
    6. I1: install packages without a version (`git`, not `git-2.43.5` or `git=2.43`).
    7. I2: one finding per parse failure, with its message.
+
+   As built: H1 covers every stage, since a builder stage's cache costs build time even if it never ships. I1
+   reads `name-1.2` (rpm) and `name=1.2` (apt, apk) as versioned; an rpm name with a digit after a hyphen
+   (`java-17-openjdk`) reads as versioned too, so I1 can miss it, which is acceptable for an Info rule. H2, I1 and
+   I2's tests were written together, as three independent rules, and each was seen to fail before its code.
 3. **Text rules**: S2, S3, H3, R3, over the parsed Dockerfile.
    8. S2 by name: `ENV DB_PASSWORD=hunter2` and `ARG API_TOKEN=abc`; not `ENV PASSWORD_FILE=$X` or an empty value.
    9. S2 by value shape under any name; the finding holds the hash and line, and the value appears nowhere in

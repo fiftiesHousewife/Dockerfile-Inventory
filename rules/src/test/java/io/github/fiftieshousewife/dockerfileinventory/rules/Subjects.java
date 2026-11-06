@@ -12,7 +12,8 @@ final class Subjects {
 
     static Subject of(String dockerfile) {
         return switch (new FactsParser().parse("blob", dockerfile)) {
-            case ParseResult.Parsed parsed -> Subject.parsed("blob", FactExtractor.extract(parsed.file()), parsed.file());
+            case ParseResult.Parsed parsed ->
+                    Subject.parsed("blob", FactExtractor.extract(parsed.file()), parsed.file());
             case ParseResult.Failed failed -> Subject.failed("blob", failed.message());
         };
     }

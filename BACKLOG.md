@@ -46,6 +46,7 @@ and one line when its gate is met.
 
 - Phase 3 — Quality rules. Plan (detect-only): `docs/plans/phase-3.md` (questions answered 6 Nov). Gate:
   false-positive rate per rule below threshold before auto-fix.
+  - Done: slice 1, harness; slice 2, R1, H1, H2, I1, I2 from the facts.
 
 ## Queued
 

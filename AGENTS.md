@@ -54,12 +54,13 @@ report/                     Phase 2: facts + manifest (+ lineage) -> passes, arc
                             Passes, NearDuplicates (MinHash), Archetypes (k80, k95), BaseCatalogue (EolList)
                             Tables (CSV, DDL), Summary and Dashboard (HTML); ReportRun: the run
                             run: FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [EOL_LIST] ./gradlew :report:run
+rules/                      Phase 3 (in progress): detect-only rules over facts, parsed Dockerfiles and lineage
+                            Rule, Finding, Subject, RuleRun (a failing rule is a finding, not a crash)
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
 
 ```
-rules/        Phase 3: detect-only recipes, then auto-fixes; depends on facts and renderer
 dsl/          Phase 4: instruction model, builders, renderer. Depends on nothing from OpenRewrite
 converter/    Phase 5: LST -> model -> generated builder class, round-trip gate
 ```
