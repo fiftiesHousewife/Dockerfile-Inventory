@@ -45,8 +45,9 @@ public final class FactsParser {
 
     /**
      * Whole-line comments blanked, keeping the line count: inside a continued instruction a comment becomes a lone
-     * backslash, which keeps the instruction going as Docker does, and elsewhere an empty line. The leading comment block (where parser directives such
-     * as {@code # syntax=} live) and heredoc bodies (whose lines are the script's) are left as they are.
+     * backslash, which keeps the instruction going as Docker does, and elsewhere an empty line. The leading comment
+     * block (where parser directives such as {@code # syntax=} live) and heredoc bodies (whose lines are the
+     * script's) are left as they are.
      */
     static String withoutComments(String text) {
         List<String> lines = new ArrayList<>(List.of(text.split("\n", -1)));
@@ -84,13 +85,15 @@ public final class FactsParser {
         var input = new Parser.Input(Path.of(blobSha, "Dockerfile"),
                 () -> new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
         List<Throwable> errors = new ArrayList<>();
-        List<SourceFile> files = parser.parseInputs(List.of(input), null, new InMemoryExecutionContext(errors::add)).toList();
+        List<SourceFile> files = parser.parseInputs(List.of(input), null, new InMemoryExecutionContext(errors::add))
+                .toList();
         if (!errors.isEmpty()) {
             return new ParseResult.Failed(blobSha, errors.getFirst().getMessage());
         }
         Docker.File file = (Docker.File) files.getFirst();
         return gluedLine(file)
-                .<ParseResult>map(line -> new ParseResult.Failed(blobSha, "unrecognised line merged into an argument: " + line))
+                .<ParseResult>map(line -> new ParseResult.Failed(blobSha,
+                        "unrecognised line merged into an argument: " + line))
                 .orElseGet(() -> new ParseResult.Parsed(blobSha, file));
     }
 
