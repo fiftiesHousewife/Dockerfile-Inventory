@@ -1,8 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.util.List;
 
 /** Where an image sits in the family tree. */
+@JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "kind")
 public sealed interface Parent {
 
     /** No other image's layers start this one's: a mirrored external base, or an image whose base is missing. */

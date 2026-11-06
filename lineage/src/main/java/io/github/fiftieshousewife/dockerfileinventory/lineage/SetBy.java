@@ -1,6 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 /** Who set an effective property. */
+@JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "kind")
 public sealed interface SetBy {
 
     /** An image in the chain, by its own steps; its link names the Dockerfile to change. */

@@ -34,6 +34,16 @@ public final class LineageFiles {
         return lines(TAGS).stream().map(line -> json.readValue(line, TagRow.class)).toList();
     }
 
+    /** Replaces a whole output file; the analysis rewrites every file from the inventory each run. */
+    public void write(String file, List<String> lines) {
+        try {
+            Files.createDirectories(dir);
+            Files.write(dir.resolve(file), lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public boolean hasConfig(String digest) {
         return Files.exists(configPath(digest));
     }
