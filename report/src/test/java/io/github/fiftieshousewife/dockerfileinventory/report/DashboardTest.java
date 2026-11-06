@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 class DashboardTest {
@@ -20,7 +22,7 @@ class DashboardTest {
 
     @Test
     void thePageShowsTheSummarysNumbers() {
-        String page = Dashboard.render(SUMMARY, RANKING, BASES);
+        String page = Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty());
 
         assertThat(page).startsWith("<!doctype html>")
                 .contains("1,234").contains(">42<").contains(">311<").contains(">350<")
@@ -29,16 +31,87 @@ class DashboardTest {
 
     @Test
     void textFromTheEstateIsHtmlEscaped() {
-        assertThat(Dashboard.render(SUMMARY, RANKING, BASES))
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty()))
                 .doesNotContain("<script>alert(1)</script>")
                 .contains("&lt;script&gt;alert(1)&lt;/script&gt;");
     }
 
     @Test
     void theUserPanelSaysWhetherItShowsEffectiveUsersOrUsersAsWritten() {
-        assertThat(Dashboard.render(SUMMARY, RANKING, BASES)).contains("as written in the Dockerfile");
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty()))
+                .contains("as written in the Dockerfile");
         Summary effective = new Summary(1234, 2, SUMMARY.passes(), 350, 42, 311, 0.02, 0.15, 0.25, 0.1,
                 SUMMARY.managers(), SUMMARY.users(), true, 0.9, 3);
-        assertThat(Dashboard.render(effective, RANKING, BASES)).contains("effective, from the built images");
+        assertThat(Dashboard.render(effective, RANKING, BASES, Optional.empty()))
+                .contains("effective, from the built images");
+    }
+
+    @Test
+    void withoutLineageTheLineageSectionSaysItHasNotRun() {
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty()))
+                .contains("<h2>Lineage</h2>").contains("Lineage has not run");
+    }
+
+    private static final LineageView CHAIN = LineageView.read(LineageViewTest.CHAIN, LineageViewTest.LOCATIONS);
+
+    @Test
+    void lineageTilesCountImagesCoverageLinksAndTheThreeLists() {
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.of(CHAIN))).contains(
+                "<div class=\"value\">5</div><div class=\"label\">Images in Artifactory</div>",
+                "<div class=\"value\">100.0%</div><div class=\"label\">With a known parent</div>",
+                "<div class=\"value\">4</div><div class=\"label\">Linked to a Dockerfile</div>",
+                "<div class=\"value\">0</div><div class=\"label\">No Dockerfile found (gaps)</div>",
+                "<div class=\"value\">1</div><div class=\"label\">Built outside (external bases)</div>",
+                "<div class=\"value\">0</div><div class=\"label\">On an outdated base</div>");
+    }
+
+    @Test
+    void aSmallRunShowsEveryImageUnderItsParentWithItsDockerfiles() {
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.of(CHAIN))).contains("""
+                <ul class="tree"><li><code>docker-local/centos/centos:stream9</code> · no Dockerfile\
+                <ul><li><code>docker-local/sclorg/s2i-core-c9s:c9s</code> · probable: \
+                <code>sclorg/s2i-base-container: core/Dockerfile.c9s</code>\
+                <ul><li><code>docker-local/sclorg/nginx-container-1-24-c9s:c9s</code> · probable: \
+                <code>sclorg/nginx-container: 1.20/Dockerfile.rhel8</code>, \
+                <code>sclorg/nginx-container: 1.22/Dockerfile.c9s</code>, \
+                <code>sclorg/nginx-container: 1.24/Dockerfile.c8s</code>, \
+                <code>sclorg/nginx-container: 1.24/Dockerfile.c9s</code></li>\
+                <li><code>docker-local/sclorg/s2i-base-c9s:c9s</code> · probable: \
+                <code>sclorg/s2i-base-container: base/Dockerfile.c9s</code>\
+                <ul><li><code>docker-local/sclorg/s2i-python-container-3-12-c9s:c9s</code> · probable: \
+                <code>sclorg/s2i-python-container: 3.12/Dockerfile.c9s</code></li></ul></li></ul>\
+                </li></ul></li></ul>""");
+    }
+
+    @Test
+    void aLargeRunShowsTheTopTwentyOfEachActionableListInsteadOfTheTree() {
+        List<LineageView.ImageRow> images = IntStream.range(0, 60)
+                .mapToObj(i -> new LineageView.ImageRow("r/app-" + i + ":1", "r/base:2", "NONE", List.of())).toList();
+        List<String> gaps = IntStream.range(0, 25).mapToObj(i -> "r/app-" + i + ":1").toList();
+        LineageView large = new LineageView(new LineageView.Counts(61, 1.0, Map.of("NONE", 61), 25, 0, 1), images,
+                List.of(new LineageView.BaseUse("r/base:2", 60)), gaps,
+                List.of(new LineageView.OutdatedRow("r/app-7:1", "r/base:1", "r/base:2")));
+
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.of(large)))
+                .doesNotContain("<ul class=\"tree\">")
+                .contains("<h3>No Dockerfile found (top 20 of 25, newest first)</h3>")
+                .contains("<code>r/app-19:1</code>").doesNotContain("<code>r/app-20:1</code>")
+                .contains("<h3>On an outdated base (1)</h3>")
+                .contains("<td class=\"code\">r/app-7:1</td><td class=\"code\">r/base:1</td>"
+                        + "<td class=\"code\">r/base:2</td>")
+                .contains("<h3>Most-used bases (1)</h3>")
+                .contains("<td class=\"code\">r/base:2</td><td class=\"num\">60</td>");
+    }
+
+    @Test
+    void anImageLinkedToManyDockerfilesListsFiveAndCountsTheRest() {
+        List<String> files = IntStream.range(0, 8).mapToObj(i -> "org/repo: " + i + "/Dockerfile").toList();
+        LineageView view = new LineageView(new LineageView.Counts(1, 1.0, Map.of("PROBABLE", 1), 0, 0, 0),
+                List.of(new LineageView.ImageRow("r/app:1", null, "PROBABLE", files)),
+                List.of(), List.of(), List.of());
+
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.of(view)))
+                .contains("<code>org/repo: 4/Dockerfile</code> and 3 more</li>")
+                .doesNotContain("org/repo: 5/Dockerfile");
     }
 }

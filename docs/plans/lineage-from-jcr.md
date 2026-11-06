@@ -1,6 +1,6 @@
 # Lineage in the report, and fixtures from the local JCR run: plan
 
-Status: planned 6 Nov; questions answered 6 Nov (below).
+Status: slice A built 6 Nov; slice B waits on the recorded replies.
 
 The local JCR run (`scripts/lineage-demo.sh`, BACKLOG Phase 1b) built four sclorg images from discovered
 Dockerfiles and ran lineage against them: every parent right, every image linked to its own Dockerfile. The
@@ -56,3 +56,12 @@ Tests, in order:
 Answers (6 Nov): 1, the actionable lists, each top 20, with the whole family tree for a run under 50 images;
 2, later (recorded in BACKLOG); 3, the `openshift` organisation, through discovery, facts, report, rules and the
 converter.
+
+## As built (slice A)
+
+`LineageView` reads lineage's files and names everything: an image by its newest tag (`repository/image:tag`), its
+parent by that name, its Dockerfiles as `repository: path`. Under 50 images the dashboard shows the family tree;
+from 50 up, the gaps, outdated bases and most-used bases, each top 20. An image lists five Dockerfiles and counts
+the rest. The real run's output is the report's `fixtures/lineage-chain`. The golden page (test 5) comes with
+slice B's recorded replies.
+

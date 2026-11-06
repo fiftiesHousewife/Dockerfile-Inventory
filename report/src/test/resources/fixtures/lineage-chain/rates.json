@@ -1,0 +1,16 @@
+{
+  "tags" : 5,
+  "images" : 5,
+  "skipped" : { },
+  "lineageCoverage" : 1.0,
+  "ambiguousParents" : 0,
+  "links" : {
+    "PROBABLE" : 4,
+    "NONE" : 1
+  },
+  "parentMissing" : 0,
+  "onbuildChildren" : 0,
+  "gaps" : 0,
+  "externalBases" : 1,
+  "outdatedBases" : 0
+}

@@ -6,9 +6,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
@@ -53,7 +55,16 @@ public final class ReportRun {
         tables.forEach(t -> write("tables/" + t.name() + ".csv", t.csv()));
         write("tables/ddl.sql", tables.stream().map(Table::ddl).collect(Collectors.joining("\n")));
         write("dashboard.html", Dashboard.render(
-                Summary.of(estate, passes.subList(0, 3), archetypeGroups.size(), ranking, bases), ranking, bases));
+                Summary.of(estate, passes.subList(0, 3), archetypeGroups.size(), ranking, bases), ranking, bases,
+                Optional.ofNullable(lineageDir).map(dir -> LineageView.read(dir, locations(estate)))));
+    }
+
+    /** Each blob's locations, Dockerfiles and failures alike, for naming the Dockerfiles an image links to. */
+    private static Map<String, List<Location>> locations(Estate estate) {
+        Map<String, List<Location>> locations = new HashMap<>();
+        estate.dockerfiles().forEach(d -> locations.put(d.blobSha(), d.locations()));
+        estate.failures().forEach(f -> locations.put(f.blobSha(), f.locations()));
+        return locations;
     }
 
     private String pretty(Object value) {

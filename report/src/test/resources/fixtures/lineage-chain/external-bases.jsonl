@@ -1,0 +1,1 @@
+{"configDigest":"sha256:cdc65e3dc1b675127b1e26ef79884f63cae4c46c00a89f0c18cb5c617bec62c8","references":[{"repository":"docker-local","image":"centos/centos","tag":"stream9","lastPushed":"2026-11-06T18:04:27.142Z"}],"lastPushed":"2026-11-06T18:04:27.142Z"}
