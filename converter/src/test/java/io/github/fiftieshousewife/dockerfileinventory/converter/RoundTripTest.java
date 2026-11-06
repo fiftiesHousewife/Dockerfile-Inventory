@@ -89,4 +89,12 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void aBaseDigestFromABuildArgumentConvertsAndPasses() {
+        String original = "ARG BASE_DOCKER_SHA\nFROM quay.io/prometheus/busybox@sha256:${BASE_DOCKER_SHA}\n"
+                + "COPY app /bin/app\n";
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

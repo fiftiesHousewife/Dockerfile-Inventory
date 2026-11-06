@@ -12,6 +12,14 @@ import org.junit.jupiter.api.Test;
 class ModelTest {
 
     @Test
+    void aDigestFromABuildArgumentIsModelledButAPlaceholderIsNot() {
+        assertThat(new BaseImage("quay.io/prometheus/busybox", null, "sha256:${BASE_DOCKER_SHA}").digest())
+                .isEqualTo("sha256:${BASE_DOCKER_SHA}");
+        assertThat(new BaseImage("busybox", null, "sha256:$SHA").digest()).isEqualTo("sha256:$SHA");
+        assertThatIllegalArgumentException().isThrownBy(() -> new BaseImage("busybox", null, "sha256..."));
+    }
+
+    @Test
     void invalidValuesAreRefusedWhenTheModelIsBuilt() {
         assertThatIllegalArgumentException().isThrownBy(() -> new BaseImage("ubi9/ubi-minimal", "9.4", "sha256:abc"))
                 .withMessageContaining("digest");
