@@ -1,6 +1,6 @@
 # Phase 2 — Cluster and report: plan
 
-Status: planned 6 Nov; questions answered. Slices 1 to 5 built 6 Nov. Slices are built test-first, as in the earlier phases.
+Status: planned 6 Nov; questions answered. Slices 1 to 6 built 6 Nov. Slices are built test-first, as in the earlier phases.
 
 Phase 2 produces the number that sets strategy: how many archetypes cover 80% and 95% of the estate. Roughly 300
 or fewer at 95% means golden base images first and a small DSL; a long, diverse tail means recipes first and the
@@ -84,6 +84,10 @@ agreed (the decision paper is written by people from these numbers, not by the p
    `bases.csv`, `images.csv` (from lineage when present). Values are escaped; nothing secret-shaped is written.
    20. Each table's header and one row per record; commas, quotes and newlines escaped.
    21. The DDL creates each table with the CSV's columns and types.
+
+   As built: four tables, `dockerfiles` (one row per blob, failures included with their message and the
+   `parse-failures` archetype), `locations`, `archetypes` and `bases`. `images` is left until loading is decided
+   (Q1), since lineage's own files already hold it. Text columns are `VARCHAR2(4000)`.
 
 7. **Dashboard.** `dashboard.html`, one self-contained page (no external scripts): files found, unique blobs,
    unique text-normal, unique signatures, k80 and k95, parse-failure and opaque-`RUN` rates, bases by family and

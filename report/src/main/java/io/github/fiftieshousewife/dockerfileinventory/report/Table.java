@@ -25,7 +25,7 @@ public record Table(String name, List<Column> columns, List<List<Object>> rows) 
 
     public Table {
         columns = List.copyOf(columns);
-        rows = rows.stream().map(row -> Collections.unmodifiableList(new ArrayList<>(row))).toList();
+        rows = List.copyOf(rows.stream().map(row -> Collections.unmodifiableList(new ArrayList<>(row))).toList());
     }
 
     /** RFC 4180: CRLF line ends; a field holding a comma, quote or line break is quoted, quotes doubled. */
