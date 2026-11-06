@@ -22,7 +22,7 @@ import org.openrewrite.docker.tree.Docker;
 public final class Convert {
 
     private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();
-    /** A heredoc opened on an instruction's first line ({@code <<EOF}, {@code <<-'EOF'}): its body is kept as written. */
+    /** A heredoc opened on an instruction's first line ({@code <<EOF}, {@code <<-'EOF'}); its body is kept. */
     private static final java.util.regex.Pattern HEREDOC = java.util.regex.Pattern.compile("<<-?['\"]?\\w+");
     private static final java.util.regex.Pattern BARE_VARIABLE =
             java.util.regex.Pattern.compile("\\$([A-Za-z_][A-Za-z0-9_]*)");

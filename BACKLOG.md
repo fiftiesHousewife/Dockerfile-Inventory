@@ -13,6 +13,9 @@ and one line when its gate is met.
   - Done 6 Nov: eighteen fixes from runs on public `sclorg` repositories, across discovery, facts, rules and the
     converter (`docs/plans/demo-fixes.md`, F1-F18); discovery now skips non-Dockerfile extensions, third-party
     copies and symlinks.
+  - Done 6 Nov: fixes from the `openshift` run (`docs/plans/openshift-fixes.md`): unreadable RUNs 10.7% -> 2.7%,
+    parse failures 3.4% -> 2.3%, round trip 2,603 -> 2,730 of 2,833. Later: S4 (loops, case, groups). Next estates:
+    konflux-ci, redhat-developer, docker-library, bitnami (`docs/plans/more-estates.md`).
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.

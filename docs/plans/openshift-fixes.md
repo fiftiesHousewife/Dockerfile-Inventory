@@ -1,6 +1,6 @@
 # Fixes from the openshift run: plan
 
-Status: S1-S3 built 6 Nov (unreadable RUNs 663 -> 162); P1 built; P2 next.
+Status: built 6 Nov except S4 (loops, case, groups), left for later.
 
 `openshift` (862 repositories, 3,180 locations, 2,833 files): 97 parse failures besides 32 templates (3.4%), 663 of
 6,019 shell-form `RUN`s too complex to read (10.7%), and 230 files failing the round trip. Fixed test-first, using
@@ -33,4 +33,15 @@ lines behind the two unclassified probe cases read.
 | P2 | 8 `extraneous input 'TARGETARCH'`, 7 `mismatched input 'CMD'`, 4 heredoc `<<EOF`, 3 `token recognition error at '\'`, and smaller groups | Done 6 Nov, in part: `ARG A B` is upstream issue 10, worked around in the retry (`ARG A=$A B=$B`); a heredoc after a command in `RUN` is issue 11, no safe workaround; discovery no longer takes `*.dockerignore`. Correctly rejected, left as failures: `ENV PATH` with no value, a bare `HEALTHCHECK`, `CROSS_BUILD_COPY` (a Kubernetes test-image preprocessor). Discovery skips `testdata/`, `testfiles/` and `testfiles-negative/` folders (owner's choice, 6 Nov) |
 | C1 | 77 round trips: "the target does not support" heredocs or `RUN --mount` | Done 6 Nov: the round trip renders for a builder with the features the original already uses |
 | C2 | 10 digests that are not `sha256:` and 64 hex characters | Done 6 Nov: 3 are a build argument (`sha256:${BASE_DOCKER_SHA}`), now modelled; 7 are a literal placeholder (`@sha256...`), which Docker rejects too, left as failures |
-| C3 | 10 conversions convert back to a different model; `USER $UID:$GID` becomes `${UID}:${GID}` | Find each cause; compare `$X` and `${X}` as the same |
+| C3 | 10 conversions convert back to a different model; `USER $UID:$GID` becomes `${UID}:${GID}` | Done 6 Nov: the round trip compares `$X` and `${X}` as Docker does; exec-form JSON escapes (`\"`) are decoded, not kept; a quoted `USER "$GF_UID"` is modelled with braces like a bare one; a `COPY` heredoc is kept as written |
+
+## As built: the numbers (openshift, same discovery output)
+
+| | Before | After |
+| --- | --- | --- |
+| Unreadable shell `RUN`s | 663 (10.7%) | 165 (2.7%; more files parse now) |
+| Parse failures, templates left out | 97 (3.4%) | 64 (2.3%), all upstream bugs or broken files |
+| Round trip passed | 2,603 of 2,833 | 2,730 of 2,833; the rest do not parse, or hold a placeholder digest |
+
+The discovery changes (`*.dockerignore`, test-input folders) apply from the next discovery run.
+
