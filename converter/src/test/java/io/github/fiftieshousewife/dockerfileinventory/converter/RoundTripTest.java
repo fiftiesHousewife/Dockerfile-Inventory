@@ -76,4 +76,17 @@ class RoundTripTest {
                 .containsExactly(new Instruction.Label(java.util.Map.of("Version", "1.4", "Release", "8")));
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void anOriginalUsingRunMountsAndHeredocsIsRenderedForABuilderThatHasThem() {
+        String original = """
+                FROM maven:3
+                RUN --mount=type=cache,target=/root/.m2 mvn package
+                RUN <<EOF
+                echo built
+                EOF
+                """;
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

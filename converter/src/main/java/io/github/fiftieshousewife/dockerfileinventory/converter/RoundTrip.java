@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.DockerfileRenderer;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Target;
+import io.github.fiftieshousewife.dockerfileinventory.facts.FactExtractor;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsParser;
 import io.github.fiftieshousewife.dockerfileinventory.facts.ParseResult;
 import io.github.fiftieshousewife.dockerfileinventory.facts.Step;
@@ -21,13 +22,13 @@ public record RoundTrip(boolean passed, String difference) {
     private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();
 
     public static RoundTrip check(String original, Dockerfile model) {
+        Docker.File before = parse(original);
         String rendered;
         try {
-            rendered = DockerfileRenderer.render(model, Target.DEFAULT);
+            rendered = DockerfileRenderer.render(model, before == null ? Target.DEFAULT : targetFor(before));
         } catch (IllegalArgumentException e) {
             return fail("the conversion does not render: " + e.getMessage());
         }
-        Docker.File before = parse(original);
         Docker.File after = parse(rendered);
         if (before == null || after == null) {
             return fail(before == null ? "the original does not parse" : "the rendered conversion does not parse");
@@ -50,6 +51,15 @@ public record RoundTrip(boolean passed, String difference) {
             }
         }
         return new RoundTrip(true, null);
+    }
+
+    /**
+     * A builder that supports what the original uses: a Dockerfile with heredocs or {@code RUN --mount} was built by
+     * one that has them, so the conversion is held to the same, no more.
+     */
+    static Target targetFor(Docker.File original) {
+        List<String> features = FactExtractor.extract(original).buildKitFeatures();
+        return new Target(features.contains("heredoc"), features.contains("run-mount"));
     }
 
     private static RoundTrip fail(String difference) {
