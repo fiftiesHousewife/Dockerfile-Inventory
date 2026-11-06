@@ -4,8 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class HistoryNormaliserTest {
+
+    private static final String NOP = "/bin/sh -c #(nop) ";
 
     @Test
     void runGivesItsCommandWithTheShellPrefixRemovedAndWhitespaceCollapsed() {
@@ -31,9 +35,9 @@ class HistoryNormaliserTest {
 
     @Test
     void labelGivesItsSortedKeyNamesWithQuotedKeysUnquotedAndQuotedValuesKeptWhole() {
-        assertThat(normalise("/bin/sh -c #(nop) LABEL vendor=\"Red Hat, Inc.\"       maintainer=\"Red Hat, Inc.\"").text())
+        assertThat(normalise(NOP + "LABEL vendor=\"Red Hat, Inc.\"       maintainer=\"Red Hat, Inc.\"").text())
                 .isEqualTo("maintainer vendor");
-        assertThat(normalise("/bin/sh -c #(nop) LABEL \"org.opencontainers.image.revision\"=\"0e05\" \"build-date\"=\"2026\"")
+        assertThat(normalise(NOP + "LABEL \"org.opencontainers.image.revision\"=\"0e05\" \"build-date\"=\"2026\"")
                 .text()).isEqualTo("build-date org.opencontainers.image.revision");
         assertThat(normalise("/bin/sh -c #(nop) LABEL summary=\"say \\\"hi there\\\" b=c\" io.k8s.name=x"))
                 .isEqualTo(new NormalStep("LABEL", "io.k8s.name summary", null, false));
@@ -75,7 +79,7 @@ class HistoryNormaliserTest {
         assertThat(normalise("/bin/sh -c #(nop) COPY file:9358 in /usr/share/buildinfo/content-sets.json      ")
                 .builderAdded()).isTrue();
         assertThat(normalise("/bin/sh -c #(nop) COPY dir:eccb in /root/buildinfo/      ").builderAdded()).isTrue();
-        assertThat(normalise("/bin/sh -c #(nop) LABEL \"architecture\"=\"x86_64\" \"vcs-ref\"=\"6\" \"build-date\"=\"2026\"")
+        assertThat(normalise(NOP + "LABEL \"architecture\"=\"x86_64\" \"vcs-ref\"=\"6\" \"build-date\"=\"2026\"")
                 .builderAdded()).isTrue();
         assertThat(normalise("/bin/sh -c #(nop) COPY dir:29d1 in /opt/app/buildinfo-docs").builderAdded()).isFalse();
         assertThat(normalise("/bin/sh -c #(nop) LABEL vcs-ref=6").builderAdded()).isFalse();
@@ -89,6 +93,14 @@ class HistoryNormaliserTest {
                         false));
         assertThat(HistoryNormaliser.normalise(new HistoryStep("/bin/sh -c make", "built by hand", false, null)).from())
                 .isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ubi9-ubi-minimal.json", "ubi9-ubi.json", "ubi9-python-311.json", "ubi9-nodejs-20.json"})
+    void everyStepOfAPublicBuildahBuiltImageIsRecognised(String fixture) {
+        assertThat(ImageConfig.parse(Fixtures.history(fixture)).orElseThrow().history())
+                .map(HistoryNormaliser::normalise)
+                .noneMatch(step -> step.keyword().equals("OTHER"));
     }
 
     private static NormalStep normalise(String createdBy) {

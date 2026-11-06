@@ -41,6 +41,7 @@ lineage/                    Phase 1b (in progress): Artifactory images -> family
                             tags, manifests and blobs, storage API for last push
                             ImageNodes: one tag -> manifest (amd64 entry of a list) -> ImageConfig, or Skipped
                             Lineage: every image's Parent (Root, Of, Ambiguous) from layer prefixes and history
+                            HistoryNormaliser: Buildah created_by -> NormalStep (keyword, comparable text, FROM)
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slices 1 to 3 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slices 1 to 4 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -154,6 +154,12 @@ or queued for curation; gap list published and reviewed.
        `/root/buildinfo/`, and a `LABEL` whose keys include `build-date` and `vcs-ref`.
    8. A `FROM <reference>` comment becomes `from`.
    9. Every step in the four public images normalises to something other than `OTHER`.
+
+   As built: test 9 passed when first written, since tests 1 to 8 were written from the same strings; removing
+   `WORKDIR` from the recognised keywords made it fail for two of the images. `HEALTHCHECK` and `ARG` are not
+   recognised: Buildah left neither in the samples, so they stay `OTHER` until real history shows them. Exec-form
+   values (`CMD ["a", "b"]`) are kept as written; whether Buildah rewrites their spacing is unknown, so slice 5
+   compares them with JSON whitespace ignored.
 5. **Dockerfile links**: candidates whose resolved final `FROM` matches the lineage parent; ordered alignment of the
    image's own history steps against each candidate's instructions; tiers per D2.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,

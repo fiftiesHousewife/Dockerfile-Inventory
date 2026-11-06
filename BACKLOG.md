@@ -23,8 +23,9 @@ and one line when its gate is met.
   - Done: slice 1, the Artifactory REST client (`lineage` module), against hand-written fixtures.
   - Done: slice 2, image nodes: one tag to its amd64 config, or a counted skip.
   - Done: slice 3, the family tree from layer prefixes (OCI chain IDs), ambiguous parents reported.
-  - Next: slice 4, history normaliser, from public Buildah-built images. Recorded fixtures wait on an
-    Artifactory token.
+  - Done: slice 4, history normaliser, from public Konflux/Buildah-built UBI images.
+  - Next: slice 5, Dockerfile links; its first question is where each Dockerfile's instruction list comes from.
+    Recorded fixtures wait on an Artifactory token.
 
 ## Queued
 
