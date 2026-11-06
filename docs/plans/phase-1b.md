@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slices 1 to 6 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slices 1 to 7 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -272,6 +272,11 @@ or queued for curation; gap list published and reviewed.
    4. An image whose parent is not the newest push of the parent's image name is outdated, naming the newer image.
    5. The same image name in two repositories is one name.
    6. A parent that is the newest push is not outdated; for an ambiguous parent, it is enough that any candidate is.
+
+   As built: test 6 found that a parent whose references carry no push time was reported as outdated, with no
+   newer image named; such names are now skipped. Breaking the one-name rule (naming images with their
+   repository) made the promotion test fail. Writing the three lists to `gaps.jsonl`, `external-bases.jsonl` and
+   `outdated-bases.jsonl` belongs to the run (slice 8).
 8. **Run and rates**: lineage coverage, link tiers, gap count, skipped non-amd64 images.
 
 ## Phase 2 after this

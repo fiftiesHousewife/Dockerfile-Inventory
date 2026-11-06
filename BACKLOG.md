@@ -30,7 +30,9 @@ and one line when its gate is met.
   - Done: slice 5b, links: exact (strong or probable), weak by ordered alignment on the same base, none, and the
     "parent missing" finding.
   - Done: slice 6, the effective fold: each image's properties with the image (and Dockerfile group) that set them.
-  - Next: slice 7, gap list, external bases and outdated bases. Recorded fixtures wait on an Artifactory token.
+  - Done: slice 7, gaps, external bases and outdated bases.
+  - Next: slice 8, the run: reads Artifactory, links, folds, writes the files and rates. Recorded fixtures wait
+    on an Artifactory token.
 
 ## Queued
 

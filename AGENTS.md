@@ -45,6 +45,7 @@ lineage/                    Phase 1b (in progress): Artifactory images -> family
                             HistoryNormaliser: Buildah created_by -> NormalStep (keyword, comparable text, FROM)
                             OwnSteps and Links: an image's own steps -> its Dockerfile group, tier, parent missing
                             Fold: each image's effective user, env, labels, ... with the image that set each one
+                            Gaps: unlinked images (gaps, external bases) and images built on an outdated base
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

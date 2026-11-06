@@ -48,9 +48,11 @@ public final class Gaps {
             candidates.stream()
                     .flatMap(c -> references.getOrDefault(c, List.of()).stream().map(Reference::image))
                     .distinct()
+                    .filter(newestByName::containsKey)
                     .filter(name -> !candidates.contains(newestByName.get(name)))
                     .sorted()
-                    .forEach(name -> outdated.add(new Outdated(image, candidates.getFirst(), name, newestByName.get(name))));
+                    .map(name -> new Outdated(image, candidates.getFirst(), name, newestByName.get(name)))
+                    .forEach(outdated::add);
         });
         outdated.sort(Comparator.comparing(Outdated::image).thenComparing(Outdated::imageName));
         return outdated;
