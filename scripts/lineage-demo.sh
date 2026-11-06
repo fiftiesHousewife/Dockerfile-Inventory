@@ -13,7 +13,7 @@
 #   SCOPE=all scripts/lineage-demo.sh       # every Dockerfile.c9s discovery found (45 on sclorg; hours, emulated)
 #
 # Settings (environment): DISCOVERY_DIR (out/demo4/discovery), FACTS_DIR (out/demo5/facts), OUT (out/lineage-demo),
-# ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, POSTGRES_IMAGE, BUILDAH_IMAGE,
+# JCR_PORT (the Mac's port for JCR, 8082), ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, POSTGRES_IMAGE, BUILDAH_IMAGE,
 # ARTIFACTORY_TOKEN (skips creating one). Rerunning is safe: running containers, an existing repository and
 # existing clones are reused. The database password is a fixed local one: PostgreSQL is reachable only on the
 # demo's Docker network. Remove everything afterwards:
@@ -33,7 +33,8 @@ JCR=inventory-jcr
 POSTGRES=inventory-postgres
 REPOSITORY=docker-local
 REGISTRY=$JCR:8082/$REPOSITORY
-API=http://localhost:8082/artifactory
+JCR_PORT=${JCR_PORT:-8082}
+API=http://localhost:$JCR_PORT/artifactory
 
 step() { printf '\n== %s\n' "$*"; }
 die() { printf 'stopped: %s\n' "$*" >&2; exit 1; }
@@ -64,9 +65,15 @@ for _ in $(seq 60); do
 done
 docker exec $POSTGRES pg_isready -q -U artifactory -d artifactory || die "PostgreSQL did not start; docker logs $POSTGRES"
 echo " up"
+# A JCR published on another port is started again on JCR_PORT; its data volume is kept.
+if [[ -n $(docker ps -q -f name=^$JCR$) ]] && ! docker port $JCR 8082/tcp | grep -q ":$JCR_PORT\$"; then
+    docker rm -f $JCR >/dev/null
+fi
 if [[ -z $(docker ps -q -f name=^$JCR$) ]]; then
+    taken=$(lsof -nP -iTCP:"$JCR_PORT" -sTCP:LISTEN 2>/dev/null | awk 'NR > 1 {print $1 " (pid " $2 ")"}' | sort -u)
+    [[ -z $taken ]] || die "port $JCR_PORT is already taken by: $taken. Free it, or choose another: JCR_PORT=18082"
     docker rm -f $JCR >/dev/null 2>&1 || true
-    docker run -d --name $JCR --network $NETWORK -p 8081:8081 -p 8082:8082 \
+    docker run -d --name $JCR --network $NETWORK -p "$JCR_PORT:8082" \
         -v $JCR:/var/opt/jfrog/artifactory \
         -e JF_SHARED_DATABASE_TYPE=postgresql -e JF_SHARED_DATABASE_DRIVER=org.postgresql.Driver \
         -e JF_SHARED_DATABASE_URL=jdbc:postgresql://$POSTGRES:5432/artifactory \
@@ -93,7 +100,7 @@ if ! repository_exists; then
         -d "{\"key\":\"$REPOSITORY\",\"rclass\":\"local\",\"packageType\":\"docker\",\"dockerApiVersion\":\"V2\"}" || true
 fi
 if ! repository_exists; then
-    echo "JCR would not create the repository through its API. In http://localhost:8082/ui (admin / $ADMIN_PASSWORD):"
+    echo "JCR would not create the repository through its API. In http://localhost:$JCR_PORT/ui (admin / $ADMIN_PASSWORD):"
     echo "Administration > Repositories > Create a Repository > Local > Docker, key '$REPOSITORY'. Then press Enter."
     read -r
     repository_exists || die "still no local Docker repository named $REPOSITORY"
@@ -168,7 +175,7 @@ docker run --rm --privileged --platform linux/amd64 --network $NETWORK \
 step "4. Lineage, then report and rules with it"
 if [[ -z ${ARTIFACTORY_TOKEN:-} ]]; then
     ARTIFACTORY_TOKEN=$(curl -s -u "admin:$ADMIN_PASSWORD" -X POST -H 'Content-Type: application/json' \
-        http://localhost:8082/access/api/v1/tokens \
+        "http://localhost:$JCR_PORT/access/api/v1/tokens" \
         -d '{"scope":"applied-permissions/admin","expires_in":86400}' | jq -r '.access_token // empty')
 fi
 [[ -n $ARTIFACTORY_TOKEN ]] || die "no token: create one in the UI (Administration > User Management > Access \
