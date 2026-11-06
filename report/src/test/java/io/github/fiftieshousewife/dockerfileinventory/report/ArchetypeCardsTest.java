@@ -67,4 +67,19 @@ class ArchetypeCardsTest {
                 "FROM ubi9/ubi-minimal:9.4\nUSER 1001\n"));
         assertThat(cards.get(1).exampleText()).isNull();
     }
+
+    @Test
+    void aTemplatesCardTakesItsExampleFromTheFailuresAndItsSentenceFromItsGroup(@TempDir Path discovery)
+            throws IOException {
+        Files.createDirectories(discovery.resolve("blobs"));
+        Files.writeString(discovery.resolve("blobs/t1"), "FROM {{ spec.base }}\n");
+        Estate estate = new Estate(List.of(), List.of(new Failure("t1", "a template, not a Dockerfile (x)",
+                List.of(new Location("org/tpl", "src/Dockerfile", "RELEASED")))), List.of(), Map.of());
+        Archetype templates = new Archetype(1, "templates", 1, List.of("t1"), "templates", "t1", List.of("org/tpl"));
+
+        assertThat(ArchetypeCards.of(new Ranking(List.of(templates), 1, 1, 1), estate, discovery).getFirst())
+                .isEqualTo(new ArchetypeCards.Card(1,
+                        "Templates saved under a Dockerfile's name (Jinja and similar), not Dockerfiles.", 1, 1,
+                        List.of("org/tpl"), "org/tpl: src/Dockerfile", "FROM {{ spec.base }}\n"));
+    }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,7 +14,10 @@ final class ArchetypeCards {
 
     private static final int PACKAGES_NAMED = 4;
 
-    /** One archetype as the dashboard shows it; the example's text is null when its blob is not on disk. */
+    /**
+     * One archetype as the dashboard shows it. The example is the representative file (a failure's, for the
+     * templates and parse-failure groups); its text is null when the file or its location is unknown.
+     */
     record Card(int rank, String sentence, int files, int locations, List<String> repositories,
                 String exampleLocation, String exampleText) {
 
@@ -28,14 +32,18 @@ final class ArchetypeCards {
     static List<Card> of(Ranking ranking, Estate estate, Path discoveryDir) {
         Map<String, Dockerfile> byBlob = estate.dockerfiles().stream()
                 .collect(Collectors.toMap(Dockerfile::blobSha, d -> d, (a, b) -> a));
+        Map<String, List<Location>> locations = new HashMap<>();
+        estate.failures().forEach(f -> locations.put(f.blobSha(), f.locations()));
+        estate.dockerfiles().forEach(d -> locations.put(d.blobSha(), d.locations()));
         return ranking.archetypes().stream().limit(CARDS).map(a -> {
             Dockerfile example = byBlob.get(a.representative());
             String base = example == null ? "an unknown base" : example.base().name()
                     + (example.base().tag() == null ? "" : ":" + example.base().tag());
-            String location = example == null || example.locations().isEmpty() ? null
-                    : example.locations().getFirst().repository() + ": " + example.locations().getFirst().path();
+            List<Location> where = locations.getOrDefault(a.representative(), List.of());
+            String location = where.isEmpty() ? null : where.getFirst().repository() + ": " + where.getFirst().path();
+            String text = location == null ? null : text(discoveryDir.resolve("blobs").resolve(a.representative()));
             return new Card(a.rank(), sentence(a.signature(), base), a.blobShas().size(), a.locations(),
-                    a.repositories(), location, text(discoveryDir.resolve("blobs").resolve(a.representative())));
+                    a.repositories(), location, text);
         }).toList();
     }
 
