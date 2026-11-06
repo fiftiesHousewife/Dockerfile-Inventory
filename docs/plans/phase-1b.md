@@ -4,7 +4,7 @@ Status: questions answered 6 Nov; ready to build. Slices are built test-first, a
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
-list: images no scanned Dockerfile matches. Module: `lineage`. Inputs: Artifactory REST and AQL, `facts.jsonl`,
+list: images no scanned Dockerfile matches. Module: `lineage`. Inputs: Artifactory REST (never AQL), `facts.jsonl`,
 `manifest.jsonl`. Gate: lineage for at least 95% of Artifactory images; every internal base linked at strong tier
 or queued for curation; gap list published and reviewed.
 
@@ -31,8 +31,13 @@ or queued for curation; gap list published and reviewed.
 ## Slices (test list per slice is written before its code)
 
 1. **Artifactory client** behind an interface, with fakes built from documented shapes until recordings exist:
-   AQL for `manifest.json` and `list.manifest.json` per local Docker repository, paged by `offset`; manifest and
-   config blob downloads from the tag folder. Dedupe on config digest before fetching.
+   REST only, never AQL (decided 6 Nov). Local Docker repositories from `GET /api/repositories?type=local&packageType=docker`;
+   per repository, images from the Docker v2 catalogue `GET /api/docker/<repo>/v2/_catalog` and tags from
+   `.../v2/<image>/tags/list`, both paged by `n` and `last`; manifests and config blobs from
+   `.../v2/<image>/manifests/<tag>` and `.../v2/<image>/blobs/<digest>`, accepting manifest lists so the amd64
+   entry can be chosen; last push from `GET /api/storage/<repo>/<image>/<tag>`. Dedupe on config digest before
+   fetching. The call count grows with tags, so it runs with the same bounded concurrency and rate-limit retry as
+   discovery, and resumes.
 2. **Image nodes**: reference, config digest, `rootfs.diff_ids`, history, user, labels. Manifest lists take their
    `linux/amd64` entry (Q3).
 3. **Layer-prefix lineage**: parent = the node whose full `diff_ids` list is this one's longest strict prefix. A

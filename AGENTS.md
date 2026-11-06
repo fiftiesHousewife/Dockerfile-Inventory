@@ -41,7 +41,7 @@ facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, norm
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
 
 ```
-lineage/      Phase 1b: Artifactory AQL + REST, layer-prefix family tree, Dockerfile links, effective fold
+lineage/      Phase 1b: Artifactory REST (no AQL), layer-prefix family tree, Dockerfile links, effective fold
 report/       Phase 2: four-pass clustering, archetype counts, Oracle export
 rules/        Phase 3: detect-only recipes, then auto-fixes; depends on facts and renderer
 dsl/          Phase 4: instruction model, builders, renderer. Depends on nothing from OpenRewrite
@@ -78,7 +78,7 @@ release index (repo -> commit) ─┐
 GHE organisations + repos ──────┴─► discovery ─► manifest.jsonl, repos.jsonl, blobs/<sha>
                                                    │
                                      facts ◄───────┘ ─► facts.jsonl, parse-failures.jsonl
-Artifactory AQL + REST ─► lineage ─► images.jsonl, lineage.jsonl, links.jsonl, effective.jsonl
+Artifactory REST ───────► lineage ─► images.jsonl, lineage.jsonl, links.jsonl, effective.jsonl
                 facts + lineage ─► report ─► archetypes.json, dashboard tables ─► Oracle
                 facts + lineage ─► rules  ─► findings data tables ─► Oracle; fix PRs (later)
 ```
