@@ -114,4 +114,13 @@ class DashboardTest {
                 .contains("<code>org/repo: 4/Dockerfile</code> and 3 more</li>")
                 .doesNotContain("org/repo: 5/Dockerfile");
     }
+
+    @Test
+    void theHealthStripNamesEachMetricsStateInWordsNotOnlyInColour() {
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty())).contains(
+                "<div class=\"health watch\"><div class=\"state\">watch</div><div class=\"value\">2.0%</div>"
+                        + "<div class=\"label\">Parse failures</div></div>",
+                "<div class=\"health act\"><div class=\"state\">act</div><div class=\"value\">10.0%</div>"
+                        + "<div class=\"label\">Bases at end of life</div></div>");
+    }
 }

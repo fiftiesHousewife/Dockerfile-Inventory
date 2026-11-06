@@ -19,7 +19,8 @@ public final class Dashboard {
     private static final int DOCKERFILES_SHOWN = 5;
 
     private static final String STYLE = """
-            :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --tile: #f5f5f7; }
+            :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --tile: #f5f5f7;
+                    --good: #0ca30c; --watch: #fab219; --act: #d03b3b; }
             @media (prefers-color-scheme: dark) {
               :root { --bg: #1c1c1e; --fg: #f2f2f7; --muted: #a1a1a6; --line: #3a3a3c; --tile: #2c2c2e; }
             }
@@ -36,6 +37,14 @@ public final class Dashboard {
             td.num, th.num { text-align: right; } td.code { font-family: ui-monospace, monospace; font-size: 13px;
             overflow-wrap: anywhere; }
             .scroll { overflow-x: auto; }
+            .strip { margin: 16px 0 24px; }
+            .health { background: var(--tile); border-radius: 10px; padding: 10px 14px; border-left: 6px solid; }
+            .health.good { border-left-color: var(--good); } .health.watch { border-left-color: var(--watch); }
+            .health.act { border-left-color: var(--act); }
+            .health .state { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+                             color: var(--muted); }
+            .health .value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+            .health .label { color: var(--muted); font-size: 13px; }
             ul.tree, ul.tree ul { list-style: none; padding-left: 20px; } ul.tree { padding-left: 0; }
             ul.tree li { margin: 4px 0; } ul.tree code { font-size: 13px; overflow-wrap: anywhere; }
             """;
@@ -53,6 +62,7 @@ public final class Dashboard {
                 "<h1>Dockerfile estate</h1>",
                 "<p class=\"note\">Counts are of Dockerfile locations (each path in each repository)"
                         + " unless stated.</p>",
+                health(Health.of(summary)),
                 tiles(summary),
                 "<h2>Collapse passes</h2>", passes(summary),
                 "<h2>Rates</h2>", rates(summary),
@@ -65,6 +75,18 @@ public final class Dashboard {
                         "<p class=\"note\">Lineage has not run: no images from Artifactory are linked to Dockerfiles."
                                 + "</p>"),
                 "</body></html>", "");
+    }
+
+    /** The state is written as a word and marked by a coloured edge, so colour never carries it alone. */
+    private static String health(List<Health.Metric> metrics) {
+        return "<div class=\"tiles strip\">" + metrics.stream()
+                .map(m -> {
+                    String state = m.state().name().toLowerCase(Locale.ROOT);
+                    return "<div class=\"health " + state + "\"><div class=\"state\">" + state
+                            + "</div><div class=\"value\">" + percent(m.value()) + "</div><div class=\"label\">"
+                            + escape(m.name()) + "</div></div>";
+                })
+                .collect(Collectors.joining()) + "</div>";
     }
 
     private static String tiles(Summary s) {
