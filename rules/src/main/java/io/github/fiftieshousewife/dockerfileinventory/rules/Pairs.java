@@ -5,8 +5,8 @@ import java.util.List;
 
 /**
  * Keys of {@code key=value} pairs read from text. rewrite-docker 8.90.4 folds {@code LABEL a=$X b=$Y} into one pair
- * {@code a}, so label keys are read from the printed instruction instead. Words split on whitespace outside double
- * quotes; quotes are removed and a backslash escapes the next character.
+ * {@code a}, so label keys are read from the printed instruction instead. Words split on whitespace outside
+ * quotes; quotes are removed and a backslash escapes the next character outside single quotes.
  */
 final class Pairs {
 
@@ -17,10 +17,16 @@ final class Pairs {
         List<String> keys = new ArrayList<>();
         StringBuilder key = new StringBuilder();
         boolean inKey = true;
-        boolean quoted = false;
+        char quote = 0;
         boolean escaped = false;
         for (char c : pairs.toCharArray()) {
-            if (escaped) {
+            if (quote == '\'') {
+                if (c == '\'') {
+                    quote = 0;
+                } else if (inKey) {
+                    key.append(c);
+                }
+            } else if (escaped) {
                 escaped = false;
                 if (inKey) {
                     key.append(c);
@@ -28,11 +34,13 @@ final class Pairs {
             } else if (c == '\\') {
                 escaped = true;
             } else if (c == '"') {
-                quoted = !quoted;
-            } else if (!quoted && Character.isWhitespace(c)) {
+                quote = quote == '"' ? 0 : '"';
+            } else if (c == '\'' && quote == 0) {
+                quote = '\'';
+            } else if (quote == 0 && Character.isWhitespace(c)) {
                 addIfAny(keys, key);
                 inKey = true;
-            } else if (!quoted && c == '=' && inKey) {
+            } else if (quote == 0 && c == '=' && inKey) {
                 inKey = false;
             } else if (inKey) {
                 key.append(c);

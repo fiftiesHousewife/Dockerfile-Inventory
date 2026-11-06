@@ -6,3 +6,5 @@ comment of the form `# key=value`, `# UID=1001 && GID=0`, after the first instru
 Jinja template saved under a Dockerfile's name, which no Dockerfile parser can read.
 `postgresql-13-lone-backslash.Dockerfile` is trimmed from sclorg's `postgresql-container` (`13/Dockerfile.rhel9`):
 a line holding only a backslash after a `COPY`, which rewrite-docker 8.90.4 glues onto the `COPY`.
+`origin-atomic-registry-single-quoted-label.Dockerfile` is trimmed from sclorg's `origin`
+(`examples/atomic-registry/systemd/Dockerfile`): `LABEL` values in single quotes continued over several lines.

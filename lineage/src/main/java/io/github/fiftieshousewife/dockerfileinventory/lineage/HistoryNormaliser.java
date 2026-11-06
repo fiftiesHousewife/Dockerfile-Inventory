@@ -71,17 +71,24 @@ public final class HistoryNormaliser {
     }
 
     /**
-     * The keys of {@code key=value} pairs, sorted. Words split on whitespace outside double quotes; quotes are removed
-     * and a backslash escapes the next character, so a quoted key or a value holding spaces or quotes stays whole.
+     * The keys of {@code key=value} pairs, sorted. Words split on whitespace outside quotes; quotes are removed and
+     * a backslash escapes the next character outside single quotes, so a quoted key or a value holding spaces or
+     * quotes stays whole.
      */
     static List<String> keys(String pairs) {
         List<String> keys = new ArrayList<>();
         StringBuilder key = new StringBuilder();
         boolean inKey = true;
-        boolean quoted = false;
+        char quote = 0;
         boolean escaped = false;
         for (char c : pairs.toCharArray()) {
-            if (escaped) {
+            if (quote == '\'') {
+                if (c == '\'') {
+                    quote = 0;
+                } else if (inKey) {
+                    key.append(c);
+                }
+            } else if (escaped) {
                 escaped = false;
                 if (inKey) {
                     key.append(c);
@@ -89,11 +96,13 @@ public final class HistoryNormaliser {
             } else if (c == '\\') {
                 escaped = true;
             } else if (c == '"') {
-                quoted = !quoted;
-            } else if (!quoted && Character.isWhitespace(c)) {
+                quote = quote == '"' ? 0 : '"';
+            } else if (c == '\'' && quote == 0) {
+                quote = '\'';
+            } else if (quote == 0 && Character.isWhitespace(c)) {
                 addIfAny(keys, key);
                 inKey = true;
-            } else if (!quoted && c == '=' && inKey) {
+            } else if (quote == 0 && c == '=' && inKey) {
                 inKey = false;
             } else if (inKey) {
                 key.append(c);

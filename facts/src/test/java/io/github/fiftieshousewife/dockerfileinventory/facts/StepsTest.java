@@ -136,6 +136,18 @@ class StepsTest {
     }
 
     @Test
+    void aSingleQuotedValueContinuedOverLinesIsOneValue() {
+        assertThat(steps("""
+                FROM ubi9
+                LABEL name="x" \\
+                      INSTALL='docker run -i \\
+                          -v /:/host \\
+                          $IMAGE' \\
+                      vendor=y
+                """)).containsExactly(new Step("LABEL", "INSTALL name vendor"));
+    }
+
+    @Test
     void aBackslashFollowedByTrailingSpacesContinuesTheLine() {
         assertThat(steps("FROM ubi9\nRUN make \\  \n    && make install\n"))
                 .containsExactly(new Step("RUN", "make && make install"));

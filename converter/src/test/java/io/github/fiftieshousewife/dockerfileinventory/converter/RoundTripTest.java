@@ -25,6 +25,16 @@ class RoundTripTest {
     }
 
     @Test
+    void theRealSingleQuotedContinuedLabelsConvertAndPass() throws IOException {
+        String original = Files.readString(Path.of("../facts/src/test/resources/fixtures/dockerfiles",
+                "origin-atomic-registry-single-quoted-label.Dockerfile"));
+
+        RoundTrip result = RoundTrip.check(original, Convert.of(Parsed.of(original)).model());
+
+        assertThat(result.difference()).isNull();
+    }
+
+    @Test
     void aConversionThatDropsOrChangesAnInstructionFailsNamingTheStep() {
         String original = "FROM ubi9\nUSER 1001\nRUN make\n";
         Dockerfile converted = Convert.of(Parsed.of(original)).model();

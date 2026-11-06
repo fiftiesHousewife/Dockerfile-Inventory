@@ -44,6 +44,12 @@ class HistoryNormaliserTest {
     }
 
     @Test
+    void aSingleQuotedLabelValueIsKeptWholeAsFactsKeepsIt() {
+        assertThat(normalise(NOP + "LABEL INSTALL='docker run -v /:/host $IMAGE' name=x").text())
+                .isEqualTo("INSTALL name");
+    }
+
+    @Test
     void envGivesItsKeyNamesInBothTheKeyValueAndTheLegacyForm() {
         assertThat(normalise("/bin/sh -c #(nop) ENV PYTHON_VERSION=3.11     PATH=$HOME/.local/bin/:$PATH"))
                 .isEqualTo(new NormalStep("ENV", "PATH PYTHON_VERSION", null, false));

@@ -79,3 +79,31 @@ As built (third round): tree entries carry git's mode, read from the REST tree, 
 when it is not a symlink. The postgresql file held a line of only a backslash between comments and a `RUN`; Docker
 reads it as continuing into the `RUN`, the parser glued it onto the `EXPOSE` before. The retry blanks such a line,
 and the bug is drafted upstream as issue 7. Found on the same file, F14 was added to the round.
+
+## Fourth round, from the rerun (6 Nov)
+
+The fresh run (`out/demo4`: 585 locations, 579 files) has no parse failures left apart from 7 templates; 566 of
+579 files pass the round trip. The 13 that do not:
+
+| # | Problem seen | Fix | Module |
+| --- | --- | --- | --- |
+| F15 | 2 `sclorg/origin` files: `LABEL INSTALL='docker run ... \` (single-quoted, continued) rendered as 25 empty labels that do not parse. `Pairs.parse` knows only double quotes | `Pairs.parse` reads single-quoted values as Docker does: everything up to the next `'`, no escapes. Check facts' steps and the rules' label reading for the same gap | `converter`, maybe `facts`, `rules` |
+| F16 | A single-quoted value keeps `$IMAGE` literal in Docker; the renderer writes every value in double quotes, where `$IMAGE` expands, so the conversion changes the label's meaning | A literal `$` is stored as `\$` (question 1, answered (a)); the renderer leaves `\$` alone, which Docker reads as `$` inside double quotes | `converter`, `dsl` |
+| F17 | 4 Jinja templates parse (`ENV VERSION={{ spec.version }}` is valid syntax), so they are counted as Dockerfiles and fail the round trip | A file that parses is a template when it holds Jinja's form: `{%` anywhere, or `{{` with a space then a dotted name not starting with a dot (question 2, answered (a)) | `facts` |
+| F18 | The 7 templates are listed among the archetypes as `parse-failures` | Templates get their own group, `templates`; real parse failures keep `parse-failures` | `report` |
+
+Tests, in order: 23. `Pairs.parse` reads `a='x y' b=c` as `a` = `x y`, `b` = `c`; 24. the real origin lines
+convert, render and pass the round trip; 25. facts' steps read the same `LABEL` as one key per pair; 26. a single-quoted
+`$IMAGE` is stored as `\$IMAGE` and renders as `"\$IMAGE"`, a double-quoted one stays `$IMAGE`; 27. `{{ spec.version }}`
+and `{% if %}` make a parsing file a template, `{{.Id}}` and `{{ .Id }}` do not; 28. the report groups
+templates apart from parse failures.
+
+Questions, answered 6 Nov:
+
+1. How the model keeps a literal `$`. (a) The converter stores it escaped, `\$IMAGE`, and the renderer leaves
+   `\$` alone (Docker reads `\$` in double quotes as a plain `$`); (b) the model remembers that a value was
+   single-quoted and the renderer writes it so; (c) leave it, noted as a known gap.
+2. Whether a file that parses can be a template. Round 2 said never, so `docker inspect --format '{{.Id}}'` is
+   safe. Jinja's form is narrower: `{%` anywhere, or `{{` followed by a space and a dotted name
+   (`{{ spec.version }}`); Go templates start with a dot (`{{.Id}}`, `{{ .Id }}`). (a) Call a parsing file a
+   template when it holds Jinja's form; (b) keep "never".
