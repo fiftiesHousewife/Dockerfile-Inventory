@@ -90,6 +90,17 @@ class DiscoveryTest {
         assertThat(many.blobCalls).extracting(java.util.List::size).containsExactly(50, 50, 20);
     }
 
+    @Test
+    void namedOrganisationsAreTheOnlyOnesScanned() {
+        gitHub.repository("ops", repo("ops/tools", A)).tree("ops/tools", A, tree(file("Dockerfile", "same")));
+
+        Discovery.Summary summary = new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4,
+                java.util.List.of("ops")).run();
+
+        assertThat(summary.repositories()).isEqualTo(1);
+        assertThat(gitHub.treeCalls).containsOnly("ops/tools");
+    }
+
     private Discovery discovery() {
         return new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4);
     }

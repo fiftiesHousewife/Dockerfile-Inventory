@@ -28,16 +28,25 @@ public final class Discovery {
     private final RepoScan scan;
     private final DiscoveryOutput output;
     private final int concurrency;
+    private final List<String> organizations;
 
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency) {
+        this(gitHub, releases, output, concurrency, List.of());
+    }
+
+    /** {@code organizations}, when not empty, are the only ones scanned; otherwise every organisation is. */
+    Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
+              List<String> organizations) {
         this.gitHub = gitHub;
         this.scan = new RepoScan(gitHub, releases);
         this.output = output;
         this.concurrency = concurrency;
+        this.organizations = List.copyOf(organizations);
     }
 
     public Summary run() {
-        List<Repository> repositories = gitHub.organizations().stream()
+        List<String> scanned = organizations.isEmpty() ? gitHub.organizations() : organizations;
+        List<Repository> repositories = scanned.stream()
                 .flatMap(org -> gitHub.repositories(org).stream())
                 .toList();
         Set<String> finished = output.finishedRepositories();
