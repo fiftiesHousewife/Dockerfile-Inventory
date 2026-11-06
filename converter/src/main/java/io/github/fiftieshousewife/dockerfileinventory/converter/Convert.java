@@ -39,6 +39,7 @@ public final class Convert {
                 .toList();
         Set<String> earlierStages = new HashSet<>();
         List<Stage> stages = new ArrayList<>();
+        List<List<List<String>>> comments = new ArrayList<>();
         for (Docker.Stage stage : file.getStages()) {
             Docker.From from = stage.getFrom();
             Docker.From.As as = from.getAs();
@@ -50,12 +51,13 @@ public final class Convert {
             BaseImage base = onStage ? null : new BaseImage(image, tag == null ? null : text(tag),
                     digest == null ? null : text(digest));
             List<Instruction> instructions = stage.getInstructions().stream().map(this::instruction).toList();
+            comments.add(stage.getInstructions().stream().map(this::comments).toList());
             stages.add(new Stage(name, base, onStage ? image : null, instructions));
             if (name != null) {
                 earlierStages.add(name);
             }
         }
-        return new Conversion(new Dockerfile(globalArgs, stages));
+        return new Conversion(new Dockerfile(globalArgs, stages), comments);
     }
 
     private Instruction instruction(Docker.Instruction instruction) {
@@ -169,6 +171,19 @@ public final class Convert {
         String joined = instruction.replaceAll("\\\\\\r?\\n", " ").strip();
         int space = joined.indexOf(' ');
         return space < 0 ? "" : joined.substring(space + 1);
+    }
+
+    /** The comment lines the printer puts before an instruction, without their {@code #}. */
+    private List<String> comments(Docker.Instruction instruction) {
+        List<String> comments = new ArrayList<>();
+        for (String line : instruction.printTrimmed(cursor).lines().toList()) {
+            String stripped = line.strip();
+            if (!stripped.startsWith("#")) {
+                break;
+            }
+            comments.add(stripped.substring(1).strip());
+        }
+        return comments;
     }
 
     /** The instruction as written, without the comment lines the printer puts before it. */

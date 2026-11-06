@@ -15,7 +15,8 @@ class RoundTripTest {
 
     @Test
     void theRealPython311DockerfileConvertsAndPasses() throws IOException {
-        String original = Files.readString(Path.of("../facts/src/test/resources/fixtures/dockerfiles/python-311.Dockerfile"));
+        String original =
+                Files.readString(Path.of("../facts/src/test/resources/fixtures/dockerfiles/python-311.Dockerfile"));
 
         RoundTrip result = RoundTrip.check(original, Convert.of(Parsed.of(original)).model());
 
