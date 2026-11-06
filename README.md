@@ -17,7 +17,7 @@ The full plan, with each phase's gate, is the
 | 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; waiting on an Artifactory token for a real run |
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need real discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
-| 4. Dockerfile builders and one shared renderer | `dsl` | Not started |
+| 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
 | 5. Convert existing Dockerfiles to builders | `converter` | Not started |
 
 ## Requirements

@@ -1,6 +1,6 @@
 # Phase 4 — DSL, builders, renderer: plan
 
-Status: planned 6 Nov; questions answered. Slices are built test-first, as in the earlier phases.
+Status: built 6 Nov; Phase 4b (central generator repository, PR job) waits on a GHE write token. Slices are built test-first, as in the earlier phases.
 
 Phase 4 builds an immutable instruction model, typed builders that enforce policy, and one renderer that both the
 builders and Phase 3's fixes call. Module: `dsl`, with no dependency on OpenRewrite. Acceptance: the rendered
@@ -58,3 +58,10 @@ invariant breach in a test.
    `src/test/resources/golden/`.
    17. Each golden builder renders exactly its committed file.
    18. In `rules`: every golden passes the per-file rules with zero findings (D4).
+
+   As built: the builder gained `arg()`, so the OCI labels R3 requires can take their values at build time. The
+   acceptance test leaves out I1, since package pinning is not an invariant. Breaking a golden on purpose first
+   did not fail it: Gradle did not know `rules`' tests read `../dsl` files and treated them as up to date. The
+   goldens, and `testdata/` for `facts` and `lineage`, are now declared test inputs, and the broken golden fails.
+   Known gap for later: the builder does not merge adjacent `RUN`s, so H3 holds only because the goldens put
+   another instruction between them.

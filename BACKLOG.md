@@ -59,6 +59,8 @@ and one line when its gate is met.
 - Phase 4 — DSL, builders, renderer. Plan: `docs/plans/phase-4.md` (questions answered 6 Nov). Gate: every golden
   passes the Phase 3 rules with zero findings; builders refuse each invariant breach. Phase 4b (central generator
   repository and PR job) waits on a GHE token with write access.
+  - Done: model, package installs, renderer with targets, builders with policy, four goldens; the gate's tests
+    pass. Next: real archetypes as goldens after the first Phase 2 run; merge adjacent RUNs in the builder (H3).
 
 ## Queued
 

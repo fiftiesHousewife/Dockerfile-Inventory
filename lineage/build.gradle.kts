@@ -12,3 +12,8 @@ dependencies {
 application {
     mainClass.set("io.github.fiftieshousewife.dockerfileinventory.lineage.LineageMain")
 }
+
+// Tests read the cross-module contracts in testdata/; a changed contract must rerun them.
+tasks.test {
+    inputs.dir("../testdata").withPropertyName("contracts")
+}

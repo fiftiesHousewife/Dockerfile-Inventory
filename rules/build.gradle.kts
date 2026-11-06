@@ -18,3 +18,8 @@ dependencies {
 application {
     mainClass.set("io.github.fiftieshousewife.dockerfileinventory.rules.RulesMain")
 }
+
+// The Phase 4 acceptance test reads the dsl's golden files; a changed golden must rerun it.
+tasks.test {
+    inputs.dir("../dsl/src/test/resources/golden").withPropertyName("goldens")
+}

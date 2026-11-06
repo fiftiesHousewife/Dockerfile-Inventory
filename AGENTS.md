@@ -59,12 +59,13 @@ rules/                      Phase 3: detect-only rules over facts, parsed Docker
                             per-file rules (S1-S3, R1-R3, H1-H3, I1, I2), EffectiveRule (S4, S1 root), Lines
                             RulesRun: blobs -> findings, table, rates, samples; renovate/ holds the Renovate preset
                             run: DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [ALLOW_LIST], [EOL_LIST] ./gradlew :rules:run
+dsl/                        Phase 4: Dockerfile model, PackageInstallRenderer, DockerfileRenderer (Target), ImageBuilder
+                            (Policy, PolicyViolation); goldens in src/test/resources/golden, checked by rules' tests
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
 
 ```
-dsl/          Phase 4: instruction model, builders, renderer. Depends on nothing from OpenRewrite
 converter/    Phase 5: LST -> model -> generated builder class, round-trip gate
 ```
 
@@ -146,6 +147,9 @@ rates before and after. Offline: `./gradlew check -x verifyUpToDate`. Its compar
 **Add a rule.** A rule ID, its tier (detect or auto-fix) and severity in the rule catalogue, a
 detect-only recipe writing to the findings data table, tests with one passing and one failing
 fixture, and a measured false-positive rate on 50 sampled findings before any auto-fix is enabled.
+
+**Files shared between modules** (`testdata/contracts/`, the dsl's goldens) are declared as test inputs in each
+reading module's `build.gradle.kts`, so a change reruns the tests that read them.
 
 **Add a renderer for a package manager.** One `PackageInstallRenderer` and its case in
 `PackageInstallRenderer.forBase`; golden-file tests per archetype show which archetypes it moves.
