@@ -175,9 +175,7 @@ class FactExtractorTest {
     }
 
     @Test
-    void recordsTheParserRejectingASyntaxLineAfterAnInstruction() {
-        assertThat(new FactsParser().parse("sha", "FROM ubi9\n# syntax=docker/dockerfile:1\nRUN echo\n"))
-                .as("rewrite-docker 8.90.4 rejects what Docker reads as a comment; delete this test when fixed upstream")
-                .isInstanceOf(ParseResult.Failed.class);
+    void aSyntaxLineAfterAnInstructionIsReadAsTheCommentDockerReadsItAs() {
+        assertThat(facts("FROM ubi9\n# syntax=docker/dockerfile:1\nRUN echo\n").buildKitFeatures()).isEmpty();
     }
 }

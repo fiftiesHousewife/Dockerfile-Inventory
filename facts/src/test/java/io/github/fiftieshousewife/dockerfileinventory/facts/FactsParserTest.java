@@ -2,6 +2,9 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class FactsParserTest {
@@ -53,5 +56,60 @@ class FactsParserTest {
     void acceptsAHeredocRun() {
         assertThat(new FactsParser().parse("ok", "FROM ubi9\nRUN <<EOF\nmicrodnf install -y git\nmicrodnf clean all\nEOF\n"))
                 .isInstanceOf(ParseResult.Parsed.class);
+    }
+
+    @Test
+    void theRealS2iPythonLinesWithAnApostropheInACommentInsideARunParse() throws IOException {
+        String text = fixture("s2i-python-3.12-comments.Dockerfile");
+
+        assertThat(new FactsParser().parse("py", text)).isInstanceOfSatisfying(ParseResult.Parsed.class,
+                parsed -> assertThat(Steps.of(parsed.file()).getLast().text())
+                        .startsWith("python3.12 -m venv ${APP_ROOT} && ${APP_ROOT}/bin/pip install"));
+    }
+
+    @Test
+    void theRealNginxLinesWithACommentEndingInABackslashParse() throws IOException {
+        assertThat(new FactsParser().parse("nginx", fixture("nginx-1.20-comments.Dockerfile")))
+                .isInstanceOf(ParseResult.Parsed.class);
+    }
+
+    @Test
+    void blankingCommentsKeepsLineNumbersParserDirectivesAndHeredocComments() {
+        String text = """
+                # syntax=docker/dockerfile:1
+                FROM ubi9
+                # it's here \\
+                RUN make && \\
+                # it's inside a continuation \\
+                    make install
+                RUN <<EOT
+                # kept: part of the script
+                echo hi
+                EOT
+                """;
+
+        assertThat(FactsParser.withoutComments(text)).isEqualTo("""
+                # syntax=docker/dockerfile:1
+                FROM ubi9
+
+                RUN make && \\
+                \\
+                    make install
+                RUN <<EOT
+                # kept: part of the script
+                echo hi
+                EOT
+                """);
+    }
+
+    @Test
+    void aFileThatParsesFirstTimeKeepsItsComments() {
+        String text = "FROM ubi9\n# a comment the converter carries\nRUN make\n";
+
+        assertThat(((ParseResult.Parsed) new FactsParser().parse("ok", text)).file().printAll()).isEqualTo(text);
+    }
+
+    private static String fixture(String name) throws IOException {
+        return Files.readString(Path.of("src/test/resources/fixtures/dockerfiles", name));
     }
 }
