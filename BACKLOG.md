@@ -34,9 +34,11 @@ and one line when its gate is met.
   - Done: slice 8, the run: inventory (resumable, concurrent), analysis and rates, `LineageMain`.
   - Code complete. The gate waits on an Artifactory token: recorded fixtures, a real run, the gap list reviewed.
 
+- Phase 2 — Cluster and report. Plan: `docs/plans/phase-2.md` (questions answered 6 Nov). Gate: written
+  decision, base-image route or DSL route.
+
 ## Queued
 
-- Phase 2 — Cluster and report. Gate: written decision, base-image route or DSL route.
 - Phase 3 — Quality rules. Gate: false-positive rate per rule below threshold before auto-fix.
 - Phase 4 — DSL, builders, renderer.
 - Phase 5 — Converter. Gate: round-trip equivalence; opt-in per team.
