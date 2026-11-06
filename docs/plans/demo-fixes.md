@@ -63,3 +63,13 @@ the adapter treats the `ParseError` tree the parser then returns as a failure wi
 case was a backslash followed by a space before the newline, which Docker reads as a continuation; the converter,
 facts' steps, the merged-line check and rule S3 all now accept trailing spaces or tabs after the backslash.
 Lineage's history normaliser reads the legacy `LABEL key value` form as facts now does, keeping the contract.
+
+## Third round (6 Nov)
+
+| # | Problem seen | Fix | Module |
+| --- | --- | --- | --- |
+| F12 | Three symlinks fetched as Dockerfiles: git stores a symlink as a blob holding its target path (`../../../Dockerfile.fedora`) | Tree entries keep their mode; an entry with mode `120000` (a symlink) is not a Dockerfile | `discovery` |
+| F13 | `postgresql-container` `13/Dockerfile.rhel9` rejected at line 46 (`extraneous input '='`) | Find the cause; fix ours, draft upstream what is the parser's | `facts` or docs |
+
+Tests: 20. a symlink entry named `Dockerfile` is not collected, and the REST tree's `mode` is read; 21. the
+postgresql case, from its real lines.
