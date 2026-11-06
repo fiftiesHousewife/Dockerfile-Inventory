@@ -42,3 +42,7 @@ lsof -nP -iTCP:"$JCR_PORT" -sTCP:LISTEN
 
 section "addresses JCR listens on inside its container (0.0.0.0 or :: means every interface)"
 docker exec $JCR sh -c 'command -v ss >/dev/null && ss -ltn || cat /proc/net/tcp /proc/net/tcp6' | grep -E ':8082|:1F92' || true
+
+section "configuration import (artifactory.config.import.yml): files left, and what the log says about it"
+docker exec $JCR ls /var/opt/jfrog/artifactory/etc/artifactory
+docker exec $JCR sh -c "grep -hiE 'config.import|import.*config|yaml' $LOGS/artifactory-service.log | tail -15"
