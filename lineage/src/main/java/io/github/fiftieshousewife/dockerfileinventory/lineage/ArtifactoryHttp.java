@@ -41,7 +41,8 @@ public final class ArtifactoryHttp implements Artifactory {
     }
 
     ArtifactoryHttp(URI base, String token, int pageSize) {
-        this.http = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
+        // Artifactory can redirect blob downloads to its file store.
+        this.http = HttpClient.newBuilder().connectTimeout(TIMEOUT).followRedirects(HttpClient.Redirect.NORMAL).build();
         this.base = URI.create(base.toString().replaceAll("/+$", "") + "/");
         this.token = token;
         this.pageSize = pageSize;
@@ -69,6 +70,12 @@ public final class ArtifactoryHttp implements Artifactory {
         return get("api/docker/%s/v2/%s/manifests/%s".formatted(repository, image, reference), MANIFEST_TYPES)
                 .map(r -> new Manifest(r.headers().firstValue("Content-Type").orElse(""),
                         r.headers().firstValue("Docker-Content-Digest").orElse(""), r.body()));
+    }
+
+    @Override
+    public Optional<String> blob(String repository, String image, String digest) {
+        return get("api/docker/%s/v2/%s/blobs/%s".formatted(repository, image, digest), "*/*")
+                .map(HttpResponse::body);
     }
 
     /**

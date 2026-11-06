@@ -17,4 +17,7 @@ public interface Artifactory {
 
     /** The manifest or manifest list a tag or digest names; empty when it no longer exists. */
     Optional<Manifest> manifest(String repository, String image, String reference);
+
+    /** A blob's text (lineage only fetches image configs); empty when it no longer exists. */
+    Optional<String> blob(String repository, String image, String digest);
 }

@@ -1,0 +1,16 @@
+{
+  "architecture": "amd64",
+  "os": "linux",
+  "config": {"User": "1001", "Labels": {"name": "team/app"}},
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    ]
+  },
+  "history": [
+    {"created": "2026-10-01T10:00:00Z", "created_by": "/bin/sh -c #(nop) ADD file:abc in / "},
+    {"created": "2026-10-02T10:00:00Z", "created_by": "/bin/sh -c microdnf install -y git", "comment": "FROM ubi9/ubi-minimal:9.4"}
+  ]
+}

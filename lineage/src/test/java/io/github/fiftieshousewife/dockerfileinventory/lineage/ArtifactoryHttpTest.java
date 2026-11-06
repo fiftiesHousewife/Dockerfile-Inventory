@@ -95,6 +95,23 @@ class ArtifactoryHttpTest {
                 "application/vnd.oci.image.index.v1+json");
     }
 
+    @Test
+    void fetchesABlobAsTextFollowingARedirectAndGivesEmptyForAMissingOne() {
+        String digest = "sha256:" + "c".repeat(64);
+        route("/artifactory/api/docker/docker-local/v2/team/app/blobs/" + digest, exchange -> {
+            exchange.getResponseHeaders().add("Location", "/filestore/config");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
+        route("/filestore/config", exchange -> respond(exchange, 200, "config.json"));
+        route("/artifactory/api/docker/docker-local/v2/team/app/blobs/sha256:gone",
+                exchange -> respond(exchange, 404, "name-unknown.json"));
+
+        assertThat(artifactory.blob("docker-local", "team/app", digest)).hasValueSatisfying(
+                text -> assertThat(text).contains("\"diff_ids\""));
+        assertThat(artifactory.blob("docker-local", "team/app", "sha256:gone")).isEmpty();
+    }
+
     private interface Handler {
         void handle(HttpExchange exchange) throws IOException;
     }
