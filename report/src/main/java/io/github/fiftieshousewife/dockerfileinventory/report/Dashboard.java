@@ -20,9 +20,10 @@ public final class Dashboard {
 
     private static final String STYLE = """
             :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --tile: #f5f5f7;
-                    --good: #0ca30c; --watch: #fab219; --act: #d03b3b; }
+                    --good: #0ca30c; --watch: #fab219; --act: #d03b3b; --series-1: #2a78d6; }
             @media (prefers-color-scheme: dark) {
-              :root { --bg: #1c1c1e; --fg: #f2f2f7; --muted: #a1a1a6; --line: #3a3a3c; --tile: #2c2c2e; }
+              :root { --bg: #1c1c1e; --fg: #f2f2f7; --muted: #a1a1a6; --line: #3a3a3c; --tile: #2c2c2e;
+                      --series-1: #3987e5; }
             }
             body { margin: 0 auto; max-width: 1100px; padding: 24px 16px; background: var(--bg); color: var(--fg);
                    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -38,6 +39,13 @@ public final class Dashboard {
             overflow-wrap: anywhere; }
             .scroll { overflow-x: auto; }
             .strip { margin: 16px 0 24px; }
+            svg.chart { width: 100%; height: auto; max-width: 760px; display: block; }
+            svg.chart .line { stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; }
+            svg.chart .grid { stroke: var(--line); stroke-width: 1; }
+            svg.chart .baseline { stroke: var(--muted); stroke-width: 1; }
+            svg.chart .axis { fill: var(--muted); font-size: 11px; }
+            svg.chart .label { fill: var(--fg); font-size: 12px; }
+            svg.chart .marker circle { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
             .health { background: var(--tile); border-radius: 10px; padding: 10px 14px; border-left: 6px solid; }
             .health.good { border-left-color: var(--good); } .health.watch { border-left-color: var(--watch); }
             .health.act { border-left-color: var(--act); }
@@ -66,6 +74,9 @@ public final class Dashboard {
                 tiles(summary),
                 "<h2>Collapse passes</h2>", passes(summary),
                 "<h2>Rates</h2>", rates(summary),
+                "<h2>Archetype coverage</h2><p class=\"note\">How few archetypes cover most locations: "
+                        + count(summary.k80()) + " cover 80%, " + count(summary.k95()) + " cover 95%.</p>"
+                        + Charts.coverage(ranking),
                 "<h2>Top " + TOP + " archetypes</h2>", "<div class=\"scroll\">" + archetypes(ranking) + "</div>",
                 "<h2>Top " + TOP + " bases</h2>", "<div class=\"scroll\">" + bases(bases) + "</div>",
                 "<h2>Package managers</h2>", counts(summary.managers(), "Manager"),

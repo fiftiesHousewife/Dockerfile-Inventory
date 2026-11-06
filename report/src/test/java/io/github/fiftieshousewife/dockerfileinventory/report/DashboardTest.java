@@ -123,4 +123,13 @@ class DashboardTest {
                 "<div class=\"health act\"><div class=\"state\">act</div><div class=\"value\">10.0%</div>"
                         + "<div class=\"label\">Bases at end of life</div></div>");
     }
+
+    @Test
+    void theCoverageCurveSitsAboveTheArchetypeTable() {
+        String page = Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty());
+
+        assertThat(page).contains("<h2>Archetype coverage</h2><p class=\"note\">")
+                .contains(Charts.coverage(RANKING));
+        assertThat(page.indexOf(Charts.coverage(RANKING))).isLessThan(page.indexOf("archetypes</h2>"));
+    }
 }
