@@ -70,6 +70,17 @@ class HistoryNormaliserTest {
         assertThat(normalise(null)).isEqualTo(new NormalStep("OTHER", "", null, false));
     }
 
+    @Test
+    void knownBuilderAddedStepsAreMarked() {
+        assertThat(normalise("/bin/sh -c #(nop) COPY file:9358 in /usr/share/buildinfo/content-sets.json      ")
+                .builderAdded()).isTrue();
+        assertThat(normalise("/bin/sh -c #(nop) COPY dir:eccb in /root/buildinfo/      ").builderAdded()).isTrue();
+        assertThat(normalise("/bin/sh -c #(nop) LABEL \"architecture\"=\"x86_64\" \"vcs-ref\"=\"6\" \"build-date\"=\"2026\"")
+                .builderAdded()).isTrue();
+        assertThat(normalise("/bin/sh -c #(nop) COPY dir:29d1 in /opt/app/buildinfo-docs").builderAdded()).isFalse();
+        assertThat(normalise("/bin/sh -c #(nop) LABEL vcs-ref=6").builderAdded()).isFalse();
+    }
+
     private static NormalStep normalise(String createdBy) {
         return HistoryNormaliser.normalise(new HistoryStep(createdBy, null, false, null));
     }

@@ -17,6 +17,10 @@ public final class HistoryNormaliser {
     /** Text a build service puts before every {@code RUN} (Q13): Konflux's hermetic-build environment. */
     private static final List<String> RUN_PREFIXES = List.of(". /cachi2/cachi2.env && ");
 
+    /** Where Konflux copies its build records, and the labels of the final step it adds to every build (Q13). */
+    private static final List<String> BUILDINFO = List.of("/usr/share/buildinfo/", "/root/buildinfo/");
+    private static final List<String> BUILD_LABELS = List.of("build-date", "vcs-ref");
+
     private HistoryNormaliser() {
     }
 
@@ -34,8 +38,14 @@ public final class HistoryNormaliser {
         String keyword = space < 0 ? instruction : instruction.substring(0, space);
         String value = space < 0 ? "" : instruction.substring(space + 1);
         return switch (keyword) {
-            case "COPY", "ADD" -> new NormalStep(keyword, destination(value), null, false);
-            case "LABEL" -> new NormalStep(keyword, String.join(" ", keys(value)), null, false);
+            case "COPY", "ADD" -> {
+                String destination = destination(value);
+                yield new NormalStep(keyword, destination, null, BUILDINFO.stream().anyMatch(destination::startsWith));
+            }
+            case "LABEL" -> {
+                List<String> keys = keys(value);
+                yield new NormalStep(keyword, String.join(" ", keys), null, keys.containsAll(BUILD_LABELS));
+            }
             case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
             case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD" ->
                     new NormalStep(keyword, value, null, false);
