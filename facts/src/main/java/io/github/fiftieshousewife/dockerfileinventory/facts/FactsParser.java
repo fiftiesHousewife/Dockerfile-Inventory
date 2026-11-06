@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Parser;
 import org.openrewrite.SourceFile;
@@ -22,7 +20,6 @@ import org.openrewrite.docker.tree.Docker;
  */
 public final class FactsParser {
 
-    private static final Pattern BARE_NEWLINE = Pattern.compile("(?<!\\\\)\n");
 
     private final DockerParser parser = DockerParser.builder().build();
 
@@ -50,13 +47,27 @@ public final class FactsParser {
         new DockerIsoVisitor<Integer>() {
             @Override
             public Docker.Literal visitLiteral(Docker.Literal literal, Integer p) {
-                Matcher m = BARE_NEWLINE.matcher(literal.getText().replace("\r\n", "\n"));
-                if (found.get() == null && m.find()) {
-                    found.set(literal.getText().substring(m.end()).lines().findFirst().orElse("").strip());
+                if (found.get() == null) {
+                    gluedAfter(literal.getText().replace("\r\n", "\n")).ifPresent(found::set);
                 }
                 return literal;
             }
         }.visit(file, 0);
         return Optional.ofNullable(found.get());
+    }
+
+    /**
+     * The first line that follows a bare newline. A comment line inside a continued instruction ends with one too,
+     * as Docker drops such lines, so a newline that ends a comment line does not count.
+     */
+    static Optional<String> gluedAfter(String text) {
+        List<String> lines = List.of(text.split("\n", -1));
+        for (int i = 0; i < lines.size() - 1; i++) {
+            String line = lines.get(i);
+            if (!line.endsWith("\\") && !line.strip().startsWith("#")) {
+                return Optional.of(lines.get(i + 1).strip());
+            }
+        }
+        return Optional.empty();
     }
 }

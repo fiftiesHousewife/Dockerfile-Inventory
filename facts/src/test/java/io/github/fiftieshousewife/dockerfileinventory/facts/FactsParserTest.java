@@ -39,6 +39,17 @@ class FactsParserTest {
     }
 
     @Test
+    void acceptsACommentLineInsideAContinuedRun() {
+        assertThat(new FactsParser().parse("ok", """
+                FROM ubi9
+                RUN rpm -V git && \\
+                    # Remove redhat-logos-httpd to keep the image small.
+                    rpm -e --nodeps redhat-logos-httpd && \\
+                    yum -y clean all
+                """)).isInstanceOf(ParseResult.Parsed.class);
+    }
+
+    @Test
     void acceptsAHeredocRun() {
         assertThat(new FactsParser().parse("ok", "FROM ubi9\nRUN <<EOF\nmicrodnf install -y git\nmicrodnf clean all\nEOF\n"))
                 .isInstanceOf(ParseResult.Parsed.class);
