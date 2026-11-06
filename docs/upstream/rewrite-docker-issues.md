@@ -90,3 +90,28 @@ RUN A="x"
 Expected: a `COPY` and a `RUN`. Actual: `extraneous input '=' expecting ...` at the `RUN` (the same after `EXPOSE`).
 Seen in `sclorg/postgresql-container`, `13/Dockerfile.rhel9`, between comment lines and the `RUN`.
 Workaround: `FactsParser`'s retry blanks such a line.
+
+## 8. Whitespace before a comma in a JSON array is "not print idempotent"
+
+```dockerfile
+FROM ubi9
+CMD ["a" , "b"]
+```
+
+Expected: an exec form of `a` and `b`. Actual: `IllegalStateException: ... is not print idempotent`. Any spaces or
+tabs between a closing quote and the comma trigger it, in any instruction with a JSON array (`CMD`, `ENTRYPOINT`,
+`RUN`, `VOLUME`); spaces after the comma or inside the brackets do not.
+Seen in 11 `openshift` files, e.g. `CMD ["/bin/bash", "-c" ,"exec cp -rp ..."]`.
+Workaround: `FactsParser`'s retry drops whitespace before a comma on lines holding `[`.
+
+## 9. A flag value `${NAME:-default}` is "not print idempotent"
+
+```dockerfile
+FROM --platform=${BUILDPLATFORM:-linux/amd64} rust:latest
+```
+
+Expected: a `FROM` whose platform flag holds the variable. Actual: `IllegalStateException: ... is not print
+idempotent`. Any flag (`--platform`, `--chown`) with `:-` inside `${...}`; `${NAME-default}`, `${NAME}` and `$NAME`
+parse, as does `${NAME:-default}` outside a flag.
+Seen in 12 `openshift` files.
+Workaround: `FactsParser`'s retry writes `${NAME-default}` inside flag values.

@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.ParseExceptionResult;
 import org.openrewrite.Parser;
@@ -31,6 +32,9 @@ public final class FactsParser {
     /** Jinja only: a block tag, or {@code {{ name.path }}}. Go's {@code {{.Id}}} and {@code {{ index .X }}} differ. */
     private static final Pattern JINJA =
             Pattern.compile("\\{%.*%}|\\{\\{\\s+[A-Za-z_]\\w*(\\.[A-Za-z_]\\w*)*\\s*(\\|[^}]*)?}}");
+    private static final Pattern SPACE_BEFORE_COMMA = Pattern.compile("\"[ \\t]+,");
+    private static final Pattern FLAG_DEFAULT =
+            Pattern.compile("(--[A-Za-z-]+=\\S*?\\$\\{[A-Za-z_][A-Za-z0-9_]*):-");
     private static final Pattern HEREDOC = Pattern.compile("<<-?['\"]?(\\w+)");
 
     private final DockerParser parser = DockerParser.builder().build();
@@ -48,7 +52,7 @@ public final class FactsParser {
             return jinja(text).<ParseResult>map(line -> new ParseResult.Failed(blobSha, TEMPLATE + " (" + line
                     + "); it parses, as its markers happen to be valid Dockerfile text")).orElse(first);
         }
-        ParseResult second = attempt(blobSha, withoutComments(text));
+        ParseResult second = attempt(blobSha, retryText(text));
         if (second instanceof ParseResult.Parsed) {
             return second;
         }
@@ -72,6 +76,20 @@ public final class FactsParser {
      */
     static Optional<String> template(String text) {
         return text.lines().filter(line -> TEMPLATE_MARKER.matcher(line).find()).map(String::strip).findFirst();
+    }
+
+    /**
+     * The text the retry parses: whole-line comments blanked, and, on lines holding a JSON array, the whitespace
+     * before a comma dropped, which rewrite-docker 8.90.4 cannot print back ({@code CMD ["a" , "b"]}); and in a
+     * flag's value, {@code ${NAME:-default}} written {@code ${NAME-default}}, which it can (the two differ only
+     * when the variable is set but empty). All keep every line where it was.
+     */
+    static String retryText(String text) {
+        return text.lines()
+                .map(line -> line.contains("[") ? SPACE_BEFORE_COMMA.matcher(line).replaceAll("\",") : line)
+                .map(line -> FLAG_DEFAULT.matcher(line).replaceAll("$1-"))
+                .collect(Collectors.joining("\n", "", text.endsWith("\n") ? "\n" : ""))
+                .transform(FactsParser::withoutComments);
     }
 
     /**

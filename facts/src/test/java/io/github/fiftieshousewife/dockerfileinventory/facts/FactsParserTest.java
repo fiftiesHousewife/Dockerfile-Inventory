@@ -160,4 +160,22 @@ class FactsParserTest {
     private static String fixture(String name) throws IOException {
         return Files.readString(Path.of("src/test/resources/fixtures/dockerfiles", name));
     }
+
+    @Test
+    void anExecFormWithASpaceBeforeACommaParsesAndKeepsItsWords() {
+        String dockerfile = "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n";
+
+        assertThat(new FactsParser().parse("php", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
+        assertThat(Steps.of(((ParseResult.Parsed) new FactsParser().parse("php", dockerfile)).file()))
+                .contains(new Step("CMD", "[\"php\", \"-S\", \"0.0.0.0:8080\"]"));
+    }
+
+    @Test
+    void aFlagWhoseValueIsAVariableWithADefaultParses() {
+        String dockerfile = "FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.io/library/rust:latest AS builder\n"
+                + "COPY --chown=${UID:-1001} a /b\n";
+
+        assertThat(new FactsParser().parse("rust", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
+        assertThat(FactExtractorTest.facts(dockerfile).base().name()).isEqualTo("docker.io/library/rust");
+    }
 }

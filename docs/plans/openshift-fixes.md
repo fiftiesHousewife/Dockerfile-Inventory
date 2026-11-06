@@ -1,6 +1,6 @@
 # Fixes from the openshift run: plan
 
-Status: S1 and S2 built 6 Nov (unreadable RUNs 663 -> 323); S3 started.
+Status: S1-S3 built 6 Nov (unreadable RUNs 663 -> 162); P1 built; P2 next.
 
 `openshift` (862 repositories, 3,180 locations, 2,833 files): 97 parse failures besides 32 templates (3.4%), 663 of
 6,019 shell-form `RUN`s too complex to read (10.7%), and 230 files failing the round trip. Fixed test-first, using
@@ -29,7 +29,7 @@ lines behind the two unclassified probe cases read.
 
 | # | Problem seen | Next step |
 | --- | --- | --- |
-| P1 | 23 files: rewrite-docker's "is not print idempotent" | Find the cause; fix ours or draft upstream |
+| P1 | 23 files: rewrite-docker's "is not print idempotent" | Done 6 Nov: two upstream bugs (issues 8, 9): whitespace before a comma in a JSON array (11 files), and `${NAME:-default}` in a flag value (12). The retry drops the whitespace and writes `${NAME-default}` in flags |
 | P2 | 8 `extraneous input 'TARGETARCH'`, 7 `mismatched input 'CMD'`, 4 heredoc `<<EOF`, 3 `token recognition error at '\'`, and smaller groups | Reproduce each from its real lines; fix ours or draft upstream |
 | C1 | 77 round trips: "the target does not support" heredocs or `RUN --mount` | The round trip renders for a target that allows what the original uses |
 | C2 | 10 digests that are not `sha256:` and 64 hex characters | Find what they are (a variable, another algorithm) |
