@@ -32,6 +32,7 @@ public final class HistoryNormaliser {
         return switch (keyword) {
             case "COPY", "ADD" -> new NormalStep(keyword, destination(value), null, false);
             case "LABEL" -> new NormalStep(keyword, String.join(" ", keys(value)), null, false);
+            case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
             default -> new NormalStep("OTHER", body, null, false);
         };
     }
@@ -72,6 +73,12 @@ public final class HistoryNormaliser {
         }
         addIfAny(keys, key);
         return keys.stream().sorted().toList();
+    }
+
+    /** {@code ENV k=v ...}, or the legacy {@code ENV k value with spaces}, which sets one variable. */
+    private static String envKeys(String value) {
+        String first = value.split(" ", 2)[0];
+        return first.contains("=") ? String.join(" ", keys(value)) : first.replace("\"", "");
     }
 
     private static void addIfAny(List<String> keys, StringBuilder key) {

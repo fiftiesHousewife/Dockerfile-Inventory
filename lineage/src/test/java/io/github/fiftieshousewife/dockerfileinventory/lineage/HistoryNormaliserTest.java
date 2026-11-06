@@ -38,6 +38,15 @@ class HistoryNormaliserTest {
                 .isEqualTo(new NormalStep("LABEL", "io.k8s.name summary", null, false));
     }
 
+    @Test
+    void envGivesItsKeyNamesInBothTheKeyValueAndTheLegacyForm() {
+        assertThat(normalise("/bin/sh -c #(nop) ENV PYTHON_VERSION=3.11     PATH=$HOME/.local/bin/:$PATH"))
+                .isEqualTo(new NormalStep("ENV", "PATH PYTHON_VERSION", null, false));
+        assertThat(normalise("/bin/sh -c #(nop) ENV container oci"))
+                .isEqualTo(new NormalStep("ENV", "container", null, false));
+        assertThat(normalise("/bin/sh -c #(nop) ENV GREETING hello there world").text()).isEqualTo("GREETING");
+    }
+
     private static NormalStep normalise(String createdBy) {
         return HistoryNormaliser.normalise(new HistoryStep(createdBy, null, false, null));
     }
