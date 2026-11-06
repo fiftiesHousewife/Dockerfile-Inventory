@@ -12,7 +12,7 @@ class DashboardTest {
             List.of(new PassCount("blob", 900, 1234), new PassCount("text-normal", 700, 1234),
                     new PassCount("signature", 400, 1234)),
             350, 42, 311, 0.02, 0.15, 0.25, 0.1, Map.of("microdnf", 800), Map.of("ROOT", 600, "NUMERIC", 634),
-            false, 0.9);
+            false, 0.9, 3);
     private static final Ranking RANKING = new Ranking(List.of(new Archetype(1, "k", 50, List.of("b"),
             "ubi-minimal:9|<script>alert(1)</script>|git", "b", List.of("org/repo"))), 1234, 42, 311);
     private static final List<BaseRow> BASES = List.of(
@@ -38,7 +38,7 @@ class DashboardTest {
     void theUserPanelSaysWhetherItShowsEffectiveUsersOrUsersAsWritten() {
         assertThat(Dashboard.render(SUMMARY, RANKING, BASES)).contains("as written in the Dockerfile");
         Summary effective = new Summary(1234, 2, SUMMARY.passes(), 350, 42, 311, 0.02, 0.15, 0.25, 0.1,
-                SUMMARY.managers(), SUMMARY.users(), true, 0.9);
+                SUMMARY.managers(), SUMMARY.users(), true, 0.9, 3);
         assertThat(Dashboard.render(effective, RANKING, BASES)).contains("effective, from the built images");
     }
 }

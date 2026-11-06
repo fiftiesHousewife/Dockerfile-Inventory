@@ -81,7 +81,8 @@ public final class Dashboard {
     }
 
     private static String rates(Summary s) {
-        return "<table>" + row("Parse failures (of distinct files)", percent(s.parseFailureRate()))
+        return "<table>" + row("Parse failures (of distinct files, templates left out)", percent(s.parseFailureRate()))
+                + row("Templates saved under a Dockerfile's name", count(s.templates()))
                 + row("RUN instructions too complex to read", percent(s.opaqueRunRate()))
                 + row("Bases pinned by digest", percent(s.pinnedShare()))
                 + row("Bases at end of life", percent(s.eolShare()))

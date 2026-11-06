@@ -47,4 +47,19 @@ class SummaryTest {
 
         assertThat(summary.eolShare()).isEqualTo(1.0);
     }
+
+    @Test
+    void templatesAreCountedApartAndLeftOutOfTheParseFailureRate() {
+        Estate base = Estate.read(EstateTest.FIXTURES, EstateTest.FIXTURES, null);
+        List<Failure> failures = new java.util.ArrayList<>(base.failures());
+        failures.add(new Failure("tpl", "a template, not a Dockerfile ({{ spec.base }}); the parser said: x",
+                List.of(new Location("org/tpl", "src/Dockerfile", "RELEASED"))));
+        Estate estate = new Estate(base.dockerfiles(), failures, base.missing(), base.effectiveUsers());
+
+        Summary summary = Summary.of(estate, Passes.exact(estate), 2, Archetypes.rank(Passes.signatureGroups(estate),
+                estate), BaseCatalogue.of(estate, EolList.empty()));
+
+        assertThat(summary.templates()).isEqualTo(1);
+        assertThat(summary.parseFailureRate()).isEqualTo(1.0 / 3);
+    }
 }
