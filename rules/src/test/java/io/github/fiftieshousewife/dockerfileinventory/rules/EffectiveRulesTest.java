@@ -26,6 +26,23 @@ class EffectiveRulesTest {
         assertThat(s4.check(image("${UID}", APP), texts::get)).hasSize(1);
     }
 
+    @Test
+    void s4ReportsANumericUserWhenNoDockerfileInTheChainMakesPathsGroupZeroWritable() {
+        EffectiveRule s4 = new ArbitraryUid();
+        Map<String, String> withChgrp = Map.of("base-df", "FROM ubi\nRUN chgrp -R 0 /opt/app && \\\n"
+                + "    chmod -R g=u /opt/app\nUSER 1001\n", "app-df", "FROM base\nCOPY app.jar /opt/app/\n");
+        Map<String, String> withChown = Map.of("base-df", "FROM ubi\nUSER 1001\n",
+                "app-df", "FROM base\nCOPY --chown=1001:0 app.jar /opt/app/\n");
+        Map<String, String> without = Map.of("base-df", "FROM ubi\nUSER 1001\n", "app-df", "FROM base\nRUN make\n");
+
+        assertThat(s4.check(image("1001", BASE), withChgrp::get)).isEmpty();
+        assertThat(s4.check(image("1001:0", BASE), withChown::get)).isEmpty();
+        assertThat(s4.check(image("1001", BASE), without::get)).singleElement().satisfies(f -> {
+            assertThat(f.message()).contains("group 0");
+            assertThat(f.contributing()).containsExactly("app-df");
+        });
+    }
+
     static ImageView image(String user, ImageView.Group setBy) {
         return new ImageView("app", user, setBy, List.of(APP, BASE, UBI), List.of());
     }
