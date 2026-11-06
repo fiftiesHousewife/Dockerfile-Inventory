@@ -1,0 +1,4 @@
+{
+  "name" : "sclorg/s2i-base-c9s",
+  "tags" : [ "c9s" ]
+}

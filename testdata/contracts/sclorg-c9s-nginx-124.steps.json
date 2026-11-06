@@ -1,0 +1,58 @@
+{
+  "source": "sclorg/nginx-container@ab2e6da 1.24/Dockerfile.c9s against its image built with Buildah 1.37 (lineage fixtures: artifactory-jcr/config-sclorg_nginx-container-1-24-c9s_c9s.json)",
+  "fromPath": "sclorg/s2i-core-c9s",
+  "steps": [
+    {
+      "keyword": "EXPOSE",
+      "text": "8080"
+    },
+    {
+      "keyword": "EXPOSE",
+      "text": "8443"
+    },
+    {
+      "keyword": "ENV",
+      "text": "NAME NGINX_SHORT_VER NGINX_VERSION VERSION"
+    },
+    {
+      "keyword": "ENV",
+      "text": "DESCRIPTION SUMMARY"
+    },
+    {
+      "keyword": "LABEL",
+      "text": "com.redhat.component com.redhat.license_terms description help io.k8s.description io.k8s.display-name io.openshift.expose-services io.openshift.expose-services io.openshift.tags maintainer name summary usage version"
+    },
+    {
+      "keyword": "ENV",
+      "text": "NGINX_APP_ROOT NGINX_CONFIGURATION_PATH NGINX_CONF_PATH NGINX_CONTAINER_SCRIPTS_PATH NGINX_DEFAULT_CONF_PATH NGINX_LOG_PATH NGINX_PERL_MODULE_PATH"
+    },
+    {
+      "keyword": "RUN",
+      "text": "yum -y module enable nginx:$NGINX_VERSION && INSTALL_PKGS=\"nss_wrapper gettext hostname nginx nginx-mod-stream nginx-mod-http-perl\" && yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && rpm -V $INSTALL_PKGS && nginx -v 2>&1 | grep -qe \"nginx/$NGINX_VERSION\\.\" && echo \"Found VERSION $NGINX_VERSION\" && yum -y clean all --enablerepo='*'"
+    },
+    {
+      "keyword": "COPY",
+      "text": "$STI_SCRIPTS_PATH"
+    },
+    {
+      "keyword": "COPY",
+      "text": "/"
+    },
+    {
+      "keyword": "RUN",
+      "text": "sed -i -f ${NGINX_APP_ROOT}/nginxconf.sed ${NGINX_CONF_PATH} && mkdir -p ${NGINX_APP_ROOT}/etc/nginx.d/ && mkdir -p ${NGINX_APP_ROOT}/etc/nginx.default.d/ && mkdir -p ${NGINX_APP_ROOT}/src/nginx-start/ && mkdir -p ${NGINX_CONTAINER_SCRIPTS_PATH}/nginx-start && mkdir -p ${NGINX_LOG_PATH} && mkdir -p ${NGINX_PERL_MODULE_PATH} && chown -R 1001:0 ${NGINX_CONF_PATH} && chown -R 1001:0 ${NGINX_APP_ROOT}/etc && chown -R 1001:0 ${NGINX_APP_ROOT}/src/nginx-start/ && chown -R 1001:0 ${NGINX_CONTAINER_SCRIPTS_PATH}/nginx-start && chown -R 1001:0 /var/lib/nginx /var/log/nginx /run && chmod ug+rw ${NGINX_CONF_PATH} && chmod -R ug+rwX ${NGINX_APP_ROOT}/etc && chmod -R ug+rwX ${NGINX_APP_ROOT}/src/nginx-start/ && chmod -R ug+rwX ${NGINX_CONTAINER_SCRIPTS_PATH}/nginx-start && chmod -R ug+rwX /var/lib/nginx /var/log/nginx /run && rpm-file-permissions"
+    },
+    {
+      "keyword": "USER",
+      "text": "1001"
+    },
+    {
+      "keyword": "STOPSIGNAL",
+      "text": "SIGQUIT"
+    },
+    {
+      "keyword": "CMD",
+      "text": "$STI_SCRIPTS_PATH/usage"
+    }
+  ]
+}

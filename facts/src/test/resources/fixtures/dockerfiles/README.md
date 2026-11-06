@@ -10,3 +10,6 @@ a line holding only a backslash after a `COPY`, which rewrite-docker 8.90.4 glue
 (`examples/atomic-registry/systemd/Dockerfile`): `LABEL` values in single quotes continued over several lines.
 `mariadb-jinja-template-that-parses.Dockerfile` is the first 15 lines of sclorg's `mariadb-container`
 `src/Dockerfile.fedora`: a Jinja template whose markers happen to be valid Dockerfile syntax, so it parses.
+`sclorg-c9s-*.Dockerfile`: sclorg's CentOS Stream 9 Dockerfiles at the commits discovery scanned on 6 Nov
+(`s2i-base-container` core and base, `s2i-python-container` 3.12, `nginx-container` 1.24), unedited: the
+Dockerfile side of the `testdata/contracts/sclorg-c9s-*` contracts.

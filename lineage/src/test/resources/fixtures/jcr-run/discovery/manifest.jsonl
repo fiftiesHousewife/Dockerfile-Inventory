@@ -1,0 +1,7 @@
+{"repository":"sclorg/s2i-base-container","commitSha":"6ee2b8f3a6532613d602ee91784322e37a00bdf2","scope":"DEFAULT_BRANCH","path":"base/Dockerfile.c9s","blobSha":"84d379564c82cd28d8d358b5f94373bb49f0fb70"}
+{"repository":"sclorg/s2i-base-container","commitSha":"6ee2b8f3a6532613d602ee91784322e37a00bdf2","scope":"DEFAULT_BRANCH","path":"core/Dockerfile.c9s","blobSha":"1723284a866651acfdadf451286d13c452181e12"}
+{"repository":"sclorg/s2i-python-container","commitSha":"cc6d266cb1e9641c1f547da1d0c6094352b4e47c","scope":"DEFAULT_BRANCH","path":"3.12/Dockerfile.c9s","blobSha":"22461d2436a54f83f08d9410d05897f7562a6c23"}
+{"repository":"sclorg/nginx-container","commitSha":"ab2e6dab8db0f2372d94e1be0eb5c02f9bbd77b2","scope":"DEFAULT_BRANCH","path":"1.20/Dockerfile.rhel8","blobSha":"6070555cb3c17f02425e461698624ec091d9ba5b"}
+{"repository":"sclorg/nginx-container","commitSha":"ab2e6dab8db0f2372d94e1be0eb5c02f9bbd77b2","scope":"DEFAULT_BRANCH","path":"1.22/Dockerfile.c9s","blobSha":"b2c598034275558b6409ad39c8b92c6651b25b2e"}
+{"repository":"sclorg/nginx-container","commitSha":"ab2e6dab8db0f2372d94e1be0eb5c02f9bbd77b2","scope":"DEFAULT_BRANCH","path":"1.24/Dockerfile.c8s","blobSha":"d69ccd7230a80986bdb0df3c9ac42814871de9e1"}
+{"repository":"sclorg/nginx-container","commitSha":"ab2e6dab8db0f2372d94e1be0eb5c02f9bbd77b2","scope":"DEFAULT_BRANCH","path":"1.24/Dockerfile.c9s","blobSha":"6add3832a59ef3bd8252cf3b20477d6eba46a8fa"}

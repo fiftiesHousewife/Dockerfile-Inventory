@@ -1,0 +1,6 @@
+[ {
+  "key" : "docker-local",
+  "type" : "LOCAL",
+  "url" : "http://localhost:8082/artifactory/docker-local",
+  "packageType" : "Docker"
+} ]

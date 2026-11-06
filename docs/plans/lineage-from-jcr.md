@@ -1,6 +1,6 @@
 # Lineage in the report, and fixtures from the local JCR run: plan
 
-Status: slice A built 6 Nov; slice B waits on the recorded replies.
+Status: both slices built 6 Nov.
 
 The local JCR run (`scripts/lineage-demo.sh`, BACKLOG Phase 1b) built four sclorg images from discovered
 Dockerfiles and ran lineage against them: every parent right, every image linked to its own Dockerfile. The
@@ -64,4 +64,17 @@ parent by that name, its Dockerfiles as `repository: path`. Under 50 images the 
 from 50 up, the gaps, outdated bases and most-used bases, each top 20. An image lists five Dockerfiles and counts
 the rest. The real run's output is the report's `fixtures/lineage-chain`. The golden page (test 5) comes with
 slice B's recorded replies.
+
+## As built (slice B)
+
+- JCR's real replies matched the hand-written fixtures' shapes, storage reply included, so the hand-written files
+  stay (their names are chosen per case) and their README says which shapes the recordings confirm; the
+  recordings live beside them in `artifactory-jcr/`.
+- `RecordedJcrRunTest` serves the recordings from a fake server and runs the inventory and analysis: every parent
+  and link of the real run, asserted. It passed first time (it describes working code); breaking one expected
+  parent made it fail.
+- Four contracts, `sclorg-c9s-*`, hold facts and lineage to one normal form on real Buildah 1.37 history, each
+  image against its recorded parent.
+- Test 5 (a golden page) was dropped: the family-tree test already asserts the section's whole HTML from the real
+  run's output, so a golden would repeat it.
 

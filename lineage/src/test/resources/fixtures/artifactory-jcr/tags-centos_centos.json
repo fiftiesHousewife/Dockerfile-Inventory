@@ -1,0 +1,4 @@
+{
+  "name" : "centos/centos",
+  "tags" : [ "stream9" ]
+}

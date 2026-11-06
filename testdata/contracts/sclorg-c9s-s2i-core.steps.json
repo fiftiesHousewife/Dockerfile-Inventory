@@ -1,0 +1,42 @@
+{
+  "source": "sclorg/s2i-base-container@6ee2b8f core/Dockerfile.c9s against its image built with Buildah 1.37 (lineage fixtures: artifactory-jcr/config-sclorg_s2i-core-c9s_c9s.json)",
+  "fromPath": "centos/centos",
+  "steps": [
+    {
+      "keyword": "ENV",
+      "text": "DESCRIPTION NAME SUMMARY VERSION"
+    },
+    {
+      "keyword": "LABEL",
+      "text": "com.redhat.component description io.k8s.description io.k8s.display-name io.openshift.s2i.scripts-url io.s2i.scripts-url maintainer name summary version"
+    },
+    {
+      "keyword": "ENV",
+      "text": "APP_ROOT HOME PATH PLATFORM STI_SCRIPTS_PATH STI_SCRIPTS_URL"
+    },
+    {
+      "keyword": "RUN",
+      "text": "INSTALL_PKGS=\"bsdtar findutils gettext glibc-langpack-en groff-base glibc-locale-source rsync scl-utils tar unzip xz yum\" && mkdir -p ${HOME}/.pki/nssdb && chown -R 1001:0 ${HOME}/.pki && dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS && rpm -V $INSTALL_PKGS && dnf -y clean all --enablerepo='*'"
+    },
+    {
+      "keyword": "COPY",
+      "text": "/"
+    },
+    {
+      "keyword": "WORKDIR",
+      "text": "${HOME}"
+    },
+    {
+      "keyword": "ENTRYPOINT",
+      "text": "[\"container-entrypoint\"]"
+    },
+    {
+      "keyword": "CMD",
+      "text": "[\"base-usage\"]"
+    },
+    {
+      "keyword": "RUN",
+      "text": "rpm-file-permissions && useradd -u 1001 -r -g 0 -d ${HOME} -c \"Default Application User\" default && chown -R 1001:0 ${APP_ROOT}"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "source": "sclorg/s2i-python-container@cc6d266 3.12/Dockerfile.c9s against its image built with Buildah 1.37 (lineage fixtures: artifactory-jcr/config-sclorg_s2i-python-container-3-12-c9s_c9s.json)",
+  "fromPath": "sclorg/s2i-base-c9s",
+  "steps": [
+    {
+      "keyword": "EXPOSE",
+      "text": "8080"
+    },
+    {
+      "keyword": "ENV",
+      "text": "LANG LC_ALL PATH PIP_NO_CACHE_DIR PYTHONIOENCODING PYTHONUNBUFFERED PYTHON_VERSION"
+    },
+    {
+      "keyword": "ENV",
+      "text": "ARCH NAME"
+    },
+    {
+      "keyword": "ENV",
+      "text": "DESCRIPTION SUMMARY"
+    },
+    {
+      "keyword": "LABEL",
+      "text": "com.redhat.component description io.k8s.description io.k8s.display-name io.openshift.expose-services io.openshift.tags maintainer name summary usage"
+    },
+    {
+      "keyword": "RUN",
+      "text": "INSTALL_PKGS=\"python3.12 python3.12-devel python3.12-pip nss_wrapper-libs httpd httpd-devel mod_ssl mod_auth_gssapi mod_ldap mod_session atlas-devel gcc-gfortran libffi-devel libtool-ltdl enchant krb5-devel\" && yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && rpm -V $INSTALL_PKGS && yum -y clean all --enablerepo='*'"
+    },
+    {
+      "keyword": "COPY",
+      "text": "$STI_SCRIPTS_PATH"
+    },
+    {
+      "keyword": "COPY",
+      "text": "/"
+    },
+    {
+      "keyword": "COPY",
+      "text": "/opt/wheels"
+    },
+    {
+      "keyword": "RUN",
+      "text": "python3.12 -m venv ${APP_ROOT} && ${APP_ROOT}/bin/pip install /opt/wheels/pip-* && rm -r /opt/wheels && chown -R 1001:0 ${APP_ROOT} && fix-permissions ${APP_ROOT} -P && echo \"unset BASH_ENV PROMPT_COMMAND ENV\" >> ${APP_ROOT}/bin/activate"
+    },
+    {
+      "keyword": "ENV",
+      "text": "BASH_ENV ENV PROMPT_COMMAND"
+    },
+    {
+      "keyword": "USER",
+      "text": "1001"
+    },
+    {
+      "keyword": "CMD",
+      "text": "$STI_SCRIPTS_PATH/usage"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "repo" : "docker-local",
+  "path" : "/sclorg/s2i-base-c9s/c9s",
+  "created" : "2026-11-06T18:16:26.094Z",
+  "createdBy" : "admin",
+  "lastModified" : "2026-11-06T18:16:26.094Z",
+  "modifiedBy" : "admin",
+  "lastUpdated" : "2026-11-06T18:16:26.094Z",
+  "children" : [ {
+    "uri" : "/manifest.json",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__4987b916833f72579f34e7077874484ddacd27d5b1bd31ce1524050d72218e5c",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__99d16ac7fae6e6cb87583892326b4177ff407f17c4417d1cabc2ea01800e08bd",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__b4af54df20ab82595312eef8a1ac1c89dea58d73b5526db0f564618594c2fe40",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__bd9ddc54bea929a22b334e73e026d4136e5b73f5cc29942896c72e4ece69b13d",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__bf34d32d7e2f2a462e17e8566513d1ebe89f7e27d992f08d40ad0679b14f9017",
+    "folder" : false
+  } ],
+  "uri" : "http://localhost:8082/artifactory/api/storage/docker-local/sclorg/s2i-base-c9s/c9s"
+}

@@ -1,0 +1,32 @@
+{
+  "repo" : "docker-local",
+  "path" : "/sclorg/s2i-python-container-3-12-c9s/c9s",
+  "created" : "2026-11-06T18:18:06.098Z",
+  "createdBy" : "admin",
+  "lastModified" : "2026-11-06T18:18:06.098Z",
+  "modifiedBy" : "admin",
+  "lastUpdated" : "2026-11-06T18:18:06.098Z",
+  "children" : [ {
+    "uri" : "/manifest.json",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__3376c871d15b158eaddde1c201beb55dfaff78b4b5605a295e4eedf1b06125cf",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__4987b916833f72579f34e7077874484ddacd27d5b1bd31ce1524050d72218e5c",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__99d16ac7fae6e6cb87583892326b4177ff407f17c4417d1cabc2ea01800e08bd",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__b4af54df20ab82595312eef8a1ac1c89dea58d73b5526db0f564618594c2fe40",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__bd9ddc54bea929a22b334e73e026d4136e5b73f5cc29942896c72e4ece69b13d",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__d071ff9a02f8fe8397d15d922610e9b5209e3a944386d1ca27afd0e240b92fb7",
+    "folder" : false
+  } ],
+  "uri" : "http://localhost:8082/artifactory/api/storage/docker-local/sclorg/s2i-python-container-3-12-c9s/c9s"
+}

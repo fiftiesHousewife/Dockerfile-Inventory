@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Timeout;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -18,6 +20,25 @@ class StepsTest {
 
     /** Shared with lineage, which must reduce the image's real history to the same steps. */
     private static final Path CONTRACT = Path.of("../testdata/contracts/python-311.steps.json");
+
+    @ParameterizedTest
+    @ValueSource(strings = {"s2i-core", "s2i-base", "python-312", "nginx-124"})
+    void eachSclorgDockerfileGivesTheStepsItsBuiltImagesHistoryGives(String name) throws IOException {
+        JsonNode contract = new ObjectMapper().readTree(
+                Path.of("../testdata/contracts/sclorg-c9s-" + name + ".steps.json").toFile());
+        List<Step> expected = new ArrayList<>();
+        contract.path("steps").forEach(s -> expected.add(
+                new Step(s.path("keyword").asString(), s.path("text").asString())));
+        String dockerfile;
+        try (InputStream in = StepsTest.class.getResourceAsStream(
+                "/fixtures/dockerfiles/sclorg-c9s-" + name + ".Dockerfile")) {
+            dockerfile = new String(Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        assertThat(steps(dockerfile)).containsExactlyElementsOf(expected);
+        assertThat(NormalForms.fromPath(FactExtractorTest.facts(dockerfile).base()))
+                .isEqualTo(contract.path("fromPath").asString());
+    }
 
     @Test
     void shellRunJoinsContinuationsDropsCommentLinesInsideAndCollapsesWhitespace() {

@@ -1,0 +1,29 @@
+{
+  "repo" : "docker-local",
+  "path" : "/sclorg/nginx-container-1-24-c9s/c9s",
+  "created" : "2026-11-06T18:13:49.493Z",
+  "createdBy" : "admin",
+  "lastModified" : "2026-11-06T18:13:49.493Z",
+  "modifiedBy" : "admin",
+  "lastUpdated" : "2026-11-06T18:13:49.493Z",
+  "children" : [ {
+    "uri" : "/manifest.json",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__21141cd0cc00c9705217877f7c86efff0a39dbdc75ffb3699d014128c8a80459",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__4987b916833f72579f34e7077874484ddacd27d5b1bd31ce1524050d72218e5c",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__a734fa11d63b645eb8a183d624062f778d5dc9284c006e85507b0a9693870894",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__b4af54df20ab82595312eef8a1ac1c89dea58d73b5526db0f564618594c2fe40",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__bd9ddc54bea929a22b334e73e026d4136e5b73f5cc29942896c72e4ece69b13d",
+    "folder" : false
+  } ],
+  "uri" : "http://localhost:8082/artifactory/api/storage/docker-local/sclorg/nginx-container-1-24-c9s/c9s"
+}

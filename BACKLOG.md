@@ -28,8 +28,9 @@ and one line when its gate is met.
     with Buildah from discovered Dockerfiles; every parent right, each image linked to its own Dockerfile
     (PROBABLE, as no release index). nginx 1.24 also linked to 1.20, 1.22 and c8s files whose steps differ only in
     ENV values, which the normal form leaves out.
-  - Done 6 Nov: the report's lineage section (`docs/plans/lineage-from-jcr.md`, slice A). Next: slice B, fixtures
-    recorded from the JCR run. Later: keep `ENV` values in the shared normal form (the nginx case above).
+  - Done 6 Nov: the report's lineage section, and fixtures recorded from the JCR run: an end-to-end lineage test on
+    JCR's real replies and four contracts on real Buildah history (`docs/plans/lineage-from-jcr.md`). Later: keep
+    `ENV` values in the shared normal form (the nginx case above).
   - Done: slice 1, the Artifactory REST client (`lineage` module), against hand-written fixtures.
   - Done: slice 2, image nodes: one tag to its amd64 config, or a counted skip.
   - Done: slice 3, the family tree from layer prefixes (OCI chain IDs), ambiguous parents reported.

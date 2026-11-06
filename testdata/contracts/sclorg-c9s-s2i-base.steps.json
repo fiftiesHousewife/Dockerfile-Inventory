@@ -1,0 +1,18 @@
+{
+  "source": "sclorg/s2i-base-container@6ee2b8f base/Dockerfile.c9s against its image built with Buildah 1.37 (lineage fixtures: artifactory-jcr/config-sclorg_s2i-base-c9s_c9s.json)",
+  "fromPath": "sclorg/s2i-core-c9s",
+  "steps": [
+    {
+      "keyword": "ENV",
+      "text": "DESCRIPTION NAME NODEJS_VER SUMMARY"
+    },
+    {
+      "keyword": "LABEL",
+      "text": "com.redhat.component description io.k8s.description io.k8s.display-name maintainer name summary version"
+    },
+    {
+      "keyword": "RUN",
+      "text": "yum -y module enable nodejs:$NODEJS_VER && INSTALL_PKGS=\"nodejs autoconf automake bzip2 gcc-c++ gd-devel gdb git libcurl-devel libpq-devel libxml2-devel libxslt-devel lsof make mariadb-connector-c-devel openssl-devel patch procps-ng npm redhat-rpm-config sqlite-devel unzip wget which zlib-devel\" && yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && rpm -V $INSTALL_PKGS && node -v | grep -qe \"^v$NODEJS_VER\\.\" && echo \"Found VERSION $NODEJS_VER\" && yum -y clean all --enablerepo='*'"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "repo" : "docker-local",
+  "path" : "/centos/centos/stream9",
+  "created" : "2026-11-06T18:04:27.142Z",
+  "createdBy" : "admin",
+  "lastModified" : "2026-11-06T18:04:27.142Z",
+  "modifiedBy" : "admin",
+  "lastUpdated" : "2026-11-06T18:04:27.142Z",
+  "children" : [ {
+    "uri" : "/manifest.json",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__b4af54df20ab82595312eef8a1ac1c89dea58d73b5526db0f564618594c2fe40",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__bd9ddc54bea929a22b334e73e026d4136e5b73f5cc29942896c72e4ece69b13d",
+    "folder" : false
+  }, {
+    "uri" : "/sha256__cdc65e3dc1b675127b1e26ef79884f63cae4c46c00a89f0c18cb5c617bec62c8",
+    "folder" : false
+  } ],
+  "uri" : "http://localhost:8082/artifactory/api/storage/docker-local/centos/centos/stream9"
+}
