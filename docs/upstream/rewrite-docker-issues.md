@@ -115,3 +115,28 @@ idempotent`. Any flag (`--platform`, `--chown`) with `:-` inside `${...}`; `${NA
 parse, as does `${NAME:-default}` outside a flag.
 Seen in 12 `openshift` files.
 Workaround: `FactsParser`'s retry writes `${NAME-default}` inside flag values.
+
+## 10. `ARG` with several names and no values is rejected
+
+```dockerfile
+FROM ubi9
+ARG TARGETOS TARGETARCH
+```
+
+Expected: two build arguments without defaults, as BuildKit accepts. Actual: `extraneous input 'TARGETARCH'
+expecting {<EOF>, 'FROM'}`. `ARG A=1 B=2` parses. Seen in 10 `openshift` files.
+Workaround: `FactsParser`'s retry writes `ARG TARGETOS=$TARGETOS TARGETARCH=$TARGETARCH`, which leaves each unknown.
+
+## 11. A heredoc after a command in `RUN` is rejected
+
+```dockerfile
+FROM ubi9
+RUN cat > /etc/x.toml <<EOF
+a = 1
+EOF
+```
+
+Expected: a `RUN` whose command reads the heredoc, as BuildKit runs it. Actual: `extraneous input '<<EOF'
+expecting {<EOF>, 'FROM'}`; the body's lines are then read as instructions. Only `RUN <<EOF` (the heredoc as the
+script) and `COPY <<EOF` parse. Seen in at least 4 `openshift` files (bootc kernel arguments, systemd units).
+Workaround: none safe; the file is counted as a parse failure.

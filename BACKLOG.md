@@ -18,7 +18,7 @@ and one line when its gate is met.
   published. Code complete; the gate waits on a discovery run.
   - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms; slice 6, the facts run and rates.
   - Fixed 6 Nov: a comment line inside a continued instruction was recorded as a parse failure.
-  - To raise upstream: nine rewrite-docker 8.90.4 issues, drafted with reproductions in
+  - To raise upstream: eleven rewrite-docker 8.90.4 issues, drafted with reproductions in
     `docs/upstream/rewrite-docker-issues.md`; each is worked around here.
 
 - Phase 1b — Lineage and effective images. Plan: `docs/plans/phase-1b.md` (questions answered 6 Nov). Gate:

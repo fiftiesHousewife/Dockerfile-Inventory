@@ -178,4 +178,13 @@ class FactsParserTest {
         assertThat(new FactsParser().parse("rust", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
         assertThat(FactExtractorTest.facts(dockerfile).base().name()).isEqualTo("docker.io/library/rust");
     }
+
+    @Test
+    void anArgDeclaringSeveralNamesWithoutValuesParsesAndLeavesEachUnknown() {
+        String dockerfile = "FROM --platform=$BUILDPLATFORM golang:1.26.4 AS builder\nARG TARGETOS TARGETARCH\n"
+                + "RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /app .\n";
+
+        assertThat(new FactsParser().parse("go", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
+        assertThat(FactExtractorTest.facts(dockerfile).base().name()).isEqualTo("golang");
+    }
 }

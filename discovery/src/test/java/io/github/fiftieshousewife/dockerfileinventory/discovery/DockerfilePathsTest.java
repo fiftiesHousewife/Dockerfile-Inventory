@@ -30,7 +30,8 @@ class DockerfilePathsTest {
         "Dockerfile.erb", "Dockerfile.in", "schema/Dockerfile.json", "Dockerfile.yaml", "Dockerfile.txt",
         "container_workflow_tool/dockerfile.py", "build/dockerfile.sh", "dockerfile.bash", "lib/dockerfile.rb",
         "src/dockerfile.js", "src/Dockerfile.ts", "src/Dockerfile.java", "Dockerfile.kt", "Dockerfile.groovy",
-        "scripts/Dockerfile.ps1"})
+        "scripts/Dockerfile.ps1", "examples/hyperlight-sandbox/Containerfile.dockerignore",
+        "rootfs.Dockerfile.dockerignore"})
     void rejectsSourceDocumentAndTemplateFilesNamedLikeDockerfiles(String path) {
         assertThat(DockerfilePaths.isDockerfile(path)).isFalse();
     }

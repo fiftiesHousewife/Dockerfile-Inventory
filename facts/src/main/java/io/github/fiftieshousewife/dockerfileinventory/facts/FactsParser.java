@@ -35,6 +35,8 @@ public final class FactsParser {
     private static final Pattern SPACE_BEFORE_COMMA = Pattern.compile("\"[ \\t]+,");
     private static final Pattern FLAG_DEFAULT =
             Pattern.compile("(--[A-Za-z-]+=\\S*?\\$\\{[A-Za-z_][A-Za-z0-9_]*):-");
+    private static final Pattern SEVERAL_ARGS =
+            Pattern.compile("(?i)(\\s*ARG\\s+)(\\S+(?:\\s+\\S+)+)\\s*");
     private static final Pattern HEREDOC = Pattern.compile("<<-?['\"]?(\\w+)");
 
     private final DockerParser parser = DockerParser.builder().build();
@@ -82,14 +84,26 @@ public final class FactsParser {
      * The text the retry parses: whole-line comments blanked, and, on lines holding a JSON array, the whitespace
      * before a comma dropped, which rewrite-docker 8.90.4 cannot print back ({@code CMD ["a" , "b"]}); and in a
      * flag's value, {@code ${NAME:-default}} written {@code ${NAME-default}}, which it can (the two differ only
-     * when the variable is set but empty). All keep every line where it was.
+     * when the variable is set but empty); and {@code ARG A B}, several names without values, which it rejects,
+     * written {@code ARG A=$A B=$B}, so each value stays unknown as before. All keep every line where it was.
      */
     static String retryText(String text) {
         return text.lines()
                 .map(line -> line.contains("[") ? SPACE_BEFORE_COMMA.matcher(line).replaceAll("\",") : line)
                 .map(line -> FLAG_DEFAULT.matcher(line).replaceAll("$1-"))
+                .map(FactsParser::argNames)
                 .collect(Collectors.joining("\n", "", text.endsWith("\n") ? "\n" : ""))
                 .transform(FactsParser::withoutComments);
+    }
+
+    private static String argNames(String line) {
+        var arg = SEVERAL_ARGS.matcher(line);
+        if (!arg.matches()) {
+            return line;
+        }
+        return arg.group(1) + java.util.Arrays.stream(arg.group(2).trim().split("\\s+"))
+                .map(name -> name.contains("=") ? name : name + "=$" + name)
+                .collect(Collectors.joining(" "));
     }
 
     /**

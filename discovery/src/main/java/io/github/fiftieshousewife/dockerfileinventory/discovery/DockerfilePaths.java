@@ -18,7 +18,7 @@ public final class DockerfilePaths {
     private static final Set<String> NOT_DOCKERFILES = Set.of(
             "go", "py", "sh", "bash", "rb", "js", "ts", "java", "kt", "groovy", "ps1",
             "md", "txt", "json", "yaml", "yml", "xml", "tmpreferences",
-            "tpl", "template", "j2", "jinja", "erb", "in");
+            "tpl", "template", "j2", "jinja", "erb", "in", "dockerignore");
     private static final Pattern THIRD_PARTY = Pattern.compile("(^|/)(vendor|node_modules|third_party)/");
 
     private DockerfilePaths() {
