@@ -72,6 +72,15 @@ class AnalysisTest {
         assertThat(user.path("setBy").path("configDigest").asString()).isEqualTo("base");
     }
 
+    @Test
+    void writesGapsExternalBasesAndOutdatedBases() throws IOException {
+        new Analysis(out, facts, discovery).run();
+
+        assertThat(byDigest("gaps.jsonl")).containsOnlyKeys("stray");
+        assertThat(byDigest("external-bases.jsonl")).containsOnlyKeys("ubi");
+        assertThat(Files.readAllLines(out.resolve("outdated-bases.jsonl"))).isEmpty();
+    }
+
     private Map<String, JsonNode> byDigest(String file) throws IOException {
         return Files.readAllLines(out.resolve(file)).stream()
                 .map(JSON::readTree)

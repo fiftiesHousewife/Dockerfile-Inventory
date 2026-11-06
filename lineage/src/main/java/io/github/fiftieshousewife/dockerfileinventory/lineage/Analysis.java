@@ -49,6 +49,10 @@ public final class Analysis {
         files.write("lineage.jsonl", rows(parents, parent -> nested("parent", parent)));
         files.write("links.jsonl", rows(links, json::valueToTree));
         files.write("effective.jsonl", rows(effective, json::valueToTree));
+        GapReport gaps = Gaps.of(references, parents, links);
+        files.write("gaps.jsonl", gaps.gaps().stream().map(json::writeValueAsString).toList());
+        files.write("external-bases.jsonl", gaps.externalBases().stream().map(json::writeValueAsString).toList());
+        files.write("outdated-bases.jsonl", gaps.outdatedBases().stream().map(json::writeValueAsString).toList());
     }
 
     /** Every reference to each config digest; skipped tags name none. */
