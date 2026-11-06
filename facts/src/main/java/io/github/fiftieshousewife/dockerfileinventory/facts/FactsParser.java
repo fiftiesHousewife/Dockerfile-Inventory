@@ -117,7 +117,7 @@ public final class FactsParser {
     }
 
     /**
-     * The first line that follows a bare newline. A comment line inside a continued instruction ends with one too,
+     * The first non-blank line that follows a bare newline. A comment line inside a continued instruction ends with one too,
      * as Docker drops such lines, so a newline that ends a comment line does not count.
      */
     static Optional<String> gluedAfter(String text) {
@@ -125,7 +125,11 @@ public final class FactsParser {
         for (int i = 0; i < lines.size() - 1; i++) {
             String line = lines.get(i);
             if (!line.endsWith("\\") && !line.strip().startsWith("#")) {
-                return Optional.of(lines.get(i + 1).strip());
+                return lines.subList(i + 1, lines.size()).stream()
+                        .map(String::strip)
+                        .filter(next -> !next.isEmpty())
+                        .findFirst()
+                        .or(() -> Optional.of(""));
             }
         }
         return Optional.empty();
