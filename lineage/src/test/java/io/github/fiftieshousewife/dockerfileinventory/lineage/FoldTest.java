@@ -58,6 +58,32 @@ class FoldTest {
         assertThat(effective.cmd()).isEqualTo(new Property<>(List.of("serve"), new SetBy.Image("app", APP_LINK)));
     }
 
+    @Test
+    void envAndLabelsAreAttributedPerKeySoAnOverrideTakesOnlyItsKey() {
+        Link baseLink = new Link(Link.Tier.PROBABLE, List.of("base-df"), false);
+        List<HistoryStep> baseHistory = List.of(step("ADD file:ubi in /"),
+                step("ENV APP_ROOT=/opt/app PATH=/usr/bin"), step("LABEL name=base vendor=acme"));
+        Resolved.Node base = new Resolved.Node("base", new ImageConfig(List.of("L1"), baseHistory, null,
+                Map.of("name", "base", "vendor", "acme"), Map.of("APP_ROOT", "/opt/app", "PATH", "/usr/bin"),
+                null, List.of(), List.of(), List.of()));
+        List<HistoryStep> appHistory = new ArrayList<>(baseHistory);
+        appHistory.addAll(List.of(step("ENV PATH=/opt/app/bin:$PATH"), step("LABEL name=app")));
+        Resolved.Node app = new Resolved.Node("app", new ImageConfig(List.of("L1", "L2"), appHistory, null,
+                Map.of("name", "app", "vendor", "acme"), Map.of("APP_ROOT", "/opt/app", "PATH", "/opt/app/bin:/usr/bin"),
+                null, List.of(), List.of(), List.of()));
+
+        EffectiveImage effective = Fold.of(List.of(base, app),
+                Map.of("base", new Parent.Root(), "app", new Parent.Of("base")),
+                Map.of("app", APP_LINK, "base", baseLink)).get("app");
+
+        assertThat(effective.env()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "PATH", new Property<>("/opt/app/bin:/usr/bin", new SetBy.Image("app", APP_LINK)),
+                "APP_ROOT", new Property<>("/opt/app", new SetBy.Image("base", baseLink))));
+        assertThat(effective.labels()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "name", new Property<>("app", new SetBy.Image("app", APP_LINK)),
+                "vendor", new Property<>("acme", new SetBy.Image("base", baseLink))));
+    }
+
     static HistoryStep step(String instruction) {
         return step(instruction, null);
     }

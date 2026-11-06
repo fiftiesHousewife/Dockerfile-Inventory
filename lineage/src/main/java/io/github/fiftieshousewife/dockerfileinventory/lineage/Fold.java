@@ -37,7 +37,9 @@ public final class Fold {
                     new Property<>(config.user(), setBy(chain, links, keyword("USER"))),
                     new Property<>(config.workingDir(), setBy(chain, links, keyword("WORKDIR"))),
                     new Property<>(config.entrypoint(), setBy(chain, links, keyword("ENTRYPOINT"))),
-                    new Property<>(config.cmd(), setBy(chain, links, keyword("CMD")))));
+                    new Property<>(config.cmd(), setBy(chain, links, keyword("CMD"))),
+                    perKey(config.env(), "ENV", chain, links),
+                    perKey(config.labels(), "LABEL", chain, links)));
         }
         return effective;
     }
@@ -54,6 +56,15 @@ public final class Fold {
             current = parent;
         }
         return chain;
+    }
+
+    /** {@code ENV} and {@code LABEL} steps reduce to their key names, so each key is attributed on its own. */
+    private static Map<String, Property<String>> perKey(Map<String, String> values, String keyword,
+                                                        List<Member> chain, Map<String, Link> links) {
+        Map<String, Property<String>> attributed = new HashMap<>();
+        values.forEach((key, value) -> attributed.put(key, new Property<>(value, setBy(chain, links,
+                keyword(keyword).and(i -> List.of(i.text().split(" ")).contains(key))))));
+        return attributed;
     }
 
     private static Predicate<Instruction> keyword(String keyword) {
