@@ -51,6 +51,14 @@ class ImageBuilderTest {
     }
 
     @Test
+    void r1ADigestFromABuildArgumentIsNotAPin() {
+        assertThat(breachMessages(ImageBuilder.finalStage(
+                new BaseImage("registry.example.com/ubi9/ubi-minimal", "9.4", "sha256:${BASE_SHA}")).user(1001)
+                .entrypoint("app"))).containsExactly(
+                        "R1: base registry.example.com/ubi9/ubi-minimal is pinned only by a build argument (BASE_SHA)");
+    }
+
+    @Test
     void h2AShellFormEntrypointIsOnlyPossibleThroughRawAndIsABreach() {
         assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(1001)
                 .raw("ENTRYPOINT java -jar app.jar", "legacy start script"))).containsExactly("H2");
@@ -101,5 +109,14 @@ class ImageBuilderTest {
         assertThatExceptionOfType(PolicyViolation.class)
                 .isThrownBy(() -> ImageBuilder.finalStage(new BaseImage("alpine", "3.20", DIGEST)).build(POLICY))
                 .withMessageContaining("S1").withMessageContaining("S4");
+    }
+
+    private static List<String> breachMessages(ImageBuilder builder) {
+        try {
+            builder.build(POLICY);
+            return List.of();
+        } catch (PolicyViolation violation) {
+            return violation.breaches().stream().map(b -> b.rule() + ": " + b.message()).toList();
+        }
     }
 }

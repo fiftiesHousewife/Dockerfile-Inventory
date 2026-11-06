@@ -239,6 +239,9 @@ public final class ImageBuilder {
         }
         if (base.digest() == null) {
             breaches.add(new PolicyViolation.Breach("R1", "base " + base.name() + " is not pinned by digest"));
+        } else if (base.digest().contains("$")) {
+            breaches.add(new PolicyViolation.Breach("R1", "base " + base.name() + " is pinned only by a build argument ("
+                    + base.digest().replaceAll("sha256:\\$\\{?([A-Za-z0-9_]+)}?", "$1") + ")"));
         }
         for (Draft stage : stages) {
             for (Instruction instruction : stage.instructions) {
