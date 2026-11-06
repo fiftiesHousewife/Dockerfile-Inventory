@@ -15,6 +15,17 @@ class LineageTest {
         assertThat(parents).containsEntry("ubi", new Parent.Root()).containsEntry("alpine", new Parent.Root());
     }
 
+    @Test
+    void theParentIsTheImageWhoseLayersAreTheLongestStrictPrefix() {
+        Map<String, Parent> parents = Lineage.of(List.of(
+                node("child", "L1", "L2", "L3"), node("ubi", "L1"), node("base", "L1", "L2")));
+
+        assertThat(parents)
+                .containsEntry("ubi", new Parent.Root())
+                .containsEntry("base", new Parent.Of("ubi"))
+                .containsEntry("child", new Parent.Of("base"));
+    }
+
     private static Resolved.Node node(String digest, String... layers) {
         return node(digest, List.of(layers), List.of());
     }
