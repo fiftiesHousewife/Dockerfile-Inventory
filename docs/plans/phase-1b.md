@@ -25,6 +25,10 @@ or queued for curation; gap list published and reviewed.
 | Q11 | Ambiguous parents (slice 3) | Report them | Both candidates recorded; links and the fold use the earliest-pushed one; rates count them |
 | Q12 | Children of an outdated base build | Report, in slice 7 | "Built on an outdated base": the parent is not the newest push of its image name |
 | Q13 | Is the Tekton build Konflux-like (slice 4)? | Not known | Strip the known `cachi2` prefix from `RUN`, mark known builder-added steps rather than dropping them, and read revision labels in slice 5 when present. Check against real history once Artifactory access exists |
+| Q14 | Where each Dockerfile's steps come from (slice 5) | `facts` writes them | `facts.jsonl` rows gain `steps` and `fromPath`; a contract fixture keeps both normal forms in step |
+| Q15 | How Dockerfiles name Artifactory images in `FROM` | Mixed, not known | A `FROM` path is matched against Artifactory image names as written and with its first segment removed (a repository key); the rates say which form matched |
+| Q16 | Revision labels (slice 5) | Never present in the estate | Not read. `STRONG` comes from the release index alone |
+| Q17 | Identical Dockerfiles in several repositories | Link to the group | One link to every Dockerfile with the same steps, listing each location |
 
 ## Decisions that follow (say if any is wrong)
 
@@ -162,6 +166,49 @@ or queued for curation; gap list published and reviewed.
    compares them with JSON whitespace ignored.
 5. **Dockerfile links**: candidates whose resolved final `FROM` matches the lineage parent; ordered alignment of the
    image's own history steps against each candidate's instructions; tiers per D2.
+
+   Evidence (6 Nov): upstream `sclorg/s2i-python-container` `3.11/Dockerfile.rhel9` (commit `b30d258`) against the
+   public `ubi9/python-311` history. Every instruction after `FROM` appears in order. `RUN` text is joined at
+   backslash-newlines, with comment lines inside the command dropped and nothing else changed. The `FROM`
+   comment is `registry.access.redhat.com/ubi9/s2i-base:9.8-1779892026`, where the Dockerfile says
+   `ubi9/s2i-base:1`: the build pins the tag and adds the registry, so bases match on image path, not on host or
+   tag.
+
+   Two parts, each test-first:
+
+   **5a, in `facts`: each Dockerfile's steps.** `facts.jsonl` rows gain `steps`: the final image's instructions
+   in the same normal form as `NormalStep` (`keyword`, `text`), and `fromPath`: the resolved final base's image
+   path without registry host or tag. The final image's instructions are the final stage's, preceded by those of
+   any earlier stage it is built `FROM`. `FROM` and `ARG` leave no step, as in Buildah's history. The two modules
+   must agree on the normal form without sharing code, since stages hand files, not objects. So a contract
+   fixture, `testdata/contracts/python-311.steps.json`, is the expected steps of the real pair above (builder
+   steps removed). `facts` tests that the Dockerfile produces it, and `lineage` tests that the history does.
+   1. `RUN` (shell form): continuations joined, comment lines inside dropped, whitespace collapsed.
+   2. `RUN` exec form and heredoc: kept as written and collapsed (no real history sample; they will rarely match).
+   3. `COPY`/`ADD`: the destination (the last argument, or the exec array's last element); flags ignored.
+   4. `LABEL`/`ENV`: sorted key names; other instructions: keyword and collapsed value.
+   5. A final stage built `FROM` an earlier stage starts with that stage's steps; `ARG`, `FROM`, comments and
+      blank lines leave none.
+   6. `fromPath`: `registry.example.com:5000/ubi9/s2i-base:1@sha256:...` gives `ubi9/s2i-base`; a first segment
+      with no dot, colon or `localhost` is part of the path, not a host (Docker's rule). Whether a first path
+      segment is a repository key is decided in 5b, against Artifactory's names (Q15).
+   7. Contract: the upstream python 3.11 Dockerfile gives exactly the contract steps.
+
+   **5b, in `lineage`: links.** `Links.of(nodes, parents, dockerfiles)` gives each image a `Link`: tier `STRONG`,
+   `PROBABLE` or `WEAK` with the matching Dockerfile group, or `NONE`. A group is every Dockerfile (by blob SHA)
+   with the same steps (Q17), so copies across repositories link once.
+   8. An image's own steps are the history after its parent's; with no parent, the steps from its last `FROM`
+      comment; builder-added steps are dropped.
+   9. Contract: the public python-311 history gives exactly the contract steps.
+   10. An image whose own steps equal a group's steps links to it.
+   11. Tier: `STRONG` when the group has a location at a released commit (D2, Q16); `PROBABLE` otherwise.
+   12. No exact match: the best ordered partial alignment (longest common subsequence over at least 80% of the
+       longer side) among groups whose `fromPath` matches the parent's or the `FROM` comment's image path gives
+       `WEAK`, naming every group tied for best.
+   13. Nothing aligns: `NONE`.
+   14. A root whose linked Dockerfile names a base that should be in Artifactory is a "parent missing" finding (Q2);
+       the base should be there when its `fromPath`, as written or without its first segment (Q15), is the name of
+       some image in Artifactory.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,
    `ENV`, labels, `WORKDIR`, `ENTRYPOINT`, `CMD` and packages; `ONBUILD` injected at the child's start.
 7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with
