@@ -17,8 +17,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * GitHub Enterprise Server over HTTP: REST for organisations and trees, GraphQL for repositories and blob text.
- * {@code apiBase} is the server's {@code /api} URL; REST lives under {@code /api/v3}, GraphQL at {@code /api/graphql}.
+ * GitHub over HTTP: REST for organisations and trees, GraphQL for repositories and blob text. Where the API lives,
+ * for GitHub Enterprise Server, github.com or Enterprise Cloud, comes from {@link GitHubApi}.
  * Only {@code java.net.http} is used, so the scanner image needs no git binary.
  */
 public final class GitHubHttp implements GitHub {
@@ -46,12 +46,13 @@ public final class GitHubHttp implements GitHub {
     private final String restPrefix;
     private final ObjectMapper json = new ObjectMapper();
 
-    public GitHubHttp(URI apiBase, String token) {
-        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build(), apiBase, token, restPrefix(apiBase));
+    public GitHubHttp(GitHubApi api, String token) {
+        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build(), api.base(), token, api.restPrefix());
     }
 
+    /** GitHub Enterprise Server's layout: REST under {@code v3/}. */
     GitHubHttp(HttpClient http, URI apiBase, String token) {
-        this(http, apiBase, token, restPrefix(apiBase));
+        this(http, apiBase, token, "v3/");
     }
 
     GitHubHttp(HttpClient http, URI apiBase, String token, String restPrefix) {
@@ -59,14 +60,6 @@ public final class GitHubHttp implements GitHub {
         this.apiBase = URI.create(apiBase.toString().replaceAll("/+$", "") + "/");
         this.token = token;
         this.restPrefix = restPrefix;
-    }
-
-    /**
-     * GitHub Enterprise Server serves REST under {@code /api/v3/} and GraphQL at {@code /api/graphql}; github.com
-     * (and Enterprise Cloud) serve REST at the root of {@code api.github.com} and GraphQL at {@code /graphql}.
-     */
-    static String restPrefix(URI apiBase) {
-        return "api.github.com".equals(apiBase.getHost()) ? "" : "v3/";
     }
 
     @Override

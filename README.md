@@ -37,10 +37,10 @@ The full plan, with each phase's gate, is the
 ## Run discovery
 
 ```bash
-export GHE_API_URL=https://github.example.com/api   # the server's /api URL, or https://api.github.com
+export GHE_API_URL=https://github.example.com       # or https://github.com/MyOrg, or https://myco.ghe.com
 export GHE_TOKEN=...                               # read access to every organisation
 export OUT_DIR=/data/inventory                     # keep it between runs: a rerun resumes
-export ORGANIZATIONS=payments,platform             # optional: only these organisations (default: all)
+export ORGANIZATIONS=payments,platform             # optional: only these (default: the URL's org, else all)
 export RELEASE_INDEX=/data/releases.csv            # optional: owner/repo,commitSha per line
 export CONCURRENCY=16                              # optional: parallel repository scans
 ./gradlew :discovery:run

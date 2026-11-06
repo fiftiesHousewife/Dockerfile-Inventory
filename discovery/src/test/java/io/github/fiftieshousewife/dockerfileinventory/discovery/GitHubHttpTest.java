@@ -31,7 +31,7 @@ class GitHubHttpTest {
     void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.start();
-        gitHub = new GitHubHttp(URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/api/"), "t0ken");
+        gitHub = new GitHubHttp(GitHubApi.from("http://127.0.0.1:" + server.getAddress().getPort() + "/api/"), "t0ken");
     }
 
     @AfterEach
@@ -68,8 +68,6 @@ class GitHubHttpTest {
 
     @Test
     void githubDotComHasRestAtTheRootAndGraphqlBesideIt() {
-        assertThat(GitHubHttp.restPrefix(URI.create("https://api.github.com/"))).isEmpty();
-        assertThat(GitHubHttp.restPrefix(URI.create("https://github.example.com/api/"))).isEqualTo("v3/");
         GitHubHttp dotCom = new GitHubHttp(java.net.http.HttpClient.newHttpClient(),
                 URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/"), "t0ken", "");
         route("/repos/payments/ledger-api/git/trees/abc", exchange -> respond(exchange, 200, "tree.json"));

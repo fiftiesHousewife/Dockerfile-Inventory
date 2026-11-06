@@ -79,3 +79,6 @@ organisations instead of listing every one on the server.
 
 1. Named organisations are the only ones scanned.
 2. github.com's REST paths have no `v3/` prefix; GraphQL sits beside them.
+3. Every URL form people know their GitHub by works (`GitHubApi`): a GHE Server host (with or without `/api` or
+   `/api/v3`), `https://github.com/MyInternalOrg` (Enterprise Cloud), and `https://myco.ghe.com` (Enterprise Cloud
+   with data residency). An organisation in the path is scanned when `ORGANIZATIONS` is not set.
