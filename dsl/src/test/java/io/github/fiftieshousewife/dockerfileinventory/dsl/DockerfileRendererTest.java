@@ -34,12 +34,12 @@ class DockerfileRendererTest {
         assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo("""
                 ARG VERSION="1.0"
 
-                FROM registry.example.com/ubi9/ubi:9.4@%1$s AS build
+                FROM registry.example.com/ubi9/ubi:9.4@DIGEST AS build
                 RUN dnf install -y --nodocs --setopt=install_weak_deps=0 make \\
                     && dnf clean all
                 RUN make build
 
-                FROM registry.example.com/ubi9/ubi-minimal:9.4@%1$s
+                FROM registry.example.com/ubi9/ubi-minimal:9.4@DIGEST
                 LABEL org.opencontainers.image.revision="${REVISION}" \\
                       summary="say \\"hi\\""
                 ENV APP_HOME="/opt/app"
@@ -52,7 +52,7 @@ class DockerfileRendererTest {
                 ENTRYPOINT ["/opt/app/app", "--config", "/etc/app \\"main\\".yaml"]
                 CMD ["serve"]
                 HEALTHCHECK NONE
-                """.formatted(DIGEST));
+                """.replace("DIGEST", DIGEST));
     }
 
     @Test
