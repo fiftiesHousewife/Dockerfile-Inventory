@@ -4,26 +4,48 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /** Every Dockerfile in the estate, with its facts and locations, read from the earlier stages' files. */
-public record Estate(List<Dockerfile> dockerfiles) {
+public record Estate(List<Dockerfile> dockerfiles, List<Location> missing) {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     public Estate {
         dockerfiles = List.copyOf(dockerfiles);
+        missing = List.copyOf(missing);
     }
 
     public static Estate read(Path factsDir, Path discoveryDir, Path lineageDir) {
-        return new Estate(lines(factsDir.resolve("facts.jsonl")).stream().map(Estate::dockerfile).toList());
+        Map<String, List<Location>> locations = new HashMap<>();
+        lines(discoveryDir.resolve("manifest.jsonl")).forEach(row -> locations
+                .computeIfAbsent(row.path("blobSha").asString(), k -> new ArrayList<>())
+                .add(new Location(row.path("repository").asString(), row.path("path").asString(),
+                        row.path("scope").asString())));
+        List<Dockerfile> dockerfiles = lines(factsDir.resolve("facts.jsonl")).stream()
+                .map(row -> dockerfile(row, locations.getOrDefault(row.path("blobSha").asString(), List.of())))
+                .toList();
+        Set<String> accounted = new HashSet<>();
+        dockerfiles.forEach(d -> accounted.add(d.blobSha()));
+        lines(factsDir.resolve("parse-failures.jsonl")).forEach(row -> accounted.add(row.path("blobSha").asString()));
+        List<Location> missing = locations.entrySet().stream()
+                .filter(e -> !accounted.contains(e.getKey()))
+                .flatMap(e -> e.getValue().stream())
+                .sorted(Comparator.comparing(Location::repository).thenComparing(Location::path))
+                .toList();
+        return new Estate(dockerfiles, missing);
     }
 
-    private static Dockerfile dockerfile(JsonNode row) {
+    private static Dockerfile dockerfile(JsonNode row, List<Location> locations) {
         JsonNode facts = row.path("facts");
         JsonNode base = facts.path("base");
         int finalStage = facts.path("stageCount").asInt() - 1;
@@ -41,7 +63,7 @@ public record Estate(List<Dockerfile> dockerfiles) {
                 new Base(base.path("name").stringValue(null), base.path("tag").stringValue(null),
                         base.path("digest").stringValue(null)),
                 packages, managers, facts.path("userKind").asString(), facts.path("runs").asInt(),
-                facts.path("opaqueRuns").asInt(), List.of());
+                facts.path("opaqueRuns").asInt(), locations);
     }
 
     static List<JsonNode> lines(Path file) {

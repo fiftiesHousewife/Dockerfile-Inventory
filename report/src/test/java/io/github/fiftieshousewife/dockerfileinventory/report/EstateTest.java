@@ -26,4 +26,14 @@ class EstateTest {
             assertThat(a.opaqueRuns()).isZero();
         });
     }
+
+    @Test
+    void eachBlobsLocationsComeFromTheManifestAndUnparsedBlobsAreReportedMissing() {
+        Estate estate = Estate.read(FIXTURES, FIXTURES, null);
+
+        assertThat(estate.dockerfiles().getFirst().locations()).containsExactly(
+                new Location("payments/api", "Dockerfile", "RELEASED"),
+                new Location("payments/web", "build/Dockerfile", "DEFAULT_BRANCH"));
+        assertThat(estate.missing()).containsExactly(new Location("platform/gone", "Dockerfile", "RELEASED"));
+    }
 }
