@@ -198,4 +198,17 @@ class ConvertTest {
         assertThat(model.stages().getFirst().instructions()).startsWith(new Instruction.Arg("UID", "1001"),
                 new Instruction.Arg("GROUP", null));
     }
+
+    @Test
+    void anArgContinuedOverLinesDeclaresEachNameAndNoBackslash() {
+        Dockerfile model = Convert.of(Parsed.of("""
+                ARG GOVERSION="1.17" \\
+                    GO_CHECKSUM="6bf8" \\
+                    DEBIAN_FRONTEND
+                FROM golang:$GOVERSION
+                """)).model();
+
+        assertThat(model.globalArgs()).containsExactly(new Instruction.Arg("GOVERSION", "1.17"),
+                new Instruction.Arg("GO_CHECKSUM", "6bf8"), new Instruction.Arg("DEBIAN_FRONTEND", null));
+    }
 }

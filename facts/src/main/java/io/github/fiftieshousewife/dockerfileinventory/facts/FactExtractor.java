@@ -16,6 +16,8 @@ import org.openrewrite.docker.tree.Docker;
 /** Reduces a parsed Dockerfile to {@link ImageFacts}. With {@link FactsParser}, the only code that sees rewrite types. */
 public final class FactExtractor {
 
+    /** A backslash ending a line inside an instruction, which joins the next line to it. */
+    private static final java.util.regex.Pattern CONTINUATION = java.util.regex.Pattern.compile("\\\\[ \\t]*\\r?\\n");
     private static final java.util.regex.Pattern REFERENCE =
             java.util.regex.Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
 
@@ -79,7 +81,8 @@ public final class FactExtractor {
      */
     public static Map<String, String> argPairs(Docker.Arg arg) {
         Docker.Argument value = arg.getValue();
-        String written = arg.getName().getText() + (value == null ? "" : "=" + text(value, Map.of()));
+        String written = CONTINUATION.matcher(arg.getName().getText()
+                + (value == null ? "" : "=" + text(value, Map.of()))).replaceAll(" ");
         Map<String, String> pairs = new java.util.LinkedHashMap<>();
         for (String word : words(written)) {
             int eq = word.indexOf('=');

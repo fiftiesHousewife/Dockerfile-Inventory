@@ -113,7 +113,8 @@ public final class Convert {
     private static List<Instruction.Arg> args(Docker.Arg arg) {
         Map<String, String> declared = FactExtractor.argPairs(arg);
         Docker.Argument value = arg.getValue();
-        Map<String, String> values = Pairs.parse(arg.getName().getText() + (value == null ? "" : "=" + text(value)));
+        Map<String, String> values = Pairs.parse(withoutContinuations(
+                arg.getName().getText() + (value == null ? "" : "=" + text(value))));
         return declared.entrySet().stream()
                 .map(e -> new Instruction.Arg(e.getKey(), e.getValue() == null ? null : values.get(e.getKey())))
                 .toList();
