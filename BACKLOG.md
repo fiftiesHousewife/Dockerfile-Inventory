@@ -14,15 +14,20 @@ and one line when its gate is met.
     converter (`docs/plans/demo-fixes.md`, F1-F18); discovery now skips non-Dockerfile extensions, third-party
     copies and symlinks.
   - Done 6 Nov: fixes from the `openshift` run (`docs/plans/openshift-fixes.md`): unreadable RUNs 10.7% -> 2.7%,
-    parse failures 3.4% -> 2.3%, round trip 2,603 -> 2,730 of 2,833. Later: S4 (loops, case, groups). Next estates:
-    konflux-ci, redhat-developer, docker-library, bitnami (`docs/plans/more-estates.md`).
+    parse failures 3.4% -> 2.3%, round trip 2,603 -> 2,730 of 2,833. Later: S4 (loops, case, groups). Discovery now
+    also skips `*.dockerignore` and test inputs (`testdata/`, `testfiles/`).
+  - Done 6 Nov: twelve fixes from a code review of the session's changes (`docs/plans/review-fixes.md`): secret
+    values hidden in the dashboard, a converter crash, multi-value `ARG`s read wrongly, and quoting edge cases.
+  - Done 6 Nov: `konflux-ci` (158 repositories, 3,231 locations, 722 files): parse failures 0.7% -> 0.1%, round trip
+    714 -> 720 of 722 (`docs/plans/more-estates.md`). Next estates: redhat-developer, docker-library, bitnami.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.
   - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms; slice 6, the facts run and rates.
   - Fixed 6 Nov: a comment line inside a continued instruction was recorded as a parse failure.
-  - To raise upstream: twelve rewrite-docker 8.90.4 issues, drafted with reproductions in
-    `docs/upstream/rewrite-docker-issues.md`; each is worked around here.
+  - To raise upstream (the owner's call, not filed): fourteen rewrite-docker 8.90.4 issues, drafted with
+    reproductions in `docs/upstream/rewrite-docker-issues.md`; twelve are worked around here, two (a heredoc after
+    a command in `RUN`, a quoted `COPY` heredoc delimiter) are not and those files count as parse failures.
 
 - Phase 1b — Lineage and effective images. Plan: `docs/plans/phase-1b.md` (questions answered 6 Nov). Gate:
   lineage for at least 95% of Artifactory images; images matched to Dockerfiles by fingerprint, unmatched images
@@ -54,6 +59,9 @@ and one line when its gate is met.
   - Done: slice 6, CSV tables and DDL for Oracle (loading undecided).
   - Done: slice 7, the HTML dashboard.
   - Done: slice 8, `ReportRun` and `ReportMain`.
+  - Done 6 Nov: a more visual dashboard (`docs/plans/report-visuals.md`): health strip with the owner's thresholds,
+    archetype coverage curve, bases as bars by end-of-life status, stacked bars, archetype cards with an example
+    Dockerfile (secret values hidden), info markers on every number and section, and the lineage section.
   - Code complete. The gate (the written decision) needs real discovery and facts runs. Open: how the tables
     reach Oracle (Q1).
 

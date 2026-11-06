@@ -1,6 +1,6 @@
 # More public estates, and openshift's lineage: plan
 
-Status: agreed 6 Nov; openshift discovery running.
+Status: openshift and konflux-ci done 6 Nov; redhat-developer next.
 
 sclorg (585 locations) found eighteen problems across discovery, facts, rules and the converter. More estates with
 different habits should find more, before the real estate does.
@@ -35,3 +35,23 @@ another build system, not ours, and links images to the Dockerfiles discovery fo
 Today every Dockerfile goes model -> rendered Dockerfile -> compared; only one test compiles a generated builder
 class. Next: for every Dockerfile, emit the class, compile it in memory, run it, render, compare, with its pass rate
 beside the existing one. Planned as its own slice.
+
+## Results so far
+
+| | sclorg | openshift | konflux-ci |
+| --- | --- | --- | --- |
+| Repositories | 75 | 862 | 158 |
+| Dockerfile locations | 585 | 3,180 | 3,231 |
+| Unique files | 579 | 2,833 | 722 |
+| Parse failures, templates left out | 0% | 2.3% (after `openshift-fixes.md`) | 0.1% (1 file) |
+| Unreadable `RUN`s | 7.8% | 2.7% | 2.9% |
+| Round trip passed | 568 of 568 | 2,730 of 2,833 | 720 of 722 |
+
+openshift's fixes are in `openshift-fixes.md`. konflux-ci (3,231 locations, only 722 distinct files: much copying)
+needed two: `ARG A=` (an empty default) fails to parse, upstream issue 13, written `ARG A=""` in the retry; and a
+backslash kept inside double quotes (`"Red Hat\, Inc."`) had two forms in the model, now one (`\\`). Left: a quoted
+`COPY <<'EOF'` heredoc, upstream issue 14 with no safe workaround, and `konflux-ci/mobster`'s parser test input
+`tests/data/dockerfiles/sample1` (a `RUN` holding only a `--mount` flag).
+
+The lineage of openshift's published OKD images is still to plan (above).
+

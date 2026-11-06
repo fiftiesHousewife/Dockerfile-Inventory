@@ -31,10 +31,15 @@ gradle/libs.versions.toml   the one version catalogue, shared by build-logic and
 discovery/                  Phase 0: repos -> trees at the released commit -> Dockerfile blobs, once per SHA
                             GitHub (interface) / GitHubHttp: REST trees and orgs, GraphQL repos and blobs
                             RepoScan: one repository; Discovery: the run; DiscoveryOutput: the files
+                            DockerfilePaths: what counts (no source/template extensions, symlinks, vendor/, testdata/)
+                            GitHubApi: any of the three GitHub URL forms -> its API; RateLimit: when to wait
                             run: GHE_API_URL, GHE_TOKEN, OUT_DIR, [ORGANIZATIONS], [RELEASE_INDEX], [CONCURRENCY]
 facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, normal-form hashes, rates
                             FactsParser, FactExtractor and Steps are the only classes that import org.openrewrite;
-                            ShellTokeniser and PackageCalls read RUN bodies; FactsRun: the run
+                            FactsParser retries a failed parse with known rewrite-docker bugs worked around, keeping
+                            line numbers (docs/upstream/), and marks templates
+                            ShellTokeniser and PackageCalls read RUN bodies ($( ) and if read; loops, case not);
+                            FactsRun: the run
                             Steps: the final image's instructions in lineage's normal form (testdata/contracts/)
                             run: DISCOVERY_DIR, OUT_DIR ./gradlew :facts:run
 lineage/                    Phase 1b: Artifactory images -> family tree -> Dockerfile links, fold, gaps
@@ -53,17 +58,26 @@ report/                     Phase 2: facts + manifest (+ lineage) -> passes, arc
                             Estate: every Dockerfile with its facts and locations, failures, effective users
                             Passes, NearDuplicates (MinHash), Archetypes (k80, k95), BaseCatalogue (EolList)
                             Tables (CSV, DDL), Summary and Dashboard (HTML); ReportRun: the run
+                            Dashboard parts: Health (the strip's thresholds), Charts (inline SVG), ArchetypeCards
+                            (sentence, size, example with secrets hidden), LineageView (lineage's files, named),
+                            About (each number's info text)
                             run: FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [EOL_LIST] ./gradlew :report:run
 rules/                      Phase 3: detect-only rules over facts, parsed Dockerfiles and lineage
                             Rule, Finding, Subject, RuleRun (a failing rule is a finding, not a crash)
                             per-file rules (S1-S3, R1-R3, H1-H3, I1, I2), EffectiveRule (S4, S1 root), Lines
                             RulesRun: blobs -> findings, table, rates, samples; renovate/ holds the Renovate preset
+                            Pairs reads label keys with facts' Steps.keys; S2's name and shape rules are dsl.Secrets
                             run: DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [ALLOW_LIST], [EOL_LIST] ./gradlew :rules:run
 dsl/                        Phase 4: Dockerfile model, PackageInstallRenderer, DockerfileRenderer (Target), ImageBuilder
                             (Policy, PolicyViolation); goldens in src/test/resources/golden, checked by rules' tests
+                            Secrets: what counts as a secret, shared by rule S2 and the report (no OpenRewrite here)
 converter/                  Phase 5: Convert (LST -> model, faithful), Installs, RoundTrip, JavaEmitter (JavaPoet)
                             ConverterRun: blobs -> roundtrip.jsonl, coverage.json, generated classes for OPT_IN
                             run: DISCOVERY_DIR, OUT_DIR, [OPT_IN], [ALLOW_LIST] ./gradlew :converter:run
+testdata/contracts/         normal-form contracts between facts and lineage: python-311 and sclorg-c9s-* (real
+                            Dockerfiles against their real Buildah-built images)
+scripts/                    discover.sh (one organisation, the GitHub CLI's token), lineage-demo.sh (local JCR,
+                            Buildah builds, lineage), jcr-diagnose.sh, record-jcr-fixtures.sh (lineage fixtures)
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
@@ -152,6 +166,12 @@ fixture, and a measured false-positive rate on 50 sampled findings before any au
 
 **Files shared between modules** (`testdata/contracts/`, the dsl's goldens) are declared as test inputs in each
 reading module's `build.gradle.kts`, so a change reruns the tests that read them.
+
+**Work around a rewrite-docker bug.** Reproduce it from the real lines (shrink the file while the error stays the
+same), draft it in `docs/upstream/rewrite-docker-issues.md` with the minimal reproduction, and, if a rewrite of the
+text is safe (it must keep every line number and the meaning), add it to `FactsParser.retryText`, which runs only
+after a failure. A fixture with the trimmed real lines goes in `facts/src/test/resources/fixtures/dockerfiles/`.
+When upstream fixes the bug, delete the workaround and its note.
 
 **Add a renderer for a package manager.** One `PackageInstallRenderer` and its case in
 `PackageInstallRenderer.forBase`; golden-file tests per archetype show which archetypes it moves.

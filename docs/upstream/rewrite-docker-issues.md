@@ -1,8 +1,10 @@
 # rewrite-docker issues to raise upstream
 
-Drafts for https://github.com/openrewrite/rewrite (module `rewrite-docker`), found against 8.90.4. Each has a
-minimal reproduction; the first two were found on real public Dockerfiles in the `sclorg` organisation. This repo
-works around each one (noted under "Workaround"); delete a workaround and its note when upstream fixes the bug.
+Drafts for https://github.com/openrewrite/rewrite (module `rewrite-docker`), found against 8.90.4 on real public
+Dockerfiles (`sclorg`, `openshift`, `konflux-ci`); none is filed yet, as filing is public and the owner's call. Each
+has a minimal reproduction. This repo works around twelve of them (noted under "Workaround"; most in `FactsParser`'s
+second parse, which runs only after a failure and keeps every line number); delete a workaround and its note when
+upstream fixes the bug. Issues 11 and 14 have no safe workaround.
 
 ## 1. A comment line inside a continued `RUN` is lexed: an apostrophe starts a string
 

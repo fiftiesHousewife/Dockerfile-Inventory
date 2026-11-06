@@ -17,7 +17,8 @@ final class Pairs {
      * Docker's quoting, into the model's form for a value: the text as it would be written inside double quotes, so
      * {@code $NAME} expands, {@code \$} is a literal dollar and {@code \\} a literal backslash. Inside {@code "..."}
      * a backslash escapes only a quote, a backslash or a dollar (and joins a continued line); before anything else
-     * it is a literal backslash, kept as {@code \\\\} like any other, so one value has one form. Inside {@code '...'} nothing is special. Unquoted, a backslash escapes the next character.
+     * it is a literal backslash, kept as {@code \\\\} like any other, so one value has one form. Inside
+     * {@code '...'} nothing is special. Unquoted, a backslash escapes the next character.
      */
     static Map<String, String> parse(String text) {
         Map<String, String> pairs = new LinkedHashMap<>();

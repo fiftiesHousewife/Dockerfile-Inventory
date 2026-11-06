@@ -12,10 +12,10 @@ The full plan, with each phase's gate, is the
 
 | Stage | Module | State |
 | --- | --- | --- |
-| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; waiting on a GHE token for the pilot run |
-| 1. Parse each Dockerfile into facts | `facts` | Built; its rates need a discovery run |
-| 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; waiting on an Artifactory token for a real run |
-| 2. Cluster into archetypes; estate report | `report` | Built; its numbers need real discovery and facts runs |
+| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; run on public organisations (`sclorg`, `openshift`, `konflux-ci`); the enterprise pilot waits on a GHE token |
+| 1. Parse each Dockerfile into facts | `facts` | Built; parse failures 0-2.3% and unreadable `RUN`s under 3% on the public runs |
+| 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; tried end to end against a local JFrog Container Registry; a real run waits on an Artifactory token |
+| 2. Cluster into archetypes; estate report | `report` | Built; its numbers need the enterprise discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
 | 5. Convert existing Dockerfiles to builders | `converter` | Built; building and comparing images (5b) needs Buildah |
@@ -36,6 +36,14 @@ The full plan, with each phase's gate, is the
 
 ## Run discovery
 
+To try one public or enterprise organisation with the GitHub CLI's login (`gh auth login`), so no token is typed:
+
+```bash
+scripts/discover.sh https://github.com/openshift out/openshift/discovery
+```
+
+In full:
+
 ```bash
 export GHE_API_URL=https://github.example.com       # or https://github.com/MyOrg, or https://myco.ghe.com
 export GHE_TOKEN=...                               # read access to every organisation
@@ -49,7 +57,13 @@ export CONCURRENCY=16                              # optional: parallel reposito
 Each repository is scanned at the commit the release index names. A repository with no entry is scanned at
 its default branch head and flagged, so the report can show how much of the estate is not release-scoped.
 Interrupted runs resume: finished repositories and fetched Dockerfiles are skipped, and failed repositories
-are retried.
+are retried. GitHub's rate limits are respected: when GitHub asks to slow down, or the hourly allowance runs out,
+discovery waits as long as GitHub says and carries on.
+
+A file counts as a Dockerfile when it is named `Dockerfile` or `Containerfile`, or carries either as a prefix or
+suffix (`Dockerfile.rhel9`, `app.Dockerfile`), in any directory. Not counted: files named like Dockerfiles that hold
+source, documents or templates (`dockerfile.go`, `Dockerfile.md`, `Dockerfile.j2`, `Containerfile.dockerignore`),
+symlinks, third-party copies (`vendor/`, `node_modules/`, `third_party/`) and test inputs (`testdata/`, `testfiles/`).
 
 ### What it writes
 
@@ -73,8 +87,13 @@ Each distinct Dockerfile is parsed once; a rerun parses only new ones.
 | File | Contents |
 | --- | --- |
 | `facts.jsonl` | One line per Dockerfile: base image, package-manager calls per stage, final user and whether it is root, numeric or named, exposed ports, entrypoint form, BuildKit features, `RUN` counts, two hashes for grouping (cosmetic and functional duplicates), and the final image's instructions and base image path, which lineage matches built images against |
-| `parse-failures.jsonl` | Dockerfiles the parser rejected, with the reason |
-| `rates.json` | Parse-failure rate, the share of `RUN`s too complex to read, unresolved `FROM` per organisation, BuildKit feature use |
+| `parse-failures.jsonl` | Dockerfiles the parser rejected, with the reason; a template saved under a Dockerfile's name (Jinja and similar) says so |
+| `rates.json` | Parse-failure rate (templates left out and counted apart), the share of `RUN`s too complex to read, unresolved `FROM` per organisation, BuildKit feature use |
+
+A `RUN` is too complex to read when its shell uses loops, `case`, functions, subshell groups or a pipe into a shell;
+its packages are then not counted. Command substitutions (`$(uname -m)`) and `if` blocks are read, every branch of an
+`if` counting. A known set of bugs in the Dockerfile parser is worked around by a second, adjusted parse that keeps
+every line number; the rest are listed in `docs/upstream/rewrite-docker-issues.md`.
 
 ## Link images to Dockerfiles
 
@@ -105,19 +124,24 @@ the Dockerfiles whose instructions match their build history.
 
 ### Trying lineage without an Artifactory
 
-`scripts/lineage-demo.sh` starts a local JFrog Container Registry in Docker, builds images with Buildah from the
-CentOS Stream 9 Dockerfiles that discovery found (each at its scanned commit, each `FROM` pointed at the image built
-before it), pushes them, and runs lineage, the report and the rules against them. It needs Docker, git, jq and
-curl, and a discovery and facts run to start from; the header of the script lists its settings. By default it
-builds one chain (CentOS Stream 9, `s2i-core`, `s2i-base`, Python 3.12, nginx 1.24); `SCOPE=all` builds every
-`Dockerfile.c9s`, which takes hours when amd64 is emulated.
+`scripts/lineage-demo.sh` starts PostgreSQL and a local JFrog Container Registry (JCR 7.77) in Docker, builds images
+with Buildah from the CentOS Stream 9 Dockerfiles that discovery found (each at its scanned commit, each `FROM`
+pointed at the image built before it), pushes them, and runs lineage, the report and the rules against them. It
+needs Docker with 4 GB of memory or more, git, jq and curl, and a discovery and facts run to start from; the header
+of the script lists its settings. By default it builds one chain (CentOS Stream 9, `s2i-core`, `s2i-base`, Python
+3.12, nginx 1.24); `SCOPE=all` builds every `Dockerfile.c9s`, which takes hours when amd64 is emulated.
+
+On a first run JCR's Docker API stays off until JFrog's JCR licence agreement is accepted: read it, then run with
+`ACCEPT_JCR_EULA=yes` to accept it through the API. If another program holds port 8082, set `JCR_PORT`.
+`scripts/jcr-diagnose.sh` shows why JCR is not answering: memory, its logs, which ports answer, and what its Docker
+API replies.
 
 ## Report on the estate
 
 ```bash
 export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
-export LINEAGE_DIR=/data/lineage              # optional: effective users from the lineage stage
+export LINEAGE_DIR=/data/lineage              # optional: effective users and the lineage section
 export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate
 export OUT_DIR=/data/report
 ./gradlew :report:run
@@ -133,7 +157,18 @@ version, package managers and packages, user kind, ports, entrypoint form, stage
 | `passes.json` | Groups and locations after each pass; k80 and k95, the fewest archetypes covering 80% and 95% of locations |
 | `archetypes.json` | Every archetype by size: its files, signature, a representative file and the repositories using it |
 | `tables/*.csv`, `tables/ddl.sql` | `dockerfiles`, `locations`, `archetypes` and `bases` for loading into Oracle, with the `CREATE TABLE` statements |
-| `dashboard.html` | One self-contained page: the counts, rates, top archetypes and bases, package managers and users |
+| `dashboard.html` | One self-contained page (no external files), described below |
+
+The dashboard opens with a health strip: six estate-wide shares, each marked good, watch or act in words as well as
+colour (parse failures good at 1% or less, act above 5%; final user root 10% / 30%; bases pinned by digest 80% /
+20%; bases at end of life 0% / 5%; scanned at a released commit 90% / 50%; `RUN`s too complex to read 5% / 15%).
+Then: how many really different Dockerfiles there are, counted four ways; the archetype coverage curve with the 80%
+and 95% points; the ten largest archetypes as cards, each with a sentence saying what it builds, its size, and one
+example Dockerfile with secret values hidden; the top bases as bars coloured by end-of-life status (without
+`EOL_LIST` every status is unknown, and the page says so); stacked bars for parse outcome, package managers and final
+user; and, with `LINEAGE_DIR`, the lineage section: the family tree for a run under 50 images, otherwise the images
+with no Dockerfile, those on an outdated base and the most-used bases. Every number and section has an info marker
+explaining it; the tables behind each chart are folded underneath it.
 
 ## Check the estate against the rules
 
@@ -187,7 +222,8 @@ export OUT_DIR=/data/converter
 
 Every distinct Dockerfile is converted to the builder model faithfully, so the generated class reproduces the
 image as it is, and is checked by a round trip: the rendered conversion must parse back to the same model and
-have the same instructions as the original. Policy breaches become `// TODO(<rule>)` comments, for later fixes.
+have the same instructions as the original. A Dockerfile that already uses heredocs or `RUN --mount` is rendered
+for a builder that has them. Policy breaches become `// TODO(<rule>)` comments, for later fixes.
 
 | File | Contents |
 | --- | --- |

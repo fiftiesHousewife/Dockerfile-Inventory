@@ -71,3 +71,15 @@ shows ten cards with the example escaped inside `<details>`, and no signature ta
 As built (slice 2): `ArchetypeCards` builds the sentence and finds each card's example; the heading is "Largest
 archetypes" (a count in it read oddly with fewer than ten). A card names five repositories and counts the rest.
 
+## Slice 3: making the page explain itself (6 Nov)
+
+The owner found several fields unclear. Built test-first:
+
+- An info marker beside every tile, health metric and section heading; its text (in `About`) shows on hover and on
+  keyboard focus.
+- "Collapse passes" became "How many really different Dockerfiles?", its rows in plain words (different files;
+  still different once comments and spacing are ignored; build a different kind of image; archetypes).
+- When no base matched an end-of-life list, the bases section says so and how to give one (`EOL_LIST`), instead of
+  showing every base as unknown without explanation.
+- The cards' example Dockerfiles hide secret values (review fix R1, `review-fixes.md`).
+
