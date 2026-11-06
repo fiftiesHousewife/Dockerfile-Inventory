@@ -44,4 +44,17 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).passed()).isTrue();
     }
+
+    @Test
+    void quotingJsonSpacingAndAKeySetTwiceAreNotDifferencesDockerWouldSee() {
+        String original = """
+                FROM ubi9
+                WORKDIR "$HOME"
+                ENV A=1 A=2 B=3
+                LABEL x=1 x=2
+                CMD [ "run-thermostat-agent" ]
+                """;
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

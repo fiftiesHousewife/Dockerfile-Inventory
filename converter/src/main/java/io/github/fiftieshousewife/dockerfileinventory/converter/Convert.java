@@ -64,7 +64,7 @@ public final class Convert {
         return switch (instruction) {
             case Docker.Arg arg -> arg(arg);
             case Docker.Env env -> new Instruction.Env(env(env));
-            case Docker.Label label -> new Instruction.Label(Pairs.parse(afterKeyword(printed(label))));
+            case Docker.Label label -> new Instruction.Label(labels(afterKeyword(printed(label))));
             case Docker.Workdir workdir -> new Instruction.Workdir(unquote(text(workdir.getPath())));
             case Docker.User user -> user(user);
             case Docker.Expose expose when single(expose) ->
@@ -173,10 +173,23 @@ public final class Convert {
         return exec.getArguments().stream().map(l -> unquote(l.getText())).toList();
     }
 
+    /** The instruction's arguments: comment lines inside it dropped, continuations removed, keyword split off. */
     private static String afterKeyword(String instruction) {
-        String joined = withoutContinuations(instruction).strip();
-        int space = joined.indexOf(' ');
-        return space < 0 ? "" : joined.substring(space + 1);
+        String text = instruction.lines()
+                .filter(line -> !line.strip().startsWith("#"))
+                .collect(Collectors.joining("\n"));
+        String[] parts = withoutContinuations(text).strip().split("\\s+", 2);
+        return parts.length < 2 ? "" : parts[1];
+    }
+
+    /** {@code LABEL k=v ...}, or the legacy {@code LABEL key value with spaces}, which sets one label. */
+    private static Map<String, String> labels(String arguments) {
+        String first = arguments.split("\\s+", 2)[0];
+        if (first.contains("=")) {
+            return Pairs.parse(arguments);
+        }
+        String value = arguments.substring(first.length()).strip();
+        return Map.of(unquote(first), unquote(value));
     }
 
     /** The comment lines the printer puts before an instruction, without their {@code #}. */

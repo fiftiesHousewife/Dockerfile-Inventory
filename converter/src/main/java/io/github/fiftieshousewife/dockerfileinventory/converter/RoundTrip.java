@@ -18,6 +18,8 @@ import org.openrewrite.docker.tree.Docker;
  */
 public record RoundTrip(boolean passed, String difference) {
 
+    private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();
+
     public static RoundTrip check(String original, Dockerfile model) {
         String rendered;
         try {
@@ -70,12 +72,35 @@ public record RoundTrip(boolean passed, String difference) {
         }).toList();
     }
 
-    /** An install's flags and packages sorted, so their order does not count (D3). */
+    /**
+     * What Docker would not tell apart (D3): an install's flag and package order; a value written in quotes or not;
+     * the spacing inside an exec form's JSON array; a key set twice in one {@code ENV} or {@code LABEL}.
+     */
     private static List<String> canonical(List<Step> steps) {
-        return steps.stream().map(step -> step.keyword() + " " + (step.keyword().equals("RUN")
-                ? Installs.of(step.text()).map(i -> i.manager() + " flags=" + sorted(i.flags()) + " packages="
-                        + sorted(i.packages())).orElse(step.text())
-                : step.text())).toList();
+        return steps.stream().map(step -> step.keyword() + " " + canonical(step)).toList();
+    }
+
+    private static String canonical(Step step) {
+        String text = step.text();
+        return switch (step.keyword()) {
+            case "RUN" -> Installs.of(text).map(i -> i.manager() + " flags=" + sorted(i.flags()) + " packages="
+                    + sorted(i.packages())).orElse(json(text));
+            case "ENV", "LABEL" -> String.join(" ", new java.util.TreeSet<>(List.of(text.split(" "))));
+            case "WORKDIR", "USER" -> Convert.unquote(text);
+            default -> json(text);
+        };
+    }
+
+    /** An exec form's JSON array written without spacing; any other text as it is. */
+    private static String json(String text) {
+        if (!text.startsWith("[")) {
+            return text;
+        }
+        try {
+            return JSON.readTree(text).toString();
+        } catch (tools.jackson.core.JacksonException e) {
+            return text;
+        }
     }
 
     private static String sorted(List<String> words) {

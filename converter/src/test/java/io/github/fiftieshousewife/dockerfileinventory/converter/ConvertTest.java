@@ -132,6 +132,25 @@ class ConvertTest {
                 new Instruction.Label(java.util.Map.of("summary", "three four", "team", "x")));
     }
 
+    @Test
+    void labelsAfterATabWithCommentsInsideOrInTheLegacyFormAreReadAsDockerReadsThem() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                LABEL\topenshift.io/tags="database,mariadb" \\
+                \tk8s.io/display-name="MariaDB 5.5"
+                LABEL io.k8s.description="desc" \\
+                # this tells where the scripts are (run, assemble) \\
+                      io.openshift.tags="builder"
+                LABEL maintainer "Shyam JVS <shyamjvs@google.com>"
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(
+                new Instruction.Label(java.util.Map.of("openshift.io/tags", "database,mariadb",
+                        "k8s.io/display-name", "MariaDB 5.5")),
+                new Instruction.Label(java.util.Map.of("io.k8s.description", "desc", "io.openshift.tags", "builder")),
+                new Instruction.Label(java.util.Map.of("maintainer", "Shyam JVS <shyamjvs@google.com>")));
+    }
+
     private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {
         return new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages)));
     }
