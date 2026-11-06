@@ -75,12 +75,25 @@ class LineageTest {
                 .containsEntry("on-base", new Parent.Of("base"));
     }
 
+    @Test
+    void anImageWithNoLayersIsARootAndNoImagesParent() {
+        Map<String, Parent> parents = Lineage.of(List.of(
+                node("empty", List.of(), List.of("META LABEL x=y")),
+                node("app", List.of("L1"), List.of("META LABEL x=y", "ADD app"))));
+
+        assertThat(parents)
+                .containsEntry("empty", new Parent.Root())
+                .containsEntry("app", new Parent.Root());
+    }
+
     private static Resolved.Node node(String digest, String... layers) {
         return node(digest, List.of(layers), List.of());
     }
 
     private static Resolved.Node node(String digest, List<String> layers, List<String> steps) {
-        List<HistoryStep> history = steps.stream().map(s -> new HistoryStep(s, null, s.startsWith("META"), null)).toList();
+        List<HistoryStep> history = steps.stream()
+                .map(s -> new HistoryStep(s, null, s.startsWith("META"), null))
+                .toList();
         return new Resolved.Node(digest, new ImageConfig(layers, history, null, Map.of()));
     }
 }

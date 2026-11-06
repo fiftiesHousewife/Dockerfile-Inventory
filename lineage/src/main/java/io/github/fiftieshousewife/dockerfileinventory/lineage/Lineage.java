@@ -26,7 +26,9 @@ public final class Lineage {
         for (Resolved.Node node : nodes) {
             List<String> chain = chainIds(node.config().diffIds());
             chains.put(node.configDigest(), chain);
-            byChain.computeIfAbsent(chain.getLast(), k -> new ArrayList<>()).add(node);
+            if (!chain.isEmpty()) {
+                byChain.computeIfAbsent(chain.getLast(), k -> new ArrayList<>()).add(node);
+            }
         }
         Map<String, Parent> parents = new HashMap<>();
         for (Resolved.Node node : nodes) {
@@ -41,6 +43,9 @@ public final class Lineage {
      * the base's history into the child unchanged.
      */
     private static Parent parent(Resolved.Node node, List<String> chain, Map<String, List<Resolved.Node>> byChain) {
+        if (chain.isEmpty()) {
+            return new Parent.Root();
+        }
         List<Resolved.Node> sameLayers = precedingHistory(node, byChain.get(chain.getLast()));
         if (!sameLayers.isEmpty()) {
             return closest(sameLayers);

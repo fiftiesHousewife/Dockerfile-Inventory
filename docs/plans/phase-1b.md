@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slices 1 and 2 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slices 1 to 3 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -106,6 +106,13 @@ or queued for curation; gap list published and reviewed.
    5. Two images with the same layers and the same history are not each other's parent; an image built on them
       is ambiguous, naming both.
    6. An image with no layers is a root and is no image's parent.
+
+   As built: among candidates at the longest matching layer prefix, those whose history leads to this image
+   are preferred, and the one with the longest history is the nearest ancestor. So `base`, then `base` plus a
+   `LABEL`, then an image built on the labelled one, form a chain, not three children of `base`. The test for
+   this was added after the code, and changing the code on purpose made it fail. Test 3 (siblings) passed when
+   first written, as the chain-ID lookup already covered it. Where no candidate's history leads to the image (a
+   squashed image, or a builder that writes no history), all candidates at that prefix are considered.
 4. **History normaliser**, from public Buildah-built `created_by` samples (Q4): `RUN` text with variable spans
    wildcarded, `COPY` to its destination, metadata steps to keyword and key.
 5. **Dockerfile links**: candidates whose resolved final `FROM` matches the lineage parent; ordered alignment of the
