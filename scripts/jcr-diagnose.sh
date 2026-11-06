@@ -46,3 +46,14 @@ docker exec $JCR sh -c 'command -v ss >/dev/null && ss -ltn || cat /proc/net/tcp
 section "configuration import (artifactory.config.import.yml): files left, and what the log says about it"
 docker exec $JCR ls /var/opt/jfrog/artifactory/etc/artifactory
 docker exec $JCR sh -c "grep -hiE 'config.import|import.*config|yaml' $LOGS/artifactory-service.log | tail -15"
+
+section "Docker API: status and the start of each reply (admin login from ADMIN_PASSWORD, default 'password')"
+for path in v2/ artifactory/api/docker/docker-local/v2/ artifactory/api/docker/docker-local/v2/token \
+        artifactory/api/docker/docker-local/v2/_catalog artifactory/api/repositories; do
+    printf '%-52s ' "/$path"
+    curl -s --noproxy '*' -m 10 -u "admin:${ADMIN_PASSWORD:-password}" -D - -o /tmp/jcr-diagnose-body \
+        "http://127.0.0.1:$JCR_PORT/$path" | awk 'NR == 1 {printf "%s ", $2} tolower($1) == "www-authenticate:" {printf "%s ", $0}'
+    head -c 200 /tmp/jcr-diagnose-body | tr '\n' ' ' | sed -E 's/"(token|access_token)" *: *"[^"]*"/"\1":"(hidden)"/g'
+    echo
+done
+rm -f /tmp/jcr-diagnose-body
