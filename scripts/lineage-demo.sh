@@ -76,7 +76,9 @@ if [[ -n $(docker ps -q -f name=^$JCR$) ]] && ! docker port $JCR 8082/tcp | grep
     docker rm -f $JCR >/dev/null
 fi
 if [[ -z $(docker ps -q -f name=^$JCR$) ]]; then
-    taken=$(lsof -nP -iTCP:"$JCR_PORT" -sTCP:LISTEN 2>/dev/null | awk 'NR > 1 {print $1 " (pid " $2 ")"}' | sort -u)
+    # lsof exits 1 when nothing listens, which is the good case.
+    taken=$( (lsof -nP -iTCP:"$JCR_PORT" -sTCP:LISTEN 2>/dev/null || true) | awk 'NR > 1 {print $1 " (pid " $2 ")"}' \
+        | sort -u)
     [[ -z $taken ]] || die "port $JCR_PORT is already taken by: $taken. Free it, or choose another: JCR_PORT=18082"
     docker rm -f $JCR >/dev/null 2>&1 || true
     docker run -d --name $JCR --network $NETWORK -p "$JCR_PORT:8082" \
