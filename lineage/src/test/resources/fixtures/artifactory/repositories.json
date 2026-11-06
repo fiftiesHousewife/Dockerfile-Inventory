@@ -1,0 +1,4 @@
+[
+  {"key": "docker-local", "type": "LOCAL", "packageType": "Docker", "url": "https://artifactory.example.com/artifactory/docker-local"},
+  {"key": "base-images", "type": "LOCAL", "packageType": "Docker", "url": "https://artifactory.example.com/artifactory/base-images"}
+]

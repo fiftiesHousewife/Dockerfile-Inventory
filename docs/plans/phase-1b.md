@@ -38,6 +38,18 @@ or queued for curation; gap list published and reviewed.
    entry can be chosen; last push from `GET /api/storage/<repo>/<image>/<tag>`. Dedupe on config digest before
    fetching. The call count grows with tags, so it runs with the same bounded concurrency and rate-limit retry as
    discovery, and resumes.
+   Slice 1 builds only the client; concurrency, dedupe and resume belong to the run (slice 8). Its tests, in order,
+   against a local HTTP server serving hand-written fixtures in `src/test/resources/fixtures/artifactory`:
+   1. Local Docker repositories are listed by key, with the token sent as `Authorization: Bearer`.
+   2. Images come from the catalogue, paged with `n` and `last` until a page comes back short.
+   3. Tags page the same way; a missing or null `tags` and a 404 (image gone) give no tags.
+   4. A manifest is fetched with every Docker and OCI manifest and index type accepted, and comes back with its
+      media type (`Content-Type`), digest (`Docker-Content-Digest`) and body; 404 gives empty.
+   5. A blob comes back as text, following Artifactory's redirect; 404 gives empty.
+   6. Last push is the storage API's `lastModified`.
+   7. A 429 or 503 is retried after `Retry-After`, then the answer is returned.
+   8. Any other status, or unreadable JSON, is an `ArtifactoryException` naming the method, URL and status, never the token.
+
 2. **Image nodes**: reference, config digest, `rootfs.diff_ids`, history, user, labels. Manifest lists take their
    `linux/amd64` entry (Q3).
 3. **Layer-prefix lineage**: parent = the node whose full `diff_ids` list is this one's longest strict prefix. A
