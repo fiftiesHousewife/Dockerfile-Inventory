@@ -31,8 +31,8 @@ and one line when its gate is met.
     "parent missing" finding.
   - Done: slice 6, the effective fold: each image's properties with the image (and Dockerfile group) that set them.
   - Done: slice 7, gaps, external bases and outdated bases.
-  - Next: slice 8, the run: reads Artifactory, links, folds, writes the files and rates. Recorded fixtures wait
-    on an Artifactory token.
+  - Done: slice 8, the run: inventory (resumable, concurrent), analysis and rates, `LineageMain`.
+  - Code complete. The gate waits on an Artifactory token: recorded fixtures, a real run, the gap list reviewed.
 
 ## Queued
 

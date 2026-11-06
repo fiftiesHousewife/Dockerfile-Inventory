@@ -22,7 +22,7 @@ public final class Inventory {
     private final int concurrency;
     private final Map<String, Optional<Resolved.Skipped>> configs = new ConcurrentHashMap<>();
 
-    public Inventory(Artifactory artifactory, LineageFiles files, int concurrency) {
+    Inventory(Artifactory artifactory, LineageFiles files, int concurrency) {
         this.artifactory = artifactory;
         this.files = files;
         this.concurrency = concurrency;

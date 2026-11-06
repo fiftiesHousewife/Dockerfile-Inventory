@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slices 1 to 7 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. All slices built 6 Nov; the gate waits on Artifactory access. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -305,6 +305,13 @@ or queued for curation; gap list published and reviewed.
 
    **8c, `LineageMain`**: `ARTIFACTORY_URL`, `ARTIFACTORY_TOKEN`, `FACTS_DIR`, `DISCOVERY_DIR`, `OUT_DIR`,
    `[CONCURRENCY]`. It runs 8a then 8b. Untested, like the other mains.
+
+   As built: `Inventory` was written ahead of tests 2 to 5, which then passed when first written. Breaking skip
+   reasons, fetch-once and resume each made its test fail; the concurrency test checks rows, not timing. The rates
+   test found that its own test estate was inconsistent (a base naming `ubi9` without sharing its layer, which is
+   a genuine "parent missing"), so the estate was fixed, not the code. A final test runs the analysis on the real
+   pair: the public `ubi9/python-311` image links, `PROBABLE`, to the upstream Dockerfile that built it. `Parent`
+   and `SetBy` are written with a `kind` field so readers can tell their cases apart.
 ## Phase 2 after this
 
 Clustering needs only `facts.jsonl`, so it could run before 1b finishes; the effective user (from 1b) refines the

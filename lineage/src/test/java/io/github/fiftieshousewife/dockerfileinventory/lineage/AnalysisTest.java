@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 class AnalysisTest {
 
@@ -31,10 +32,10 @@ class AnalysisTest {
     @BeforeEach
     void estate() throws IOException {
         LineageFiles files = new LineageFiles(out);
-        String ubiStep = "{\"created_by\": \"/bin/sh -c #(nop) ADD file:ubi in / \"}";
-        String baseStep = "{\"created_by\": \"/bin/sh -c #(nop) USER 1001\", \"comment\": \"FROM registry.access.redhat.com/ubi9:9.8\"}";
-        String appStep = "{\"created_by\": \"/bin/sh -c make\", \"comment\": \"FROM registry.example.com/team/base:1\"}";
-        String strayStep = "{\"created_by\": \"/bin/sh -c ./unknown.sh\", \"comment\": \"FROM registry.example.com/team/base:1\"}";
+        String ubiStep = step("#(nop) ADD file:ubi in / ", null);
+        String baseStep = step("#(nop) USER 1001", "FROM registry.access.redhat.com/ubi9:9.8");
+        String appStep = step("make", "FROM registry.example.com/team/base:1");
+        String strayStep = step("./unknown.sh", "FROM registry.example.com/team/base:1");
         image(files, "team/base", "1", "base", "2026-09-01T00:00:00Z", "1001", List.of("U1", "L1"), ubiStep, baseStep);
         image(files, "team/app", "1", "app", "2026-10-01T00:00:00Z", "1001", List.of("U1", "L1", "L2"),
                 ubiStep, baseStep, appStep);
@@ -48,8 +49,8 @@ class AnalysisTest {
                 {"blobSha":"app-df","steps":[{"keyword":"RUN","text":"make"}],"fromPath":"team/base"}
                 """);
         Files.writeString(discovery.resolve("manifest.jsonl"), """
-                {"repository":"platform/base","commitSha":"c1","scope":"DEFAULT_BRANCH","path":"Dockerfile","blobSha":"base-df"}
-                {"repository":"payments/app","commitSha":"c2","scope":"RELEASED","path":"Dockerfile","blobSha":"app-df"}
+                {"repository":"platform/base","scope":"DEFAULT_BRANCH","blobSha":"base-df"}
+                {"repository":"payments/app","scope":"RELEASED","blobSha":"app-df"}
                 """);
     }
 
@@ -102,6 +103,27 @@ class AnalysisTest {
         assertThat(rates.path("outdatedBases").asInt()).isZero();
     }
 
+    @Test
+    void thePublicPython311ImageLinksToTheRealDockerfileThatBuiltIt(@TempDir Path real) throws IOException {
+        LineageFiles files = new LineageFiles(real);
+        for (String name : List.of("ubi9-ubi-minimal", "ubi9-ubi", "ubi9-python-311", "ubi9-nodejs-20")) {
+            files.record(new TagRow("redhat", name, "latest", Instant.parse("2026-11-05T00:00:00Z"), name, null, null));
+            files.storeConfig(name, Fixtures.history(name + ".json"));
+        }
+        JsonNode contract = JSON.readTree(Path.of("../testdata/contracts/python-311.steps.json").toFile());
+        ObjectNode row = JSON.createObjectNode().put("blobSha", "python-df").put("fromPath", "ubi9/s2i-base");
+        row.set("steps", contract.path("steps"));
+        Files.writeString(facts.resolve("facts.jsonl"), row + "\n");
+        Files.writeString(discovery.resolve("manifest.jsonl"), "");
+
+        new Analysis(real, facts, discovery).run();
+
+        JsonNode link = Files.readAllLines(real.resolve("links.jsonl")).stream().map(JSON::readTree)
+                .filter(n -> n.path("configDigest").asString().equals("ubi9-python-311")).findFirst().orElseThrow();
+        assertThat(link.path("tier").asString()).isEqualTo("PROBABLE");
+        assertThat(link.path("blobShas").get(0).asString()).isEqualTo("python-df");
+    }
+
     private Map<String, JsonNode> byDigest(String file) throws IOException {
         return Files.readAllLines(out.resolve(file)).stream()
                 .map(JSON::readTree)
@@ -112,8 +134,13 @@ class AnalysisTest {
                               List<String> layers, String... history) {
         files.record(new TagRow("docker-local", name, tag, Instant.parse(pushed), digest, null, null));
         String diffIds = layers.stream().map(l -> "\"" + l + "\"").collect(Collectors.joining(","));
-        files.storeConfig(digest, """
-                {"config": {"User": %s}, "rootfs": {"type": "layers", "diff_ids": [%s]}, "history": [%s]}
-                """.formatted(user == null ? "null" : "\"" + user + "\"", diffIds, String.join(",", history)));
+        files.storeConfig(digest, "{\"config\": {\"User\": %s}, \"rootfs\": {\"diff_ids\": [%s]}, \"history\": [%s]}"
+                .formatted(user == null ? "null" : "\"" + user + "\"", diffIds, String.join(",", history)));
+    }
+
+    private static String step(String createdBy, String comment) {
+        return comment == null
+                ? "{\"created_by\": \"/bin/sh -c %s\"}".formatted(createdBy)
+                : "{\"created_by\": \"/bin/sh -c %s\", \"comment\": \"%s\"}".formatted(createdBy, comment);
     }
 }

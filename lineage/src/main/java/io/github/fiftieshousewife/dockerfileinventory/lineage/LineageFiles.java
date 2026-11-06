@@ -60,7 +60,7 @@ public final class LineageFiles {
     public void storeConfig(String digest, String text) {
         try {
             Path target = configPath(digest);
-            Files.createDirectories(target.getParent());
+            Files.createDirectories(dir.resolve("configs"));
             Path part = target.resolveSibling(target.getFileName() + ".part");
             Files.writeString(part, text, StandardCharsets.UTF_8);
             Files.move(part, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
@@ -86,7 +86,9 @@ public final class LineageFiles {
     private List<String> lines(String file) {
         try {
             Path path = dir.resolve(file);
-            return Files.exists(path) ? Files.readAllLines(path).stream().filter(l -> !l.isBlank()).toList() : List.of();
+            return Files.exists(path)
+                    ? Files.readAllLines(path).stream().filter(l -> !l.isBlank()).toList()
+                    : List.of();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

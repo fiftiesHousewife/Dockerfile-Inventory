@@ -37,7 +37,7 @@ facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, norm
                             ShellTokeniser and PackageCalls read RUN bodies; FactsRun: the run
                             Steps: the final image's instructions in lineage's normal form (testdata/contracts/)
                             run: DISCOVERY_DIR, OUT_DIR ./gradlew :facts:run
-lineage/                    Phase 1b (in progress): Artifactory images -> family tree -> Dockerfile links
+lineage/                    Phase 1b: Artifactory images -> family tree -> Dockerfile links, fold, gaps
                             Artifactory (interface) / ArtifactoryHttp: REST only, never AQL; Docker v2 catalogue,
                             tags, manifests and blobs, storage API for last push
                             ImageNodes: one tag -> manifest (amd64 entry of a list) -> ImageConfig, or Skipped
@@ -46,6 +46,9 @@ lineage/                    Phase 1b (in progress): Artifactory images -> family
                             OwnSteps and Links: an image's own steps -> its Dockerfile group, tier, parent missing
                             Fold: each image's effective user, env, labels, ... with the image that set each one
                             Gaps: unlinked images (gaps, external bases) and images built on an outdated base
+                            Inventory: Artifactory -> images.jsonl, configs/; Analysis: everything else, rates
+                            run: ARTIFACTORY_URL, ARTIFACTORY_TOKEN, FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [CONCURRENCY]
+                            ./gradlew :lineage:run
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

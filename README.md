@@ -14,7 +14,7 @@ The full plan, with each phase's gate, is the
 | --- | --- | --- |
 | 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; waiting on a GHE token for the pilot run |
 | 1. Parse each Dockerfile into facts | `facts` | Built; its rates need a discovery run |
-| 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Not started |
+| 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; waiting on an Artifactory token for a real run |
 | 2. Cluster into archetypes; estate report | `report` | Not started |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Not started |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Not started |
@@ -74,6 +74,33 @@ Each distinct Dockerfile is parsed once; a rerun parses only new ones.
 | `facts.jsonl` | One line per Dockerfile: base image, package-manager calls per stage, final user and whether it is root, numeric or named, exposed ports, entrypoint form, BuildKit features, `RUN` counts, two hashes for grouping (cosmetic and functional duplicates), and the final image's instructions and base image path, which lineage matches built images against |
 | `parse-failures.jsonl` | Dockerfiles the parser rejected, with the reason |
 | `rates.json` | Parse-failure rate, the share of `RUN`s too complex to read, unresolved `FROM` per organisation, BuildKit feature use |
+
+## Link images to Dockerfiles
+
+```bash
+export ARTIFACTORY_URL=https://artifactory.example.com/artifactory/
+export ARTIFACTORY_TOKEN=...                  # read access to every local Docker repository; REST only, no AQL
+export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
+export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
+export OUT_DIR=/data/lineage                  # keep it between runs: a rerun resumes the Artifactory reading
+export CONCURRENCY=16                         # optional: images read at once
+./gradlew :lineage:run
+```
+
+Every tag of every image in every local Docker repository is read once (`linux/amd64` only); each image config is
+fetched once however many tags share it. Images are then placed in a family tree by their layers and linked to
+the Dockerfiles whose instructions match their build history.
+
+| File | Contents |
+| --- | --- |
+| `images.jsonl`, `configs/` | Every tag, with the image config it names or why it was skipped; each config once |
+| `lineage.jsonl` | Each image's parent: another image, none (a root), or several equally likely |
+| `links.jsonl` | Each image's Dockerfiles: `STRONG` (exact, and at a released commit), `PROBABLE` (exact), `WEAK` (close, on the same base), or `NONE`; and whether a root's Dockerfile names a base Artifactory holds |
+| `effective.jsonl` | Each image's user, environment, labels, working directory, entrypoint and command, and which image in its chain set each one |
+| `gaps.jsonl` | Images built here that no scanned Dockerfile matches |
+| `external-bases.jsonl` | Unmatched roots: external bases mirrored into Artifactory |
+| `outdated-bases.jsonl` | Images built on a base that has since been pushed again under the same name |
+| `rates.json` | Tags, images, skips, lineage coverage, links by tier, gaps |
 
 ## Contributing
 
