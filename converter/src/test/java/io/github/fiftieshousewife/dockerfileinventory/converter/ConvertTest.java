@@ -28,4 +28,34 @@ class ConvertTest {
                 org.assertj.core.groups.Tuple.tuple("test", null, "build"),
                 org.assertj.core.groups.Tuple.tuple(null, new BaseImage("${BASE}", "9.4", null), null));
     }
+
+    @Test
+    void simpleInstructionsBecomeTyped() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                ARG VERSION=1.0
+                ARG REVISION
+                ENV APP_HOME="/opt/app" MODE=prod
+                ENV LEGACY value with spaces
+                LABEL org.opencontainers.image.revision=$REVISION summary="say hi"
+                WORKDIR /opt/app
+                USER 1001:0
+                EXPOSE 8080
+                ENTRYPOINT ["java", "-jar", "app.jar"]
+                CMD ["serve"]
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(
+                new Instruction.Arg("VERSION", "1.0"),
+                new Instruction.Arg("REVISION", null),
+                new Instruction.Env(java.util.Map.of("APP_HOME", "/opt/app", "MODE", "prod")),
+                new Instruction.Env(java.util.Map.of("LEGACY", "value with spaces")),
+                new Instruction.Label(java.util.Map.of("org.opencontainers.image.revision", "$REVISION",
+                        "summary", "say hi")),
+                new Instruction.Workdir("/opt/app"),
+                new Instruction.User("1001:0"),
+                new Instruction.Expose(8080),
+                new Instruction.Entrypoint(List.of("java", "-jar", "app.jar")),
+                new Instruction.Cmd(List.of("serve")));
+    }
 }

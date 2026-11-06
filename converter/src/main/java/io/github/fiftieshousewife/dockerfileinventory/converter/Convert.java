@@ -6,7 +6,9 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.openrewrite.Cursor;
@@ -55,7 +57,48 @@ public final class Convert {
     }
 
     private Instruction instruction(Docker.Instruction instruction) {
-        return new Instruction.Raw(printed(instruction), "not converted yet");
+        return switch (instruction) {
+            case Docker.Arg arg -> new Instruction.Arg(arg.getName().getText(),
+                    arg.getValue() == null ? null : unquote(text(arg.getValue())));
+            case Docker.Env env -> new Instruction.Env(env(env));
+            case Docker.Label label -> new Instruction.Label(Pairs.parse(afterKeyword(printed(label))));
+            case Docker.Workdir workdir -> new Instruction.Workdir(unquote(text(workdir.getPath())));
+            case Docker.User user -> new Instruction.User(text(user.getUser())
+                    + (user.getGroup() == null ? "" : ":" + text(user.getGroup())));
+            case Docker.Expose expose when single(expose) ->
+                    new Instruction.Expose(Integer.parseInt(expose.getPorts().getFirst().getText().strip()));
+            case Docker.Entrypoint entrypoint when entrypoint.getCommand() instanceof Docker.ExecForm exec ->
+                    new Instruction.Entrypoint(arguments(exec));
+            case Docker.Cmd cmd when cmd.getCommand() instanceof Docker.ExecForm exec ->
+                    new Instruction.Cmd(arguments(exec));
+            default -> new Instruction.Raw(printed(instruction), "not converted yet");
+        };
+    }
+
+    /** rewrite-docker gives an empty {@code KEY=} the value {@code =}, and keeps a value's quotes in its text. */
+    private static Map<String, String> env(Docker.Env env) {
+        Map<String, String> values = new LinkedHashMap<>();
+        env.getPairs().forEach(pair -> {
+            String value = pair.getValue() == null ? "" : text(pair.getValue());
+            values.put(pair.getKey().getText(), value.equals("=") ? "" : unquote(value));
+        });
+        return values;
+    }
+
+    /** One port written as plain digits: no protocol, range or variable; anything else stays {@code Raw} (D2). */
+    private static boolean single(Docker.Expose expose) {
+        List<Docker.Port> ports = expose.getPorts();
+        return ports.size() == 1 && ports.getFirst().getText().strip().matches("\\d{1,5}");
+    }
+
+    private static List<String> arguments(Docker.ExecForm exec) {
+        return exec.getArguments().stream().map(l -> unquote(l.getText())).toList();
+    }
+
+    private static String afterKeyword(String instruction) {
+        String joined = instruction.replaceAll("\\\\\\r?\\n", " ").strip();
+        int space = joined.indexOf(' ');
+        return space < 0 ? "" : joined.substring(space + 1);
     }
 
     /** The instruction as written, without the comment lines the printer puts before it. */
