@@ -23,4 +23,15 @@ class TableTest {
                 name",1,\r
                 """);
     }
+
+    @Test
+    void theDdlCreatesTheTableWithEachColumnsOracleType() {
+        assertThat(TABLE.ddl()).isEqualTo("""
+                CREATE TABLE bases (
+                    path VARCHAR2(4000),
+                    locations NUMBER,
+                    eol_date DATE
+                );
+                """);
+    }
 }

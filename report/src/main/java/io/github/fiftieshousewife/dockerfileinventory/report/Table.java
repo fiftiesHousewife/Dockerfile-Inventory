@@ -12,9 +12,15 @@ public record Table(String name, List<Column> columns, List<List<Object>> rows) 
     }
 
     public enum Type {
-        TEXT,
-        NUMBER,
-        DATE
+        TEXT("VARCHAR2(4000)"),
+        NUMBER("NUMBER"),
+        DATE("DATE");
+
+        private final String oracle;
+
+        Type(String oracle) {
+            this.oracle = oracle;
+        }
     }
 
     public Table {
@@ -28,6 +34,13 @@ public record Table(String name, List<Column> columns, List<List<Object>> rows) 
         csv.append(columns.stream().map(Column::name).collect(Collectors.joining(","))).append("\r\n");
         rows.forEach(row -> csv.append(row.stream().map(Table::field).collect(Collectors.joining(","))).append("\r\n"));
         return csv.toString();
+    }
+
+    /** The {@code CREATE TABLE} statement a DBA runs once before loading the CSV. */
+    public String ddl() {
+        return columns.stream()
+                .map(c -> "    " + c.name() + " " + c.type().oracle)
+                .collect(Collectors.joining(",\n", "CREATE TABLE " + name + " (\n", "\n);\n"));
     }
 
     private static String field(Object value) {
