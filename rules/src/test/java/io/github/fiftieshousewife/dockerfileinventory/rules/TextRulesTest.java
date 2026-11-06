@@ -60,4 +60,30 @@ class TextRulesTest {
                 RUN true
                 """))).extracting(Finding::line).containsExactly(3);
     }
+
+    @Test
+    void r3ReportsAFinalImageWithoutOciRevisionOrSourceCountingEarlierStagesItBuildsOn() {
+        Rule r3 = new MissingOciLabels();
+
+        assertThat(r3.check(Subjects.of("FROM ubi9\nLABEL org.opencontainers.image.source=https://x\n")))
+                .singleElement().satisfies(f -> assertThat(f.message())
+                        .contains("org.opencontainers.image.revision").doesNotContain("image.source"));
+        assertThat(r3.check(Subjects.of("""
+                FROM ubi9 AS labelled
+                LABEL org.opencontainers.image.revision=$REV org.opencontainers.image.source=$SRC
+                FROM golang AS build
+                FROM labelled
+                USER 1001
+                """))).isEmpty();
+        assertThat(r3.check(Subjects.of("""
+                FROM ubi9
+                # the build sets org.opencontainers.image.revision
+                LABEL org.opencontainers.image.source=$SRC
+                """))).hasSize(1);
+        assertThat(r3.check(Subjects.of("""
+                FROM ubi9 AS build
+                LABEL org.opencontainers.image.revision=$REV org.opencontainers.image.source=$SRC
+                FROM ubi9
+                """))).hasSize(1);
+    }
 }

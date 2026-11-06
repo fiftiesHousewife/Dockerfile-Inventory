@@ -1,6 +1,6 @@
 # Phase 3 — Quality rules, detect-only: plan
 
-Status: planned 6 Nov; questions answered. Slices 1 and 2 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
+Status: planned 6 Nov; questions answered. Slices 1 to 3 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
 after people have classified a sample of that rule's findings (the false-positive gate), and H1's fix renders
 through Phase 4's renderer, so fixes get their own plan.
 
@@ -71,6 +71,13 @@ decision: security, then speed of remediation, then hygiene.
    11. H3: two adjacent shell-form `RUN`s in one stage; not across a `COPY`, nor when either has `--mount`.
    12. R3: final image without `org.opencontainers.image.revision` or `.source`; a `LABEL` in an earlier stage the
        final stage builds on counts.
+
+   As built: line numbers come from `Lines`, which finds each instruction's own text in the printed file where it
+   starts a line (the tree stores no lines, and `printTrimmed` keeps the comments before an instruction). Probing
+   found two more rewrite-docker quirks. Variables inside an `ENV` value are plain text, and an empty `KEY=` gets
+   the value `=`, so S2 counts any `$` outside single quotes as a variable and `=` as empty. `LABEL a=$X b=$Y` is
+   folded into one pair, so R3 reads label keys from the printed instruction. S2's name list includes `KEY`,
+   which will flag public key IDs such as `GPG_KEY`; the false-positive sample will show how often.
 4. **List rules**: S1 and R2.
    13. S1: a base whose path and tag prefix are not on the list; without a list, S1 is skipped and says so.
    14. R2: a base the end-of-life list marks `eol`.

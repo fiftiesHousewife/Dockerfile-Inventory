@@ -41,7 +41,7 @@ final class Lines {
     }
 
     /** The printed prefix can carry the comment lines before an instruction; its own text starts after them. */
-    private static String withoutLeadingComments(String printed) {
+    static String withoutLeadingComments(String printed) {
         String rest = printed.stripLeading();
         while (rest.startsWith("#")) {
             int newline = rest.indexOf('\n');
@@ -50,7 +50,7 @@ final class Lines {
         return rest;
     }
 
-    /** The next place {@code own} starts a line (only whitespace before it on that line), so a comment never matches. */
+    /** The next place {@code own} starts a line (only whitespace before it), so text in a comment never matches. */
     private static int startOfLine(String text, String own, int from) {
         for (int at = text.indexOf(own, from); at >= 0; at = text.indexOf(own, at + 1)) {
             int lineStart = text.lastIndexOf('\n', at - 1) + 1;

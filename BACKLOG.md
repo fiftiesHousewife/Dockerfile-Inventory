@@ -16,7 +16,9 @@ and one line when its gate is met.
   - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms; slice 6, the facts run and rates.
   - Fixed 6 Nov: a comment line inside a continued instruction was recorded as a parse failure.
   - To raise upstream (rewrite-docker 8.90.4): an unrecognised line is appended to the previous argument
-    silently; a `# syntax=` line after the first instruction is rejected, though Docker reads it as a comment.
+    silently; a `# syntax=` line after the first instruction is rejected, though Docker reads it as a comment;
+    `LABEL a=$X b=$Y` is parsed as one pair; an empty `ENV KEY=` gets the value `=`; variables in `ENV` values are
+    not split out as they are in `FROM`.
 
 - Phase 1b — Lineage and effective images. Plan: `docs/plans/phase-1b.md` (questions answered 6 Nov). Gate:
   lineage for at least 95% of Artifactory images; images matched to Dockerfiles by fingerprint, unmatched images
@@ -46,7 +48,8 @@ and one line when its gate is met.
 
 - Phase 3 — Quality rules. Plan (detect-only): `docs/plans/phase-3.md` (questions answered 6 Nov). Gate:
   false-positive rate per rule below threshold before auto-fix.
-  - Done: slice 1, harness; slice 2, R1, H1, H2, I1, I2 from the facts.
+  - Done: slice 1, harness; slice 2, R1, H1, H2, I1, I2 from the facts; slice 3, S2, S3, H3, R3 over the
+    parsed Dockerfile, with line numbers.
 
 ## Queued
 
