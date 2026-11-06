@@ -91,4 +91,11 @@ class ShellTokeniserTest {
         assertThat(ShellTokeniser.parse("grep \">\" /etc/hosts"))
                 .contains(List.of(List.of("grep", ">", "/etc/hosts")));
     }
+
+    @Test
+    void aBackslashNewlineInsideDoubleQuotesIsRemovedAsTheShellRemovesIt() {
+        String script = "INSTALL_PKGS=\"php php-fpm \\\n        tzdata\" && yum install -y $INSTALL_PKGS";
+
+        assertThat(ShellTokeniser.assignments(script)).containsEntry("INSTALL_PKGS", "php php-fpm         tzdata");
+    }
 }

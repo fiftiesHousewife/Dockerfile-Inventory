@@ -93,7 +93,10 @@ public final class ShellTokeniser {
         return opaque ? Optional.empty() : Optional.of(List.copyOf(commands));
     }
 
-    /** Appends a quoted span to the current word, without its quotes; returns the index of the closing quote. */
+    /**
+     * Appends a quoted span to the current word, without its quotes; returns the index of the closing quote. Inside
+     * double quotes a backslash-newline is removed, as the shell removes it; inside single quotes nothing changes.
+     */
     private int quoted(int open, char quote) {
         int close = script.indexOf(quote, open + 1);
         if (close < 0) {
@@ -104,7 +107,7 @@ public final class ShellTokeniser {
         if (quote == '"' && (span.contains("$(") || span.contains("`") || span.endsWith("\\"))) {
             opaque = true;
         }
-        word.append(span);
+        word.append(quote == '"' ? span.replace("\\\n", "") : span);
         wordQuoted = true;
         return close;
     }
