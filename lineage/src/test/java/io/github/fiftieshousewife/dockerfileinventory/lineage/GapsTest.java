@@ -37,6 +37,18 @@ class GapsTest {
         assertThat(report.gaps()).isEmpty();
     }
 
+    @Test
+    void anImageWhoseParentIsNotTheNewestPushOfItsImageNameIsOutdated() {
+        GapReport report = Gaps.of(
+                Map.of("base-old", List.of(ref("docker-local", "team/base", "1", "2026-09-01T00:00:00Z")),
+                        "base-new", List.of(ref("docker-local", "team/base", "2", "2026-10-01T00:00:00Z")),
+                        "app", List.of(ref("docker-local", "team/app", "1.0", "2026-10-02T00:00:00Z"))),
+                Map.of("base-old", new Parent.Root(), "base-new", new Parent.Root(), "app", new Parent.Of("base-old")),
+                Map.of("base-old", LINKED, "base-new", LINKED, "app", LINKED));
+
+        assertThat(report.outdatedBases()).containsExactly(new Outdated("app", "base-old", "team/base", "base-new"));
+    }
+
     static Reference ref(String repository, String image, String tag, String pushed) {
         return new Reference(repository, image, tag, Instant.parse(pushed));
     }
