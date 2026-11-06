@@ -22,9 +22,6 @@ import java.util.regex.Pattern;
  */
 final class ShellCommands {
 
-    /** {@code $NAME} or {@code ${NAME}} in an assigned value, expanded from the assignments before it. */
-    private static final Pattern REFERENCE =
-            Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
     /** {@code NAME=value} before a command's name sets its environment; it is not the command. */
     private static final Pattern ASSIGNMENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*=.*", Pattern.DOTALL);
     /** A redirection operator, optionally with its target joined on ({@code >/dev/null}, {@code 2>&1}). */
@@ -93,7 +90,7 @@ final class ShellCommands {
     private void assign(String marked) {
         String value = marked.substring(marked.indexOf('=') + 1);
         assignments.put(marked.substring(0, marked.indexOf('=')),
-                expanded(value).replace(ShellWords.LITERAL_DOLLAR, '$'));
+                Expansions.expanded(value, assignments).replace(ShellWords.LITERAL_DOLLAR, '$'));
     }
 
     /** {@code name()} at the start of a command defines a function, whose body follows; elsewhere {@code ()}. */
@@ -203,18 +200,17 @@ final class ShellCommands {
             return;
         }
         List<String> words = command.subList(3, command.size());
-        if (words.stream().noneMatch(w -> w.contains("*") || w.contains("?") || PackageCalls.substituted(w))) {
-            assignments.put(command.get(1), expanded(String.join(" ", words)));
+        if (words.stream().noneMatch(ShellCommands::onlyTheBuildKnows)) {
+            assignments.put(command.get(1), Expansions.expanded(String.join(" ", words), assignments));
         }
+    }
+
+    /** A glob or a command's output, whose words only the build knows. */
+    private static boolean onlyTheBuildKnows(String word) {
+        return word.contains("*") || word.contains("?") || Expansions.holdsCommandSubstitution(word);
     }
 
     private boolean firstWordIs(String keyword) {
         return !command.isEmpty() && command.getFirst().equals(keyword);
-    }
-
-    /** A value with earlier assignments substituted, so {@code A="$A more"} keeps what {@code A} held. */
-    private String expanded(String value) {
-        return REFERENCE.matcher(value).replaceAll(m -> Matcher.quoteReplacement(
-                assignments.getOrDefault(m.group(1) != null ? m.group(1) : m.group(2), m.group())));
     }
 }

@@ -13,7 +13,8 @@ class ContinuationsTest {
 
     @Test
     void oneLineJoinsDropsCommentLinesCollapsesWhitespaceAndKeepsABackslashEndingTheLastLine() {
-        assertThat(Continuations.oneLine("COPY a \\\n  # why\n\tC:\\\\Windows\\\\ \n")).isEqualTo("COPY a C:\\\\Windows\\\\");
+        assertThat(Continuations.oneLine("COPY a \\\n  # why\n\tC:\\\\Windows\\\\ \n"))
+                .isEqualTo("COPY a C:\\\\Windows\\\\");
         assertThat(Continuations.oneLine("RUN make \\  \n    && make install")).isEqualTo("RUN make && make install");
     }
 }

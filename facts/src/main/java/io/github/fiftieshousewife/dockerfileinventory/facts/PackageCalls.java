@@ -1,11 +1,12 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -58,24 +59,18 @@ public final class PackageCalls {
     }
 
     private static List<String> expand(List<String> command, Map<String, String> variables) {
-        List<String> words = new ArrayList<>();
-        for (String word : command) {
-            var variable = VARIABLE.matcher(word);
-            String value = variable.matches() ? variables.get(variable.group(1)) : null;
-            if (value == null || substituted(value)) {
-                words.add(word);
-            } else {
-                Arrays.stream(Continuations.removed(unquote(value)).trim().split("\\s+"))
-                        .filter(w -> !w.isEmpty())
-                        .forEach(words::add);
-            }
-        }
-        return words;
+        return command.stream().flatMap(word -> expandedWord(word, variables).stream()).toList();
     }
 
-    /** A word holding a command substitution: its value is only known when the image is built. */
-    static boolean substituted(String word) {
-        return word.contains("$(") || word.contains("`");
+    /** A word that is only a variable's reference, as the words of its value when that is known. */
+    private static List<String> expandedWord(String word, Map<String, String> variables) {
+        Matcher variable = VARIABLE.matcher(word);
+        String value = variable.matches() ? variables.get(variable.group(1)) : null;
+        if (value == null || Expansions.holdsCommandSubstitution(value)) {
+            return List.of(word);
+        }
+        return Arrays.stream(Continuations.removed(unquote(value)).trim().split("\\s+"))
+                .filter(w -> !w.isEmpty()).toList();
     }
 
     private static String unquote(String value) {
@@ -88,12 +83,14 @@ public final class PackageCalls {
     private static PackageCall call(List<String> command, List<List<String>> later) {
         String manager = command.getFirst();
         Family family = MANAGERS.get(manager);
-        List<String> flags = new ArrayList<>();
-        List<String> words = new ArrayList<>();
-        command.subList(1, command.size()).forEach(w -> (w.startsWith("-") ? flags : words).add(w));
+        Map<Boolean, List<String>> byFlag = command.subList(1, command.size()).stream()
+                .collect(Collectors.partitioningBy(w -> w.startsWith("-")));
+        List<String> flags = byFlag.get(true);
+        List<String> words = byFlag.get(false);
         String subcommand = words.isEmpty() ? "" : words.getFirst();
         List<String> packages = INSTALLS.contains(subcommand)
-                ? words.subList(1, words.size()).stream().filter(w -> !substituted(w)).toList() : List.of();
+                ? words.subList(1, words.size()).stream().filter(w -> !Expansions.holdsCommandSubstitution(w)).toList()
+                : List.of();
         boolean cleaned = (family == Family.APK && flags.contains("--no-cache"))
                 || later.stream().anyMatch(c -> cleans(c, family));
         return new PackageCall(manager, subcommand, flags, packages, cleaned);
@@ -104,6 +101,7 @@ public final class PackageCalls {
         if (MANAGERS.get(first) == family && family != Family.APT && command.contains("clean")) {
             return true;
         }
-        return first.equals("rm") && command.stream().anyMatch(w -> family.cacheDirs.stream().anyMatch(w::startsWith));
+        return first.equals("rm")
+                && command.stream().anyMatch(w -> family.cacheDirs.stream().anyMatch(w::startsWith));
     }
 }

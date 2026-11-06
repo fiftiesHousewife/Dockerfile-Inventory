@@ -79,7 +79,8 @@ public final class FactsRun {
                 }
             }
         }
-        Rates rates = Rates.of(read("facts.jsonl", FactRow.class), read("parse-failures.jsonl", FailureRow.class), locations());
+        Rates rates = Rates.of(read("facts.jsonl", FactRow.class), read("parse-failures.jsonl", FailureRow.class),
+                locations());
         Files.writeString(outDir.resolve("rates.json"), json.writerWithDefaultPrettyPrinter().writeValueAsString(rates),
                 StandardCharsets.UTF_8);
         return new Summary(parsed, failed, alreadyDone);
@@ -94,7 +95,8 @@ public final class FactsRun {
         try (Stream<String> lines = Files.lines(manifest, StandardCharsets.UTF_8)) {
             return lines.filter(l -> !l.isBlank())
                     .map(json::readTree)
-                    .<Map.Entry<String, String>>map(n -> Map.entry(n.path("repository").asString(), n.path("blobSha").asString()))
+                    .<Map.Entry<String, String>>map(
+                            n -> Map.entry(n.path("repository").asString(), n.path("blobSha").asString()))
                     .toList();
         }
     }
@@ -112,7 +114,8 @@ public final class FactsRun {
     private List<Path> blobs() throws IOException {
         try (Stream<Path> files = Files.list(discoveryDir.resolve("blobs"))) {
             // Discovery writes a blob to <sha>...part, then renames it; a .part file is unfinished.
-            return files.filter(f -> Files.isRegularFile(f) && !String.valueOf(f.getFileName()).endsWith(".part")).sorted().toList();
+            return files.filter(f -> Files.isRegularFile(f) && !String.valueOf(f.getFileName()).endsWith(".part"))
+                    .sorted().toList();
         }
     }
 

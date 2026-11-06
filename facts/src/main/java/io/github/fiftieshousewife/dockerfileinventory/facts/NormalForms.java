@@ -38,7 +38,8 @@ public final class NormalForms {
         return String.join("|",
                 family(facts.base()) + ":" + major(facts.base()),
                 installs.stream().map(PackageCall::manager).distinct().sorted().collect(Collectors.joining(",")),
-                installs.stream().flatMap(c -> c.packages().stream()).distinct().sorted().collect(Collectors.joining(",")),
+                installs.stream().flatMap(c -> c.packages().stream()).distinct().sorted()
+                        .collect(Collectors.joining(",")),
                 facts.userKind().name(),
                 String.join(",", facts.exposedPorts()),
                 facts.entrypointForm().name(),
@@ -91,7 +92,8 @@ public final class NormalForms {
 
     static String sha256(String text) {
         try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8)));
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("every JVM provides SHA-256", e);
         }

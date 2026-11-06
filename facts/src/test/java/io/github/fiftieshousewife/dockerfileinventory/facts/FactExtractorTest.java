@@ -55,7 +55,8 @@ class FactExtractorTest {
         "ubi9/ubi-minimal:9.4                           | ubi9/ubi-minimal                           | 9.4",
     })
     void splitsATagCarriedInAnArgDefaultFromARegistryPort(String reference, String name, String tag) {
-        assertThat(facts("ARG BASE=" + reference + "\nFROM ${BASE}\n").base()).isEqualTo(new BaseImage(name, tag, null));
+        assertThat(facts("ARG BASE=" + reference + "\nFROM ${BASE}\n").base())
+                .isEqualTo(new BaseImage(name, tag, null));
     }
 
     @Test
@@ -171,7 +172,8 @@ class FactExtractorTest {
 
     @Test
     void ignoresASyntaxLineAfterAnOrdinaryComment() {
-        assertThat(facts("# base image for payments\n# syntax=docker/dockerfile:1\nFROM ubi9\n").buildKitFeatures()).isEmpty();
+        assertThat(facts("# base image for payments\n# syntax=docker/dockerfile:1\nFROM ubi9\n").buildKitFeatures())
+                .isEmpty();
     }
 
     @Test

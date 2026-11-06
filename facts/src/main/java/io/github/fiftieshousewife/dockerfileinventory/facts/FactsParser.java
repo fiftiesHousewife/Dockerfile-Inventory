@@ -33,7 +33,7 @@ public final class FactsParser {
         ParseResult parsed = first instanceof ParseResult.Parsed ? first : attempt(blobSha, RetryText.of(text));
         return switch (parsed) {
             case ParseResult.Parsed p -> Templates.jinja(text)
-                    .map(line -> template(blobSha, line, "it parses, as its markers happen to be valid Dockerfile text"))
+                    .map(line -> template(blobSha, line, "it parses, as its markers are valid Dockerfile text"))
                     .orElse(p);
             case ParseResult.Failed _ -> Templates.anyMarker(text)
                     .map(line -> template(blobSha, line, "the parser said: " + ((ParseResult.Failed) first).message()))

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.openrewrite.Cursor;
 import org.openrewrite.docker.tree.Docker;
 import tools.jackson.databind.JsonNode;
@@ -62,13 +63,14 @@ public final class Steps {
         String name = from.getImageName().getContents().stream()
                 .map(c -> c instanceof Docker.Literal l ? l.getText() : "$")
                 .collect(Collectors.joining());
-        for (int i = earlier.size() - 1; i >= 0; i--) {
-            Docker.From.As as = earlier.get(i).getFrom().getAs();
-            if (as != null && as.getName().getText().equals(name)) {
-                return i;
-            }
-        }
-        return -1;
+        return IntStream.iterate(earlier.size() - 1, i -> i >= 0, i -> i - 1)
+                .filter(i -> named(earlier.get(i), name))
+                .findFirst().orElse(-1);
+    }
+
+    private static boolean named(Docker.Stage stage, String name) {
+        Docker.From.As as = stage.getFrom().getAs();
+        return as != null && as.getName().getText().equals(name);
     }
 
     static Step step(String keyword, String value) {

@@ -34,7 +34,8 @@ class ShellTokeniserTest {
     @Test
     void joinsBackslashContinuations() {
         assertThat(ShellTokeniser.parse("microdnf install -y \\\n    git \\\n    tar && \\\n  microdnf clean all"))
-                .contains(List.of(List.of("microdnf", "install", "-y", "git", "tar"), List.of("microdnf", "clean", "all")));
+                .contains(List.of(List.of("microdnf", "install", "-y", "git", "tar"),
+                        List.of("microdnf", "clean", "all")));
     }
 
     @Test

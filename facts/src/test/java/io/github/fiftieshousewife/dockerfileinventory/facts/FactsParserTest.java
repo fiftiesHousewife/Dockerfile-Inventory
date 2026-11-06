@@ -62,7 +62,8 @@ class FactsParserTest {
 
     @Test
     void acceptsAHeredocRun() {
-        assertThat(new FactsParser().parse("ok", "FROM ubi9\nRUN <<EOF\nmicrodnf install -y git\nmicrodnf clean all\nEOF\n"))
+        assertThat(new FactsParser().parse("ok",
+                "FROM ubi9\nRUN <<EOF\nmicrodnf install -y git\nmicrodnf clean all\nEOF\n"))
                 .isInstanceOf(ParseResult.Parsed.class);
     }
 

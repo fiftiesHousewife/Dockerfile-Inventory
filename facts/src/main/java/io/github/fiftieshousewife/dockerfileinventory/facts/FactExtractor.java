@@ -3,23 +3,26 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.openrewrite.docker.DockerIsoVisitor;
 import org.openrewrite.docker.tree.Docker;
 
-/** Reduces a parsed Dockerfile to {@link ImageFacts}. With {@link FactsParser}, the only code that sees rewrite types. */
+/**
+ * Reduces a parsed Dockerfile to {@link ImageFacts}. With {@link FactsParser} and {@link Steps}, the only code that
+ * sees rewrite types.
+ */
 public final class FactExtractor {
 
     private static final Set<String> OTHER_SHELLS = Set.of("powershell", "pwsh", "cmd");
-    private static final java.util.regex.Pattern REFERENCE =
-            java.util.regex.Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
 
     /** What a stage built {@code FROM} an earlier stage's name starts with. */
     private record Inherited(String user, List<String> ports, EntrypointForm entrypoint) {
@@ -29,9 +32,8 @@ public final class FactExtractor {
     private static final Pattern DIRECTIVE = Pattern.compile("#\\s*(\\w+)\\s*=.*");
 
     /** By port number, then text, so {@code 53/udp} sorts before {@code 8080}; variables sort last. */
-    private static final Comparator<String> PORT_ORDER = Comparator
-            .comparingInt((String p) -> p.matches("\\d+.*") ? Integer.parseInt(p.replaceFirst("\\D.*", "")) : Integer.MAX_VALUE)
-            .thenComparing(Comparator.naturalOrder());
+    private static final Comparator<String> PORT_ORDER =
+            Comparator.comparingInt(FactExtractor::portNumber).thenComparing(Comparator.naturalOrder());
 
     private FactExtractor() {
     }
@@ -40,37 +42,49 @@ public final class FactExtractor {
         Map<String, String> globalArgs = globalArgs(file);
         Map<String, Inherited> byStageName = new HashMap<>();
         RunTally runs = new RunTally();
-        StageScan last = null;
+        Inherited end = Inherited.NONE;
         List<Docker.Stage> stages = file.getStages();
         for (int index = 0; index < stages.size(); index++) {
-            Docker.Stage stage = stages.get(index);
-            Docker.From from = stage.getFrom();
-            last = new StageScan(byStageName.getOrDefault(text(from.getImageName(), globalArgs), Inherited.NONE), globalArgs);
-            boolean otherShell = false;
-            for (Docker.Instruction instruction : stage.getInstructions()) {
-                last.accept(instruction);
-                if (instruction instanceof Docker.Shell shell) {
-                    otherShell = otherShell(shell);
-                } else if (instruction instanceof Docker.Run run) {
-                    runs.add(index, run, last.vars, otherShell);
-                }
-            }
-            Docker.From.As as = from.getAs();
-            if (as != null) {
-                byStageName.put(as.getName().getText(), last.result());
-            }
+            end = scanned(index, stages.get(index), globalArgs, byStageName, runs);
         }
-        Inherited end = last == null ? Inherited.NONE : last.result();
         return new ImageFacts(stages.size(), finalBase(file, globalArgs), runs.calls, runs.runs, runs.opaque,
                 end.user(), kind(end.user()), end.ports(), end.entrypoint(),
                 List.copyOf(buildKitFeatures(file)), runs.otherShell);
+    }
+
+    /**
+     * One stage, starting from what the earlier stage it is built {@code FROM} by name ended with; its own end is
+     * recorded under its name for the stages after it. Each {@code RUN} is tallied under the stage's {@code SHELL}.
+     */
+    private static Inherited scanned(int index, Docker.Stage stage, Map<String, String> globalArgs,
+            Map<String, Inherited> byStageName, RunTally runs) {
+        Docker.From from = stage.getFrom();
+        StageScan scan = new StageScan(
+                byStageName.getOrDefault(text(from.getImageName(), globalArgs), Inherited.NONE), globalArgs);
+        boolean underOtherShell = false;
+        for (Docker.Instruction instruction : stage.getInstructions()) {
+            scan.accept(instruction);
+            switch (instruction) {
+                case Docker.Shell shell -> underOtherShell = otherShell(shell);
+                case Docker.Run run -> runs.add(index, run, scan.vars, underOtherShell);
+                default -> {
+                }
+            }
+        }
+        Inherited end = scan.result();
+        Optional.ofNullable(from.getAs()).ifPresent(as -> byStageName.put(as.getName().getText(), end));
+        return end;
+    }
+
+    private static int portNumber(String port) {
+        return port.matches("\\d+.*") ? Integer.parseInt(port.replaceFirst("\\D.*", "")) : Integer.MAX_VALUE;
     }
 
     private static Map<String, String> globalArgs(Docker.File file) {
         Map<String, String> globalArgs = new HashMap<>();
         file.getGlobalArgs().forEach(arg -> argPairs(arg).forEach((name, value) -> {
             if (value != null) {
-                globalArgs.put(name, substituted(value, globalArgs));
+                globalArgs.put(name, Expansions.expanded(value, globalArgs));
             }
         }));
         return globalArgs;
@@ -86,7 +100,7 @@ public final class FactExtractor {
         Docker.Argument value = arg.getValue();
         String written = Continuations.removed(arg.getName().getText()
                 + (value == null ? "" : "=" + text(value, Map.of())));
-        Map<String, String> pairs = new java.util.LinkedHashMap<>();
+        Map<String, String> pairs = new LinkedHashMap<>();
         KeyValuePairs.of(written).forEach(pair -> {
             String declared = pair.value() == null ? null : KeyValuePairs.unquoted(pair.value());
             pairs.put(pair.key(), declared == null || ownName(declared, pair.key()) ? null : declared);
@@ -97,12 +111,6 @@ public final class FactExtractor {
     /** A default that is only the argument's own name ({@code A=$A}, how the parser's retry writes {@code ARG A B}). */
     private static boolean ownName(String value, String name) {
         return value.equals("$" + name) || value.equals("${" + name + "}");
-    }
-
-    /** {@code $NAME} and {@code ${NAME}} replaced from {@code vars}; an unknown one stays as written. */
-    private static String substituted(String value, Map<String, String> vars) {
-        return REFERENCE.matcher(value).replaceAll(m -> java.util.regex.Matcher.quoteReplacement(
-                vars.getOrDefault(m.group(1) != null ? m.group(1) : m.group(2), m.group())));
     }
 
     /** One stage's walk: its variable scope, and the user, entrypoint and ports it ends with. */
@@ -124,11 +132,13 @@ public final class FactExtractor {
         void accept(Docker.Instruction instruction) {
             switch (instruction) {
                 case Docker.Arg arg -> arg(arg);
-                case Docker.Env env -> env.getPairs().forEach(p -> vars.put(p.getKey().getText(), text(p.getValue(), vars)));
+                case Docker.Env env -> env.getPairs()
+                        .forEach(pair -> vars.put(pair.getKey().getText(), text(pair.getValue(), vars)));
                 case Docker.User u -> user = text(u.getUser(), vars);
-                case Docker.Entrypoint e ->
-                        entrypoint = e.getCommand() instanceof Docker.ExecForm ? EntrypointForm.EXEC : EntrypointForm.SHELL;
-                case Docker.Expose expose -> expose.getPorts().forEach(p -> ports.add(p.getText().replaceFirst("/tcp$", "")));
+                case Docker.Entrypoint e -> entrypoint =
+                        e.getCommand() instanceof Docker.ExecForm ? EntrypointForm.EXEC : EntrypointForm.SHELL;
+                case Docker.Expose expose -> expose.getPorts()
+                        .forEach(port -> ports.add(port.getText().replaceFirst("/tcp$", "")));
                 default -> {
                 }
             }
@@ -139,13 +149,9 @@ public final class FactExtractor {
          * Docker does.
          */
         private void arg(Docker.Arg arg) {
-            argPairs(arg).forEach((name, declared) -> {
-                String value = declared == null ? globalArgs.get(name)
-                        : substituted(declared, vars);
-                if (value != null) {
-                    vars.put(name, value);
-                }
-            });
+            argPairs(arg).forEach((name, declared) -> Optional
+                    .ofNullable(declared == null ? globalArgs.get(name) : Expansions.expanded(declared, vars))
+                    .ifPresent(value -> vars.put(name, value)));
         }
 
         Inherited result() {
@@ -259,16 +265,8 @@ public final class FactExtractor {
 
     /** Docker reads parser directives only from the leading {@code # key=value} lines, before any other line. */
     static boolean hasSyntaxDirective(String text) {
-        for (String line : text.lines().toList()) {
-            var directive = DIRECTIVE.matcher(line);
-            if (!directive.matches()) {
-                return false;
-            }
-            if (directive.group(1).equalsIgnoreCase("syntax")) {
-                return true;
-            }
-        }
-        return false;
+        return text.lines().map(DIRECTIVE::matcher).takeWhile(Matcher::matches)
+                .anyMatch(directive -> directive.group(1).equalsIgnoreCase("syntax"));
     }
 
     static UserKind kind(String user) {
@@ -297,14 +295,9 @@ public final class FactExtractor {
      * command. Empty when the tokeniser declines the script.
      */
     static Optional<List<List<String>>> commands(Docker.Run run) {
-        return switch (run.getCommand()) {
-            case Docker.ShellForm shell -> ShellTokeniser.parse(shell.getArgument().getText());
-            case Docker.ExecForm exec -> Optional.of(List.of(exec.getArguments().stream().map(Docker.Literal::getText).toList()));
-            case Docker.HeredocForm heredoc -> ShellTokeniser.parse(heredoc.getBodies().stream()
-                    .flatMap(b -> b.getContentLines().stream())
-                    .collect(Collectors.joining("\n")));
-            default -> Optional.empty();
-        };
+        return run.getCommand() instanceof Docker.ExecForm exec
+                ? Optional.of(List.of(exec.getArguments().stream().map(Docker.Literal::getText).toList()))
+                : script(run).flatMap(ShellTokeniser::parse);
     }
 
     /** An argument's text with known variables substituted; an unknown one is kept as {@code ${NAME}}. */

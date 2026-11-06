@@ -19,7 +19,10 @@ import org.openrewrite.docker.tree.Docker;
  */
 public record RoundTrip(boolean passed, String difference) {
 
-    /** {@code ${NAME}} is {@code $NAME} to Docker unless a name character follows ({@code ${A}B} is not {@code $AB}). */
+    /**
+     * {@code ${NAME}} is {@code $NAME} to Docker unless a name character follows ({@code ${A}B} is not
+     * {@code $AB}).
+     */
     private static final java.util.regex.Pattern BRACES =
             java.util.regex.Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}(?![A-Za-z0-9_])");
     private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();

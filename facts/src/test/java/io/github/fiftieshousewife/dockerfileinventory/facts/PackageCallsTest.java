@@ -29,7 +29,8 @@ class PackageCallsTest {
         "apt install --no-install-recommends git | apt | install | --no-install-recommends",
         "microdnf -y install git         | microdnf | install | -y",
     })
-    void readsEachManagerWithFlagsBeforeOrAfterTheSubcommand(String script, String manager, String subcommand, String flag) {
+    void readsEachManagerWithFlagsBeforeOrAfterTheSubcommand(String script, String manager, String subcommand,
+            String flag) {
         assertThat(calls(script)).containsExactly(new PackageCall(manager, subcommand, List.of(flag), List.of("git"),
                 manager.equals("apk")));
     }

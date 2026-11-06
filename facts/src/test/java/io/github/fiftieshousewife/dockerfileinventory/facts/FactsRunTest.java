@@ -67,14 +67,18 @@ class FactsRunTest {
 
     @Test
     void writesTheEstateRates() throws IOException {
-        Files.writeString(discovery.resolve("blobs/templated"), "ARG BASE\nFROM $BASE\nRUN wget -qO- https://get.example/x | bash\n");
+        Files.writeString(discovery.resolve("blobs/templated"),
+                "ARG BASE\nFROM $BASE\nRUN wget -qO- https://get.example/x | bash\n");
         Files.writeString(discovery.resolve("blobs/modern"), "# syntax=docker/dockerfile:1\nFROM ubi9\n"
                 + "RUN --mount=type=cache,target=/c true\nSHELL [\"pwsh\", \"-c\"]\nRUN Write-Host hi\n");
         Files.writeString(discovery.resolve("manifest.jsonl"), """
                 {"repository":"payments/api","commitSha":"c1","scope":"RELEASED","path":"Dockerfile","blobSha":"good"}
-                {"repository":"platform/base","commitSha":"c2","scope":"RELEASED","path":"Dockerfile","blobSha":"templated"}
-                {"repository":"platform/tools","commitSha":"c3","scope":"RELEASED","path":"build/Dockerfile","blobSha":"templated"}
-                {"repository":"payments/web","commitSha":"c4","scope":"DEFAULT_BRANCH","path":"Dockerfile","blobSha":"modern"}
+                {"repository":"platform/base","commitSha":"c2","scope":"RELEASED","path":"Dockerfile",\
+                "blobSha":"templated"}
+                {"repository":"platform/tools","commitSha":"c3","scope":"RELEASED","path":"build/Dockerfile",\
+                "blobSha":"templated"}
+                {"repository":"payments/web","commitSha":"c4","scope":"DEFAULT_BRANCH","path":"Dockerfile",\
+                "blobSha":"modern"}
                 """);
 
         new FactsRun(discovery, out).run();

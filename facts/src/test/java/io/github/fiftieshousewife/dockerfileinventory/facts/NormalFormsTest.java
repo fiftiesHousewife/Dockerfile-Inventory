@@ -46,7 +46,8 @@ class NormalFormsTest {
 
     @Test
     void sharesASignatureAcrossRegistryMinorTagPackageOrderAndUid() {
-        String sameKind = APP.replace("FROM ubi9/ubi-minimal:9.4", "FROM registry.example.com/ubi9/ubi-minimal:9.6-1100")
+        String sameKind = APP
+                .replace("FROM ubi9/ubi-minimal:9.4", "FROM registry.example.com/ubi9/ubi-minimal:9.6-1100")
                 .replace("git tar", "tar git").replace("USER 1001", "USER 1002");
 
         assertThat(NormalForms.signature(facts(sameKind))).isEqualTo(NormalForms.signature(facts(APP)));

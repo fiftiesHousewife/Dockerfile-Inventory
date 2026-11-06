@@ -16,7 +16,8 @@ class KeyValuePairsTest {
 
     @Test
     void keysAreUnquotedAndSorted() {
-        assertThat(KeyValuePairs.keys("vendor=\"Red Hat, Inc.\"   maintainer=\"Red Hat, Inc.\" \"build-date\"=\"2026\""))
+        assertThat(KeyValuePairs.keys(
+                "vendor=\"Red Hat, Inc.\"   maintainer=\"Red Hat, Inc.\" \"build-date\"=\"2026\""))
                 .containsExactly("build-date", "maintainer", "vendor");
     }
 
