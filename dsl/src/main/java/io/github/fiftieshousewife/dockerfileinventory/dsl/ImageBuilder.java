@@ -42,6 +42,7 @@ public final class ImageBuilder {
         }
     }
 
+    private final List<Instruction.Arg> globalArgs = new ArrayList<>();
     private final List<Draft> stages = new ArrayList<>();
     private final List<String> writable = new ArrayList<>();
 
@@ -62,6 +63,29 @@ public final class ImageBuilder {
         return builder;
     }
 
+    /** An empty builder for the faithful path (Phase 5): add global arguments, then stages with {@code thenStage}. */
+    public static ImageBuilder create() {
+        return new ImageBuilder();
+    }
+
+    /** A build argument before the first {@code FROM}, usable in any {@code FROM}. */
+    public ImageBuilder globalArg(String name, String defaultValue) {
+        globalArgs.add(new Instruction.Arg(name, defaultValue));
+        return this;
+    }
+
+    /** Begins a stage on a base image; {@code name} may be null. */
+    public ImageBuilder thenStage(String name, BaseImage base) {
+        stages.add(new Draft(name, base, null));
+        return this;
+    }
+
+    /** Begins a stage built on an earlier stage; {@code name} may be null. */
+    public ImageBuilder thenStageFrom(String name, String earlierStage) {
+        stages.add(new Draft(name, null, earlierStage));
+        return this;
+    }
+
     /** Begins the final stage on a base image. */
     public ImageBuilder thenFrom(BaseImage base) {
         stages.add(new Draft(null, base, null));
@@ -78,12 +102,22 @@ public final class ImageBuilder {
         return add(new Instruction.Run(new RunBody.Install(new PackageInstall(manager, Arrays.asList(packages)))));
     }
 
+    /** An install with its own flags, rendered exactly (Phase 5, Q2). */
+    public ImageBuilder install(PackageManager manager, List<String> flags, List<String> packages) {
+        return add(new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages))));
+    }
+
     public ImageBuilder run(String... commands) {
         return add(new Instruction.Run(new RunBody.Shell(Arrays.asList(commands))));
     }
 
     public ImageBuilder copy(String source, String destination) {
         return add(new Instruction.Copy(List.of(source), destination, null, null));
+    }
+
+    /** A {@code COPY} as written: several sources, and optional {@code --chown} and {@code --from}. */
+    public ImageBuilder copy(List<String> sources, String destination, String chown, String fromStage) {
+        return add(new Instruction.Copy(sources, destination, chown, fromStage));
     }
 
     public ImageBuilder copyFrom(String stage, String source, String destination) {
@@ -97,6 +131,16 @@ public final class ImageBuilder {
 
     public ImageBuilder env(String name, String value) {
         return add(new Instruction.Env(Map.of(name, value)));
+    }
+
+    /** {@code ENV} with several pairs, in the given order. */
+    public ImageBuilder env(Map<String, String> values) {
+        return add(new Instruction.Env(values));
+    }
+
+    /** {@code LABEL} with several pairs, in the given order. */
+    public ImageBuilder label(Map<String, String> values) {
+        return add(new Instruction.Label(values));
     }
 
     public ImageBuilder label(String name, String value) {
@@ -139,6 +183,28 @@ public final class ImageBuilder {
     }
 
     public Built build(Policy policy) {
+        List<PolicyViolation.Breach> breaches = check(policy);
+        if (!breaches.isEmpty()) {
+            throw new PolicyViolation(breaches);
+        }
+        Draft last = stages.getLast();
+        String user = finalUser(last);
+        return new Built(new Dockerfile(globalArgs, stages.stream().map(d -> finish(d, d == last, user)).toList()),
+                raw());
+    }
+
+    /**
+     * The Dockerfile exactly as written, with no policy checks and none of the policy's additions (Phase 5, D4):
+     * what a faithful conversion needs.
+     */
+    public Dockerfile model() {
+        return new Dockerfile(globalArgs, stages.stream()
+                .map(d -> new Stage(d.name, d.base, d.fromStage, d.instructions))
+                .toList());
+    }
+
+    /** Every breach {@link #build} would throw, without throwing. */
+    public List<PolicyViolation.Breach> check(Policy policy) {
         Draft last = stages.getLast();
         String user = finalUser(last);
         List<PolicyViolation.Breach> breaches = new ArrayList<>();
@@ -154,24 +220,25 @@ public final class ImageBuilder {
         if (base.digest() == null) {
             breaches.add(new PolicyViolation.Breach("R1", "base " + base.name() + " is not pinned by digest"));
         }
-        List<Instruction.Raw> raw = new ArrayList<>();
         for (Draft stage : stages) {
             for (Instruction instruction : stage.instructions) {
-                if (instruction instanceof Instruction.Raw r) {
-                    raw.add(r);
-                    if (r.text().startsWith("ENTRYPOINT") && !r.text().substring(10).strip().startsWith("[")) {
-                        breaches.add(new PolicyViolation.Breach("H2", "shell-form entrypoint: " + r.text()));
-                    }
+                if (instruction instanceof Instruction.Raw r
+                        && r.text().startsWith("ENTRYPOINT") && !r.text().substring(10).strip().startsWith("[")) {
+                    breaches.add(new PolicyViolation.Breach("H2", "shell-form entrypoint: " + r.text()));
                 }
                 uncleanedInstall(instruction).ifPresent(command -> breaches.add(new PolicyViolation.Breach("H1",
                         "an install that does not clean in the same RUN: " + command)));
             }
         }
-        if (!breaches.isEmpty()) {
-            throw new PolicyViolation(breaches);
-        }
-        return new Built(new Dockerfile(List.of(), stages.stream().map(d -> finish(d, d == last, user)).toList()),
-                raw);
+        return breaches;
+    }
+
+    private List<Instruction.Raw> raw() {
+        return stages.stream()
+                .flatMap(stage -> stage.instructions.stream())
+                .filter(i -> i instanceof Instruction.Raw)
+                .map(i -> (Instruction.Raw) i)
+                .toList();
     }
 
     /** The final stage gets the group-0 step before its {@code USER}, and its copies owned by {@code <uid>:0}. */
