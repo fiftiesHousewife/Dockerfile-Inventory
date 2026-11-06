@@ -16,12 +16,20 @@ public final class ImageNodes {
     public static Resolved resolve(Artifactory artifactory, String repository, String image, String tag) {
         JsonNode manifest = JSON.readTree(artifactory.manifest(repository, image, tag).orElseThrow().body());
         if (manifest.has("manifests")) {
-            String entry = amd64(manifest).orElseThrow();
+            Optional<String> amd64 = amd64(manifest);
+            if (amd64.isEmpty()) {
+                return new Resolved.Skipped(Resolved.Reason.NO_AMD64, reference(repository, image, tag));
+            }
+            String entry = amd64.get();
             manifest = JSON.readTree(artifactory.manifest(repository, image, entry).orElseThrow().body());
         }
         String configDigest = manifest.path("config").path("digest").asString();
         String config = artifactory.blob(repository, image, configDigest).orElseThrow();
         return new Resolved.Node(configDigest, ImageConfig.parse(config).orElseThrow());
+    }
+
+    private static String reference(String repository, String image, String tag) {
+        return repository + "/" + image + ":" + tag;
     }
 
     /** The digest of a manifest list's {@code linux/amd64} entry (Q3: one platform only). */

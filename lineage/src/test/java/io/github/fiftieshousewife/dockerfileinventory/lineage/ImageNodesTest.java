@@ -45,4 +45,13 @@ class ImageNodesTest {
         assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/oci", "multi"))
                 .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest()).isEqualTo(CONFIG_D));
     }
+
+    @Test
+    void aListWithNoLinuxAmd64EntryIsSkipped() {
+        FakeArtifactory artifactory = new FakeArtifactory()
+                .manifest("docker-local", "team/arm", "1.0", DOCKER_LIST, "list-arm-only.json");
+
+        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/arm", "1.0"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.NO_AMD64, "docker-local/team/arm:1.0"));
+    }
 }
