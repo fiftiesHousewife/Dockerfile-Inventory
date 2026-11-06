@@ -103,6 +103,15 @@ the Dockerfiles whose instructions match their build history.
 | `outdated-bases.jsonl` | Images built on a base that has since been pushed again under the same name |
 | `rates.json` | Tags, images, skips, lineage coverage, links by tier, gaps |
 
+### Trying lineage without an Artifactory
+
+`scripts/lineage-demo.sh` starts a local JFrog Container Registry in Docker, builds images with Buildah from the
+CentOS Stream 9 Dockerfiles that discovery found (each at its scanned commit, each `FROM` pointed at the image built
+before it), pushes them, and runs lineage, the report and the rules against them. It needs Docker, git, jq and
+curl, and a discovery and facts run to start from; the header of the script lists its settings. By default it
+builds one chain (CentOS Stream 9, `s2i-core`, `s2i-base`, Python 3.12, nginx 1.24); `SCOPE=all` builds every
+`Dockerfile.c9s`, which takes hours when amd64 is emulated.
+
 ## Report on the estate
 
 ```bash
