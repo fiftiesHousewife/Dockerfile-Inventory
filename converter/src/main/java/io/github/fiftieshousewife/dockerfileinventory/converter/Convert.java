@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -67,12 +68,37 @@ public final class Convert {
                     + (user.getGroup() == null ? "" : ":" + text(user.getGroup())));
             case Docker.Expose expose when single(expose) ->
                     new Instruction.Expose(Integer.parseInt(expose.getPorts().getFirst().getText().strip()));
+            case Docker.Run run -> run(run);
             case Docker.Entrypoint entrypoint when entrypoint.getCommand() instanceof Docker.ExecForm exec ->
                     new Instruction.Entrypoint(arguments(exec));
             case Docker.Cmd cmd when cmd.getCommand() instanceof Docker.ExecForm exec ->
                     new Instruction.Cmd(arguments(exec));
             default -> new Instruction.Raw(printed(instruction), "not converted yet");
         };
+    }
+
+    /** An install when it is exactly one install and its clean; other shell text as written; the rest raw (D1, D2). */
+    private Instruction run(Docker.Run run) {
+        if (run.getFlags() != null && !run.getFlags().isEmpty()) {
+            return new Instruction.Raw(printed(run), "RUN with flags");
+        }
+        if (!(run.getCommand() instanceof Docker.ShellForm shell)) {
+            return new Instruction.Raw(printed(run), "RUN in exec or heredoc form");
+        }
+        String command = joined(shell.getArgument().getText());
+        return Installs.of(command)
+                .<Instruction>map(install -> new Instruction.Run(new RunBody.Install(install)))
+                .orElseGet(() -> new Instruction.Run(new RunBody.Shell(List.of(command))));
+    }
+
+    /** One line: continuations joined, comment lines inside dropped (Docker drops them), whitespace collapsed. */
+    static String joined(String text) {
+        return text.lines()
+                .map(line -> line.endsWith("\\") ? line.substring(0, line.length() - 1) : line)
+                .filter(line -> !line.strip().startsWith("#"))
+                .collect(Collectors.joining(" "))
+                .replaceAll("\\s+", " ")
+                .strip();
     }
 
     /** rewrite-docker gives an empty {@code KEY=} the value {@code =}, and keeps a value's quotes in its text. */

@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -57,5 +60,39 @@ class ConvertTest {
                 new Instruction.Expose(8080),
                 new Instruction.Entrypoint(List.of("java", "-jar", "app.jar")),
                 new Instruction.Cmd(List.of("serve")));
+    }
+
+    @Test
+    void aRunThatIsOnlyAnInstallAndItsCleanBecomesAnInstallWithItsFlagsAndAnyOtherRunAShell() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                RUN microdnf install -y git tar && microdnf clean all
+                RUN apk add --no-cache git
+                RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+                RUN dnf install -y git
+                RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y curl \\
+                    && rm -rf /var/lib/apt/lists/*
+                RUN make \\
+                    && make install
+                RUN --mount=type=cache,target=/root/.m2 mvn package
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(
+                install(PackageManager.MICRODNF, List.of("-y"), List.of("git", "tar")),
+                install(PackageManager.APK, List.of("--no-cache"), List.of("git")),
+                install(PackageManager.APT, List.of("-y"), List.of("curl")),
+                shell("dnf install -y git"),
+                shell("DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y curl"
+                        + " && rm -rf /var/lib/apt/lists/*"),
+                shell("make && make install"),
+                new Instruction.Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "RUN with flags"));
+    }
+
+    private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {
+        return new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages)));
+    }
+
+    private static Instruction shell(String command) {
+        return new Instruction.Run(new RunBody.Shell(List.of(command)));
     }
 }
