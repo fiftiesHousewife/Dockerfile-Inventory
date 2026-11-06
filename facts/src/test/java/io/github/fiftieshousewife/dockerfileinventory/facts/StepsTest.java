@@ -47,6 +47,32 @@ class StepsTest {
                         new Step("COPY", "/c d/"));
     }
 
+    @Test
+    void labelAndEnvGiveSortedKeyNamesAndOtherInstructionsTheirCollapsedValue() {
+        assertThat(steps("""
+                FROM ubi9/ubi-minimal
+                LABEL summary="$SUMMARY" \
+                      "io.k8s.display-name"="Python 3.11" \
+                      description="say \\"hi\\" a=b"
+                ENV SUMMARY="Platform for \
+                building" PATH=$HOME/bin:$PATH
+                ENV container oci
+                USER 1001
+                WORKDIR   ${HOME}
+                EXPOSE 8080
+                ENTRYPOINT ["container-entrypoint"]
+                CMD $STI_SCRIPTS_PATH/usage
+                """)).containsExactly(
+                        new Step("LABEL", "description io.k8s.display-name summary"),
+                        new Step("ENV", "PATH SUMMARY"),
+                        new Step("ENV", "container"),
+                        new Step("USER", "1001"),
+                        new Step("WORKDIR", "${HOME}"),
+                        new Step("EXPOSE", "8080"),
+                        new Step("ENTRYPOINT", "[\"container-entrypoint\"]"),
+                        new Step("CMD", "$STI_SCRIPTS_PATH/usage"));
+    }
+
     static List<Step> steps(String dockerfile) {
         ParseResult parsed = new FactsParser().parse("sha", dockerfile);
         assertThat(parsed).isInstanceOf(ParseResult.Parsed.class);
