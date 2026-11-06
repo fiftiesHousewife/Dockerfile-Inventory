@@ -35,6 +35,9 @@ public final class ShellTokeniser {
     /** A pipe into one of these runs downloaded or generated code nobody can read here. */
     private static final Set<String> SHELLS = Set.of("sh", "bash", "ash", "dash", "zsh", "ksh");
 
+    /** Inside double quotes a backslash escapes only these, as in the shell; before anything else it is kept. */
+    private static final String ESCAPED_IN_DOUBLE_QUOTES = "\"\\$`";
+
     private final String script;
     private final List<List<String>> commands = new ArrayList<>();
     private List<String> command = new ArrayList<>();
@@ -122,6 +125,9 @@ public final class ShellTokeniser {
                 wordQuoted = true;
                 return i;
             } else if (c == '\\' && next(i) == '\n') {
+                i++;
+            } else if (c == '\\' && ESCAPED_IN_DOUBLE_QUOTES.indexOf(next(i)) >= 0) {
+                word.append(next(i));
                 i++;
             } else if (c == '\\' && i + 1 == script.length()) {
                 break;

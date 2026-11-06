@@ -124,4 +124,17 @@ class ShellTokeniserTest {
                 .contains(List.of(List.of("echo", "v=$(cat \"a b\")"), List.of("echo", "$(dirname $(pwd))"),
                         List.of("echo", "`date`")));
     }
+
+    @Test
+    void insideDoubleQuotesABackslashEscapesAQuoteABackslashABacktickAndADollar() {
+        assertThat(ShellTokeniser.parse("echo \"a \\\"b\\\" c\" \"x\\\\y\" \"\\$HOME \\`d\\`\" && echo ok"))
+                .contains(List.of(List.of("echo", "a \"b\" c", "x\\y", "$HOME `d`"), List.of("echo", "ok")));
+    }
+
+    @Test
+    void theRealOpenshiftLineWithEscapedQuotesInsideDoubleQuotesReads() {
+        assertThat(ShellTokeniser.parse(
+                "echo -e \"http.cors.allow-origin: \\\"*\\\"\" >> /usr/share/elasticsearch/config/elasticsearch.yml"))
+                .contains(List.of(List.of("echo", "-e", "http.cors.allow-origin: \"*\"")));
+    }
 }
