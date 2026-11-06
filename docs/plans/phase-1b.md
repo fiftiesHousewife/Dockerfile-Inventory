@@ -279,6 +279,32 @@ or queued for curation; gap list published and reviewed.
    `outdated-bases.jsonl` belongs to the run (slice 8).
 8. **Run and rates**: lineage coverage, link tiers, gap count, skipped non-amd64 images.
 
+   Three parts, each test-first. Inputs and outputs live under one `OUT_DIR`, as in the other stages.
+
+   **8a, inventory** (`Inventory`): for every tag of every image of every local Docker repository, find the
+   config digest (manifest, then the amd64 entry of a list), fetch the config only if `configs/<digest>.json` is
+   not already stored, and append a row to `images.jsonl`: repository, image, tag, last push, then the config
+   digest or the skip reason and detail. Images run on virtual threads behind a semaphore, as in discovery. A rerun
+   skips tags already recorded. `ImageNodes` is split so the config digest is known before the config is fetched.
+   1. Every tag is recorded with its config digest and last push, and its config is stored.
+   2. A skipped tag is recorded with its reason.
+   3. A config is fetched once, however many tags and repositories share it.
+   4. A rerun fetches no manifest for a tag already recorded.
+   5. Several threads give the same rows as one.
+
+   **8b, analysis** (`Analysis`): reads `images.jsonl`, the stored configs, `facts.jsonl` (steps, `fromPath`) and
+   `manifest.jsonl` (blobs at a released commit), runs slices 3 and 5 to 7, and writes `lineage.jsonl` (each
+   image's parent), `links.jsonl`, `effective.jsonl`, `gaps.jsonl`, `external-bases.jsonl`,
+   `outdated-bases.jsonl` and `rates.json`.
+   6. The tree, links and fold are written, one row per image.
+   7. Gaps, external bases and outdated bases are written.
+   8. Rates: tags, images, skips by reason, lineage coverage, ambiguous parents, links by tier, parent missing,
+      children of `ONBUILD` bases, gaps, external bases, outdated bases. Lineage coverage, the gate's measure, is
+      the share of tags in scope that were placed in the tree; tags skipped as `NO_AMD64` (Q3) or `GONE` are out
+      of scope.
+
+   **8c, `LineageMain`**: `ARTIFACTORY_URL`, `ARTIFACTORY_TOKEN`, `FACTS_DIR`, `DISCOVERY_DIR`, `OUT_DIR`,
+   `[CONCURRENCY]`. It runs 8a then 8b. Untested, like the other mains.
 ## Phase 2 after this
 
 Clustering needs only `facts.jsonl`, so it could run before 1b finishes; the effective user (from 1b) refines the
