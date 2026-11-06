@@ -22,6 +22,8 @@ or queued for curation; gap list published and reviewed.
 | Q8 | External bases (UBI) | Mirrored into a local repository | Mirrored images appear in the tree as roots. See D1 |
 | Q9 | Which tags (slice 2) | Every tag | One manifest request per tag; configs fetched once per digest |
 | Q10 | Promoted images (slice 2) | One image, every reference | One node per config digest, listing each repository and tag; counts are per distinct image |
+| Q11 | Ambiguous parents (slice 3) | Report them | Both candidates recorded; links and the fold use the earliest-pushed one; rates count them |
+| Q12 | Children of an outdated base build | Report, in slice 7 | "Built on an outdated base": the parent is not the newest push of its image name |
 
 ## Decisions that follow (say if any is wrong)
 
@@ -86,6 +88,24 @@ or queued for curation; gap list published and reviewed.
    digest that went missing. A `User` of `""` is kept as written; slice 6 decides what it means (root).
 3. **Layer-prefix lineage**: parent = the node whose full `diff_ids` list is this one's longest strict prefix. A
    non-root image with no parent is a finding (Q2).
+
+   Design: `Lineage.of(nodes)` takes every resolved `Node` and returns each one's `Parent`: `Root`, `Of(digest)`
+   or `Ambiguous(candidates)`. Each node gets the OCI chain ID of every layer prefix (`sha256(prev + " " +
+   diffId)`), indexed once, so finding a parent is one lookup per layer rather than a comparison with every other
+   image. A child that adds only metadata (`USER`, `LABEL`, `ENV`) has exactly its parent's layers, so equal
+   layers count too, provided the candidate's history is a strict prefix of the child's: Buildah copies the
+   base's history into the child unchanged. Whether a root *should* have had a parent depends on the Dockerfile
+   its image was built from, so the "non-root with no parent" finding is made in slice 5, not here. Tests, in
+   order:
+   1. An image whose first layer no other image has is a root.
+   2. The parent is the image whose layers are the longest strict prefix: a child of a child picks its parent,
+      not its grandparent.
+   3. Siblings that share a parent's layers and then diverge are not each other's parent.
+   4. A child that adds only metadata takes the image with the same layers whose history is a strict prefix of
+      its own; that image does not take the child as its parent.
+   5. Two images with the same layers and the same history are not each other's parent; an image built on them
+      is ambiguous, naming both.
+   6. An image with no layers is a root and is no image's parent.
 4. **History normaliser**, from public Buildah-built `created_by` samples (Q4): `RUN` text with variable spans
    wildcarded, `COPY` to its destination, metadata steps to keyword and key.
 5. **Dockerfile links**: candidates whose resolved final `FROM` matches the lineage parent; ordered alignment of the
@@ -93,7 +113,7 @@ or queued for curation; gap list published and reviewed.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,
    `ENV`, labels, `WORKDIR`, `ENTRYPOINT`, `CMD` and packages; `ONBUILD` injected at the child's start.
 7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with
-   repository, image, tags and last push.
+   repository, image, tags and last push. Also `outdated-bases.jsonl` (Q12): images whose parent is not the newest push of that parent's image name.
 8. **Run and rates**: lineage coverage, link tiers, gap count, skipped non-amd64 images.
 
 ## Phase 2 after this
