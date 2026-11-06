@@ -1,6 +1,6 @@
 # Cleanup of the parsing code: plan
 
-Status: planned 6 Nov; scope answered 6 Nov (facts and the shared helpers; lineage stays separate); steps 1 and 2 built (step 2: `RetryText`, `Templates` and `MergedLines` out of `FactsParser`; a comment line no longer opens a heredoc in the retry, as it already did not when blanking comments); step 3 built (`ShellWords`: characters to words and operators; `ShellCommands`: those to commands and assignments; `ShellTokeniser` the facade); step 4 built (`Expansions`: the one variable expander and command-substitution test, used by `FactExtractor`, `ShellCommands` and `PackageCalls`; streams for the directive check, package expansion and stage lookup; long lines wrapped), step 5 next.
+Status: planned 6 Nov; scope answered 6 Nov (facts and the shared helpers; lineage stays separate); built 6 Nov.
 
 The owner asked for the parsing code to be made idiomatic and consistent: small classes, well-named methods, streams
 over loops. The code grew fix by fix across five public estates and a review (about fifty changes), and it shows:
@@ -37,3 +37,18 @@ gets its own test, as AGENTS.md asks.
 1. Scope: the parsing code in `facts`, plus the shared helpers the converter and rules use (proposed); or `facts`
    only; or also lineage's history normaliser (now kept separate on purpose, so the contracts compare two
    independent readers)?
+
+## As built
+
+| Step | Change |
+| --- | --- |
+| 1 | `Continuations` (joining continued lines, keeping a backslash that ends the last) and `KeyValuePairs` (one quote-aware `key=value` reader) replace five ways of joining lines and three pair readers, in facts, rules and the converter; the converter keeps only `Pairs.modelForm` |
+| 2 | `FactsParser` keeps parsing and the verdict; `RetryText` holds each rewrite as its own method (JSON commas, flag defaults, `ARG` names, comments) and finds heredoc bodies once; `Templates` and `MergedLines` hold the template and merged-line checks |
+| 3 | `ShellWords` turns characters into words and operators (quotes, escapes, substitutions, comments); `ShellCommands` turns those into commands and assignments (keywords, `case`, `for`, functions, redirections); `ShellTokeniser` is the facade |
+| 4 | `Expansions` is the one `$NAME`/`${NAME}` expander and command-substitution test (it was in three places); `FactExtractor` scans each stage in its own method and reads a heredoc script once; streams for the directive check, package expansion and earlier-stage lookup; lines over 120 characters wrapped |
+
+Checked by running facts, rules and the converter on openshift and docker-library with the code before the cleanup
+(e5c9841) and after: every output is identical except the `steps` of four docker-library Windows images (mongo
+`nanoserver`), whose `COPY` destination `C:\\Windows\\System32\\` kept only one of its two trailing backslashes before;
+the shared `Continuations` keeps both, as the converter already did. Two behaviour edges changed on purpose and are
+tested: a comment line no longer opens a heredoc in the retry, and a stray `)` keeps a script unreadable.

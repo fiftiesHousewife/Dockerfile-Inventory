@@ -2,7 +2,7 @@
 
 Drafts for https://github.com/openrewrite/rewrite (module `rewrite-docker`), found against 8.90.4 on real public
 Dockerfiles (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`); none is filed yet, as filing is public and the owner's call. Each
-has a minimal reproduction. This repo works around twelve of them (noted under "Workaround"; most in `FactsParser`'s
+has a minimal reproduction. This repo works around twelve of them (noted under "Workaround"; most in the parser's retry,
 second parse, which runs only after a failure and keeps every line number); delete a workaround and its note when
 upstream fixes the bug. Issues 11, 14 and 15 have no workaround.
 
@@ -19,7 +19,7 @@ RUN echo a && \
 
 Expected: one `RUN` with `echo a && echo b`. Actual: `token recognition error at: ''s tested better ...'`.
 Seen in `sclorg/s2i-python-container`, `3.12/Dockerfile.c10s` and six more.
-Workaround: `FactsParser` retries with whole-line comments blanked.
+Workaround: the retry (`RetryText`) parses again with whole-line comments blanked.
 
 ## 2. A comment of the form `# key=value` after the first instruction is rejected
 
@@ -35,7 +35,7 @@ RUN echo
 Expected: an ordinary comment. Actual: `extraneous input '# a=b' expecting {<EOF>, 'FROM'}`. Any word before the
 `=` triggers it (`# UID=1001 && GID=0`, `# syntax=docker/dockerfile:1`, `# a = b`); `# words then a=b` does not.
 Seen in `sclorg/nginx-container`, `1.20/Dockerfile.c9s` (`# UID=1001 && GID=0`) and 18 more.
-Workaround: `FactsParser` retries with whole-line comments blanked.
+Workaround: the retry (`RetryText`) parses again with whole-line comments blanked.
 
 ## 3. An unrecognised line is silently appended to the previous instruction's last argument
 
@@ -45,7 +45,7 @@ RUNN echo typo
 ```
 
 Expected: a syntax error. Actual: no error; the `FROM` image name becomes `ubi9\nRUNN echo typo`.
-Workaround: `FactsParser` reports a literal holding a newline not preceded by a backslash as a failure.
+Workaround: `MergedLines` reports a literal holding a newline not preceded by a backslash as a failure.
 
 ## 4. `LABEL a=$X b=$Y` is parsed as one pair
 
@@ -91,7 +91,7 @@ RUN A="x"
 
 Expected: a `COPY` and a `RUN`. Actual: `extraneous input '=' expecting ...` at the `RUN` (the same after `EXPOSE`).
 Seen in `sclorg/postgresql-container`, `13/Dockerfile.rhel9`, between comment lines and the `RUN`.
-Workaround: `FactsParser`'s retry blanks such a line.
+Workaround: the retry (`RetryText`) blanks such a line.
 
 ## 8. Whitespace before a comma in a JSON array is "not print idempotent"
 
@@ -104,7 +104,7 @@ Expected: an exec form of `a` and `b`. Actual: `IllegalStateException: ... is no
 tabs between a closing quote and the comma trigger it, in any instruction with a JSON array (`CMD`, `ENTRYPOINT`,
 `RUN`, `VOLUME`); spaces after the comma or inside the brackets do not.
 Seen in 11 `openshift` files, e.g. `CMD ["/bin/bash", "-c" ,"exec cp -rp ..."]`.
-Workaround: `FactsParser`'s retry drops whitespace before a comma on lines holding `[`.
+Workaround: the retry (`RetryText`) drops whitespace before a comma on lines holding `[`.
 
 ## 9. A flag value `${NAME:-default}` is "not print idempotent"
 
@@ -116,7 +116,7 @@ Expected: a `FROM` whose platform flag holds the variable. Actual: `IllegalState
 idempotent`. Any flag (`--platform`, `--chown`) with `:-` inside `${...}`; `${NAME-default}`, `${NAME}` and `$NAME`
 parse, as does `${NAME:-default}` outside a flag.
 Seen in 12 `openshift` files.
-Workaround: `FactsParser`'s retry writes `${NAME-default}` inside flag values.
+Workaround: the retry (`RetryText`) writes `${NAME-default}` inside flag values.
 
 ## 10. `ARG` with several names and no values is rejected
 
@@ -127,7 +127,7 @@ ARG TARGETOS TARGETARCH
 
 Expected: two build arguments without defaults, as BuildKit accepts. Actual: `extraneous input 'TARGETARCH'
 expecting {<EOF>, 'FROM'}`. `ARG A=1 B=2` parses. Seen in 10 `openshift` files.
-Workaround: `FactsParser`'s retry writes `ARG TARGETOS=$TARGETOS TARGETARCH=$TARGETARCH`, which leaves each unknown.
+Workaround: the retry (`RetryText`) writes `ARG TARGETOS=$TARGETOS TARGETARCH=$TARGETARCH`, which leaves each unknown.
 
 ## 11. A heredoc after a command in `RUN` is rejected
 
@@ -163,7 +163,7 @@ ARG HTTP_PROXY=
 
 Expected: a build argument whose default is empty. Actual: a syntax error at the next line or the end of the file.
 `ARG HTTP_PROXY=""` parses. Seen in 4 `konflux-ci` files (proxy settings).
-Workaround: `FactsParser`'s retry writes `ARG HTTP_PROXY=""`.
+Workaround: the retry (`RetryText`) writes `ARG HTTP_PROXY=""`.
 
 ## 14. A `COPY` heredoc with a quoted delimiter is rejected
 

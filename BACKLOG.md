@@ -26,8 +26,12 @@ and one line when its gate is met.
   - Done 6 Nov: `docker-library` (48 repositories, 594 locations, 581 files): no parse failures; 35% of its RUNs were
     unreadable, which led to S4 (`docs/plans/shell-reading.md`): groups, `case`, loops and functions read, PowerShell
     counted apart; every estate now 0-1.2% unreadable. Round trip 580 of 581 after a fix for Windows `COPY`
-    destinations ending in a backslash (mongo). Next: a cleanup of the parsing code (`docs/plans/parsing-cleanup.md`),
-    then bitnami.
+    destinations ending in a backslash (mongo).
+  - Done 6 Nov: a cleanup of the parsing code (`docs/plans/parsing-cleanup.md`): shared `Continuations`,
+    `KeyValuePairs` and `Expansions`; `FactsParser` split into `RetryText`, `Templates` and `MergedLines`;
+    `ShellTokeniser` into `ShellWords` and `ShellCommands`. openshift's and docker-library's facts, rules and round
+    trips are unchanged, apart from four Windows images whose `COPY` destination now keeps both trailing backslashes.
+    Next: bitnami.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.

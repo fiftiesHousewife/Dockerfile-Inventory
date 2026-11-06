@@ -36,12 +36,14 @@ discovery/                  Phase 0: repos -> trees at the released commit -> Do
                             GitHubApi: any of the three GitHub URL forms -> its API; RateLimit: when to wait
                             run: GHE_API_URL, GHE_TOKEN, OUT_DIR, [ORGANIZATIONS], [RELEASE_INDEX], [CONCURRENCY]
 facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, normal-form hashes, rates
-                            FactsParser, FactExtractor and Steps are the only classes that import org.openrewrite;
-                            FactsParser retries a failed parse with known rewrite-docker bugs worked around, keeping
-                            line numbers (docs/upstream/), and marks templates
-                            ShellTokeniser and PackageCalls read RUN bodies ($( ), groups, if, case, loops,
-                            functions; a pipe into a shell stays unreadable; PowerShell RUNs are counted apart);
-                            FactsRun: the run
+                            FactsParser, MergedLines, ParseResult, FactExtractor and Steps are the only classes
+                            that import org.openrewrite; FactsParser retries a failed parse with RetryText (known
+                            rewrite-docker bugs worked around, keeping line numbers, docs/upstream/), marks Templates
+                            ShellTokeniser reads RUN bodies: ShellWords (characters to words: quotes, escapes, $( ))
+                            then ShellCommands (words to commands: groups, if, case, loops, functions; a pipe into a
+                            shell stays unreadable); PackageCalls finds installs; PowerShell RUNs are counted apart
+                            Shared text helpers: Continuations (joining lines), KeyValuePairs (quoted key=value, used
+                            by rules and the converter too), Expansions ($NAME and ${NAME}); FactsRun: the run
                             Steps: the final image's instructions in lineage's normal form (testdata/contracts/)
                             run: DISCOVERY_DIR, OUT_DIR ./gradlew :facts:run
 lineage/                    Phase 1b: Artifactory images -> family tree -> Dockerfile links, fold, gaps
@@ -68,7 +70,7 @@ rules/                      Phase 3: detect-only rules over facts, parsed Docker
                             Rule, Finding, Subject, RuleRun (a failing rule is a finding, not a crash)
                             per-file rules (S1-S3, R1-R3, H1-H3, I1, I2), EffectiveRule (S4, S1 root), Lines
                             RulesRun: blobs -> findings, table, rates, samples; renovate/ holds the Renovate preset
-                            Pairs reads label keys with facts' Steps.keys; S2's name and shape rules are dsl.Secrets
+                            label keys are read with facts' KeyValuePairs; S2's name and shape rules are dsl.Secrets
                             run: DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [ALLOW_LIST], [EOL_LIST] ./gradlew :rules:run
 dsl/                        Phase 4: Dockerfile model, PackageInstallRenderer, DockerfileRenderer (Target), ImageBuilder
                             (Policy, PolicyViolation); goldens in src/test/resources/golden, checked by rules' tests
@@ -171,9 +173,9 @@ reading module's `build.gradle.kts`, so a change reruns the tests that read them
 
 **Work around a rewrite-docker bug.** Reproduce it from the real lines (shrink the file while the error stays the
 same), draft it in `docs/upstream/rewrite-docker-issues.md` with the minimal reproduction, and, if a rewrite of the
-text is safe (it must keep every line number and the meaning), add it to `FactsParser.retryText`, which runs only
-after a failure. A fixture with the trimmed real lines goes in `facts/src/test/resources/fixtures/dockerfiles/`.
-When upstream fixes the bug, delete the workaround and its note.
+text is safe (it must keep every line number and the meaning), add it to `RetryText` as its own method; the retry
+runs only after a failure. A fixture with the trimmed real lines goes in
+`facts/src/test/resources/fixtures/dockerfiles/`. When upstream fixes the bug, delete the workaround and its note.
 
 **Add a renderer for a package manager.** One `PackageInstallRenderer` and its case in
 `PackageInstallRenderer.forBase`; golden-file tests per archetype show which archetypes it moves.
