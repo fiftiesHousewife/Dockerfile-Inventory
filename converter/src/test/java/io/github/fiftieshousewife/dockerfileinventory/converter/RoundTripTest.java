@@ -119,4 +119,11 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void aBackslashKeptInsideDoubleQuotesIsTheSameValueAfterTheRoundTrip() {
+        String original = "FROM ubi9\nLABEL vendor=\"Red Hat\\, Inc.\" name=x\n";
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

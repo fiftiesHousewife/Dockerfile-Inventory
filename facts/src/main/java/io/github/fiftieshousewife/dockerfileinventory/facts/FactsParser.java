@@ -131,7 +131,8 @@ public final class FactsParser {
 
     /**
      * One line of an {@code ARG}, its first or a continued one: when every word is a plain name or a simple
-     * {@code NAME=value}, each plain name is given {@code =$NAME}; the trailing backslash is kept.
+     * {@code NAME=value}, each plain name is given {@code =$NAME} and an empty default is written {@code NAME=""}
+     * (rewrite-docker rejects {@code ARG A=}, upstream issue 13); the trailing backslash is kept.
      */
     private static String argNames(java.util.regex.Matcher arg) {
         String[] words = arg.group(2).trim().split("\\s+");
@@ -139,7 +140,7 @@ public final class FactsParser {
             return arg.group();
         }
         return arg.group(0).substring(0, arg.start(2)) + java.util.Arrays.stream(words)
-                .map(w -> w.contains("=") ? w : w + "=$" + w)
+                .map(w -> w.endsWith("=") ? w + "\"\"" : w.contains("=") ? w : w + "=$" + w)
                 .collect(Collectors.joining(" ")) + (arg.group(3) == null ? "" : arg.group(3));
     }
 

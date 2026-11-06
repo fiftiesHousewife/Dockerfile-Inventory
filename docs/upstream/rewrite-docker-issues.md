@@ -152,3 +152,27 @@ Expected: two build arguments, `A` (1) and `B` (2). Actual: one `Docker.Arg`, na
 The same family as issue 4 (`LABEL`). Found through a workaround for issue 10, which writes `ARG A=$A B=$B`.
 Workaround: `FactExtractor` reads an `ARG`'s names and values from its text.
 
+## 13. `ARG A=` (an empty default) is rejected
+
+```dockerfile
+FROM ubi9
+ARG HTTP_PROXY=
+```
+
+Expected: a build argument whose default is empty. Actual: a syntax error at the next line or the end of the file.
+`ARG HTTP_PROXY=""` parses. Seen in 4 `konflux-ci` files (proxy settings).
+Workaround: `FactsParser`'s retry writes `ARG HTTP_PROXY=""`.
+
+## 14. A `COPY` heredoc with a quoted delimiter is rejected
+
+```dockerfile
+FROM ubi9
+COPY <<'EOF' /etc/x.conf
+a = 1
+EOF
+```
+
+Expected: the file written without variable expansion, as BuildKit does for a quoted delimiter. Actual: a syntax
+error at the body. `COPY <<EOF` parses. Seen in 1 `konflux-ci` file.
+Workaround: none safe (dropping the quotes would change what is copied); the file is counted as a parse failure.
+

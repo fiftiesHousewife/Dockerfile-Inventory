@@ -233,4 +233,13 @@ class FactsParserTest {
                 RUN make build
                 """)).isInstanceOf(ParseResult.Parsed.class);
     }
+
+    @Test
+    void anArgWithAnEmptyDefaultParsesAndItsValueIsEmpty() {
+        String dockerfile = "ARG HTTP_PROXY=\nARG HTTPS_PROXY=\nFROM --platform=linux/arm64 debian:bookworm\n"
+                + "ARG CROSSPLANE_VERSION=\nWORKDIR /workspace\n";
+
+        assertThat(new FactsParser().parse("proxy", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
+        assertThat(FactsParser.retryText(dockerfile)).startsWith("ARG HTTP_PROXY=\"\"\nARG HTTPS_PROXY=\"\"\n");
+    }
 }
