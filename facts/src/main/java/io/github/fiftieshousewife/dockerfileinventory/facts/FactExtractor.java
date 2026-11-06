@@ -44,7 +44,7 @@ public final class FactExtractor {
             for (Docker.Instruction instruction : stage.getInstructions()) {
                 last.accept(instruction);
                 if (instruction instanceof Docker.Run run) {
-                    runs.add(index, run);
+                    runs.add(index, run, last.vars);
                 }
             }
             Docker.From.As as = from.getAs();
@@ -120,13 +120,17 @@ public final class FactExtractor {
         private int runs;
         private int opaque;
 
-        void add(int stage, Docker.Run run) {
+        /** Package variables expand from the stage's {@code ARG} and {@code ENV} and the RUN's own assignments. */
+        void add(int stage, Docker.Run run, Map<String, String> stageVariables) {
             runs++;
             Optional<List<List<String>>> commands = commands(run);
             if (commands.isEmpty()) {
                 opaque++;
             }
-            commands.ifPresent(c -> PackageCalls.of(c).forEach(call -> calls.add(new StagedCall(stage, call))));
+            Map<String, String> variables = new HashMap<>(stageVariables);
+            script(run).ifPresent(script -> variables.putAll(ShellTokeniser.assignments(script)));
+            commands.ifPresent(c -> PackageCalls.of(c, variables)
+                    .forEach(call -> calls.add(new StagedCall(stage, call))));
         }
     }
 
@@ -215,6 +219,17 @@ public final class FactExtractor {
             return UserKind.UNRESOLVED;
         }
         return user.chars().allMatch(Character::isDigit) ? UserKind.NUMERIC : UserKind.NAMED;
+    }
+
+    /** A shell-form or heredoc RUN's script text; exec form has none. */
+    static Optional<String> script(Docker.Run run) {
+        return switch (run.getCommand()) {
+            case Docker.ShellForm shell -> Optional.of(shell.getArgument().getText());
+            case Docker.HeredocForm heredoc -> Optional.of(heredoc.getBodies().stream()
+                    .flatMap(b -> b.getContentLines().stream())
+                    .collect(Collectors.joining("\n")));
+            default -> Optional.empty();
+        };
     }
 
     /**

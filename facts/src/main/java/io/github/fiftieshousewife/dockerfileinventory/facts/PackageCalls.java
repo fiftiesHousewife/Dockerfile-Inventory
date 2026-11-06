@@ -1,9 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 /**
@@ -33,14 +35,46 @@ public final class PackageCalls {
             "apt-get", Family.APT, "apt", Family.APT,
             "apk", Family.APK);
 
+    private static final Pattern VARIABLE = Pattern.compile("\\$\\{?([A-Za-z_][A-Za-z0-9_]*)}?");
+
     private PackageCalls() {
     }
 
     public static List<PackageCall> of(List<List<String>> commands) {
+        return of(commands, Map.of());
+    }
+
+    /**
+     * Package calls with any word that is exactly {@code $NAME} or {@code ${NAME}} replaced by the words of that
+     * variable's value, from {@code variables}; an unknown variable stays as written.
+     */
+    public static List<PackageCall> of(List<List<String>> unexpanded, Map<String, String> variables) {
+        List<List<String>> commands = unexpanded.stream().map(c -> expand(c, variables)).toList();
         return IntStream.range(0, commands.size())
                 .filter(i -> MANAGERS.containsKey(commands.get(i).getFirst()))
                 .mapToObj(i -> call(commands.get(i), commands.subList(i + 1, commands.size())))
                 .toList();
+    }
+
+    private static List<String> expand(List<String> command, Map<String, String> variables) {
+        List<String> words = new ArrayList<>();
+        for (String word : command) {
+            var variable = VARIABLE.matcher(word);
+            String value = variable.matches() ? variables.get(variable.group(1)) : null;
+            if (value == null) {
+                words.add(word);
+            } else {
+                Arrays.stream(unquote(value).trim().split("\\s+")).filter(w -> !w.isEmpty()).forEach(words::add);
+            }
+        }
+        return words;
+    }
+
+    private static String unquote(String value) {
+        String v = value.strip();
+        boolean quoted = v.length() >= 2
+                && (v.startsWith("\"") && v.endsWith("\"") || v.startsWith("'") && v.endsWith("'"));
+        return quoted ? v.substring(1, v.length() - 1) : v;
     }
 
     private static PackageCall call(List<String> command, List<List<String>> later) {

@@ -178,4 +178,25 @@ class FactExtractorTest {
     void aSyntaxLineAfterAnInstructionIsReadAsTheCommentDockerReadsItAs() {
         assertThat(facts("FROM ubi9\n# syntax=docker/dockerfile:1\nRUN echo\n").buildKitFeatures()).isEmpty();
     }
+
+    @Test
+    void aPackageVariableAssignedInTheSameRunIsExpanded() {
+        ImageFacts facts = facts("FROM ubi9\nRUN INSTALL_PKGS=\"nss_wrapper  gettext\" && \\\n"
+                + "    yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && yum -y clean all\n");
+
+        assertThat(facts.packageCalls().getFirst().call().packages()).containsExactly("nss_wrapper", "gettext");
+    }
+
+    @Test
+    void aPackageVariableFromTheStagesEnvOrArgIsExpandedAndAnUnknownOneStays() {
+        ImageFacts facts = facts("""
+                FROM ubi9
+                ARG EXTRA="tar"
+                ENV PKGS="python3.11 python3.11-pip"
+                RUN dnf install -y ${PKGS} $EXTRA $NOPE && dnf clean all
+                """);
+
+        assertThat(facts.packageCalls().getFirst().call().packages())
+                .containsExactly("python3.11", "python3.11-pip", "tar", "$NOPE");
+    }
 }

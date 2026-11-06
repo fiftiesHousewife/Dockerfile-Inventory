@@ -1,7 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -38,12 +40,23 @@ public final class ShellTokeniser {
     private boolean targetNext;
     private boolean wordQuoted;
 
+    private final Map<String, String> assignments = new LinkedHashMap<>();
+
     private ShellTokeniser(String script) {
         this.script = script;
     }
 
     public static Optional<List<List<String>>> parse(String script) {
         return new ShellTokeniser(script).run();
+    }
+
+    /**
+     * The variables a script sets with leading assignments ({@code INSTALL_PKGS="a b" && yum install $INSTALL_PKGS}),
+     * quotes removed, later ones winning; empty when the script is opaque.
+     */
+    public static Map<String, String> assignments(String script) {
+        ShellTokeniser tokeniser = new ShellTokeniser(script);
+        return tokeniser.run().isPresent() ? Map.copyOf(tokeniser.assignments) : Map.of();
     }
 
     private Optional<List<List<String>>> run() {
@@ -111,7 +124,9 @@ public final class ShellTokeniser {
                 targetNext = false;
             } else if (!quoted && redirect.matches()) {
                 targetNext = redirect.group(2).isEmpty();
-            } else if (!(command.isEmpty() && ASSIGNMENT.matcher(w).matches())) {
+            } else if (command.isEmpty() && ASSIGNMENT.matcher(w).matches()) {
+                assignments.put(w.substring(0, w.indexOf('=')), w.substring(w.indexOf('=') + 1));
+            } else {
                 command.add(w);
             }
         }
