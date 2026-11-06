@@ -25,13 +25,17 @@ public final class PackageInstallRenderer {
         return switch (install.manager()) {
             case MICRODNF, DNF, YUM -> {
                 String tool = install.manager().name().toLowerCase(Locale.ROOT);
-                yield List.of(tool + " install -y --nodocs --setopt=install_weak_deps=0 " + packages,
-                        tool + " clean all");
+                yield List.of(tool + " install " + flags(install, "-y --nodocs --setopt=install_weak_deps=0")
+                        + packages, tool + " clean all");
             }
-            case APK -> List.of("apk add --no-cache " + packages);
-            case APT -> List.of("apt-get update", "apt-get install -y --no-install-recommends " + packages,
-                    "rm -rf /var/lib/apt/lists/*");
+            case APK -> List.of("apk add " + flags(install, "--no-cache") + packages);
+            case APT -> List.of("apt-get update", "apt-get install " + flags(install, "-y --no-install-recommends")
+                    + packages, "rm -rf /var/lib/apt/lists/*");
         };
+    }
+
+    private static String flags(PackageInstall install, String house) {
+        return (install.flags().isEmpty() ? house : String.join(" ", install.flags())) + " ";
     }
 
     /** The manager a base's family ships with; any other base must name its manager. */

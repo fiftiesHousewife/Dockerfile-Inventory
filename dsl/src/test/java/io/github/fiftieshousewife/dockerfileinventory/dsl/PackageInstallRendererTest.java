@@ -35,6 +35,19 @@ class PackageInstallRendererTest {
                 .withMessageContaining("team/custom");
     }
 
+    @Test
+    void anInstallWithItsOwnFlagsRendersExactlyThoseFlagsThenTheClean() {
+        assertThat(PackageInstallRenderer.commands(
+                new PackageInstall(PackageManager.MICRODNF, List.of("-y"), List.of("git", "tar"))))
+                .containsExactly("microdnf install -y git tar", "microdnf clean all");
+        assertThat(PackageInstallRenderer.commands(
+                new PackageInstall(PackageManager.APK, List.of("--no-cache", "--virtual", ".build"), List.of("gcc"))))
+                .containsExactly("apk add --no-cache --virtual .build gcc");
+        assertThat(PackageInstallRenderer.commands(
+                new PackageInstall(PackageManager.APT, List.of("-y"), List.of("curl"))))
+                .containsExactly("apt-get update", "apt-get install -y curl", "rm -rf /var/lib/apt/lists/*");
+    }
+
     private static List<String> commands(PackageManager manager) {
         return PackageInstallRenderer.commands(new PackageInstall(manager, PACKAGES));
     }
