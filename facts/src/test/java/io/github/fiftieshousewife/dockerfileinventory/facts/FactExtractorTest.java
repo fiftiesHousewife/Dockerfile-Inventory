@@ -202,7 +202,8 @@ class FactExtractorTest {
 
     @Test
     void aPackageVariableFromAnEnvContinuedOverLinesHasNoBackslashWords() {
-        ImageFacts facts = facts("FROM ubi9\nENV PKGS=\"php \\\n    php-fpm\"\nRUN yum install -y $PKGS && yum clean all\n");
+        ImageFacts facts = facts("FROM ubi9\nENV PKGS=\"php \\\n    php-fpm\"\n"
+                + "RUN yum install -y $PKGS && yum clean all\n");
 
         assertThat(facts.packageCalls().getFirst().call().packages()).containsExactly("php", "php-fpm");
     }
