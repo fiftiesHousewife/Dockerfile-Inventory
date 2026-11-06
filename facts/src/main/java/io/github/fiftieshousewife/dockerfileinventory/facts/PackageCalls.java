@@ -35,8 +35,6 @@ public final class PackageCalls {
             "apt-get", Family.APT, "apt", Family.APT,
             "apk", Family.APK);
 
-    /** A value read from an {@code ENV} keeps its backslash-newlines; Docker removes them. */
-    private static final Pattern CONTINUATION = Pattern.compile("\\\\[ \\t]*\\r?\\n");
     private static final Pattern VARIABLE = Pattern.compile("\\$\\{?([A-Za-z_][A-Za-z0-9_]*)}?");
 
     private PackageCalls() {
@@ -67,7 +65,7 @@ public final class PackageCalls {
             if (value == null || substituted(value)) {
                 words.add(word);
             } else {
-                Arrays.stream(CONTINUATION.matcher(unquote(value)).replaceAll(" ").trim().split("\\s+"))
+                Arrays.stream(Continuations.removed(unquote(value)).trim().split("\\s+"))
                         .filter(w -> !w.isEmpty())
                         .forEach(words::add);
             }

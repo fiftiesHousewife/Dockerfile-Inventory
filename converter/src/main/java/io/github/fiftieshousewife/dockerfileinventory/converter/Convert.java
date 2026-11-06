@@ -5,6 +5,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
+import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactExtractor;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -113,7 +114,7 @@ public final class Convert {
     private static List<Instruction.Arg> args(Docker.Arg arg) {
         Map<String, String> declared = FactExtractor.argPairs(arg);
         Docker.Argument value = arg.getValue();
-        Map<String, String> values = Pairs.parse(withoutContinuations(
+        Map<String, String> values = Pairs.parse(Continuations.removed(
                 arg.getName().getText() + (value == null ? "" : "=" + text(value))));
         return declared.entrySet().stream()
                 .map(e -> new Instruction.Arg(e.getKey(), e.getValue() == null ? null : values.get(e.getKey())))
@@ -135,33 +136,10 @@ public final class Convert {
         if (!(run.getCommand() instanceof Docker.ShellForm shell)) {
             return new Instruction.Raw(printed(run), "RUN in exec or heredoc form");
         }
-        String command = joined(shell.getArgument().getText());
+        String command = Continuations.oneLine(shell.getArgument().getText());
         return Installs.of(command)
                 .<Instruction>map(install -> new Instruction.Run(new RunBody.Install(install)))
                 .orElseGet(() -> new Instruction.Run(new RunBody.Shell(List.of(command))));
-    }
-
-    /**
-     * Docker removes a backslash-newline before it reads an instruction, inside quotes too, and a backslash followed
-     * only by spaces or tabs before the newline counts.
-     */
-    static String withoutContinuations(String text) {
-        return text.replaceAll("\\\\[ \\t]*\\r?\\n", "");
-    }
-
-    /**
-     * One line: continuations joined, comment lines inside dropped (Docker drops them), whitespace collapsed. A
-     * backslash ending the last line joins nothing, so it stays ({@code COPY ... C:\\Windows\\}).
-     */
-    static String joined(String text) {
-        List<String> lines = text.stripTrailing().lines().map(String::stripTrailing).toList();
-        return java.util.stream.IntStream.range(0, lines.size())
-                .mapToObj(i -> i < lines.size() - 1 && lines.get(i).endsWith("\\")
-                        ? lines.get(i).substring(0, lines.get(i).length() - 1) : lines.get(i))
-                .filter(line -> !line.strip().startsWith("#"))
-                .collect(Collectors.joining(" "))
-                .replaceAll("\\s+", " ")
-                .strip();
     }
 
     /** {@code COPY [--from=x] [--chown=y] src... dest}; other flags and the JSON form stay raw (D2). */
@@ -169,7 +147,7 @@ public final class Convert {
         if (HEREDOC.matcher(text.lines().findFirst().orElse("")).find()) {
             return new Instruction.Raw(text, "COPY with a heredoc");
         }
-        List<String> words = new ArrayList<>(List.of(joined(text).split(" ")));
+        List<String> words = new ArrayList<>(List.of(Continuations.oneLine(text).split(" ")));
         words.removeFirst();
         String from = null;
         String chown = null;
@@ -219,7 +197,7 @@ public final class Convert {
         String text = instruction.lines()
                 .filter(line -> !line.strip().startsWith("#"))
                 .collect(Collectors.joining("\n"));
-        String[] parts = withoutContinuations(text).strip().split("\\s+", 2);
+        String[] parts = Continuations.removed(text).strip().split("\\s+", 2);
         return parts.length < 2 ? "" : parts[1];
     }
 

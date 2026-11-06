@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
+import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +31,7 @@ public final class MissingOciLabels implements Rule {
         Cursor cursor = new Cursor(null, subject.file());
         Set<String> labels = FinalImage.instructions(subject.file()).stream()
                 .filter(i -> i instanceof Docker.Label)
-                .map(i -> PipeToShell.joined(Lines.withoutLeadingComments(i.printTrimmed(cursor))).strip())
+                .map(i -> Continuations.removed(Lines.withoutLeadingComments(i.printTrimmed(cursor))).strip())
                 .flatMap(text -> Pairs.keys(text.substring(text.indexOf(' ') + 1)).stream())
                 .collect(Collectors.toSet());
         List<String> missing = REQUIRED.stream().filter(label -> !labels.contains(label)).toList();

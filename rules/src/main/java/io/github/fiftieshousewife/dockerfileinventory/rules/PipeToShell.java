@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
+import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.openrewrite.Cursor;
@@ -32,13 +33,9 @@ public final class PipeToShell implements Rule {
         return subject.file().getStages().stream()
                 .flatMap(stage -> stage.getInstructions().stream())
                 .filter(i -> i instanceof Docker.Run)
-                .filter(run -> PIPED.matcher(joined(run.printTrimmed(cursor))).find())
+                .filter(run -> PIPED.matcher(Continuations.removed(run.printTrimmed(cursor))).find())
                 .map(run -> finding(subject, lines.of(run), "a downloaded script is piped straight into a shell"))
                 .toList();
     }
 
-    /** The instruction as one line: continuations joined, a backslash with trailing spaces or tabs included. */
-    static String joined(String instruction) {
-        return instruction.replaceAll("\\\\[ \\t]*\\r?\\n", " ");
-    }
 }

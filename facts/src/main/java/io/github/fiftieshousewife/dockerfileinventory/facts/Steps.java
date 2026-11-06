@@ -17,7 +17,6 @@ import tools.jackson.databind.ObjectMapper;
  */
 public final class Steps {
 
-    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Pattern FLAGS = Pattern.compile("^(--\\S+\\s+)*");
 
@@ -30,7 +29,7 @@ public final class Steps {
             if (instruction instanceof Docker.Arg) {
                 continue;
             }
-            String text = joined(instruction.printTrimmed(new Cursor(null, file)));
+            String text = Continuations.oneLine(instruction.printTrimmed(new Cursor(null, file)));
             int space = text.indexOf(' ');
             String keyword = (space < 0 ? text : text.substring(0, space)).toUpperCase(Locale.ROOT);
             steps.add(step(keyword, space < 0 ? "" : text.substring(space + 1)));
@@ -145,13 +144,4 @@ public final class Steps {
         }
     }
 
-    /** One line, as Buildah records it: backslash-newline continuations joined and comment lines inside dropped. */
-    static String joined(String instruction) {
-        List<String> kept = instruction.lines()
-                .map(String::stripTrailing)
-                .map(line -> line.endsWith("\\") ? line.substring(0, line.length() - 1) : line)
-                .filter(line -> !line.strip().startsWith("#"))
-                .toList();
-        return WHITESPACE.matcher(String.join(" ", kept)).replaceAll(" ").strip();
-    }
 }

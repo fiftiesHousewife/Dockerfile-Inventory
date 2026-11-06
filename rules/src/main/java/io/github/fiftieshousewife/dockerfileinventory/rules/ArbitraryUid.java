@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
+import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -40,7 +41,7 @@ public final class ArbitraryUid implements EffectiveRule {
                 .flatMap(g -> g.blobShas().stream())
                 .map(blobText)
                 .filter(Objects::nonNull)
-                .map(PipeToShell::joined)
+                .map(Continuations::removed)
                 .anyMatch(text -> GROUP_ZERO.matcher(text).find());
         if (groupZero) {
             return List.of();

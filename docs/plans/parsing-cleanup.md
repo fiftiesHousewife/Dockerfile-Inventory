@@ -1,6 +1,6 @@
 # Cleanup of the parsing code: plan
 
-Status: planned 6 Nov; one question open.
+Status: planned 6 Nov; scope answered 6 Nov (facts and the shared helpers; lineage stays separate); step 1 started.
 
 The owner asked for the parsing code to be made idiomatic and consistent: small classes, well-named methods, streams
 over loops. The code grew fix by fix across five public estates and a review (about fifty changes), and it shows:
