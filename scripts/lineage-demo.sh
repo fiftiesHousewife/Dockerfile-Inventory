@@ -39,6 +39,9 @@ die() { printf 'stopped: %s\n' "$*" >&2; exit 1; }
 [[ -f $FACTS_DIR/facts.jsonl ]] || die "no $FACTS_DIR/facts.jsonl; run facts on $DISCOVERY_DIR first"
 for tool in docker git jq curl; do command -v $tool >/dev/null || die "$tool is not installed"; done
 docker info >/dev/null 2>&1 || die "Docker is not running"
+memory_gb=$(docker info --format '{{.MemTotal}}' | awk '{printf "%d", $1 / 1024 / 1024 / 1024 + 0.5}')
+(( memory_gb >= 4 )) || die "Docker may use ${memory_gb} GB; JCR needs 4 or more (Docker Desktop > Settings > \
+Resources > Memory). If JCR already started short of memory: docker rm -f $JCR; docker volume rm $JCR"
 mkdir -p "$OUT/src"
 OUT=$(cd "$OUT" && pwd)
 
