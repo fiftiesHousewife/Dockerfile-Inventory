@@ -33,6 +33,8 @@ public final class HistoryNormaliser {
             case "COPY", "ADD" -> new NormalStep(keyword, destination(value), null, false);
             case "LABEL" -> new NormalStep(keyword, String.join(" ", keys(value)), null, false);
             case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
+            case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD" ->
+                    new NormalStep(keyword, value, null, false);
             default -> new NormalStep("OTHER", body, null, false);
         };
     }

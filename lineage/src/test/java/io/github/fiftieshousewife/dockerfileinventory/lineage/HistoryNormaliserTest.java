@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class HistoryNormaliserTest {
@@ -45,6 +46,20 @@ class HistoryNormaliserTest {
         assertThat(normalise("/bin/sh -c #(nop) ENV container oci"))
                 .isEqualTo(new NormalStep("ENV", "container", null, false));
         assertThat(normalise("/bin/sh -c #(nop) ENV GREETING hello there world").text()).isEqualTo("GREETING");
+    }
+
+    @Test
+    void otherMetadataGivesItsKeywordAndCollapsedValue() {
+        assertThat(List.of(
+                "USER 1001", "WORKDIR ${HOME}", "EXPOSE 8080", "ENTRYPOINT [\"container-entrypoint\"]",
+                "CMD $STI_SCRIPTS_PATH/usage", "VOLUME /data", "STOPSIGNAL SIGTERM", "SHELL [\"/bin/bash\", \"-c\"]",
+                "ONBUILD RUN    make").stream()
+                .map(i -> normalise("/bin/sh -c #(nop) " + i))
+                .map(n -> n.keyword() + " " + n.text()))
+                .containsExactly(
+                        "USER 1001", "WORKDIR ${HOME}", "EXPOSE 8080", "ENTRYPOINT [\"container-entrypoint\"]",
+                        "CMD $STI_SCRIPTS_PATH/usage", "VOLUME /data", "STOPSIGNAL SIGTERM",
+                        "SHELL [\"/bin/bash\", \"-c\"]", "ONBUILD RUN make");
     }
 
     private static NormalStep normalise(String createdBy) {
