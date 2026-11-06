@@ -28,6 +28,16 @@ class HistoryNormaliserTest {
                 .isEqualTo(new NormalStep("ADD", "/", null, false));
     }
 
+    @Test
+    void labelGivesItsSortedKeyNamesWithQuotedKeysUnquotedAndQuotedValuesKeptWhole() {
+        assertThat(normalise("/bin/sh -c #(nop) LABEL vendor=\"Red Hat, Inc.\"       maintainer=\"Red Hat, Inc.\"").text())
+                .isEqualTo("maintainer vendor");
+        assertThat(normalise("/bin/sh -c #(nop) LABEL \"org.opencontainers.image.revision\"=\"0e05\" \"build-date\"=\"2026\"")
+                .text()).isEqualTo("build-date org.opencontainers.image.revision");
+        assertThat(normalise("/bin/sh -c #(nop) LABEL summary=\"say \\\"hi there\\\" b=c\" io.k8s.name=x"))
+                .isEqualTo(new NormalStep("LABEL", "io.k8s.name summary", null, false));
+    }
+
     private static NormalStep normalise(String createdBy) {
         return HistoryNormaliser.normalise(new HistoryStep(createdBy, null, false, null));
     }

@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -30,6 +31,7 @@ public final class HistoryNormaliser {
         String value = space < 0 ? "" : instruction.substring(space + 1);
         return switch (keyword) {
             case "COPY", "ADD" -> new NormalStep(keyword, destination(value), null, false);
+            case "LABEL" -> new NormalStep(keyword, String.join(" ", keys(value)), null, false);
             default -> new NormalStep("OTHER", body, null, false);
         };
     }
@@ -37,6 +39,46 @@ public final class HistoryNormaliser {
     /** {@code dir:<hash> in <dest>}: the hash is of the content, so only the destination is comparable. */
     private static String destination(String value) {
         return value.substring(value.lastIndexOf(" in ") + " in ".length());
+    }
+
+    /**
+     * The keys of {@code key=value} pairs, sorted. Words split on whitespace outside double quotes; quotes are removed
+     * and a backslash escapes the next character, so a quoted key or a value holding spaces or quotes stays whole.
+     */
+    static List<String> keys(String pairs) {
+        List<String> keys = new ArrayList<>();
+        StringBuilder key = new StringBuilder();
+        boolean inKey = true;
+        boolean quoted = false;
+        boolean escaped = false;
+        for (char c : pairs.toCharArray()) {
+            if (escaped) {
+                escaped = false;
+                if (inKey) {
+                    key.append(c);
+                }
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                quoted = !quoted;
+            } else if (!quoted && Character.isWhitespace(c)) {
+                addIfAny(keys, key);
+                inKey = true;
+            } else if (!quoted && c == '=' && inKey) {
+                inKey = false;
+            } else if (inKey) {
+                key.append(c);
+            }
+        }
+        addIfAny(keys, key);
+        return keys.stream().sorted().toList();
+    }
+
+    private static void addIfAny(List<String> keys, StringBuilder key) {
+        if (!key.isEmpty()) {
+            keys.add(key.toString());
+            key.setLength(0);
+        }
     }
 
     private static String withoutBuilderPrefix(String command) {
