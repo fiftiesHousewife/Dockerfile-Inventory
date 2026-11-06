@@ -21,6 +21,23 @@ class FoldTest {
         assertThat(effective.user()).isEqualTo(new Property<>("1001", new SetBy.Image("app", APP_LINK)));
     }
 
+    @Test
+    void aPropertyTheImageDoesNotSetIsAttributedToTheNearestAncestorThatDoes() {
+        Link baseLink = new Link(Link.Tier.PROBABLE, List.of("base-df"), false);
+        Resolved.Node ubi = node("ubi", List.of("L1"), null, List.of(step("ADD file:ubi in /")));
+        Resolved.Node base = node("base", List.of("L1", "L2"), "1001",
+                List.of(step("ADD file:ubi in /"), step("RUN useradd app", "FROM ubi9"), step("USER 1001")));
+        Resolved.Node app = node("app", List.of("L1", "L2", "L3"), "1001", List.of(step("ADD file:ubi in /"),
+                step("RUN useradd app", "FROM ubi9"), step("USER 1001"), step("RUN make", "FROM team/base:1")));
+        Map<String, Parent> parents = Map.of(
+                "ubi", new Parent.Root(), "base", new Parent.Of("ubi"), "app", new Parent.Of("base"));
+
+        EffectiveImage effective = Fold.of(List.of(ubi, base, app), parents,
+                Map.of("app", APP_LINK, "base", baseLink, "ubi", Links.NONE)).get("app");
+
+        assertThat(effective.user()).isEqualTo(new Property<>("1001", new SetBy.Image("base", baseLink)));
+    }
+
     static HistoryStep step(String instruction) {
         return step(instruction, null);
     }

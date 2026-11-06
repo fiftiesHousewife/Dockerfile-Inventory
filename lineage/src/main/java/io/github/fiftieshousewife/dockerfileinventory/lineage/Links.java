@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  */
 public final class Links {
 
-    private static final Link NONE = new Link(Link.Tier.NONE, List.of(), false);
+    static final Link NONE = new Link(Link.Tier.NONE, List.of(), false);
     static final double MIN_ALIGNMENT = 0.8;
 
     private Links() {
@@ -116,7 +116,7 @@ public final class Links {
     }
 
     /** An ambiguous parent's candidates share layers and history, so any of them gives the same own steps. */
-    private static Resolved.Node parentNode(Parent parent, Map<String, Resolved.Node> byDigest) {
+    static Resolved.Node parentNode(Parent parent, Map<String, Resolved.Node> byDigest) {
         return switch (parent) {
             case Parent.Of of -> byDigest.get(of.configDigest());
             case Parent.Ambiguous ambiguous -> byDigest.get(ambiguous.configDigests().getFirst());
