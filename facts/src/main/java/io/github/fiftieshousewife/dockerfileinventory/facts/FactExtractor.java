@@ -77,8 +77,8 @@ public final class FactExtractor {
      * 12). Words split on whitespace outside quotes; quotes are removed.
      */
     static Map<String, String> argPairs(Docker.Arg arg) {
-        String written = arg.getName().getText()
-                + (arg.getValue() == null ? "" : "=" + text(arg.getValue(), Map.of()));
+        Docker.Argument value = arg.getValue();
+        String written = arg.getName().getText() + (value == null ? "" : "=" + text(value, Map.of()));
         Map<String, String> pairs = new java.util.LinkedHashMap<>();
         for (String word : words(written)) {
             int eq = word.indexOf('=');
