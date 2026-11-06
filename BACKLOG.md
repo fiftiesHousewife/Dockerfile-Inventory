@@ -62,9 +62,11 @@ and one line when its gate is met.
   - Done: model, package installs, renderer with targets, builders with policy, four goldens; the gate's tests
     pass. Next: real archetypes as goldens after the first Phase 2 run; merge adjacent RUNs in the builder (H3).
 
+- Phase 5 — Converter. Plan: `docs/plans/phase-5.md` (questions answered 6 Nov). Gate: round-trip equivalence;
+  opt-in per team. Phase 5b (building and comparing images, delivering PRs) needs Buildah and Phase 4b.
+
 ## Queued
 
-- Phase 5 — Converter. Gate: round-trip equivalence; opt-in per team.
 
 ## Shipped
 
