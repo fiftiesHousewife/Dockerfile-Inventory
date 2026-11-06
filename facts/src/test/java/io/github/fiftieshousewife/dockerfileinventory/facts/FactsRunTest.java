@@ -88,4 +88,17 @@ class FactsRunTest {
         assertThat(rates.unresolvedFromByOrganisation()).isEqualTo(Map.of("platform", 1));
         assertThat(rates.buildKitFeatures()).isEqualTo(Map.of("run-mount", 1, "syntax-directive", 1));
     }
+
+    @Test
+    void templatesAreCountedApartAndLeftOutOfTheParseFailureRate() throws IOException {
+        Files.writeString(discovery.resolve("blobs/jinja"), "FROM {{ spec.base }}\n{% if x %}RUN y{% endif %}\n");
+
+        new FactsRun(discovery, out).run();
+
+        Rates rates = JsonMapper.builder().build().readValue(out.resolve("rates.json").toFile(), Rates.class);
+        assertThat(rates.blobs()).isEqualTo(3);
+        assertThat(rates.templates()).isEqualTo(1);
+        assertThat(rates.parseFailures()).isEqualTo(1);
+        assertThat(rates.parseFailureRate()).isEqualTo(0.5);
+    }
 }

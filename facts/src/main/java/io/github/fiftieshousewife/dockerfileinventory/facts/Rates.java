@@ -9,11 +9,12 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * {@code rates.json}: the Phase 1 gate's measurements across every blob recorded so far. Unresolved {@code FROM}
+ * {@code rates.json}: the Phase 1 gate's measurements across every blob recorded so far. Templates saved under a
+ * Dockerfile's name are counted apart and left out of the parse-failure rate, which measures the parser. Unresolved {@code FROM}
  * counts distinct blobs per organisation (D8); BuildKit features count blobs using each one (D7: use, not proof
  * that the builder supports it).
  */
-public record Rates(int blobs, int parseFailures, double parseFailureRate, int runs, int opaqueRuns,
+public record Rates(int blobs, int templates, int parseFailures, double parseFailureRate, int runs, int opaqueRuns,
                     double opaqueRunRate, Map<String, Integer> unresolvedFromByOrganisation,
                     Map<String, Integer> buildKitFeatures) {
 
@@ -41,7 +42,9 @@ public record Rates(int blobs, int parseFailures, double parseFailureRate, int r
                 });
         Map<String, Integer> features = new TreeMap<>();
         facts.forEach(f -> f.facts().buildKitFeatures().forEach(feature -> features.merge(feature, 1, Integer::sum)));
-        return new Rates(blobs, failures.size(), ratio(failures.size(), blobs), runs, opaque, ratio(opaque, runs),
+        int templates = (int) failures.stream().filter(f -> f.message().startsWith(FactsParser.TEMPLATE)).count();
+        int parseFailures = failures.size() - templates;
+        return new Rates(blobs, templates, parseFailures, ratio(parseFailures, blobs - templates), runs, opaque, ratio(opaque, runs),
                 unresolvedByOrg, features);
     }
 
