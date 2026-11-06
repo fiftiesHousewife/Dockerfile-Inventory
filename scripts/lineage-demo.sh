@@ -95,14 +95,15 @@ repository_exists() {
 curl -s -o /dev/null -w '%{http_code}' -u "admin:$ADMIN_PASSWORD" "$API/api/repositories" | grep -q 200 \
     || die "admin login refused; if you changed the admin password in the UI, set ADMIN_PASSWORD"
 if ! repository_exists; then
-    curl -s -o /dev/null -u "admin:$ADMIN_PASSWORD" -X PUT -H 'Content-Type: application/json' \
+    reply=$(curl -s -w ' (HTTP %{http_code})' -u "admin:$ADMIN_PASSWORD" -X PUT -H 'Content-Type: application/json' \
         "$API/api/repositories/$REPOSITORY" \
-        -d "{\"key\":\"$REPOSITORY\",\"rclass\":\"local\",\"packageType\":\"docker\",\"dockerApiVersion\":\"V2\"}" || true
+        -d "{\"key\":\"$REPOSITORY\",\"rclass\":\"local\",\"packageType\":\"docker\",\"dockerApiVersion\":\"V2\"}" || true)
+    echo "creating $REPOSITORY through the API: $reply"
 fi
 if ! repository_exists; then
     echo "JCR would not create the repository through its API. In http://localhost:$JCR_PORT/ui (admin / $ADMIN_PASSWORD):"
     echo "Administration > Repositories > Create a Repository > Local > Docker, key '$REPOSITORY'. Then press Enter."
-    read -r
+    read -r || die "no keyboard to wait on (run with !?): create the repository in the UI, then rerun"
     repository_exists || die "still no local Docker repository named $REPOSITORY"
 fi
 echo "repository $REPOSITORY ready"
