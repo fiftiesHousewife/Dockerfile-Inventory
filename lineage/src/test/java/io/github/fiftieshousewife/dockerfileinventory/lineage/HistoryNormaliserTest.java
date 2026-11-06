@@ -103,6 +103,12 @@ class HistoryNormaliserTest {
                 .noneMatch(step -> step.keyword().equals("OTHER"));
     }
 
+    @Test
+    void aLegacyLabelGivesOneKeyAsFactsDoes() {
+        assertThat(normalise(NOP + "LABEL MAINTAINER \"Marek Polacek <polacek@redhat.com>\"").text())
+                .isEqualTo("MAINTAINER");
+    }
+
     private static NormalStep normalise(String createdBy) {
         return HistoryNormaliser.normalise(new HistoryStep(createdBy, null, false, null));
     }

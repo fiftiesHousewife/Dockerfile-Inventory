@@ -75,8 +75,7 @@ public final class Steps {
     static Step step(String keyword, String value) {
         return switch (keyword) {
             case "COPY", "ADD" -> new Step(keyword, destination(value));
-            case "LABEL" -> new Step(keyword, String.join(" ", keys(value)));
-            case "ENV" -> new Step(keyword, envKeys(value));
+            case "LABEL", "ENV" -> new Step(keyword, pairKeys(value));
             default -> new Step(keyword, value);
         };
     }
@@ -91,8 +90,8 @@ public final class Steps {
         return arguments.substring(arguments.lastIndexOf(' ') + 1);
     }
 
-    /** {@code ENV k=v ...}, or the legacy {@code ENV k value with spaces}, which sets one variable. */
-    static String envKeys(String value) {
+    /** {@code ENV} or {@code LABEL} {@code k=v ...}, or the legacy {@code k value with spaces}, which sets one. */
+    static String pairKeys(String value) {
         String first = value.split(" ", 2)[0];
         return first.contains("=") ? String.join(" ", keys(value)) : first.replace("\"", "");
     }

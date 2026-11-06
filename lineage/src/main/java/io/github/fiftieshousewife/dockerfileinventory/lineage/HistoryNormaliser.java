@@ -55,8 +55,8 @@ public final class HistoryNormaliser {
                 yield new NormalStep(keyword, destination, null, BUILDINFO.stream().anyMatch(destination::startsWith));
             }
             case "LABEL" -> {
-                List<String> keys = keys(value);
-                yield new NormalStep(keyword, String.join(" ", keys), null, keys.containsAll(BUILD_LABELS));
+                String keys = envKeys(value);
+                yield new NormalStep(keyword, keys, null, List.of(keys.split(" ")).containsAll(BUILD_LABELS));
             }
             case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
             case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD" ->
@@ -103,7 +103,7 @@ public final class HistoryNormaliser {
         return keys.stream().sorted().toList();
     }
 
-    /** {@code ENV k=v ...}, or the legacy {@code ENV k value with spaces}, which sets one variable. */
+    /** {@code ENV} or {@code LABEL} {@code k=v ...}, or the legacy {@code k value with spaces}, which sets one. */
     private static String envKeys(String value) {
         String first = value.split(" ", 2)[0];
         return first.contains("=") ? String.join(" ", keys(value)) : first.replace("\"", "");

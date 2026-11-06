@@ -127,6 +127,14 @@ class StepsTest {
                 .isEqualTo(contract.path("fromPath").asString());
     }
 
+    @Test
+    void aLegacyLabelGivesOneKeyAsALegacyEnvDoes() {
+        assertThat(steps("""
+                FROM ubi9
+                LABEL MAINTAINER "Marek Polacek <polacek@redhat.com>"
+                """)).containsExactly(new Step("LABEL", "MAINTAINER"));
+    }
+
     static List<Step> steps(String dockerfile) {
         ParseResult parsed = new FactsParser().parse("sha", dockerfile);
         assertThat(parsed).isInstanceOf(ParseResult.Parsed.class);
