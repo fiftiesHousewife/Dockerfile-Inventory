@@ -1,6 +1,6 @@
 # Cleanup of the parsing code: plan
 
-Status: planned 6 Nov; scope answered 6 Nov (facts and the shared helpers; lineage stays separate); steps 1 and 2 built (step 2: `RetryText`, `Templates` and `MergedLines` out of `FactsParser`; a comment line no longer opens a heredoc in the retry, as it already did not when blanking comments), step 3 next.
+Status: planned 6 Nov; scope answered 6 Nov (facts and the shared helpers; lineage stays separate); steps 1 and 2 built (step 2: `RetryText`, `Templates` and `MergedLines` out of `FactsParser`; a comment line no longer opens a heredoc in the retry, as it already did not when blanking comments); step 3 built (`ShellWords`: characters to words and operators; `ShellCommands`: those to commands and assignments; `ShellTokeniser` the facade), step 4 next.
 
 The owner asked for the parsing code to be made idiomatic and consistent: small classes, well-named methods, streams
 over loops. The code grew fix by fix across five public estates and a review (about fifty changes), and it shows:

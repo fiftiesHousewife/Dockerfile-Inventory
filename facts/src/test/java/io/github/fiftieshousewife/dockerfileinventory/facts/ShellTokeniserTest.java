@@ -196,4 +196,9 @@ class ShellTokeniserTest {
         assertThat(ShellTokeniser.parse("function setup { apk add git; }; setup"))
                 .contains(List.of(List.of("apk", "add", "git"), List.of("setup")));
     }
+
+    @Test
+    void aStrayClosingParenthesisLeavesTheScriptUnreadableWhateverFollows() {
+        assertThat(ShellTokeniser.parse("echo a ) b")).isEmpty();
+    }
 }
