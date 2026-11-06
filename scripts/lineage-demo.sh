@@ -214,6 +214,8 @@ cut -f2,3 "$plan.ordered" | sort -u | while read -r repo commit; do
         git clone -q --filter=blob:none --no-checkout "https://github.com/$repo.git" "$dir"
         git -C "$dir" checkout -q "$commit"
     fi
+    # sclorg's build contexts link into common/, a submodule (container-common-scripts) pinned by the commit.
+    git -C "$dir" submodule update -q --init --recursive
 done
 
 step "3. Build linux/amd64 images with Buildah and push them to JCR"
