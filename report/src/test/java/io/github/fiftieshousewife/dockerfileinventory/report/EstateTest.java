@@ -36,4 +36,13 @@ class EstateTest {
                 new Location("payments/web", "build/Dockerfile", "DEFAULT_BRANCH"));
         assertThat(estate.missing()).containsExactly(new Location("platform/gone", "Dockerfile", "RELEASED"));
     }
+
+    @Test
+    void parseFailuresAreReadWithTheirLocations() {
+        assertThat(Estate.read(FIXTURES, FIXTURES, null).failures()).singleElement().satisfies(failure -> {
+            assertThat(failure.blobSha()).isEqualTo("blob-bad");
+            assertThat(failure.message()).startsWith("Syntax error");
+            assertThat(failure.locations()).containsExactly(new Location("platform/old", "Dockerfile", "RELEASED"));
+        });
+    }
 }

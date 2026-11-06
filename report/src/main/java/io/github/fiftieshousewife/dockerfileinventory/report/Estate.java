@@ -16,12 +16,13 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /** Every Dockerfile in the estate, with its facts and locations, read from the earlier stages' files. */
-public record Estate(List<Dockerfile> dockerfiles, List<Location> missing) {
+public record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<Location> missing) {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     public Estate {
         dockerfiles = List.copyOf(dockerfiles);
+        failures = List.copyOf(failures);
         missing = List.copyOf(missing);
     }
 
@@ -34,15 +35,19 @@ public record Estate(List<Dockerfile> dockerfiles, List<Location> missing) {
         List<Dockerfile> dockerfiles = lines(factsDir.resolve("facts.jsonl")).stream()
                 .map(row -> dockerfile(row, locations.getOrDefault(row.path("blobSha").asString(), List.of())))
                 .toList();
+        List<Failure> failures = lines(factsDir.resolve("parse-failures.jsonl")).stream()
+                .map(row -> new Failure(row.path("blobSha").asString(), row.path("message").asString(),
+                        locations.getOrDefault(row.path("blobSha").asString(), List.of())))
+                .toList();
         Set<String> accounted = new HashSet<>();
         dockerfiles.forEach(d -> accounted.add(d.blobSha()));
-        lines(factsDir.resolve("parse-failures.jsonl")).forEach(row -> accounted.add(row.path("blobSha").asString()));
+        failures.forEach(f -> accounted.add(f.blobSha()));
         List<Location> missing = locations.entrySet().stream()
                 .filter(e -> !accounted.contains(e.getKey()))
                 .flatMap(e -> e.getValue().stream())
                 .sorted(Comparator.comparing(Location::repository).thenComparing(Location::path))
                 .toList();
-        return new Estate(dockerfiles, missing);
+        return new Estate(dockerfiles, failures, missing);
     }
 
     private static Dockerfile dockerfile(JsonNode row, List<Location> locations) {
