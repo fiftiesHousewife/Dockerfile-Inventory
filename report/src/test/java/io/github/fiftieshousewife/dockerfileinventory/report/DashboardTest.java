@@ -49,7 +49,7 @@ class DashboardTest {
     @Test
     void withoutLineageTheLineageSectionSaysItHasNotRun() {
         assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty()))
-                .contains("<h2>Lineage</h2>").contains("Lineage has not run");
+                .contains("<h2>Lineage<span class=\"info\"").contains("Lineage has not run");
     }
 
     private static final LineageView CHAIN = LineageView.read(LineageViewTest.CHAIN, LineageViewTest.LOCATIONS);
@@ -57,12 +57,12 @@ class DashboardTest {
     @Test
     void lineageTilesCountImagesCoverageLinksAndTheThreeLists() {
         assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.of(CHAIN))).contains(
-                "<div class=\"value\">5</div><div class=\"label\">Images in Artifactory</div>",
-                "<div class=\"value\">100.0%</div><div class=\"label\">With a known parent</div>",
-                "<div class=\"value\">4</div><div class=\"label\">Linked to a Dockerfile</div>",
-                "<div class=\"value\">0</div><div class=\"label\">No Dockerfile found (gaps)</div>",
-                "<div class=\"value\">1</div><div class=\"label\">Built outside (external bases)</div>",
-                "<div class=\"value\">0</div><div class=\"label\">On an outdated base</div>");
+                "<div class=\"value\">5</div><div class=\"label\">Images in Artifactory<span class=\"info\"",
+                "<div class=\"value\">100.0%</div><div class=\"label\">With a known parent<span class=\"info\"",
+                "<div class=\"value\">4</div><div class=\"label\">Linked to a Dockerfile<span class=\"info\"",
+                "<div class=\"value\">0</div><div class=\"label\">No Dockerfile found (gaps)<span class=\"info\"",
+                "<div class=\"value\">1</div><div class=\"label\">Built outside (external bases)<span class=\"info\"",
+                "<div class=\"value\">0</div><div class=\"label\">On an outdated base<span class=\"info\"");
     }
 
     @Test
@@ -119,18 +119,18 @@ class DashboardTest {
     void theHealthStripNamesEachMetricsStateInWordsNotOnlyInColour() {
         assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty())).contains(
                 "<div class=\"health watch\"><div class=\"state\">watch</div><div class=\"value\">2.0%</div>"
-                        + "<div class=\"label\">Parse failures</div></div>",
+                        + "<div class=\"label\">Parse failures<span class=\"info\"",
                 "<div class=\"health act\"><div class=\"state\">act</div><div class=\"value\">10.0%</div>"
-                        + "<div class=\"label\">Bases at end of life</div></div>");
+                        + "<div class=\"label\">Bases at end of life<span class=\"info\"");
     }
 
     @Test
     void theCoverageCurveSitsAboveTheArchetypeTable() {
         String page = Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty());
 
-        assertThat(page).contains("<h2>Archetype coverage</h2><p class=\"note\">")
+        assertThat(page).contains("<h2>Archetype coverage<span class=\"info\"")
                 .contains(Charts.coverage(RANKING));
-        assertThat(page.indexOf(Charts.coverage(RANKING))).isLessThan(page.indexOf("archetypes</h2>"));
+        assertThat(page.indexOf(Charts.coverage(RANKING))).isLessThan(page.indexOf("<h2>Top 20 archetypes"));
     }
 
     @Test
@@ -163,5 +163,42 @@ class DashboardTest {
         assertThat(Dashboard.render(SUMMARY, RANKING, hostile, Optional.of(CHAIN)))
                 .doesNotContain("http://", "https://", " src=", "<script>")
                 .contains("evil/&lt;script&gt;x&lt;/script&gt;:1</text>");
+    }
+
+    @Test
+    void tilesAndHealthMetricsCarryAnInfoMarkerSayingWhatTheyMean() {
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty())).contains(
+                "Unique signatures<span class=\"info\" tabindex=\"0\" data-tip=\"Distinct by what the image is:",
+                "Parse failures<span class=\"info\" tabindex=\"0\" data-tip=\"Share of distinct Dockerfiles");
+    }
+
+    @Test
+    void sectionHeadingsCarryAnInfoMarker() {
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty()))
+                .contains("<h2>Archetype coverage<span class=\"info\"")
+                .contains("<h2>Top 20 bases<span class=\"info\"");
+    }
+
+    @Test
+    void whenNoBaseMatchedTheEndOfLifeListTheBasesSectionSaysSoAndHowToGiveOne() {
+        List<BaseRow> unmatched = List.of(new BaseRow("centos", "7", "centos", 5, 0, "unknown", null));
+
+        assertThat(Dashboard.render(SUMMARY, RANKING, unmatched, Optional.empty()))
+                .contains("No base matched an end-of-life list")
+                .contains("EOL_LIST");
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty()))
+                .doesNotContain("No base matched an end-of-life list");
+    }
+
+    @Test
+    void howAlikeTheDockerfilesAreIsToldInPlainWords() {
+        assertThat(Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty()))
+                .contains("<h2>How many really different Dockerfiles?<span class=\"info\"")
+                .contains("<tr><td>Different files</td><td class=\"num\">900</td>")
+                .contains("<tr><td>Still different once comments and spacing are ignored</td>"
+                        + "<td class=\"num\">700</td>")
+                .contains("<tr><td>Build a different kind of image</td><td class=\"num\">400</td>")
+                .contains("<tr><td>Archetypes: families of near-identical images</td><td class=\"num\">350</td>")
+                .doesNotContain("Collapse passes");
     }
 }

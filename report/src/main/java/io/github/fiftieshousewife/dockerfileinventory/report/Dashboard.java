@@ -61,6 +61,14 @@ public final class Dashboard {
             .s3 { fill: var(--c3); background: var(--c3); } .s4 { fill: var(--c4); background: var(--c4); }
             .s5 { fill: var(--c5); background: var(--c5); } .s6 { fill: var(--c6); background: var(--c6); }
             .s7 { fill: var(--c7); background: var(--c7); } .s8 { fill: var(--c8); background: var(--c8); }
+            .info { display: inline-block; position: relative; width: 15px; height: 15px; margin-left: 6px;
+                    border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font: 600 10px/13px
+                    system-ui, sans-serif; text-align: center; cursor: help; vertical-align: 2px;
+                    text-transform: none; letter-spacing: 0; }
+            .info:hover::after, .info:focus::after { content: attr(data-tip); position: absolute; left: 50%;
+                    top: 20px; transform: translateX(-50%); width: 260px; padding: 8px 10px; border-radius: 8px;
+                    background: var(--fg); color: var(--bg); font: 400 12px/1.4 system-ui, sans-serif;
+                    text-align: left; z-index: 10; white-space: normal; }
             svg.chart .marker circle { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
             .health { background: var(--tile); border-radius: 10px; padding: 10px 14px; border-left: 6px solid; }
             .health.good { border-left-color: var(--good); } .health.watch { border-left-color: var(--watch); }
@@ -88,27 +96,30 @@ public final class Dashboard {
                         + " unless stated.</p>",
                 health(Health.of(summary)),
                 tiles(summary),
-                "<h2>Collapse passes</h2>", passes(summary),
-                "<h2>Rates</h2>", rates(summary),
-                "<h2>Archetype coverage</h2><p class=\"note\">How few archetypes cover most locations: "
+                h2("How many really different Dockerfiles?", "How alike"), passes(summary),
+                h2("Rates", "Rates"), rates(summary),
+                h2("Archetype coverage", "Archetype coverage")
+                        + "<p class=\"note\">How few archetypes cover most locations: "
                         + count(summary.k80()) + " cover 80%, " + count(summary.k95()) + " cover 95%.</p>"
                         + Charts.coverage(ranking),
-                "<h2>Top " + TOP + " archetypes</h2>", "<div class=\"scroll\">" + archetypes(ranking) + "</div>",
-                "<h2>Top " + TOP + " bases</h2>",
+                h2("Top " + TOP + " archetypes", "Top archetypes"),
+                "<div class=\"scroll\">" + archetypes(ranking) + "</div>",
+                h2("Top " + TOP + " bases", "Top bases") + noEolMatch(bases),
                 "<p class=\"legend\"><span class=\"key eol\"></span>end of life <span class=\"key supported\"></span>"
                         + "supported <span class=\"key unknown\"></span>not on the list "
                         + "<span class=\"key hatched\"></span>hatched: pinned by digest</p>",
                 Charts.bases(bases),
                 "<details><summary>Table</summary><div class=\"scroll\">" + bases(bases) + "</div></details>",
-                "<h2>Parse outcome</h2><p class=\"note\">Distinct files.</p>"
+                h2("Parse outcome", "Parse outcome") + "<p class=\"note\">Distinct files.</p>"
                         + Charts.stacked("Parse outcome", parseOutcome(summary)),
-                "<h2>Package managers</h2><p class=\"note\">A location using two managers counts for each.</p>"
+                h2("Package managers", "Package managers")
+                        + "<p class=\"note\">A location using two managers counts for each.</p>"
                         + Charts.stacked("Package managers", managers(summary.managers())),
                 folded(counts(summary.managers(), "Manager")),
-                "<h2>Final user</h2>", "<p class=\"note\">" + userNote(summary) + "</p>",
+                h2("Final user", "Final user"), "<p class=\"note\">" + userNote(summary) + "</p>",
                 Charts.stacked("Final user", users(summary.users())),
                 folded(counts(summary.users(), "User")),
-                "<h2>Lineage</h2>", lineage.map(Dashboard::lineage).orElse(
+                h2("Lineage", "Lineage"), lineage.map(Dashboard::lineage).orElse(
                         "<p class=\"note\">Lineage has not run: no images from Artifactory are linked to Dockerfiles."
                                 + "</p>"),
                 "</body></html>", "");
@@ -121,7 +132,7 @@ public final class Dashboard {
                     String state = m.state().name().toLowerCase(Locale.ROOT);
                     return "<div class=\"health " + state + "\"><div class=\"state\">" + state
                             + "</div><div class=\"value\">" + percent(m.value()) + "</div><div class=\"label\">"
-                            + escape(m.name()) + "</div></div>";
+                            + escape(m.name()) + info(m.name()) + "</div></div>";
                 })
                 .collect(Collectors.joining()) + "</div>";
     }
@@ -139,15 +150,22 @@ public final class Dashboard {
 
     private static String tile(String label, String value) {
         return "<div class=\"tile\"><div class=\"value\">" + value + "</div><div class=\"label\">"
-                + escape(label) + "</div></div>";
+                + escape(label) + info(label) + "</div></div>";
     }
+
+    private static final Map<String, String> PASS_NAMES = Map.of(
+            "blob", "Different files",
+            "text-normal", "Still different once comments and spacing are ignored",
+            "signature", "Build a different kind of image");
 
     private static String passes(Summary s) {
         String rows = s.passes().stream()
-                .map(p -> row(escape(p.pass()), count(p.groups()), count(p.locations())))
+                .map(p -> row(escape(PASS_NAMES.getOrDefault(p.pass(), p.pass())), count(p.groups()),
+                        count(p.locations())))
                 .collect(Collectors.joining());
-        return "<table><tr><th>Pass</th><th class=\"num\">Groups</th><th class=\"num\">Locations</th></tr>"
-                + rows + row("near-duplicate", count(s.nearDuplicateGroups()), count(s.locations())) + "</table>";
+        return "<table><tr><th>Counted as</th><th class=\"num\">How many</th><th class=\"num\">Locations</th></tr>"
+                + rows + row("Archetypes: families of near-identical images", count(s.nearDuplicateGroups()),
+                count(s.locations())) + "</table>";
     }
 
     private static String rates(Summary s) {
@@ -285,6 +303,25 @@ public final class Dashboard {
 
     private static String folded(String table) {
         return "<details><summary>Table</summary>" + table + "</details>";
+    }
+
+    private static String h2(String title, String key) {
+        return "<h2>" + escape(title) + info(key) + "</h2>";
+    }
+
+    /** A marker showing what a number or section means, on hover and on keyboard focus. */
+    static String info(String key) {
+        String text = About.TEXT.get(key);
+        return text == null ? "" : "<span class=\"info\" tabindex=\"0\" data-tip=\"" + escape(text)
+                + "\" aria-label=\"" + escape(text) + "\">i</span>";
+    }
+
+    /** Every base unknown means no list was given, or one that names none of these bases. */
+    private static String noEolMatch(List<BaseRow> bases) {
+        return bases.isEmpty() || bases.stream().anyMatch(b -> !b.status().equals("unknown")) ? ""
+                : "<p class=\"note\">No base matched an end-of-life list, so every status is unknown: either no "
+                        + "list was given or it names none of these bases. Give the internal list as a CSV with "
+                        + "EOL_LIST (imagePath,tagPrefix,status,eolDate).</p>";
     }
 
     private static String userNote(Summary s) {
