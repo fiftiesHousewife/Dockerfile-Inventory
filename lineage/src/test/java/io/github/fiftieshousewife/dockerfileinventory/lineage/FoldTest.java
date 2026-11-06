@@ -84,6 +84,18 @@ class FoldTest {
                 "vendor", new Property<>("acme", new SetBy.Image("base", baseLink))));
     }
 
+    @Test
+    void aPropertySetOnlyBeforeARootsFromCommentIsAttributedToTheExternalBaseItNames() {
+        Resolved.Node python = new Resolved.Node("python",
+                ImageConfig.parse(Fixtures.history("ubi9-python-311.json")).orElseThrow());
+
+        EffectiveImage effective = Fold.of(List.of(python), Map.of("python", new Parent.Root()),
+                Map.of("python", APP_LINK)).get("python");
+
+        assertThat(effective.entrypoint().setBy()).isEqualTo(new SetBy.ExternalBase("ubi9/s2i-base"));
+        assertThat(effective.user().setBy()).isEqualTo(new SetBy.Image("python", APP_LINK));
+    }
+
     static HistoryStep step(String instruction) {
         return step(instruction, null);
     }
