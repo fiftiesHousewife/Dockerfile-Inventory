@@ -50,3 +50,24 @@ failures from the rate of non-template files); package managers keep a fixed ord
 apt, apk, zypper, then the rest alphabetically) and only those present appear; final user always shows its four
 kinds. Test 5 passed first time: the charts already escaped every label.
 
+## Slice 2: archetype cards (6 Nov)
+
+The owner found the top-20 archetype table meaningless: each row was a raw signature. It becomes cards for the top
+10 (the full ranking stays in `archetypes.json`), each with:
+
+- a plain sentence built from the signature (`base:major|managers|packages|user|ports|entrypoint|stages`, the format
+  `NormalForms.signature` documents) and the representative Dockerfile's base as written: "Builds on X, installs N
+  packages with yum (a, b, c and 17 more), runs as a numeric user, exposes 8080 and 8443, starts with an exec-form
+  command, one stage";
+- its size: Dockerfiles, locations and repositories;
+- one example: the representative Dockerfile's location and its full text, read from discovery's `blobs/`, in a
+  collapsible section, escaped.
+
+Tests, in order: 1. the sentence for each user kind, entrypoint form, no packages, many packages and several
+stages; 2. the templates and parse-failure groups get their own sentence; 3. a card's numbers, repositories and
+example come from the ranking, the estate and the blob; a missing blob leaves the example out; 4. the dashboard
+shows ten cards with the example escaped inside `<details>`, and no signature table.
+
+As built (slice 2): `ArchetypeCards` builds the sentence and finds each card's example; the heading is "Largest
+archetypes" (a count in it read oddly with fewer than ten). A card names five repositories and counts the rest.
+

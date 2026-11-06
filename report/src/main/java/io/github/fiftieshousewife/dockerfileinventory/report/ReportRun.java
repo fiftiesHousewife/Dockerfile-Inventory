@@ -55,7 +55,8 @@ public final class ReportRun {
         tables.forEach(t -> write("tables/" + t.name() + ".csv", t.csv()));
         write("tables/ddl.sql", tables.stream().map(Table::ddl).collect(Collectors.joining("\n")));
         write("dashboard.html", Dashboard.render(
-                Summary.of(estate, passes.subList(0, 3), archetypeGroups.size(), ranking, bases), ranking, bases,
+                Summary.of(estate, passes.subList(0, 3), archetypeGroups.size(), ranking, bases), ranking,
+                ArchetypeCards.of(ranking, estate, discoveryDir), bases,
                 Optional.ofNullable(lineageDir).map(dir -> LineageView.read(dir, locations(estate)))));
     }
 

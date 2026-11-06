@@ -56,9 +56,9 @@ final class About {
                     + "estate is copies and variations of a few designs."),
             Map.entry("Rates", "The estate-wide shares behind the health strip, with the template count."),
             Map.entry("Archetype coverage", "Share of locations covered as archetypes are added, largest first."),
-            Map.entry("Top archetypes", "The largest families of near-identical Dockerfiles, by locations. The "
-                    + "signature describes the family: base:tag | package manager | packages | final user | ports | "
-                    + "entrypoint form | number of stages."),
+            Map.entry("Top archetypes", "The largest families of near-identical Dockerfiles, by locations: what "
+                    + "each builds, how many Dockerfiles and repositories share it, and one example to read. The full "
+                    + "ranking is in archetypes.json."),
             Map.entry("Top bases", "The images Dockerfiles build their final stage FROM, by locations. Colour is "
                     + "the status from the end-of-life list (EOL_LIST); the hatched part is pinned by digest."),
             Map.entry("Parse outcome", "Distinct files: read, templates saved under a Dockerfile's name, and those "

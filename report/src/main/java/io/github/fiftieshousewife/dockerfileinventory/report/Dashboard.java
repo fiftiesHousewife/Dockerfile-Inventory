@@ -17,6 +17,7 @@ public final class Dashboard {
     /** Below this many images the whole family tree fits on the page (Q1). */
     private static final int TREE_LIMIT = 50;
     private static final int DOCKERFILES_SHOWN = 5;
+    private static final int REPOSITORIES_SHOWN = 5;
 
     private static final String STYLE = """
             :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --tile: #f5f5f7;
@@ -69,6 +70,13 @@ public final class Dashboard {
                     top: 20px; transform: translateX(-50%); width: 260px; padding: 8px 10px; border-radius: 8px;
                     background: var(--fg); color: var(--bg); font: 400 12px/1.4 system-ui, sans-serif;
                     text-align: left; z-index: 10; white-space: normal; }
+            .card { position: relative; background: var(--tile); border-radius: 10px; padding: 12px 14px 4px 52px;
+                    margin: 0 0 10px; }
+            .card .rank { position: absolute; left: 14px; top: 12px; width: 26px; height: 26px; border-radius: 50%;
+                          background: var(--series-1); color: #fff; font-weight: 600; text-align: center;
+                          line-height: 26px; font-size: 13px; }
+            .card p { margin: 0 0 6px; }
+            .card pre { background: var(--bg); border-radius: 8px; padding: 10px; overflow-x: auto; font-size: 12px; }
             svg.chart .marker circle { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
             .health { background: var(--tile); border-radius: 10px; padding: 10px 14px; border-left: 6px solid; }
             .health.good { border-left-color: var(--good); } .health.watch { border-left-color: var(--watch); }
@@ -84,8 +92,8 @@ public final class Dashboard {
     private Dashboard() {
     }
 
-    public static String render(Summary summary, Ranking ranking, List<BaseRow> bases,
-                                Optional<LineageView> lineage) {
+    public static String render(Summary summary, Ranking ranking, List<ArchetypeCards.Card> cards,
+                                List<BaseRow> bases, Optional<LineageView> lineage) {
         return String.join("\n",
                 "<!doctype html>",
                 "<html lang=\"en\"><head><meta charset=\"utf-8\">",
@@ -102,8 +110,7 @@ public final class Dashboard {
                         + "<p class=\"note\">How few archetypes cover most locations: "
                         + count(summary.k80()) + " cover 80%, " + count(summary.k95()) + " cover 95%.</p>"
                         + Charts.coverage(ranking),
-                h2("Top " + TOP + " archetypes", "Top archetypes"),
-                "<div class=\"scroll\">" + archetypes(ranking) + "</div>",
+                h2("Largest archetypes", "Top archetypes"), cards(cards),
                 h2("Top " + TOP + " bases", "Top bases") + noEolMatch(bases),
                 "<p class=\"legend\"><span class=\"key eol\"></span>end of life <span class=\"key supported\"></span>"
                         + "supported <span class=\"key unknown\"></span>not on the list "
@@ -178,14 +185,17 @@ public final class Dashboard {
                 + row("Locations whose file was never parsed", count(s.missing())) + "</table>";
     }
 
-    private static String archetypes(Ranking ranking) {
-        String rows = ranking.archetypes().stream().limit(TOP)
-                .map(a -> "<tr><td class=\"num\">" + a.rank() + "</td><td class=\"num\">" + count(a.locations())
-                        + "</td><td class=\"num\">" + count(a.blobShas().size()) + "</td><td class=\"code\">"
-                        + escape(a.signature()) + "</td></tr>")
-                .collect(Collectors.joining());
-        return "<table><tr><th class=\"num\">Rank</th><th class=\"num\">Locations</th>"
-                + "<th class=\"num\">Files</th><th>Signature</th></tr>" + rows + "</table>";
+    /** Each archetype told as a sentence, its size, and one example Dockerfile folded underneath. */
+    private static String cards(List<ArchetypeCards.Card> cards) {
+        return cards.stream().map(c -> "<div class=\"card\"><div class=\"rank\">" + c.rank() + "</div><p>"
+                + escape(c.sentence()) + "</p><p class=\"note\">" + count(c.files()) + " Dockerfiles · "
+                + count(c.locations()) + " locations · " + c.repositories().size() + " repositories: "
+                + escape(String.join(", ", c.repositories().stream().limit(REPOSITORIES_SHOWN).toList()))
+                + (c.repositories().size() > REPOSITORIES_SHOWN
+                        ? " and " + (c.repositories().size() - REPOSITORIES_SHOWN) + " more" : "")
+                + "</p>" + (c.exampleText() == null ? "" : "<details><summary>Example: "
+                + escape(c.exampleLocation()) + "</summary><pre>" + escape(c.exampleText()) + "</pre></details>")
+                + "</div>").collect(Collectors.joining());
     }
 
     private static String bases(List<BaseRow> bases) {
