@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.openrewrite.docker.tree.Docker;
 
@@ -12,6 +13,10 @@ public final class SecretValue implements Rule {
 
     private static final List<String> SECRET_NAMES =
             List.of("PASSWORD", "PASSWD", "SECRET", "TOKEN", "KEY", "CREDENTIAL");
+    private static final List<Pattern> SECRET_SHAPES = List.of(
+            Pattern.compile("-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+            Pattern.compile("\\bAKIA[0-9A-Z]{16}\\b"),
+            Pattern.compile("\\beyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+"));
 
     @Override
     public String id() {
@@ -47,7 +52,7 @@ public final class SecretValue implements Rule {
 
     private Optional<Finding> check(Subject subject, int line, String keyword, String name, Docker.Argument value) {
         Optional<String> literal = literal(value);
-        if (literal.isEmpty() || !secretName(name)) {
+        if (literal.isEmpty() || !secretName(name) && !secretShape(literal.get())) {
             return Optional.empty();
         }
         return Optional.of(new Finding(id(), severity(), subject.blobSha(), line,
@@ -57,6 +62,11 @@ public final class SecretValue implements Rule {
     static boolean secretName(String name) {
         String upper = name.toUpperCase(Locale.ROOT);
         return SECRET_NAMES.stream().anyMatch(upper::contains);
+    }
+
+    /** Values that are secrets whatever they are called: a private key, an AWS access key ID, a JWT. */
+    static boolean secretShape(String value) {
+        return SECRET_SHAPES.stream().anyMatch(shape -> shape.matcher(value).find());
     }
 
     /**

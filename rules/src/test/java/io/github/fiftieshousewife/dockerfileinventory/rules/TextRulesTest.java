@@ -22,4 +22,15 @@ class TextRulesTest {
                         },
                         f -> assertThat(f.line()).isEqualTo(3));
     }
+
+    @Test
+    void s2ReportsAKnownSecretShapeUnderAnyNameAndNeverKeepsTheValue() {
+        String awsKey = "AKIA" + "ABCDEFGHIJKLMNOP";
+        String jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl";
+        assertThat(new SecretValue().check(Subjects.of("FROM ubi9\nENV CONFIG=" + awsKey + "\nARG HEADER=" + jwt
+                + "\nENV PEM=\"-----BEGIN RSA PRIVATE KEY-----\"\nENV GREETING=hello\n")))
+                .hasSize(3)
+                .allSatisfy(f -> assertThat(f.toString()).doesNotContain(awsKey).doesNotContain(jwt)
+                        .doesNotContain("BEGIN RSA"));
+    }
 }
