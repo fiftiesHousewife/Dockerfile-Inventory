@@ -158,4 +158,16 @@ class ConvertTest {
     private static Instruction shell(String command) {
         return new Instruction.Run(new RunBody.Shell(List.of(command)));
     }
+
+    @Test
+    void anExecFormsJsonEscapesAreDecodedAndAQuotedUserVariableIsWrittenWithBraces() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                USER "$GF_UID"
+                ENTRYPOINT ["sh", "-c", "update-ca-trust extract && exec \\"$@\\"", "arg0"]
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(new Instruction.User("${GF_UID}"),
+                new Instruction.Entrypoint(List.of("sh", "-c", "update-ca-trust extract && exec \"$@\"", "arg0")));
+    }
 }

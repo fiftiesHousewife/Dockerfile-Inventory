@@ -104,4 +104,19 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void aCopyHeredocIsKeptAsWrittenAndPasses() {
+        String original = """
+                FROM debian:bookworm-slim
+                COPY <<EOF /etc/ocicrypt.conf
+                {
+                  "key-providers": { "attestation-agent": { "grpc": "localhost:50000" } }
+                }
+                EOF
+                EXPOSE 50000
+                """;
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

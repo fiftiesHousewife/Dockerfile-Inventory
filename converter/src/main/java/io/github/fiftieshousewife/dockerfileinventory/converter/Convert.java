@@ -21,6 +21,12 @@ import org.openrewrite.docker.tree.Docker;
  */
 public final class Convert {
 
+    private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();
+    /** A heredoc opened on an instruction's first line ({@code <<EOF}, {@code <<-'EOF'}): its body is kept as written. */
+    private static final java.util.regex.Pattern HEREDOC = java.util.regex.Pattern.compile("<<-?['\"]?\\w+");
+    private static final java.util.regex.Pattern BARE_VARIABLE =
+            java.util.regex.Pattern.compile("\\$([A-Za-z_][A-Za-z0-9_]*)");
+
     private final Docker.File file;
     private final Cursor cursor;
 
@@ -94,7 +100,8 @@ public final class Convert {
 
     private static Instruction.User user(Docker.User user) {
         Docker.Argument group = user.getGroup();
-        return new Instruction.User(text(user.getUser()) + (group == null ? "" : ":" + text(group)));
+        return new Instruction.User(braced(unquote(text(user.getUser())))
+                + (group == null ? "" : ":" + braced(unquote(text(group)))));
     }
 
     /** An install when it is exactly one install and its clean; other shell text as written; the rest raw (D1, D2). */
@@ -133,6 +140,9 @@ public final class Convert {
 
     /** {@code COPY [--from=x] [--chown=y] src... dest}; other flags and the JSON form stay raw (D2). */
     private static Instruction copy(String text) {
+        if (HEREDOC.matcher(text.lines().findFirst().orElse("")).find()) {
+            return new Instruction.Raw(text, "COPY with a heredoc");
+        }
         List<String> words = new ArrayList<>(List.of(joined(text).split(" ")));
         words.removeFirst();
         String from = null;
@@ -173,8 +183,13 @@ public final class Convert {
         return ports.size() == 1 && ports.getFirst().getText().strip().matches("\\d{1,5}");
     }
 
+    /** An exec form's words, decoded as the JSON strings they are ({@code \\"} is a quote). */
     private static List<String> arguments(Docker.ExecForm exec) {
-        return exec.getArguments().stream().map(l -> unquote(l.getText())).toList();
+        return exec.getArguments().stream().map(l -> {
+            String text = l.getText();
+            boolean quoted = text.length() >= 2 && text.startsWith("\"") && text.endsWith("\"");
+            return JSON.readValue(quoted ? text : "\"" + text + "\"", String.class);
+        }).toList();
     }
 
     /** The instruction's arguments: comment lines inside it dropped, continuations removed, keyword split off. */
@@ -217,6 +232,14 @@ public final class Convert {
             text = newline < 0 ? "" : text.substring(newline + 1).stripLeading();
         }
         return text;
+    }
+
+    /**
+     * Variables written {@code ${NAME}}, as {@link #text} writes the ones the parser finds, so a quoted
+     * {@code "$UID"} and a bare {@code $UID} model alike.
+     */
+    static String braced(String value) {
+        return BARE_VARIABLE.matcher(value).replaceAll("\\${$1}");
     }
 
     /** An argument's text, with a variable as {@code ${NAME}}. */
