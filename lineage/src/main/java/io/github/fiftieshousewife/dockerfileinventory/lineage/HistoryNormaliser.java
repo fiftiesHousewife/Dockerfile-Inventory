@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 public final class HistoryNormaliser {
 
     private static final String SHELL = "/bin/sh -c ";
+    private static final String NOP = "#(nop) ";
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 
     /** Text a build service puts before every {@code RUN} (Q13): Konflux's hermetic-build environment. */
@@ -20,7 +21,22 @@ public final class HistoryNormaliser {
 
     public static NormalStep normalise(HistoryStep step) {
         String body = collapse(step.createdBy().substring(SHELL.length()));
-        return new NormalStep("RUN", withoutBuilderPrefix(body), null, false);
+        if (!body.startsWith(NOP)) {
+            return new NormalStep("RUN", withoutBuilderPrefix(body), null, false);
+        }
+        String instruction = body.substring(NOP.length());
+        int space = instruction.indexOf(' ');
+        String keyword = space < 0 ? instruction : instruction.substring(0, space);
+        String value = space < 0 ? "" : instruction.substring(space + 1);
+        return switch (keyword) {
+            case "COPY", "ADD" -> new NormalStep(keyword, destination(value), null, false);
+            default -> new NormalStep("OTHER", body, null, false);
+        };
+    }
+
+    /** {@code dir:<hash> in <dest>}: the hash is of the content, so only the destination is comparable. */
+    private static String destination(String value) {
+        return value.substring(value.lastIndexOf(" in ") + " in ".length());
     }
 
     private static String withoutBuilderPrefix(String command) {
