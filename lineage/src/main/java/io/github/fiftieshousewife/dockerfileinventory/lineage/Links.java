@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
  */
 public final class Links {
 
+    private static final Link NONE = new Link(Link.Tier.NONE, List.of(), false);
+
     private Links() {
     }
 
@@ -26,12 +28,15 @@ public final class Links {
         Map<String, Link> links = new HashMap<>();
         for (Resolved.Node image : images) {
             List<Instruction> own = OwnSteps.of(image, parentNode(parents.get(image.configDigest()), byDigest));
-            List<Dockerfile> group = groups.getOrDefault(own, List.of());
-            Link.Tier tier = group.stream().anyMatch(Dockerfile::released) ? Link.Tier.STRONG : Link.Tier.PROBABLE;
-            links.put(image.configDigest(), new Link(tier,
-                    group.stream().map(Dockerfile::blobSha).sorted().toList(), false));
+            List<Dockerfile> group = groups.get(own);
+            links.put(image.configDigest(), group == null ? NONE : exact(group));
         }
         return links;
+    }
+
+    private static Link exact(List<Dockerfile> group) {
+        Link.Tier tier = group.stream().anyMatch(Dockerfile::released) ? Link.Tier.STRONG : Link.Tier.PROBABLE;
+        return new Link(tier, group.stream().map(Dockerfile::blobSha).sorted().toList(), false);
     }
 
     /** An ambiguous parent's candidates share layers and history, so any of them gives the same own steps. */

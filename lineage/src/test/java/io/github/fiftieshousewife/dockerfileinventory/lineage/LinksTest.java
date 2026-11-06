@@ -32,6 +32,15 @@ class LinksTest {
                 .isEqualTo(Link.Tier.STRONG);
     }
 
+    @Test
+    void anImageNoDockerfileAlignsWithHasNoLink() {
+        Resolved.Node image = image("app", "FROM registry.example.com/team/base:1", "RUN make", "USER 1001");
+        List<Dockerfile> dockerfiles = List.of(dockerfile("other", "team/base", true, "RUN npm ci", "CMD node"));
+
+        assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()))
+                .containsEntry("app", new Link(Link.Tier.NONE, List.of(), false));
+    }
+
     static Resolved.Node image(String digest, String fromComment, String... steps) {
         List<HistoryStep> history = new java.util.ArrayList<>();
         history.add(new HistoryStep("/bin/sh -c #(nop) ADD file:base in / ", null, false, null));
