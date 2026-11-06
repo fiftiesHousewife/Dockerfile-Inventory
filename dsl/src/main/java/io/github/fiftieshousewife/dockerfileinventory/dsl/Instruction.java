@@ -15,7 +15,7 @@ public sealed interface Instruction {
         }
     }
 
-    /** Values as Docker reads them inside double quotes: {@code $NAME} expands, a literal dollar is {@code \$}. */
+    /** Values as written inside double quotes: {@code $NAME} expands, {@code \$} is a dollar, {@code \\\\} a backslash. */
     record Env(Map<String, String> values) implements Instruction {
 
         public Env {
@@ -23,7 +23,7 @@ public sealed interface Instruction {
         }
     }
 
-    /** Values as Docker reads them inside double quotes: {@code $NAME} expands, a literal dollar is {@code \$}. */
+    /** Values as written inside double quotes: {@code $NAME} expands, {@code \$} is a dollar, {@code \\\\} a backslash. */
     record Label(Map<String, String> values) implements Instruction {
 
         public Label {

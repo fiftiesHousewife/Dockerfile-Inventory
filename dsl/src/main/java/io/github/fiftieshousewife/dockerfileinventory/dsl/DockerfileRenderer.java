@@ -14,8 +14,7 @@ import java.util.stream.Collectors;
  */
 public final class DockerfileRenderer {
 
-    /** A backslash that is not the escape of a literal dollar. */
-    private static final java.util.regex.Pattern LONE_BACKSLASH = java.util.regex.Pattern.compile("\\\\(?!\\$)");
+
 
     private static final String CONTINUE = " \\\n";
     private static final Pattern RUN_MOUNT = Pattern.compile("^RUN\\s+(--\\S+\\s+)*--mount=");
@@ -93,11 +92,25 @@ public final class DockerfileRenderer {
     }
 
     /**
-     * Double-quoted, so spaces survive and {@code $VARIABLES} still expand as Docker expands them. A model value holds
-     * a literal dollar as {@code \$}, which is kept: Docker reads it inside double quotes as a plain {@code $}.
+     * Double-quoted, so spaces survive and {@code $VARIABLES} still expand as Docker expands them. A model value is
+     * written as it would be inside double quotes: its escaped pairs ({@code \\$}, a literal dollar, and
+     * {@code \\\\}, a literal backslash) are kept; any other backslash is doubled and a quote escaped.
      */
     private static String quote(String value) {
-        return "\"" + LONE_BACKSLASH.matcher(value).replaceAll("\\\\\\\\").replace("\"", "\\\"") + "\"";
+        StringBuilder quoted = new StringBuilder("\"");
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            char next = i + 1 < value.length() ? value.charAt(i + 1) : 0;
+            if (c == '\\' && (next == '\\' || next == '$')) {
+                quoted.append(c).append(next);
+                i++;
+            } else if (c == '\\' || c == '"') {
+                quoted.append('\\').append(c);
+            } else {
+                quoted.append(c);
+            }
+        }
+        return quoted.append('"').toString();
     }
 
     private static String json(List<String> command) {

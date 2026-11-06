@@ -1,6 +1,6 @@
 # Fixes from the code review of 6 Nov: plan
 
-Status: R1-R6 built 6 Nov; R7 and R8 next.
+Status: R1-R8 built 6 Nov; R9 next.
 
 A code review of the session's changes (`c0da31d^..HEAD`) found nine likely bugs and one rule breach, all from
 reading the code. Each is fixed test-first: a failing test from the reviewer's scenario, then the fix.
@@ -13,8 +13,8 @@ reading the code. Each is fixed test-first: a failing test from the reviewer's s
 | R4 | The retry's rewrites touch quoted `ARG` values, continued lines and heredoc bodies | Done 6 Nov: as planned | `facts` |
 | R5 | The template check can call a valid Dockerfile a template (`${{ github.sha }}` in a comment, Go's `{{ end }}`), and misses a template that parses only on the retry | Done 6 Nov: as planned | `facts` |
 | R6 | Decoded newlines and tabs in an exec form are written raw, splitting the instruction | Done 6 Nov: as planned | `dsl` |
-| R7 | In the converter's `ENV`/`LABEL` reading, a backslash inside double quotes is always consumed (`"C:\tools"` becomes `C:tools`) | As in the shell and as in S2: only before `"`, `\`, `$` (and a newline) | `converter` |
-| R8 | `\$` in the model means a literal dollar, but a literal backslash then a variable (`"pre\\$HOME"`) models the same | The model keeps a literal backslash as `\\` too; the renderer keeps `\\` and `\$` pairs and escapes any other backslash | `converter`, `dsl` |
+| R7 | In the converter's `ENV`/`LABEL` reading, a backslash inside double quotes is always consumed (`"C:\tools"` becomes `C:tools`) | Done 6 Nov, with R8 | `converter` |
+| R8 | `\$` in the model means a literal dollar, but a literal backslash then a variable (`"pre\\$HOME"`) models the same | Done 6 Nov: a model value is written as inside double quotes (`\$` a dollar, `\\` a backslash); `Pairs` reads Docker's escapes into that form and the renderer keeps the pairs, doubling any other backslash | `converter`, `dsl` |
 | R9 | A digest from a build argument counts as pinned for the builders' R1 | R1 needs a literal digest; a build argument is a breach with its own message | `dsl` |
 | R10 | Lineage's key reading treats any apostrophe as a quote, but the classic builder writes history values unquoted (`MSG=it's`) | A quote opens a value only at its start; the quote-aware key reading is shared by facts, rules and the converter (lineage keeps its own, held to facts by the contracts) | `lineage`, `facts`, `rules`, `converter` |
 | R12 | The converter reads `ARG` through the same folded node: `ARG A=1 B=2` becomes one argument `A` = `1 B=2`, which renders with a different meaning (found while fixing R3) | Read the names and values from the text, as facts now does | `converter` |

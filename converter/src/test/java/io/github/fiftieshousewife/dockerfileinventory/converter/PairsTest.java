@@ -19,4 +19,19 @@ class PairsTest {
                 org.assertj.core.api.Assertions.entry("b", "run $IMAGE"),
                 org.assertj.core.api.Assertions.entry("c", "cost \\$5"));
     }
+
+    @Test
+    void insideDoubleQuotesABackslashBeforeAnythingButAQuoteBackslashOrDollarIsKept() {
+        assertThat(Pairs.parse("W=\"C:\\tools\\bin\" Q=\"say \\\"hi\\\"\"")).containsExactly(
+                org.assertj.core.api.Assertions.entry("W", "C:\\tools\\bin"),
+                org.assertj.core.api.Assertions.entry("Q", "say \"hi\""));
+    }
+
+    @Test
+    void aLiteralBackslashBeforeAVariableStaysDistinctFromALiteralDollar() {
+        assertThat(Pairs.parse("P=\"pre\\\\$HOME\" D=\"cost \\$5\" S='a\\b'")).containsExactly(
+                org.assertj.core.api.Assertions.entry("P", "pre\\\\$HOME"),
+                org.assertj.core.api.Assertions.entry("D", "cost \\$5"),
+                org.assertj.core.api.Assertions.entry("S", "a\\\\b"));
+    }
 }

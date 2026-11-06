@@ -91,6 +91,15 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void escapedPairsAreKeptAndAnyOtherBackslashIsDoubled() {
+        Dockerfile env = single(new Instruction.Env(new java.util.LinkedHashMap<>(Map.of("P", "pre\\\\$HOME"))));
+        Dockerfile windows = single(new Instruction.Env(new java.util.LinkedHashMap<>(Map.of("W", "C:\\tools\\"))));
+
+        assertThat(DockerfileRenderer.render(env, Target.DEFAULT)).contains("P=\"pre\\\\$HOME\"");
+        assertThat(DockerfileRenderer.render(windows, Target.DEFAULT)).contains("W=\"C:\\\\tools\\\\\"");
+    }
+
+    @Test
     void renderingIsStable() {
         assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo(DockerfileRenderer.render(MODEL,
                 Target.DEFAULT));
