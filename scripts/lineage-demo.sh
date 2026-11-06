@@ -91,9 +91,16 @@ wait_for_jcr() {
 }
 wait_for_jcr
 
+# True when JCR has a local Docker repository; REPOSITORY becomes its key (docker-local if there is one, as JCR's
+# setup wizard may name its own differently).
 repository_exists() {
-    curl -s -u "admin:$ADMIN_PASSWORD" "$API/api/repositories?type=local&packageType=docker" \
-        | jq -e --arg k $REPOSITORY 'type == "array" and any(.[]; .key == $k)' >/dev/null
+    local key
+    key=$(curl -s -u "admin:$ADMIN_PASSWORD" "$API/api/repositories?type=local&packageType=docker" \
+        | jq -r --arg k "$REPOSITORY" 'if type == "array" then ([.[].key] | if index($k) then $k else .[0] end)
+                                       else empty end // empty')
+    [[ -n $key ]] || return 1
+    REPOSITORY=$key
+    REGISTRY=$JCR:8082/$REPOSITORY
 }
 curl -s -o /dev/null -w '%{http_code}' -u "admin:$ADMIN_PASSWORD" "$API/api/repositories" | grep -q 200 \
     || die "admin login refused; if you changed the admin password in the UI, set ADMIN_PASSWORD"
@@ -104,13 +111,14 @@ if ! repository_exists; then
     echo "creating $REPOSITORY through the API: $reply"
 fi
 if ! repository_exists; then
-    # The free edition refuses the repositories API (Pro only), but applies a configuration file it finds at start.
-    echo "creating $REPOSITORY from artifactory.config.import.yml instead, and restarting JCR"
+    # The free edition refuses the repositories API (Pro only), but its setup wizard reads this file at start and
+    # creates the default repositories for each package type listed.
+    echo "asking JCR's setup wizard for its Docker repositories (artifactory.config.import.yml), and restarting JCR"
     docker exec -i $JCR sh -c 'cat > /var/opt/jfrog/artifactory/etc/artifactory/artifactory.config.import.yml' <<YAML
-localRepositories:
-  $REPOSITORY:
-    type: docker
-    dockerApiVersion: V2
+version: 1
+OnboardingConfiguration:
+  repoTypes:
+    - docker
 YAML
     docker restart $JCR >/dev/null
     wait_for_jcr
@@ -121,7 +129,7 @@ if ! repository_exists; then
     read -r || die "no keyboard to wait on (run with !?): create the repository in the UI, then rerun"
     repository_exists || die "still no local Docker repository named $REPOSITORY"
 fi
-echo "repository $REPOSITORY ready"
+echo "repository $REPOSITORY ready (images go to $REGISTRY)"
 
 step "2. Dockerfiles to build, and their repositories at the scanned commit"
 # One line per Dockerfile: image name, repository, commit, path, the base it is built FROM (as written).
