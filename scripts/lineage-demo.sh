@@ -246,7 +246,10 @@ while IFS=$'\t' read -r name repo commit path base; do
     fi
 done < /work/plan.txt.ordered
 INNER
-docker run --rm --privileged --network $NETWORK \
+# Buildah itself must run natively: as an emulated binary it cannot re-exec itself for RUN. Named explicitly, as
+# Docker otherwise reuses whatever platform of the image it pulled before.
+native=linux/$(docker info --format '{{.Architecture}}' | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+docker run --rm --privileged --platform "$native" --network $NETWORK \
     -e REGISTRY="$REGISTRY" -e ADMIN_PASSWORD="$ADMIN_PASSWORD" -e STORAGE_DRIVER=vfs \
     -v "$OUT/src:/src:ro" -v "$OUT:/work" -v inventory-demo-buildah:/var/lib/containers \
     "$BUILDAH_IMAGE" bash /work/build.sh | tee "$OUT/build.log"
