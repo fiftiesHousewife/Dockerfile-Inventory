@@ -42,3 +42,17 @@ F6. 12. The glued-line message names the first non-blank line.
 - F4: three converter bugs behind the label differences: a tab after `LABEL` (the keyword was split on a space),
   comment lines inside a continued `LABEL` read as keys, and the legacy `LABEL key value` form read as two keys.
 - F6: `facts` on the old discovery output now parses 818 of 893 files (785 before), from F2 alone.
+
+## Second round, from the rerun (6 Nov)
+
+| # | Problem seen | Fix | Module |
+| --- | --- | --- | --- |
+| F7 | A package named `\`: inside double quotes, `INSTALL_PKGS="a b \<newline> c"` kept the backslash-newline, which the shell removes | The tokeniser removes backslash-newline inside double quotes too | `facts` |
+| F8 | `LABEL MAINTAINER "Marek Polacek <...>"` (the legacy form) read as several keys in facts' steps, failing 12 round trips and skewing lineage's matching | Facts' steps read legacy `LABEL key value` as one key, as they already do for `ENV` | `facts` |
+| F9 | `dockerfile.py` still collected | Add source extensions: `py`, `sh`, `bash`, `rb`, `js`, `ts`, `java`, `kt`, `groovy`, `ps1` | `discovery` |
+| F10 | Jinja templates saved as `Dockerfile` (`{% if %}`, `{{ spec.version }}`) are most of the remaining parse failures | A file that fails to parse and holds template markers is recorded as a template; facts' and the report's failure rates leave templates out and count them separately. A file that parses is never called a template (`docker inspect --format '{{.Id}}'` in a `RUN` is fine) | `facts`, `report` |
+| F11 | One thermostat file converts back to a different model; two files hit `InMemoryDiffEntry` failing to initialise inside OpenRewrite | Find each cause; fix ours, draft upstream what is theirs | `converter`, docs |
+
+Tests, in order: 14. a double-quoted value continued over lines has no backslash words; 15. legacy `LABEL` steps
+give one key; 16. the source extensions are not Dockerfiles; 17. a failing file with `{%` or `{{ ... }}` is a
+template, one that parses with `{{.Id}}` is not; 18. the rates count templates apart; 19. the thermostat case.
