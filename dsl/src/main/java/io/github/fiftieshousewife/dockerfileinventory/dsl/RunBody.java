@@ -2,7 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
 import java.util.List;
 
-/** What a {@code RUN} does: install packages (rendered per manager, always cleaned), or commands joined by {@code &&}. */
+/** What a {@code RUN} does: install packages (always cleaned), or shell commands joined by {@code &&}. */
 public sealed interface RunBody {
 
     record Install(PackageInstall install) implements RunBody {
