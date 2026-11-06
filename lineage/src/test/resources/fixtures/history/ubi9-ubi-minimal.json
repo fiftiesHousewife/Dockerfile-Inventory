@@ -1,0 +1,99 @@
+{
+ "rootfs": {
+  "type": "layers",
+  "diff_ids": [
+   "sha256:95ac3d364b0e62cb9ad4814c0a58aa29f116fa6c74368b405bc50813123d6595"
+  ]
+ },
+ "history": [
+  {
+   "created": "2026-11-05T07:02:47.979939512Z",
+   "created_by": "/bin/sh -c #(nop) LABEL maintainer=\"Red Hat, Inc.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:48.147734393Z",
+   "created_by": "/bin/sh -c #(nop) LABEL vendor=\"Red Hat, Inc.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:48.367364444Z",
+   "created_by": "/bin/sh -c #(nop) LABEL url=\"https://catalog.redhat.com/en/search?searchType=containers\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:48.544549542Z",
+   "created_by": "/bin/sh -c #(nop) LABEL com.redhat.component=\"ubi9-minimal-container\"       name=\"ubi9/ubi-minimal\"       version=\"9.8\"       cpe=\"cpe:/a:redhat:enterprise_linux:9::appstream\"       distribution-scope=\"public\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:48.698675033Z",
+   "created_by": "/bin/sh -c #(nop) LABEL com.redhat.license_terms=\"https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:48.921479641Z",
+   "created_by": "/bin/sh -c #(nop) LABEL summary=\"Provides the latest release of the minimal Red Hat Universal Base Image 9.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:49.129304669Z",
+   "created_by": "/bin/sh -c #(nop) LABEL description=\"The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:49.292808066Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.k8s.description=\"The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:49.459170952Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.k8s.display-name=\"Red Hat Universal Base Image 9 Minimal\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:49.683891087Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.openshift.expose-services=\"\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:49.883414814Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.openshift.tags=\"minimal rhel9\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:50.087281726Z",
+   "created_by": "/bin/sh -c #(nop) ENV container oci",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:51.3264359Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:a9fe70a4508745294cc96d107a79dbf9c40908f5c2d69ed1bd2f25ea177a0817 in /      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:51.806262155Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:1376702515d596f414e3aa494e0daa6d408a6d2475c4aeca96bf9392f5287f69 in /etc/yum.repos.d/.      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:52.082412271Z",
+   "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:52.685351327Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:eccbcd097ca02aaac045033e6fe2f6c2393d56ab3ac98c52b91cb36071b9028c in /usr/share/buildinfo/      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:52.98867884Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:eccbcd097ca02aaac045033e6fe2f6c2393d56ab3ac98c52b91cb36071b9028c in /root/buildinfo/      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T07:02:53.312134169Z",
+   "created_by": "/bin/sh -c #(nop) LABEL \"org.opencontainers.image.created\"=\"2026-11-05T07:01:54Z\" \"org.opencontainers.image.revision\"=\"0e057e10c76b9113e7e3307cee61e7ea4d827a31\" \"build-date\"=\"2026-11-05T07:01:54Z\" \"architecture\"=\"x86_64\" \"vcs-ref\"=\"0e057e10c76b9113e7e3307cee61e7ea4d827a31\" \"vcs-type\"=\"git\" \"release\"=\"1793862054\"org.opencontainers.image.created=2026-11-05T07:01:54Z,org.opencontainers.image.revision=0e057e10c76b9113e7e3307cee61e7ea4d827a31"
+  }
+ ]
+}

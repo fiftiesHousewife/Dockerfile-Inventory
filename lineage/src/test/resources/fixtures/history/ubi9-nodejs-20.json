@@ -1,0 +1,256 @@
+{
+ "rootfs": {
+  "type": "layers",
+  "diff_ids": [
+   "sha256:2a77e49aac5d8d6ddb1dd1e8bec5dc4fa8dfa50df24d8235c9f1362ae38bd971",
+   "sha256:195d3036adb0dad0f63d128dcc157659da4433cefb1846e5f70b5963c14fb36a",
+   "sha256:6d30cc01887118b3ffbe7a41f360053be988b3a153b2b40c58b81571000ff658"
+  ]
+ },
+ "history": [
+  {
+   "created": "2026-05-12T09:01:01.442912331Z",
+   "created_by": "/bin/sh -c #(nop) LABEL maintainer=\"Red Hat, Inc.\"       vendor=\"Red Hat, Inc.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.462020536Z",
+   "created_by": "/bin/sh -c #(nop) LABEL url=\"https://catalog.redhat.com/en/search?searchType=containers\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.48111425Z",
+   "created_by": "/bin/sh -c #(nop) LABEL com.redhat.component=\"ubi9-container\"       name=\"ubi9/ubi\"       version=\"9.7\"       cpe=\"cpe:/a:redhat:enterprise_linux:9::appstream\"       distribution-scope=\"public\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.499514326Z",
+   "created_by": "/bin/sh -c #(nop) LABEL com.redhat.license_terms=\"https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.51845451Z",
+   "created_by": "/bin/sh -c #(nop) LABEL summary=\"Provides the latest release of Red Hat Universal Base Image 9.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.537627929Z",
+   "created_by": "/bin/sh -c #(nop) LABEL description=\"The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.558324502Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.k8s.description=\"The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.577944133Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.k8s.display-name=\"Red Hat Universal Base Image 9\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.597708002Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.openshift.expose-services=\"\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.617754581Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.openshift.tags=\"base rhel9\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:01.637046629Z",
+   "created_by": "/bin/sh -c #(nop) ENV container oci",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:03.33156525Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:dc2903ccadfb17708e4f3606c837c7a2dcaefcf45e7650b8e21eaa8685308f51 in /      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:03.421003678Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:1376702515d596f414e3aa494e0daa6d408a6d2475c4aeca96bf9392f5287f69 in /etc/yum.repos.d/.      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:03.436804357Z",
+   "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:03.529751385Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:93583a9ebbaeff1e36b48820b647eea1eef523f6627dacfb0b21af79f5a41b35 in /usr/share/buildinfo/content-sets.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:03.61959304Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:93583a9ebbaeff1e36b48820b647eea1eef523f6627dacfb0b21af79f5a41b35 in /root/buildinfo/content_manifests/content-sets.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:03.711099269Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:b5436b9382ece22e983fc2ba25df27bf2a379c73c669aa0a75af228b6c9148f3 in /usr/share/buildinfo/labels.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:03.798759486Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:b5436b9382ece22e983fc2ba25df27bf2a379c73c669aa0a75af228b6c9148f3 in /root/buildinfo/labels.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T09:01:04.602901872Z",
+   "created_by": "/bin/sh -c #(nop) LABEL \"architecture\"=\"x86_64\" \"vcs-type\"=\"git\" \"vcs-ref\"=\"aa4fa8db6226e15f9e1c73bc3815043f0c0a439d\" \"org.opencontainers.image.revision\"=\"aa4fa8db6226e15f9e1c73bc3815043f0c0a439d\" \"build-date\"=\"2026-05-12T09:00:42Z\" \"org.opencontainers.image.created\"=\"2026-05-12T09:00:42Z\" \"release\"=\"1778576335\"org.opencontainers.image.revision=aa4fa8db6226e15f9e1c73bc3815043f0c0a439d,org.opencontainers.image.created=2026-05-12T09:00:42Z"
+  },
+  {
+   "created": "2026-05-12T17:10:54.679799117Z",
+   "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Base image which allows using of source-to-image.\"\t    DESCRIPTION=\"The s2i-core image provides any images layered on top of it with all the tools needed to use source-to-image functionality while keeping the image size as small as possible.\"",
+   "comment": "FROM registry.access.redhat.com/ubi9:9.7-1778576335",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:54.700797209Z",
+   "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"s2i core\"       io.openshift.s2i.scripts-url=image:///usr/libexec/s2i       io.s2i.scripts-url=image:///usr/libexec/s2i       io.openshift.tags=\"s2i-core rhel9\"       com.redhat.component=\"s2i-core-container\"       name=\"ubi9/s2i-core\"       version=\"1\"       com.redhat.license_terms=\"https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:54.721281059Z",
+   "created_by": "/bin/sh -c #(nop) ENV     STI_SCRIPTS_URL=image:///usr/libexec/s2i     STI_SCRIPTS_PATH=/usr/libexec/s2i     APP_ROOT=/opt/app-root     HOME=/opt/app-root/src     PATH=/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin     PLATFORM=\"el9\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:57.145816562Z",
+   "created_by": "/bin/sh -c . /cachi2/cachi2.env &&     INSTALL_PKGS=\"bsdtar   findutils   groff-base   glibc-locale-source   glibc-langpack-en   gettext   rsync   scl-utils   tar   unzip   xz   yum\" &&   mkdir -p ${HOME}/.pki/nssdb &&   chown -R 1001:0 ${HOME}/.pki &&   yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&   rpm -V $INSTALL_PKGS &&   yum -y clean all --enablerepo='*'",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:57.248485941Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:37f69665f54a97126cf208f9b880bfe35cb36cd94584f2ef77bb38008a7055bf in /      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:57.269354485Z",
+   "created_by": "/bin/sh -c #(nop) WORKDIR ${HOME}",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:57.289480385Z",
+   "created_by": "/bin/sh -c #(nop) ENTRYPOINT [\"container-entrypoint\"]",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:57.309955535Z",
+   "created_by": "/bin/sh -c #(nop) CMD [\"base-usage\"]",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:58.666708251Z",
+   "created_by": "/bin/sh -c . /cachi2/cachi2.env &&     rpm-file-permissions &&   useradd -u 1001 -r -g 0 -d ${HOME} -c \"Default Application User\" default &&   chown -R 1001:0 ${APP_ROOT}",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:58.770792825Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:93583a9ebbaeff1e36b48820b647eea1eef523f6627dacfb0b21af79f5a41b35 in /usr/share/buildinfo/content-sets.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:58.867916901Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:93583a9ebbaeff1e36b48820b647eea1eef523f6627dacfb0b21af79f5a41b35 in /root/buildinfo/content_manifests/content-sets.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:58.970287122Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:9932ed63a65dc5a16000ea0767d7548354641355522cbbf83fc27a2c099852c9 in /usr/share/buildinfo/labels.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:10:59.074372577Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:9932ed63a65dc5a16000ea0767d7548354641355522cbbf83fc27a2c099852c9 in /root/buildinfo/labels.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-12T17:11:00.042942307Z",
+   "created_by": "/bin/sh -c #(nop) LABEL \"architecture\"=\"x86_64\" \"vcs-type\"=\"git\" \"vcs-ref\"=\"c28dc4d253db3ec9c8316cf42a3ac73c7218144a\" \"org.opencontainers.image.revision\"=\"c28dc4d253db3ec9c8316cf42a3ac73c7218144a\" \"build-date\"=\"2026-05-12T17:10:54Z\" \"org.opencontainers.image.created\"=\"2026-05-12T17:10:54Z\" \"release\"=\"1778605808\"org.opencontainers.image.revision=c28dc4d253db3ec9c8316cf42a3ac73c7218144a,org.opencontainers.image.created=2026-05-12T17:10:54Z"
+  },
+  {
+   "created": "2026-05-13T04:57:15.778201453Z",
+   "created_by": "/bin/sh -c #(nop) EXPOSE 8080",
+   "comment": "FROM registry.access.redhat.com/ubi9/s2i-core:9.7-1778605808",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:15.799013914Z",
+   "created_by": "/bin/sh -c #(nop) ENV NODEJS_VERSION=20     NPM_RUN=start     NAME=nodejs     NPM_CONFIG_PREFIX=$HOME/.npm-global     PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:$PATH     CNB_STACK_ID=com.redhat.stacks.ubi9-nodejs-20     CNB_USER_ID=1001     CNB_GROUP_ID=0",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:15.819341742Z",
+   "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Platform for building and running Node.js $NODEJS_VERSION applications\"     DESCRIPTION=\"Node.js $NODEJS_VERSION available as container is a base platform for building and running various Node.js $NODEJS_VERSION applications and frameworks. Node.js is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:15.838334314Z",
+   "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"Node.js $NODEJS_VERSION\"       io.openshift.expose-services=\"8080:http\"       io.openshift.tags=\"builder,$NAME,${NAME}${NODEJS_VERSION}\"       io.openshift.s2i.scripts-url=\"image:///usr/libexec/s2i\"       io.s2i.scripts-url=\"image:///usr/libexec/s2i\"       io.buildpacks.stack.id=\"com.redhat.stacks.ubi9-nodejs-20\"       com.redhat.dev-mode=\"DEV_MODE:false\"       com.redhat.deployments-dir=\"${APP_ROOT}/src\"       com.redhat.dev-mode.port=\"DEBUG_PORT:5858\"       com.redhat.component=\"${NAME}-${NODEJS_VERSION}-container\"       name=\"ubi9/$NAME-$NODEJS_VERSION\"       version=\"1\"       com.redhat.license_terms=\"https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"       help=\"For more information visit https://github.com/sclorg/s2i-nodejs-container\"       usage=\"s2i build <SOURCE-REPOSITORY> ubi9/$NAME-$NODEJS_VERSION:latest <APP-NAME>\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:24.597977465Z",
+   "created_by": "/bin/sh -c . /cachi2/cachi2.env &&     yum -y module enable nodejs:$NODEJS_VERSION &&     MODULE_DEPS=\"make gcc gcc-c++ git openssl-devel\" &&     INSTALL_PKGS=\"$MODULE_DEPS nodejs npm nodejs-nodemon nss_wrapper-libs which\" &&     ln -s /usr/lib/node_modules/nodemon/bin/nodemon.js /usr/bin/nodemon &&     yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&     rpm -V $INSTALL_PKGS &&     node -v | grep -qe \"^v$NODEJS_VERSION\\.\" && echo \"Found VERSION $NODEJS_VERSION\" &&     yum -y clean all --enablerepo='*'",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:24.906902108Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:8d3153ef703ad568c6b9d1b8061504f85cce18d68f2c41840d79e0d0fe922c69 in $STI_SCRIPTS_PATH      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:25.187055672Z",
+   "created_by": "/bin/sh -c . /cachi2/cachi2.env &&     chmod +x $STI_SCRIPTS_PATH/init-wrapper",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:25.298533503Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:f10af35fb3ff4d0e0d37ed9b48677ea837c1abd81748424ca8870fa4da65abe2 in /      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:26.539091599Z",
+   "created_by": "/bin/sh -c . /cachi2/cachi2.env &&     chown -R 1001:0 ${APP_ROOT} && chmod -R ug+rwx ${APP_ROOT} &&     rpm-file-permissions",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:26.558916387Z",
+   "created_by": "/bin/sh -c #(nop) USER 1001",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:26.578422355Z",
+   "created_by": "/bin/sh -c #(nop) CMD $STI_SCRIPTS_PATH/usage",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:26.672463354Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:93583a9ebbaeff1e36b48820b647eea1eef523f6627dacfb0b21af79f5a41b35 in /usr/share/buildinfo/content-sets.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:26.770556593Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:93583a9ebbaeff1e36b48820b647eea1eef523f6627dacfb0b21af79f5a41b35 in /root/buildinfo/content_manifests/content-sets.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:26.868067556Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:fad41f58e108cc7469addfdcc53f62ba0a3dd67ad7da51d1844411e4bb3f04da in /usr/share/buildinfo/labels.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:26.964011267Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:fad41f58e108cc7469addfdcc53f62ba0a3dd67ad7da51d1844411e4bb3f04da in /root/buildinfo/labels.json      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-05-13T04:57:29.13862458Z",
+   "created_by": "/bin/sh -c #(nop) LABEL \"architecture\"=\"x86_64\" \"vcs-type\"=\"git\" \"vcs-ref\"=\"0578d2ce53b63c06d6c622073287d688a85bc013\" \"org.opencontainers.image.revision\"=\"0578d2ce53b63c06d6c622073287d688a85bc013\" \"build-date\"=\"2026-05-13T04:57:15Z\" \"org.opencontainers.image.created\"=\"2026-05-13T04:57:15Z\" \"release\"=\"1778648167\"org.opencontainers.image.revision=0578d2ce53b63c06d6c622073287d688a85bc013,org.opencontainers.image.created=2026-05-13T04:57:15Z"
+  }
+ ]
+}

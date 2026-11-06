@@ -1,0 +1,94 @@
+{
+ "rootfs": {
+  "type": "layers",
+  "diff_ids": [
+   "sha256:b38850413dc5263b6326e490048b3755ab5117536beb7476a458113c96f851cf"
+  ]
+ },
+ "history": [
+  {
+   "created": "2026-11-05T06:53:49.748673956Z",
+   "created_by": "/bin/sh -c #(nop) LABEL maintainer=\"Red Hat, Inc.\"       vendor=\"Red Hat, Inc.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:49.790992146Z",
+   "created_by": "/bin/sh -c #(nop) LABEL url=\"https://catalog.redhat.com/en/search?searchType=containers\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:49.832253188Z",
+   "created_by": "/bin/sh -c #(nop) LABEL com.redhat.component=\"ubi9-container\"       name=\"ubi9/ubi\"       version=\"9.8\"       cpe=\"cpe:/a:redhat:enterprise_linux:9::appstream\"       distribution-scope=\"public\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:49.875683538Z",
+   "created_by": "/bin/sh -c #(nop) LABEL com.redhat.license_terms=\"https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:49.918973405Z",
+   "created_by": "/bin/sh -c #(nop) LABEL summary=\"Provides the latest release of Red Hat Universal Base Image 9.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:49.961355337Z",
+   "created_by": "/bin/sh -c #(nop) LABEL description=\"The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:50.004410477Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.k8s.description=\"The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:50.041998241Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.k8s.display-name=\"Red Hat Universal Base Image 9\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:50.082548433Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.openshift.expose-services=\"\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:50.123851707Z",
+   "created_by": "/bin/sh -c #(nop) LABEL io.openshift.tags=\"base rhel9\"",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:50.16443047Z",
+   "created_by": "/bin/sh -c #(nop) ENV container oci",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:52.044513516Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:84f9dacc9003a385d511c3ef5759e382ff708051136f68f6d50315ca128f8c93 in /      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:52.259825578Z",
+   "created_by": "/bin/sh -c #(nop) COPY file:1376702515d596f414e3aa494e0daa6d408a6d2475c4aeca96bf9392f5287f69 in /etc/yum.repos.d/.      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:52.300952151Z",
+   "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:52.52251195Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:477e205255221639b7717e03aad2575fbe5cf70ee79b08c06f45d1ee423c6f53 in /usr/share/buildinfo/      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:52.741151141Z",
+   "created_by": "/bin/sh -c #(nop) COPY dir:477e205255221639b7717e03aad2575fbe5cf70ee79b08c06f45d1ee423c6f53 in /root/buildinfo/      ",
+   "empty_layer": true
+  },
+  {
+   "created": "2026-11-05T06:53:53.654080985Z",
+   "created_by": "/bin/sh -c #(nop) LABEL \"org.opencontainers.image.created\"=\"2026-11-05T06:53:11Z\" \"org.opencontainers.image.revision\"=\"5c590161c7d0954dbfbc380a66393434e8bdae44\" \"build-date\"=\"2026-11-05T06:53:11Z\" \"architecture\"=\"x86_64\" \"vcs-ref\"=\"5c590161c7d0954dbfbc380a66393434e8bdae44\" \"vcs-type\"=\"git\" \"release\"=\"1793861509\"org.opencontainers.image.created=2026-11-05T06:53:11Z,org.opencontainers.image.revision=5c590161c7d0954dbfbc380a66393434e8bdae44"
+  }
+ ]
+}

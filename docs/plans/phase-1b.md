@@ -24,6 +24,7 @@ or queued for curation; gap list published and reviewed.
 | Q10 | Promoted images (slice 2) | One image, every reference | One node per config digest, listing each repository and tag; counts are per distinct image |
 | Q11 | Ambiguous parents (slice 3) | Report them | Both candidates recorded; links and the fold use the earliest-pushed one; rates count them |
 | Q12 | Children of an outdated base build | Report, in slice 7 | "Built on an outdated base": the parent is not the newest push of its image name |
+| Q13 | Is the Tekton build Konflux-like (slice 4)? | Not known | Strip the known `cachi2` prefix from `RUN`, mark known builder-added steps rather than dropping them, and read revision labels in slice 5 when present. Check against real history once Artifactory access exists |
 
 ## Decisions that follow (say if any is wrong)
 
@@ -115,6 +116,44 @@ or queued for curation; gap list published and reviewed.
    squashed image, or a builder that writes no history), all candidates at that prefix are considered.
 4. **History normaliser**, from public Buildah-built `created_by` samples (Q4): `RUN` text with variable spans
    wildcarded, `COPY` to its destination, metadata steps to keyword and key.
+
+   What the real history shows (6 Nov; `ubi9/ubi-minimal`, `ubi9/ubi`, `ubi9/python-311`, `ubi9/nodejs-20` from
+   `registry.access.redhat.com`, built by Red Hat's Tekton-based Konflux):
+   - Every Dockerfile instruction except `FROM` and `ARG` leaves a step. Metadata steps are
+     `/bin/sh -c #(nop) <KEYWORD> <as written>`; `RUN` is `/bin/sh -c <command>`.
+   - **Variables are not expanded**: `$NODEJS_VERSION`, `${HOME}` and `$STI_SCRIPTS_PATH` appear as written in the
+     Dockerfile. So no wildcarding is needed, and steps can be compared with the Dockerfile text exactly once
+     whitespace is collapsed. Backslash-newline continuations are joined, with their indentation kept.
+   - `COPY` is `COPY dir:<hash> in <dest>` or `COPY file:<hash> in <dest>`; the hash is of content, so only the
+     destination can be compared.
+   - **The first step of each build carries the comment `FROM <base reference>`**, the base as resolved at build
+     time, such as `registry.access.redhat.com/ubi9/s2i-core:9.8-1779830904`. That names the parent build directly.
+   - Squashed builds: almost every step is marked `empty_layer`, and only each build's last step makes a layer,
+     so one build is one layer. Slice 3's prefix rule still holds.
+   - Konflux adds things no Dockerfile has: `. /cachi2/cachi2.env && ` at the start of every `RUN`; four
+     `COPY ... /buildinfo/...` steps; and a final `LABEL` holding `build-date`, `vcs-ref` and
+     `org.opencontainers.image.revision`.
+
+   Design: `HistoryNormaliser.normalise(HistoryStep)` returns `NormalStep(keyword, text, from)`. The keyword is
+   `RUN`, `COPY`, `ADD`, a metadata keyword, or `OTHER`. The text is the comparable part: the command for `RUN`,
+   the destination for `COPY`/`ADD`, sorted key names for `LABEL`/`ENV`, and the collapsed value otherwise.
+   `from` is the base reference when the step's comment is `FROM ...`. The four public configs' histories are
+   kept as fixtures in `src/test/resources/fixtures/history/`. Slice 5 needs the same normal form for each
+   Dockerfile's instructions; where that comes from (a new `facts` output, since only `facts` may import
+   OpenRewrite) is slice 5's first question. Tests, in order:
+   1. `RUN` gives its command, `/bin/sh -c ` removed and whitespace collapsed.
+   2. Known builder prefixes on `RUN` are removed (Q13).
+   3. `COPY` and `ADD` give their destination, variables kept, trailing whitespace dropped.
+   4. `LABEL` gives its sorted key names; quoted keys are unquoted, and quoted values with spaces or escaped quotes
+      do not split.
+   5. `ENV` gives its key names, in both `ENV k=v ...` and the legacy `ENV k v` form.
+   6. `USER`, `WORKDIR`, `EXPOSE`, `ENTRYPOINT`, `CMD`, `VOLUME`, `STOPSIGNAL`, `SHELL` and `ONBUILD` give the keyword
+      and the collapsed value.
+   7. Anything else is `OTHER`, with the collapsed text.
+   7b. Known builder-added steps are marked `builderAdded` (Q13): `COPY` into `/usr/share/buildinfo/` or
+       `/root/buildinfo/`, and a `LABEL` whose keys include `build-date` and `vcs-ref`.
+   8. A `FROM <reference>` comment becomes `from`.
+   9. Every step in the four public images normalises to something other than `OTHER`.
 5. **Dockerfile links**: candidates whose resolved final `FROM` matches the lineage parent; ordered alignment of the
    image's own history steps against each candidate's instructions; tiers per D2.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,
