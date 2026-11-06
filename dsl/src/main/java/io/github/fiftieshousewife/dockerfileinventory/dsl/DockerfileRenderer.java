@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -14,6 +15,8 @@ import java.util.stream.Collectors;
 public final class DockerfileRenderer {
 
     private static final String CONTINUE = " \\\n";
+    private static final Pattern RUN_MOUNT = Pattern.compile("^RUN\\s+(--\\S+\\s+)*--mount=");
+    private static final Pattern HEREDOC = Pattern.compile("^(RUN|COPY|ADD)\\s.*<<-?['\"]?\\w+");
 
     private DockerfileRenderer() {
     }
@@ -24,16 +27,27 @@ public final class DockerfileRenderer {
             blocks.add(dockerfile.globalArgs().stream().map(DockerfileRenderer::instruction)
                     .collect(Collectors.joining("\n")));
         }
-        dockerfile.stages().forEach(stage -> blocks.add(stage(stage)));
+        dockerfile.stages().forEach(stage -> blocks.add(stage(stage, target)));
         return String.join("\n\n", blocks) + "\n";
     }
 
-    private static String stage(Stage stage) {
+    private static String stage(Stage stage, Target target) {
         List<String> lines = new ArrayList<>();
         lines.add("FROM " + (stage.base() != null ? reference(stage.base()) : stage.fromStage())
                 + (stage.name() == null ? "" : " AS " + stage.name()));
-        stage.instructions().forEach(i -> lines.add(instruction(i)));
+        stage.instructions().forEach(i -> lines.add(supported(instruction(i), target)));
         return String.join("\n", lines);
+    }
+
+    /** Only {@link Instruction.Raw} can hold a heredoc or a mount; the typed model has neither. */
+    private static String supported(String line, Target target) {
+        if (!target.runMounts() && RUN_MOUNT.matcher(line).find()) {
+            throw new IllegalArgumentException("the target does not support RUN --mount: " + line);
+        }
+        if (!target.heredocs() && HEREDOC.matcher(line).find()) {
+            throw new IllegalArgumentException("the target does not support a heredoc: " + line);
+        }
+        return line;
     }
 
     private static String reference(BaseImage base) {

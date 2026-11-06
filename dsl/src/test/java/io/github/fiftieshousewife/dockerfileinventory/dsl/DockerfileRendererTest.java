@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,6 +53,30 @@ class DockerfileRendererTest {
                 CMD ["serve"]
                 HEALTHCHECK NONE
                 """.formatted(DIGEST));
+    }
+
+    @Test
+    void aHeredocOrRunMountIsRefusedUnlessTheTargetAllowsIt() {
+        Dockerfile mount = single(new Instruction.Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "cache"));
+        Dockerfile heredoc = single(new Instruction.Raw("RUN <<EOT\nmake\nEOT", "script"));
+
+        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(mount, Target.DEFAULT))
+                .withMessageContaining("--mount");
+        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(heredoc, Target.DEFAULT))
+                .withMessageContaining("heredoc");
+        assertThat(DockerfileRenderer.render(mount, new Target(false, true))).contains("--mount");
+        assertThat(DockerfileRenderer.render(heredoc, new Target(true, false))).contains("<<EOT");
+    }
+
+    @Test
+    void renderingIsStable() {
+        assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo(DockerfileRenderer.render(MODEL,
+                Target.DEFAULT));
+    }
+
+    private static Dockerfile single(Instruction instruction) {
+        return new Dockerfile(List.of(), List.of(new Stage(null, new BaseImage("ubi9/ubi", "9.4", DIGEST), null,
+                List.of(instruction))));
     }
 
     private static Map<String, String> ordered(String... pairs) {
