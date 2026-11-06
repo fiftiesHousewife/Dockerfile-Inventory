@@ -1,6 +1,6 @@
 # Fixes from the sclorg demonstration: plan
 
-Status: planned 6 Nov. The first run on real public data (sclorg: 75 repositories, 987 Dockerfiles) showed six
+Status: all six fixed 6 Nov; the demonstration is rerun from a fresh discovery. The first run on real public data (sclorg: 75 repositories, 987 Dockerfiles) showed six
 problems. Each is fixed test-first, using trimmed real sclorg lines as fixtures where they exist; the demonstration
 is then rerun from a fresh discovery so the numbers can be compared.
 
@@ -31,3 +31,14 @@ F5. 10. `INSTALL_PKGS="a b" && yum install -y $INSTALL_PKGS` gives packages `a`,
     11. A package variable from the stage's `ENV` or `ARG` is expanded; an unknown one stays as `$NAME`.
 F6. 12. The glued-line message names the first non-blank line.
     13. `run` tasks' working directory is the repository root (checked by running a stage with a relative `OUT_DIR`).
+
+## As built
+
+- F2: the repro narrowed the second parser bug to any `# key=value` comment after the first instruction (the
+  trailing backslash was a red herring; `# syntax=` there is the same bug). A blanked comment inside a continued
+  instruction becomes a lone backslash, since an empty line there would end the instruction for the parser. The
+  fallback also rescues the old "`# syntax=` after an instruction" case, so that test now checks it parses.
+  Six upstream drafts are in `docs/upstream/rewrite-docker-issues.md`.
+- F4: three converter bugs behind the label differences: a tab after `LABEL` (the keyword was split on a space),
+  comment lines inside a continued `LABEL` read as keys, and the legacy `LABEL key value` form read as two keys.
+- F6: `facts` on the old discovery output now parses 818 of 893 files (785 before), from F2 alone.

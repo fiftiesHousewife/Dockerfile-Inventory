@@ -75,3 +75,12 @@ spotbugs {
     effort.set(com.github.spotbugs.snom.Effort.DEFAULT)
     reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
 }
+
+// A stage's `run` starts in the repository root, so a relative OUT_DIR or DISCOVERY_DIR means the same thing
+// whichever module runs it (Gradle would otherwise start in the module's own folder).
+val repositoryRoot = rootDir
+plugins.withId("application") {
+    tasks.named<JavaExec>("run") {
+        workingDir = repositoryRoot
+    }
+}
