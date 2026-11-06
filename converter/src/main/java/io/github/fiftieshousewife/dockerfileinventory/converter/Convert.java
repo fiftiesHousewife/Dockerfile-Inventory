@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import org.openrewrite.docker.tree.Docker;
 public final class Convert {
 
     private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();
+    private static final String NOT_JSON = "exec form that is not valid JSON";
     /** A heredoc opened on an instruction's first line ({@code <<EOF}, {@code <<-'EOF'}); its body is kept. */
     private static final java.util.regex.Pattern HEREDOC = java.util.regex.Pattern.compile("<<-?['\"]?\\w+");
     private static final java.util.regex.Pattern BARE_VARIABLE =
@@ -77,9 +79,11 @@ public final class Convert {
                     new Instruction.Expose(Integer.parseInt(expose.getPorts().getFirst().getText().strip()));
             case Docker.Run run -> run(run);
             case Docker.Entrypoint entrypoint when entrypoint.getCommand() instanceof Docker.ExecForm exec ->
-                    new Instruction.Entrypoint(arguments(exec));
+                    arguments(exec).<Instruction>map(Instruction.Entrypoint::new)
+                            .orElseGet(() -> new Instruction.Raw(printed(entrypoint), NOT_JSON));
             case Docker.Cmd cmd when cmd.getCommand() instanceof Docker.ExecForm exec ->
-                    new Instruction.Cmd(arguments(exec));
+                    arguments(exec).<Instruction>map(Instruction.Cmd::new)
+                            .orElseGet(() -> new Instruction.Raw(printed(cmd), NOT_JSON));
             case Docker.Copy copy -> copy(printed(copy));
             case Docker.Entrypoint entrypoint -> new Instruction.Raw(printed(entrypoint), "shell-form ENTRYPOINT");
             case Docker.Cmd cmd -> new Instruction.Raw(printed(cmd), "shell-form CMD");
@@ -183,13 +187,20 @@ public final class Convert {
         return ports.size() == 1 && ports.getFirst().getText().strip().matches("\\d{1,5}");
     }
 
-    /** An exec form's words, decoded as the JSON strings they are ({@code \\"} is a quote). */
-    private static List<String> arguments(Docker.ExecForm exec) {
-        return exec.getArguments().stream().map(l -> {
-            String text = l.getText();
-            boolean quoted = text.length() >= 2 && text.startsWith("\"") && text.endsWith("\"");
-            return JSON.readValue(quoted ? text : "\"" + text + "\"", String.class);
-        }).toList();
+    /**
+     * An exec form's words, decoded as the JSON strings they are ({@code \\"} is a quote); empty when a word is not
+     * valid JSON ({@code "\\d+"}), which Docker reads as shell form instead.
+     */
+    private static Optional<List<String>> arguments(Docker.ExecForm exec) {
+        try {
+            return Optional.of(exec.getArguments().stream().map(l -> {
+                String text = l.getText();
+                boolean quoted = text.length() >= 2 && text.startsWith("\"") && text.endsWith("\"");
+                return JSON.readValue(quoted ? text : "\"" + text + "\"", String.class);
+            }).toList());
+        } catch (tools.jackson.core.JacksonException e) {
+            return Optional.empty();
+        }
     }
 
     /** The instruction's arguments: comment lines inside it dropped, continuations removed, keyword split off. */

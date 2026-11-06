@@ -170,4 +170,15 @@ class ConvertTest {
         assertThat(instructions).containsExactly(new Instruction.User("${GF_UID}"),
                 new Instruction.Entrypoint(List.of("sh", "-c", "update-ca-trust extract && exec \"$@\"", "arg0")));
     }
+
+    @Test
+    void anExecFormThatIsNotValidJsonIsKeptRawAsDockerFallsBackToShellForm() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                CMD ["grep", "\\d+"]
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(
+                new Instruction.Raw("CMD [\"grep\", \"\\d+\"]", "exec form that is not valid JSON"));
+    }
 }
