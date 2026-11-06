@@ -83,6 +83,14 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void anExecFormsControlCharactersAreEscapedSoTheInstructionStaysOnOneLine() {
+        Dockerfile cmd = single(new Instruction.Cmd(List.of("sh", "-c", "echo a\nb\tc\u0001")));
+
+        assertThat(DockerfileRenderer.render(cmd, Target.DEFAULT))
+                .contains("CMD [\"sh\", \"-c\", \"echo a\\nb\\tc\\u0001\"]\n");
+    }
+
+    @Test
     void renderingIsStable() {
         assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo(DockerfileRenderer.render(MODEL,
                 Target.DEFAULT));

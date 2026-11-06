@@ -104,8 +104,17 @@ public final class DockerfileRenderer {
         return command.stream().map(DockerfileRenderer::jsonString).collect(Collectors.joining(", ", "[", "]"));
     }
 
-    /** A JSON string: every backslash escaped, as JSON has no {@code \$}. */
+    /** A JSON string: every backslash escaped, as JSON has no {@code \$}, and control characters too. */
     private static String jsonString(String value) {
-        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        StringBuilder json = new StringBuilder("\"");
+        value.chars().forEach(c -> json.append(switch (c) {
+            case '\\' -> "\\\\";
+            case '"' -> "\\\"";
+            case '\n' -> "\\n";
+            case '\t' -> "\\t";
+            case '\r' -> "\\r";
+            default -> c < 0x20 ? String.format(java.util.Locale.ROOT, "\\u%04x", c) : String.valueOf((char) c);
+        }));
+        return json.append('"').toString();
     }
 }

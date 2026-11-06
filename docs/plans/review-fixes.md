@@ -1,6 +1,6 @@
 # Fixes from the code review of 6 Nov: plan
 
-Status: R1-R5 built 6 Nov; R6 next.
+Status: R1-R6 built 6 Nov; R7 and R8 next.
 
 A code review of the session's changes (`c0da31d^..HEAD`) found nine likely bugs and one rule breach, all from
 reading the code. Each is fixed test-first: a failing test from the reviewer's scenario, then the fix.
@@ -12,7 +12,7 @@ reading the code. Each is fixed test-first: a failing test from the reviewer's s
 | R3 | `ARG A B` rewritten `ARG A=$A B=$B` loses a global default inside a stage | Done 6 Nov. The cause was deeper: rewrite-docker folds `ARG A=1 B=2` into one argument `A` = `1 B=2` (upstream issue 12), so facts had read every multi-value `ARG` wrongly, not only the retry's. Facts now reads an `ARG`'s names and values from its text, and a default that is only the ARG's own name counts as none | `facts` |
 | R4 | The retry's rewrites touch quoted `ARG` values, continued lines and heredoc bodies | Done 6 Nov: as planned | `facts` |
 | R5 | The template check can call a valid Dockerfile a template (`${{ github.sha }}` in a comment, Go's `{{ end }}`), and misses a template that parses only on the retry | Done 6 Nov: as planned | `facts` |
-| R6 | Decoded newlines and tabs in an exec form are written raw, splitting the instruction | JSON strings escape control characters (`\n`, `\t`, `\u00XX`) | `dsl` |
+| R6 | Decoded newlines and tabs in an exec form are written raw, splitting the instruction | Done 6 Nov: as planned | `dsl` |
 | R7 | In the converter's `ENV`/`LABEL` reading, a backslash inside double quotes is always consumed (`"C:\tools"` becomes `C:tools`) | As in the shell and as in S2: only before `"`, `\`, `$` (and a newline) | `converter` |
 | R8 | `\$` in the model means a literal dollar, but a literal backslash then a variable (`"pre\\$HOME"`) models the same | The model keeps a literal backslash as `\\` too; the renderer keeps `\\` and `\$` pairs and escapes any other backslash | `converter`, `dsl` |
 | R9 | A digest from a build argument counts as pinned for the builders' R1 | R1 needs a literal digest; a build argument is a breach with its own message | `dsl` |
