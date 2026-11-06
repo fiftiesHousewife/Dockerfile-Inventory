@@ -34,3 +34,4 @@ rootProject.name = "dockerfile-inventory"
 include("discovery")
 include("facts")
 include("lineage")
+include("report")

@@ -1,0 +1,1 @@
+{"blobSha":"blob-bad","message":"Syntax error in blob-bad/Dockerfile at line 1:0 mismatched input 'not' expecting {PARSER_DIRECTIVE, 'FROM', 'ARG'}."}

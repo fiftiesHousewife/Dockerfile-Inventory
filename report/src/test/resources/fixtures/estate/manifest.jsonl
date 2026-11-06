@@ -1,0 +1,5 @@
+{"repository":"payments/api","commitSha":"c1","scope":"RELEASED","path":"Dockerfile","blobSha":"blob-a"}
+{"repository":"payments/web","commitSha":"c2","scope":"DEFAULT_BRANCH","path":"build/Dockerfile","blobSha":"blob-a"}
+{"repository":"platform/tools","commitSha":"c3","scope":"RELEASED","path":"Dockerfile","blobSha":"blob-b"}
+{"repository":"platform/old","commitSha":"c4","scope":"RELEASED","path":"Dockerfile","blobSha":"blob-bad"}
+{"repository":"platform/gone","commitSha":"c5","scope":"RELEASED","path":"Dockerfile","blobSha":"blob-gone"}
