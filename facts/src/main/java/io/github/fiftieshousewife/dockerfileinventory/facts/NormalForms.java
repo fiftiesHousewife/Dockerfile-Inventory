@@ -45,6 +45,22 @@ public final class NormalForms {
                 "stages=" + facts.stageCount());
     }
 
+    /**
+     * The base's image path, without registry host, tag or digest, so it compares with what a build records and with
+     * Artifactory's image names. As in Docker, a first segment is a host only if it holds a dot or a colon, or is
+     * {@code localhost}. Null when the base is unresolved.
+     */
+    public static String fromPath(BaseImage base) {
+        if (!base.resolved()) {
+            return null;
+        }
+        String name = base.name();
+        int slash = name.indexOf('/');
+        String first = slash < 0 ? "" : name.substring(0, slash);
+        boolean host = first.contains(".") || first.contains(":") || first.equals("localhost");
+        return host ? name.substring(slash + 1) : name;
+    }
+
     /** D4: the last path segment of the image name, so registries and mirrors of one image group together. */
     static String family(BaseImage base) {
         if (!base.resolved()) {

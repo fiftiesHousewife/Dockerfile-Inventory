@@ -4,6 +4,8 @@ import static io.github.fiftieshousewife.dockerfileinventory.facts.FactExtractor
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class NormalFormsTest {
 
@@ -66,5 +68,18 @@ class NormalFormsTest {
     void separatesADifferentMajorVersion() {
         assertThat(NormalForms.signature(facts(APP.replace("ubi-minimal:9.4", "ubi-minimal:10.0"))))
                 .isNotEqualTo(NormalForms.signature(facts(APP)));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', nullValues = "-", value = {
+        "registry.example.com:5000/ubi9/s2i-base | ubi9/s2i-base",
+        "localhost/team/app                      | team/app",
+        "artifactory:8443/team/app               | team/app",
+        "ubi9/s2i-base                           | ubi9/s2i-base",
+        "docker-local/team/app                   | docker-local/team/app",
+        "${BASE}                                 | -",
+    })
+    void theFromPathDropsARegistryHostButKeepsAFirstSegmentThatIsNotOne(String name, String path) {
+        assertThat(NormalForms.fromPath(new BaseImage(name, "1", null))).isEqualTo(path);
     }
 }
