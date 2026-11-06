@@ -45,4 +45,19 @@ class TextRulesTest {
                 RUN curl -s https://example.com/data.json | jq .version
                 """))).extracting(Finding::line).containsExactly(2, 3);
     }
+
+    @Test
+    void h3ReportsAdjacentShellFormRunsInOneStage() {
+        assertThat(new AdjacentRuns().check(Subjects.of("""
+                FROM ubi9 AS build
+                RUN microdnf install -y make
+                RUN make
+                COPY . /src
+                RUN make install
+                RUN --mount=type=cache,target=/root/.m2 mvn package
+                RUN ["echo", "exec form"]
+                FROM ubi9
+                RUN true
+                """))).extracting(Finding::line).containsExactly(3);
+    }
 }
