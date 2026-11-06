@@ -32,8 +32,12 @@ public final class Fold {
         Map<String, EffectiveImage> effective = new HashMap<>();
         for (Resolved.Node image : images) {
             List<Member> chain = chain(image, parents, byDigest);
-            SetBy user = setBy(chain, links, i -> i.keyword().equals("USER"));
-            effective.put(image.configDigest(), new EffectiveImage(new Property<>(image.config().user(), user)));
+            ImageConfig config = image.config();
+            effective.put(image.configDigest(), new EffectiveImage(
+                    new Property<>(config.user(), setBy(chain, links, keyword("USER"))),
+                    new Property<>(config.workingDir(), setBy(chain, links, keyword("WORKDIR"))),
+                    new Property<>(config.entrypoint(), setBy(chain, links, keyword("ENTRYPOINT"))),
+                    new Property<>(config.cmd(), setBy(chain, links, keyword("CMD")))));
         }
         return effective;
     }
@@ -50,6 +54,10 @@ public final class Fold {
             current = parent;
         }
         return chain;
+    }
+
+    private static Predicate<Instruction> keyword(String keyword) {
+        return instruction -> instruction.keyword().equals(keyword);
     }
 
     /** The nearest image in the chain whose own steps include one the predicate accepts. */

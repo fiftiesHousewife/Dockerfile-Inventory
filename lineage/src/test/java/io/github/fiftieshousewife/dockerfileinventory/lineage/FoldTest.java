@@ -38,6 +38,26 @@ class FoldTest {
         assertThat(effective.user()).isEqualTo(new Property<>("1001", new SetBy.Image("base", baseLink)));
     }
 
+    @Test
+    void workdirEntrypointAndCmdAreAttributedLikeTheUser() {
+        Link baseLink = new Link(Link.Tier.PROBABLE, List.of("base-df"), false);
+        Resolved.Node base = new Resolved.Node("base", new ImageConfig(List.of("L1"),
+                List.of(step("ADD file:ubi in /"), step("WORKDIR /app"), step("ENTRYPOINT [\"run\"]")),
+                null, Map.of(), Map.of(), "/app", List.of("run"), List.of(), List.of()));
+        Resolved.Node app = new Resolved.Node("app", new ImageConfig(List.of("L1", "L2"),
+                List.of(step("ADD file:ubi in /"), step("WORKDIR /app"), step("ENTRYPOINT [\"run\"]"),
+                        step("RUN make"), step("CMD [\"serve\"]")),
+                null, Map.of(), Map.of(), "/app", List.of("run"), List.of("serve"), List.of()));
+
+        EffectiveImage effective = Fold.of(List.of(base, app),
+                Map.of("base", new Parent.Root(), "app", new Parent.Of("base")),
+                Map.of("app", APP_LINK, "base", baseLink)).get("app");
+
+        assertThat(effective.workingDir()).isEqualTo(new Property<>("/app", new SetBy.Image("base", baseLink)));
+        assertThat(effective.entrypoint()).isEqualTo(new Property<>(List.of("run"), new SetBy.Image("base", baseLink)));
+        assertThat(effective.cmd()).isEqualTo(new Property<>(List.of("serve"), new SetBy.Image("app", APP_LINK)));
+    }
+
     static HistoryStep step(String instruction) {
         return step(instruction, null);
     }
