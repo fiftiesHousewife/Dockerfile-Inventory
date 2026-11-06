@@ -37,6 +37,16 @@ class FactsRunTest {
     }
 
     @Test
+    void eachFactsRowCarriesTheStepsAndBasePathLineageMatchesOn() throws IOException {
+        new FactsRun(discovery, out).run();
+
+        assertThat(Files.readAllLines(out.resolve("facts.jsonl"))).singleElement()
+                .satisfies(line -> assertThat(line)
+                        .contains("\"steps\":[{\"keyword\":\"RUN\",\"text\":\"microdnf install -y git\"}]")
+                        .contains("\"fromPath\":\"ubi9/ubi-minimal\""));
+    }
+
+    @Test
     void aRerunParsesNothingAlreadyRecorded() throws IOException {
         new FactsRun(discovery, out).run();
 

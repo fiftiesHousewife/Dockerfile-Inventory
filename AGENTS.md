@@ -33,8 +33,9 @@ discovery/                  Phase 0: repos -> trees at the released commit -> Do
                             RepoScan: one repository; Discovery: the run; DiscoveryOutput: the files
                             run: GHE_API_URL, GHE_TOKEN, OUT_DIR, [RELEASE_INDEX], [CONCURRENCY] ./gradlew :discovery:run
 facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, normal-form hashes, rates
-                            FactsParser and FactExtractor are the only classes that import org.openrewrite;
+                            FactsParser, FactExtractor and Steps are the only classes that import org.openrewrite;
                             ShellTokeniser and PackageCalls read RUN bodies; FactsRun: the run
+                            Steps: the final image's instructions in lineage's normal form (testdata/contracts/)
                             run: DISCOVERY_DIR, OUT_DIR ./gradlew :facts:run
 lineage/                    Phase 1b (in progress): Artifactory images -> family tree -> Dockerfile links
                             Artifactory (interface) / ArtifactoryHttp: REST only, never AQL; Docker v2 catalogue,

@@ -16,6 +16,9 @@ import tools.jackson.databind.ObjectMapper;
 
 class StepsTest {
 
+    /** Shared with lineage, which must reduce the image's real history to the same steps. */
+    private static final Path CONTRACT = Path.of("../testdata/contracts/python-311.steps.json");
+
     @Test
     void shellRunJoinsContinuationsDropsCommentLinesInsideAndCollapsesWhitespace() {
         assertThat(steps("""
@@ -110,9 +113,10 @@ class StepsTest {
 
     @Test
     void theRealPython311DockerfileGivesTheStepsItsRealBuildHistoryGives() throws IOException {
-        JsonNode contract = new ObjectMapper().readTree(Path.of("../testdata/contracts/python-311.steps.json").toFile());
+        JsonNode contract = new ObjectMapper().readTree(CONTRACT.toFile());
         List<Step> expected = new ArrayList<>();
-        contract.path("steps").forEach(s -> expected.add(new Step(s.path("keyword").asString(), s.path("text").asString())));
+        contract.path("steps").forEach(s -> expected.add(
+                new Step(s.path("keyword").asString(), s.path("text").asString())));
         String dockerfile;
         try (InputStream in = StepsTest.class.getResourceAsStream("/fixtures/dockerfiles/python-311.Dockerfile")) {
             dockerfile = new String(Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8);

@@ -71,7 +71,7 @@ Each distinct Dockerfile is parsed once; a rerun parses only new ones.
 
 | File | Contents |
 | --- | --- |
-| `facts.jsonl` | One line per Dockerfile: base image, package-manager calls per stage, final user and whether it is root, numeric or named, exposed ports, entrypoint form, BuildKit features, `RUN` counts, and two hashes for grouping (cosmetic and functional duplicates) |
+| `facts.jsonl` | One line per Dockerfile: base image, package-manager calls per stage, final user and whether it is root, numeric or named, exposed ports, entrypoint form, BuildKit features, `RUN` counts, two hashes for grouping (cosmetic and functional duplicates), and the final image's instructions and base image path, which lineage matches built images against |
 | `parse-failures.jsonl` | Dockerfiles the parser rejected, with the reason |
 | `rates.json` | Parse-failure rate, the share of `RUN`s too complex to read, unresolved `FROM` per organisation, BuildKit feature use |
 

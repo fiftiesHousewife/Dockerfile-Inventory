@@ -22,8 +22,14 @@ import tools.jackson.databind.json.JsonMapper;
  */
 public final class FactsRun {
 
-    /** One row of {@code facts.jsonl}. */
-    public record FactRow(String blobSha, String textHash, String signatureHash, String signature, ImageFacts facts) {
+    /** One row of {@code facts.jsonl}; {@code steps} and {@code fromPath} are what lineage matches images on. */
+    public record FactRow(String blobSha, String textHash, String signatureHash, String signature, ImageFacts facts,
+                          List<Step> steps, String fromPath) {
+
+        /** A row written before steps were recorded reads back with none. */
+        public FactRow {
+            steps = steps == null ? List.of() : List.copyOf(steps);
+        }
     }
 
     public record Summary(int parsed, int failed, int alreadyDone) {
@@ -63,7 +69,8 @@ public final class FactsRun {
                 case ParseResult.Parsed result -> {
                     ImageFacts facts = FactExtractor.extract(result.file());
                     append("facts.jsonl", new FactRow(sha, NormalForms.textHash(text), NormalForms.signatureHash(facts),
-                            NormalForms.signature(facts), facts));
+                            NormalForms.signature(facts), facts,
+                            Steps.of(result.file()), NormalForms.fromPath(facts.base())));
                     parsed++;
                 }
                 case ParseResult.Failed result -> {

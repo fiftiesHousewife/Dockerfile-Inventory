@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slices 1 to 4 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slices 1 to 4 and 5a built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -193,6 +193,15 @@ or queued for curation; gap list published and reviewed.
       with no dot, colon or `localhost` is part of the path, not a host (Docker's rule). Whether a first path
       segment is a repository key is decided in 5b, against Artifactory's names (Q15).
    7. Contract: the upstream python 3.11 Dockerfile gives exactly the contract steps.
+
+   As built (5a, 6 Nov): each instruction is printed from the parsed tree and reduced by keyword, so forms the
+   grammar distinguishes (exec, heredoc) are kept as written; test 2 passed when first written for that reason.
+   The contract test found a bug in Phase 1's parser adapter. A comment line inside a continued `RUN`, which Docker
+   allows and Red Hat's python 3.11 Dockerfile has, was recorded as a parse failure: the check for lines the
+   parser glues onto an argument now lets a newline that ends a comment line through. A stage name resolves only
+   to earlier stages, as in Docker, so `FROM app AS app` cannot loop; that test needed a pre-emptive timeout to
+   fail cleanly. Rows written before this change read back with no steps. No real facts run exists yet, but one
+   made before this change should be rerun into an empty `OUT_DIR`.
 
    **5b, in `lineage`: links.** `Links.of(nodes, parents, dockerfiles)` gives each image a `Link`: tier `STRONG`,
    `PROBABLE` or `WEAK` with the matching Dockerfile group, or `NONE`. A group is every Dockerfile (by blob SHA)

@@ -14,6 +14,7 @@ and one line when its gate is met.
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.
   - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms; slice 6, the facts run and rates.
+  - Fixed 6 Nov: a comment line inside a continued instruction was recorded as a parse failure.
   - To raise upstream (rewrite-docker 8.90.4): an unrecognised line is appended to the previous argument
     silently; a `# syntax=` line after the first instruction is rejected, though Docker reads it as a comment.
 
@@ -24,8 +25,9 @@ and one line when its gate is met.
   - Done: slice 2, image nodes: one tag to its amd64 config, or a counted skip.
   - Done: slice 3, the family tree from layer prefixes (OCI chain IDs), ambiguous parents reported.
   - Done: slice 4, history normaliser, from public Konflux/Buildah-built UBI images.
-  - Next: slice 5, Dockerfile links; its first question is where each Dockerfile's instruction list comes from.
-    Recorded fixtures wait on an Artifactory token.
+  - Done: slice 5a, `facts` writes each Dockerfile's steps and base path, held to lineage's normal form by a
+    contract from a real Dockerfile and its real build history.
+  - Next: slice 5b, links in `lineage`. Recorded fixtures wait on an Artifactory token.
 
 ## Queued
 
