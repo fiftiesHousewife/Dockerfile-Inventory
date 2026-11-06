@@ -19,6 +19,9 @@ import org.openrewrite.docker.tree.Docker;
  */
 public record RoundTrip(boolean passed, String difference) {
 
+    /** {@code ${NAME}} is {@code $NAME} to Docker unless a name character follows ({@code ${A}B} is not {@code $AB}). */
+    private static final java.util.regex.Pattern BRACES =
+            java.util.regex.Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}(?![A-Za-z0-9_])");
     private static final tools.jackson.databind.ObjectMapper JSON = new tools.jackson.databind.ObjectMapper();
 
     public static RoundTrip check(String original, Dockerfile model) {
@@ -91,7 +94,7 @@ public record RoundTrip(boolean passed, String difference) {
     }
 
     private static String canonical(Step step) {
-        String text = step.text();
+        String text = BRACES.matcher(step.text()).replaceAll("\\$$1");
         return switch (step.keyword()) {
             case "RUN" -> Installs.of(text).map(i -> i.manager() + " flags=" + sorted(i.flags()) + " packages="
                     + sorted(i.packages())).orElse(json(text));

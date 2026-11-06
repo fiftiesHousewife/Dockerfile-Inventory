@@ -97,4 +97,11 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void aVariableWithOrWithoutBracesIsTheSameToDocker() {
+        String original = "FROM ubi9\nARG UID GID\nUSER $UID:$GID\n";
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }
