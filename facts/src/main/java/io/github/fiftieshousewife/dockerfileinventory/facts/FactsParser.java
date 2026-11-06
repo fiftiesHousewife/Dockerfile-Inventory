@@ -31,7 +31,9 @@ public final class FactsParser {
     private static final Pattern TEMPLATE_MARKER = Pattern.compile("\\{%.*%}|\\{\\{.*}}");
     /** Jinja only: a block tag, or {@code {{ name.path }}}. Go's {@code {{.Id}}} and {@code {{ index .X }}} differ. */
     private static final Pattern JINJA =
-            Pattern.compile("\\{%.*%}|\\{\\{\\s+[A-Za-z_]\\w*(\\.[A-Za-z_]\\w*)*\\s*(\\|[^}]*)?}}");
+            Pattern.compile("\\{%.*%}|\\{\\{\\s+([A-Za-z_]\\w*)(\\.[A-Za-z_]\\w*)*\\s*(\\|[^}]*)?}}");
+    private static final java.util.Set<String> GO_KEYWORDS = java.util.Set.of(
+            "end", "else", "if", "range", "with", "define", "template", "block", "break", "continue");
     private static final Pattern SPACE_BEFORE_COMMA = Pattern.compile("\"[ \\t]+,");
     private static final Pattern FLAG_DEFAULT =
             Pattern.compile("(--[A-Za-z-]+=\\S*?\\$\\{[A-Za-z_][A-Za-z0-9_]*):-");
@@ -51,13 +53,10 @@ public final class FactsParser {
      */
     public ParseResult parse(String blobSha, String text) {
         ParseResult first = attempt(blobSha, text);
-        if (first instanceof ParseResult.Parsed) {
+        ParseResult parsed = first instanceof ParseResult.Parsed ? first : attempt(blobSha, retryText(text));
+        if (parsed instanceof ParseResult.Parsed) {
             return jinja(text).<ParseResult>map(line -> new ParseResult.Failed(blobSha, TEMPLATE + " (" + line
-                    + "); it parses, as its markers happen to be valid Dockerfile text")).orElse(first);
-        }
-        ParseResult second = attempt(blobSha, retryText(text));
-        if (second instanceof ParseResult.Parsed) {
-            return second;
+                    + "); it parses, as its markers happen to be valid Dockerfile text")).orElse(parsed);
         }
         return template(text)
                 .<ParseResult>map(line -> new ParseResult.Failed(blobSha, TEMPLATE + " (" + line + "); the parser said: "
@@ -68,9 +67,23 @@ public final class FactsParser {
     /**
      * The first line holding Jinja's markers, which make even a file that parses a template: Jinja's
      * {@code {{ spec.version }}} is valid in a {@code FROM} or an {@code ENV}, but no real Dockerfile holds it.
+     * Comment lines do not count, nor do a GitHub Actions expression ({@code ${{ github.sha }}}) or a Go template
+     * keyword ({@code {{ end }}}), which real Dockerfiles do hold.
      */
     static Optional<String> jinja(String text) {
-        return text.lines().filter(line -> JINJA.matcher(line).find()).map(String::strip).findFirst();
+        return text.lines().filter(line -> !line.strip().startsWith("#") && jinjaMarker(line))
+                .map(String::strip).findFirst();
+    }
+
+    private static boolean jinjaMarker(String line) {
+        var marker = JINJA.matcher(line);
+        while (marker.find()) {
+            boolean actions = marker.start() > 0 && line.charAt(marker.start() - 1) == '$';
+            if (!actions && (marker.group(1) == null || !GO_KEYWORDS.contains(marker.group(1)))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

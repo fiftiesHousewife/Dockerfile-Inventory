@@ -205,4 +205,20 @@ class FactsParserTest {
                 "ARG DESC=\"two words\" OTHER\n", "ARG A \\\n    B\n", "python3 -c 'x = [\"a\" , \"b\"]'\n",
                 "CMD [\"a\", \"b\"]");
     }
+
+    @Test
+    void githubActionsExpressionsInCommentsAndGoTemplateKeywordsDoNotMakeATemplate() {
+        assertThat(new FactsParser().parse("ok", """
+                # built by CI at ${{ github.sha }}
+                FROM ubi9
+                RUN docker inspect -f '{{ range .Mounts }}{{ .Source }}{{ end }}' x
+                """)).isInstanceOf(ParseResult.Parsed.class);
+    }
+
+    @Test
+    void aJinjaTemplateThatOnlyParsesOnTheRetryIsStillATemplate() {
+        assertThat(new FactsParser().parse("tpl", "FROM ubi9\nENV V={{ spec.version }}\nCMD [\"a\" , \"b\"]\n"))
+                .isInstanceOfSatisfying(ParseResult.Failed.class,
+                        failed -> assertThat(failed.message()).startsWith(FactsParser.TEMPLATE));
+    }
 }
