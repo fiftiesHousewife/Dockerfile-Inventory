@@ -100,6 +100,18 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void anInstructionEndingInABackslashIsFollowedByABlankLineSoItIsNotReadAsAContinuation() {
+        Dockerfile windows = new Dockerfile(List.of(), List.of(new Stage(null,
+                new BaseImage("mcr.microsoft.com/windows/nanoserver", "ltsc2022", null), null, List.of(
+                        new Instruction.Copy(List.of("C:\\\\Windows\\\\System32\\\\msvcp140.dll"),
+                                "C:\\\\Windows\\\\System32\\\\", null, "builder"),
+                        new Instruction.Env(Map.of("MONGO_VERSION", "8.3.13"))))));
+
+        assertThat(DockerfileRenderer.render(windows, Target.DEFAULT))
+                .contains("C:\\\\Windows\\\\System32\\\\\n\nENV MONGO_VERSION=\"8.3.13\"");
+    }
+
+    @Test
     void renderingIsStable() {
         assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo(DockerfileRenderer.render(MODEL,
                 Target.DEFAULT));

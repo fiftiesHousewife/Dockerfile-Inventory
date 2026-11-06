@@ -149,11 +149,15 @@ public final class Convert {
         return text.replaceAll("\\\\[ \\t]*\\r?\\n", "");
     }
 
-    /** One line: continuations joined, comment lines inside dropped (Docker drops them), whitespace collapsed. */
+    /**
+     * One line: continuations joined, comment lines inside dropped (Docker drops them), whitespace collapsed. A
+     * backslash ending the last line joins nothing, so it stays ({@code COPY ... C:\\Windows\\}).
+     */
     static String joined(String text) {
-        return text.lines()
-                .map(String::stripTrailing)
-                .map(line -> line.endsWith("\\") ? line.substring(0, line.length() - 1) : line)
+        List<String> lines = text.stripTrailing().lines().map(String::stripTrailing).toList();
+        return java.util.stream.IntStream.range(0, lines.size())
+                .mapToObj(i -> i < lines.size() - 1 && lines.get(i).endsWith("\\")
+                        ? lines.get(i).substring(0, lines.get(i).length() - 1) : lines.get(i))
                 .filter(line -> !line.strip().startsWith("#"))
                 .collect(Collectors.joining(" "))
                 .replaceAll("\\s+", " ")

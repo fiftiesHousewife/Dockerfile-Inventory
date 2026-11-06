@@ -145,4 +145,20 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void aWindowsCopyWhoseDestinationEndsInABackslashPasses() {
+        String original = """
+                FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+                SHELL ["cmd", "/S", "/C"]
+                COPY --from=mongo:8.3.13-windowsservercore-ltsc2022 \\
+                	C:\\\\Windows\\\\System32\\\\msvcp140.dll \\
+                	C:\\\\Windows\\\\System32\\\\
+
+                # https://docs.mongodb.org/master/release-notes/8.3/
+                ENV MONGO_VERSION 8.3.13
+                """;
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

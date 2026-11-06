@@ -27,7 +27,7 @@ public final class DockerfileRenderer {
         List<String> blocks = new ArrayList<>();
         if (!dockerfile.globalArgs().isEmpty()) {
             blocks.add(dockerfile.globalArgs().stream().map(DockerfileRenderer::instruction)
-                    .collect(Collectors.joining("\n")));
+                    .map(DockerfileRenderer::ended).collect(Collectors.joining("\n")));
         }
         dockerfile.stages().forEach(stage -> blocks.add(stage(stage, target)));
         return String.join("\n\n", blocks) + "\n";
@@ -37,8 +37,16 @@ public final class DockerfileRenderer {
         List<String> lines = new ArrayList<>();
         lines.add("FROM " + (stage.base() != null ? reference(stage.base()) : stage.fromStage())
                 + (stage.name() == null ? "" : " AS " + stage.name()));
-        stage.instructions().forEach(i -> lines.add(supported(instruction(i), target)));
+        stage.instructions().forEach(i -> lines.add(ended(supported(instruction(i), target))));
         return String.join("\n", lines);
+    }
+
+    /**
+     * An instruction whose last word ends in a backslash ({@code COPY ... C:\\Windows\\}) is followed by a blank
+     * line, as in the Dockerfiles that hold one: otherwise the backslash reads as joining the next line to it.
+     */
+    private static String ended(String instruction) {
+        return instruction.endsWith("\\") ? instruction + "\n" : instruction;
     }
 
     /** Only {@link Instruction.Raw} can hold a heredoc or a mount; the typed model has neither. */
