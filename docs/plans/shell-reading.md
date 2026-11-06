@@ -1,6 +1,6 @@
 # Reading more shell in RUN (S4): plan
 
-Status: planned 6 Nov; questions answered 6 Nov; S4a-S4e built; docker-library measured again.
+Status: built 6 Nov.
 
 `docker-library` (the official images) has 870 of 2,492 shell-form `RUN`s too complex to read (35%); openshift
 2.7%, konflux-ci 2.9%, redhat-developer 4.7%. An unreadable `RUN` counts no packages, so the inventory undercounts
@@ -52,4 +52,21 @@ Answers (6 Nov): 1, yes, the loop variable takes the list; 2, yes, read the body
 5. A `RUN` after `SHELL ["powershell", ...]` is counted as another shell, not read and not unreadable; rates and the
    report say how many.
 6. docker-library's real lines for each construct read.
+
+## As built
+
+| Estate | Unreadable RUNs before S4 | After | RUNs in another shell |
+| --- | --- | --- | --- |
+| docker-library | 870 of 2,492 (35%) | 18 of 2,390 (0.75%) | 96 |
+| openshift | 165 (2.7%) | 44 of 6,302 (0.7%) | 0 |
+| konflux-ci | 20 (2.9%) | 8 of 676 (1.2%) | 0 |
+| redhat-developer | 59 (4.7%) | 12 of 1,244 (1.0%) | 0 |
+| sclorg | 7.8% | 0 of 1,301 | 0 |
+
+`ShellTokeniser` drops the keywords and braces of groups, loops and `if`, reads every `case` branch without its
+patterns, gives a `for` variable its list, and reads a function's body (`name() {` and `function name {`). A
+subshell's parentheses are separators. `FactExtractor` tracks each stage's `SHELL`; `ImageFacts.otherShellRuns`,
+`Rates.otherShellRuns` and the report's rates table carry the count. Two facts tests that used an `if` or a loop as
+their example of an unreadable RUN now use a pipe into a shell. Not yet classified: docker-library's last 18, long
+install scripts.
 

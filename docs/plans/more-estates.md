@@ -1,6 +1,6 @@
 # More public estates, and openshift's lineage: plan
 
-Status: openshift, konflux-ci and redhat-developer done 6 Nov; docker-library next.
+Status: openshift, konflux-ci, redhat-developer and docker-library done 6 Nov; bitnami next.
 
 sclorg (585 locations) found eighteen problems across discovery, facts, rules and the converter. More estates with
 different habits should find more, before the real estate does.
@@ -38,14 +38,14 @@ beside the existing one. Planned as its own slice.
 
 ## Results so far
 
-| | sclorg | openshift | konflux-ci | redhat-developer |
-| --- | --- | --- | --- | --- |
-| Repositories | 75 | 862 | 158 | 288 |
-| Dockerfile locations | 585 | 3,180 | 3,231 | 604 |
-| Unique files | 579 | 2,833 | 722 | 518 |
-| Parse failures, templates left out | 0% | 2.3% (after `openshift-fixes.md`) | 0.1% (1 file) | 1.4% (7 files; 3 not Dockerfiles) |
-| Unreadable `RUN`s | 7.8% | 2.7% | 2.9% | 4.7% |
-| Round trip passed | 568 of 568 | 2,730 of 2,833 | 720 of 722 | 502 of 518 (every file that parses) |
+| | sclorg | openshift | konflux-ci | redhat-developer | docker-library |
+| --- | --- | --- | --- | --- | --- |
+| Repositories | 75 | 862 | 158 | 288 | 48 |
+| Dockerfile locations | 585 | 3,180 | 3,231 | 604 | 594 |
+| Unique files | 579 | 2,833 | 722 | 518 | 581 |
+| Parse failures, templates left out | 0% | 2.2% (61) | 0.1% (1) | 1.4% (7; 3 not Dockerfiles) | 0% |
+| Unreadable `RUN`s (after S4) | 0% | 0.7% | 1.2% | 1.0% | 0.75% (96 more in PowerShell) |
+| Round trip passed | 568 of 568 | 2,730 of 2,833 | 720 of 722 | 502 of 518 (every file that parses) | 576 of 581 |
 
 openshift's fixes are in `openshift-fixes.md`. konflux-ci (3,231 locations, only 722 distinct files: much copying)
 needed two: `ARG A=` (an empty default) fails to parse, upstream issue 13, written `ARG A=""` in the retry; and a
@@ -59,6 +59,9 @@ instructions, continued from a bare `ENV \` with comments between the values, lo
 parser's pairs, so the converter now reads `ENV` from its text, as it already did `LABEL`. Left: `ENV KEY = value`
 (upstream issue 15, one file), two Kubernetes `CROSS_BUILD_COPY` files and one with an unclosed quote, which Docker
 rejects too.
+
+docker-library parsed completely, but 35% of its RUNs were unreadable (loops, `case`, groups, functions), which led
+to S4 (`shell-reading.md`). Left: 4 conversions whose rendering does not parse.
 
 The lineage of openshift's published OKD images is still to plan (above).
 

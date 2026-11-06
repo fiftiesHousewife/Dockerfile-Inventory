@@ -12,8 +12,8 @@ The full plan, with each phase's gate, is the
 
 | Stage | Module | State |
 | --- | --- | --- |
-| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; run on public organisations (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`); the enterprise pilot waits on a GHE token |
-| 1. Parse each Dockerfile into facts | `facts` | Built; parse failures 0-2.3% and unreadable `RUN`s under 3% on the public runs |
+| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; run on public organisations (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`, `docker-library`); the enterprise pilot waits on a GHE token |
+| 1. Parse each Dockerfile into facts | `facts` | Built; on the public runs parse failures 0-2.3% and unreadable `RUN`s 0-1.2% |
 | 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; tried end to end against a local JFrog Container Registry; a real run waits on an Artifactory token |
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need the enterprise discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
@@ -89,11 +89,13 @@ Each distinct Dockerfile is parsed once; a rerun parses only new ones.
 | --- | --- |
 | `facts.jsonl` | One line per Dockerfile: base image, package-manager calls per stage, final user and whether it is root, numeric or named, exposed ports, entrypoint form, BuildKit features, `RUN` counts, two hashes for grouping (cosmetic and functional duplicates), and the final image's instructions and base image path, which lineage matches built images against |
 | `parse-failures.jsonl` | Dockerfiles the parser rejected, with the reason; a template saved under a Dockerfile's name (Jinja and similar) says so |
-| `rates.json` | Parse-failure rate (templates left out and counted apart), the share of `RUN`s too complex to read, unresolved `FROM` per organisation, BuildKit feature use |
+| `rates.json` | Parse-failure rate (templates left out and counted apart), the share of `RUN`s too complex to read, `RUN`s in another shell, unresolved `FROM` per organisation, BuildKit feature use |
 
-A `RUN` is too complex to read when its shell uses loops, `case`, functions, subshell groups or a pipe into a shell;
-its packages are then not counted. Command substitutions (`$(uname -m)`) and `if` blocks are read, every branch of an
-`if` counting. A known set of bugs in the Dockerfile parser is worked around by a second, adjusted parse that keeps
+The shell in each `RUN` is read for its commands: command substitutions (`$(uname -m)`), groups and subshells,
+`if` and `case` (every branch counts), loops (read once; `for p in a b` gives `$p` the list) and functions (their
+bodies). A `RUN` is too complex to read only when it pipes a download into a shell or uses rarer forms; its packages
+are then not counted. A `RUN` under `SHELL ["powershell", ...]` (or `pwsh`, `cmd`) is counted apart as another
+shell. A known set of bugs in the Dockerfile parser is worked around by a second, adjusted parse that keeps
 every line number; the rest are listed in `docs/upstream/rewrite-docker-issues.md`.
 
 ## Link images to Dockerfiles

@@ -39,7 +39,8 @@ facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, norm
                             FactsParser, FactExtractor and Steps are the only classes that import org.openrewrite;
                             FactsParser retries a failed parse with known rewrite-docker bugs worked around, keeping
                             line numbers (docs/upstream/), and marks templates
-                            ShellTokeniser and PackageCalls read RUN bodies ($( ) and if read; loops, case not);
+                            ShellTokeniser and PackageCalls read RUN bodies ($( ), groups, if, case, loops,
+                            functions; a pipe into a shell stays unreadable; PowerShell RUNs are counted apart);
                             FactsRun: the run
                             Steps: the final image's instructions in lineage's normal form (testdata/contracts/)
                             run: DISCOVERY_DIR, OUT_DIR ./gradlew :facts:run

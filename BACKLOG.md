@@ -14,7 +14,7 @@ and one line when its gate is met.
     converter (`docs/plans/demo-fixes.md`, F1-F18); discovery now skips non-Dockerfile extensions, third-party
     copies and symlinks.
   - Done 6 Nov: fixes from the `openshift` run (`docs/plans/openshift-fixes.md`): unreadable RUNs 10.7% -> 2.7%,
-    parse failures 3.4% -> 2.3%, round trip 2,603 -> 2,730 of 2,833. Later: S4 (loops, case, groups). Discovery now
+    parse failures 3.4% -> 2.3%, round trip 2,603 -> 2,730 of 2,833. Discovery now
     also skips `*.dockerignore` and test inputs (`testdata/`, `testfiles/`).
   - Done 6 Nov: twelve fixes from a code review of the session's changes (`docs/plans/review-fixes.md`): secret
     values hidden in the dashboard, a converter crash, multi-value `ARG`s read wrongly, and quoting edge cases.
@@ -22,7 +22,11 @@ and one line when its gate is met.
     714 -> 720 of 722 (`docs/plans/more-estates.md`).
   - Done 6 Nov: `redhat-developer` (288 repositories, 604 locations, 518 files): every file that parses passes the
     round trip, after the converter reads `ENV` from its text as it does `LABEL`; discovery skips image and grammar
-    files named like Dockerfiles. Next estates: docker-library, bitnami.
+    files named like Dockerfiles.
+  - Done 6 Nov: `docker-library` (48 repositories, 594 locations, 581 files): no parse failures; 35% of its RUNs were
+    unreadable, which led to S4 (`docs/plans/shell-reading.md`): groups, `case`, loops and functions read, PowerShell
+    counted apart; every estate now 0-1.2% unreadable. Open: 4 docker-library conversions render text that does not
+    parse. Next estate: bitnami.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.
