@@ -27,7 +27,8 @@ public final class Links {
         for (Resolved.Node image : images) {
             List<Instruction> own = OwnSteps.of(image, parentNode(parents.get(image.configDigest()), byDigest));
             List<Dockerfile> group = groups.getOrDefault(own, List.of());
-            links.put(image.configDigest(), new Link(Link.Tier.PROBABLE,
+            Link.Tier tier = group.stream().anyMatch(Dockerfile::released) ? Link.Tier.STRONG : Link.Tier.PROBABLE;
+            links.put(image.configDigest(), new Link(tier,
                     group.stream().map(Dockerfile::blobSha).sorted().toList(), false));
         }
         return links;

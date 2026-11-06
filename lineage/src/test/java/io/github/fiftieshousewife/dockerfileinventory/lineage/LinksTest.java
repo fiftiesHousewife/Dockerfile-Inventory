@@ -21,6 +21,17 @@ class LinksTest {
                 .containsEntry("app", new Link(Link.Tier.PROBABLE, List.of("copy-a", "copy-b"), false));
     }
 
+    @Test
+    void aGroupWithADockerfileAtAReleasedCommitMakesTheLinkStrong() {
+        Resolved.Node image = image("app", "FROM registry.example.com/team/base:1", "RUN make");
+        List<Dockerfile> dockerfiles = List.of(
+                dockerfile("on-main", "team/base", false, "RUN make"),
+                dockerfile("released", "team/base", true, "RUN make"));
+
+        assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()).get("app").tier())
+                .isEqualTo(Link.Tier.STRONG);
+    }
+
     static Resolved.Node image(String digest, String fromComment, String... steps) {
         List<HistoryStep> history = new java.util.ArrayList<>();
         history.add(new HistoryStep("/bin/sh -c #(nop) ADD file:base in / ", null, false, null));
