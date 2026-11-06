@@ -41,6 +41,20 @@ class LinksTest {
                 .containsEntry("app", new Link(Link.Tier.NONE, List.of(), false));
     }
 
+    @Test
+    void withNoExactMatchTheGroupsTiedForTheBestPartialAlignmentOnTheSameBaseAreAWeakLink() {
+        Resolved.Node image = image("app", "FROM registry.example.com/team/base:1",
+                "RUN a", "RUN b", "RUN c", "RUN d", "USER 1001");
+        List<Dockerfile> dockerfiles = List.of(
+                dockerfile("near", "team/base", true, "RUN a", "RUN b", "RUN c", "RUN d", "USER 1002"),
+                dockerfile("near-under-repo-key", "docker-local/team/base", false, "RUN a", "RUN b", "RUN c", "RUN d"),
+                dockerfile("other-base", "other/base", false, "RUN a", "RUN b", "RUN c", "RUN d", "USER 1002"),
+                dockerfile("poor", "team/base", false, "RUN a", "RUN x", "RUN y", "RUN z", "USER 1001"));
+
+        assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()))
+                .containsEntry("app", new Link(Link.Tier.WEAK, List.of("near", "near-under-repo-key"), false));
+    }
+
     static Resolved.Node image(String digest, String fromComment, String... steps) {
         List<HistoryStep> history = new java.util.ArrayList<>();
         history.add(new HistoryStep("/bin/sh -c #(nop) ADD file:base in / ", null, false, null));
