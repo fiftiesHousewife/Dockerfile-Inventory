@@ -1,16 +1,23 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfileinventory.facts.KeyValuePairs;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * {@code key=value} pairs read from an instruction's text, in order. rewrite-docker 8.90.4 folds
- * {@code LABEL a=$X b=$Y} into one pair, so labels are read here (Phase 5, D5). Words split on whitespace outside
- * quotes; quotes are removed, and escapes are read as {@link #parse} says.
+ * {@code key=value} pairs of an {@code ENV}, {@code LABEL} or {@code ARG}, with each value in the model's form. The
+ * words and keys come from facts' {@link KeyValuePairs}; this turns a value as written into the model's form.
  */
 final class Pairs {
 
     private Pairs() {
+    }
+
+    /** In order; a key written twice keeps its last value, as Docker does; a word without {@code =} has "". */
+    static Map<String, String> parse(String text) {
+        Map<String, String> pairs = new LinkedHashMap<>();
+        KeyValuePairs.of(text).forEach(p -> pairs.put(p.key(), p.value() == null ? "" : modelForm(p.value())));
+        return pairs;
     }
 
     /**
@@ -20,62 +27,45 @@ final class Pairs {
      * it is a literal backslash, kept as {@code \\\\} like any other, so one value has one form. Inside
      * {@code '...'} nothing is special. Unquoted, a backslash escapes the next character.
      */
-    static Map<String, String> parse(String text) {
-        Map<String, String> pairs = new LinkedHashMap<>();
-        StringBuilder key = new StringBuilder();
+    static String modelForm(String written) {
         StringBuilder value = new StringBuilder();
-        boolean inKey = true;
         char quote = 0;
-        String rest = text + " ";
-        for (int i = 0; i < rest.length(); i++) {
-            char c = rest.charAt(i);
-            char next = i + 1 < rest.length() ? rest.charAt(i + 1) : 0;
-            StringBuilder current = inKey ? key : value;
+        for (int i = 0; i < written.length(); i++) {
+            char c = written.charAt(i);
+            char next = i + 1 < written.length() ? written.charAt(i + 1) : 0;
             if (quote == '\'') {
-                if (c == '\'') {
-                    quote = 0;
-                } else {
-                    current.append(literal(c));
-                }
+                quote = c == '\'' ? 0 : quote;
+                value.append(c == '\'' ? "" : literal(c));
             } else if (c == '\\' && quote == '"') {
-                i += escapedInDoubleQuotes(next, current);
+                i += escapedInDoubleQuotes(next, value);
             } else if (c == '\\') {
-                current.append(literal(next));
+                value.append(literal(next));
                 i++;
             } else if (c == '"') {
                 quote = quote == '"' ? 0 : '"';
             } else if (c == '\'' && quote == 0) {
                 quote = '\'';
-            } else if (quote == 0 && Character.isWhitespace(c)) {
-                if (!key.isEmpty()) {
-                    pairs.put(key.toString(), value.toString());
-                }
-                key.setLength(0);
-                value.setLength(0);
-                inKey = true;
-            } else if (quote == 0 && c == '=' && inKey) {
-                inKey = false;
             } else {
-                current.append(c);
+                value.append(c);
             }
         }
-        return pairs;
+        return value.toString();
     }
 
     /** A character that is itself, written in the model's form: a dollar or a backslash escaped. */
     private static String literal(char c) {
-        return c == '$' || c == '\\' ? "\\" + c : String.valueOf(c);
+        return c == '$' || c == '\\' ? "\\" + c : c == 0 ? "" : String.valueOf(c);
     }
 
     /** After a backslash inside double quotes: appends what it means; returns how many characters it took. */
-    private static int escapedInDoubleQuotes(char next, StringBuilder current) {
+    private static int escapedInDoubleQuotes(char next, StringBuilder value) {
         switch (next) {
-            case '"' -> current.append('"');
-            case '\\', '$' -> current.append('\\').append(next);
+            case '"' -> value.append('"');
+            case '\\', '$' -> value.append('\\').append(next);
             case '\n' -> {
             }
             default -> {
-                current.append("\\\\");
+                value.append("\\\\");
                 return 0;
             }
         }

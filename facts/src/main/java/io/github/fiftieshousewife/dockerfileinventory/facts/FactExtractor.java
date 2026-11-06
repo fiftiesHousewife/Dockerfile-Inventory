@@ -87,42 +87,11 @@ public final class FactExtractor {
         String written = Continuations.removed(arg.getName().getText()
                 + (value == null ? "" : "=" + text(value, Map.of())));
         Map<String, String> pairs = new java.util.LinkedHashMap<>();
-        for (String word : words(written)) {
-            int eq = word.indexOf('=');
-            String name = eq < 0 ? word : word.substring(0, eq);
-            String declared = eq < 0 ? null : unquoted(word.substring(eq + 1));
-            pairs.put(name, declared == null || ownName(declared, name) ? null : declared);
-        }
+        KeyValuePairs.of(written).forEach(pair -> {
+            String declared = pair.value() == null ? null : KeyValuePairs.unquoted(pair.value());
+            pairs.put(pair.key(), declared == null || ownName(declared, pair.key()) ? null : declared);
+        });
         return pairs;
-    }
-
-    private static List<String> words(String text) {
-        List<String> words = new ArrayList<>();
-        StringBuilder word = new StringBuilder();
-        char quote = 0;
-        for (char c : text.toCharArray()) {
-            if (quote == 0 && Character.isWhitespace(c)) {
-                if (!word.isEmpty()) {
-                    words.add(word.toString());
-                    word.setLength(0);
-                }
-                continue;
-            }
-            if (c == '"' || c == '\'') {
-                quote = quote == 0 ? c : quote == c ? 0 : quote;
-            }
-            word.append(c);
-        }
-        if (!word.isEmpty()) {
-            words.add(word.toString());
-        }
-        return words;
-    }
-
-    private static String unquoted(String value) {
-        boolean quoted = value.length() >= 2 && (value.startsWith("\"") && value.endsWith("\"")
-                || value.startsWith("'") && value.endsWith("'"));
-        return quoted ? value.substring(1, value.length() - 1) : value;
     }
 
     /** A default that is only the argument's own name ({@code A=$A}, how the parser's retry writes {@code ARG A B}). */
