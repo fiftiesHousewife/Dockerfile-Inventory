@@ -40,7 +40,9 @@ and one line when its gate is met.
     slice 4, archetypes, k80 and k95; slice 5, base catalogue with the internal end-of-life list.
   - Done: slice 6, CSV tables and DDL for Oracle (loading undecided).
   - Done: slice 7, the HTML dashboard.
-  - Next: slice 8, `ReportMain`.
+  - Done: slice 8, `ReportRun` and `ReportMain`.
+  - Code complete. The gate (the written decision) needs real discovery and facts runs. Open: how the tables
+    reach Oracle (Q1).
 
 ## Queued
 

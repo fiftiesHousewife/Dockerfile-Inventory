@@ -15,7 +15,7 @@ The full plan, with each phase's gate, is the
 | 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; waiting on a GHE token for the pilot run |
 | 1. Parse each Dockerfile into facts | `facts` | Built; its rates need a discovery run |
 | 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; waiting on an Artifactory token for a real run |
-| 2. Cluster into archetypes; estate report | `report` | Not started |
+| 2. Cluster into archetypes; estate report | `report` | Built; its numbers need real discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Not started |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Not started |
 | 5. Convert existing Dockerfiles to builders | `converter` | Not started |
@@ -101,6 +101,29 @@ the Dockerfiles whose instructions match their build history.
 | `external-bases.jsonl` | Unmatched roots: external bases mirrored into Artifactory |
 | `outdated-bases.jsonl` | Images built on a base that has since been pushed again under the same name |
 | `rates.json` | Tags, images, skips, lineage coverage, links by tier, gaps |
+
+## Report on the estate
+
+```bash
+export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
+export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
+export LINEAGE_DIR=/data/lineage              # optional: effective users from the lineage stage
+export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate
+export OUT_DIR=/data/report
+./gradlew :report:run
+```
+
+Every Dockerfile location counts once. Dockerfiles are collapsed in four passes, cheapest first: identical files,
+files identical once comments and whitespace are normalised, files with the same signature (base family and major
+version, package managers and packages, user kind, ports, entrypoint form, stage count), and near-duplicates
+(package set and base family at least 80% similar). What is left are the archetypes.
+
+| File | Contents |
+| --- | --- |
+| `passes.json` | Groups and locations after each pass; k80 and k95, the fewest archetypes covering 80% and 95% of locations |
+| `archetypes.json` | Every archetype by size: its files, signature, a representative file and the repositories using it |
+| `tables/*.csv`, `tables/ddl.sql` | `dockerfiles`, `locations`, `archetypes` and `bases` for loading into Oracle, with the `CREATE TABLE` statements |
+| `dashboard.html` | One self-contained page: the counts, rates, top archetypes and bases, package managers and users |
 
 ## Contributing
 

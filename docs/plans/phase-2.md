@@ -1,6 +1,6 @@
 # Phase 2 — Cluster and report: plan
 
-Status: planned 6 Nov; questions answered. Slices 1 to 7 built 6 Nov. Slices are built test-first, as in the earlier phases.
+Status: planned 6 Nov; questions answered. All slices built 6 Nov; the decision waits on real discovery and facts runs. Slices are built test-first, as in the earlier phases.
 
 Phase 2 produces the number that sets strategy: how many archetypes cover 80% and 95% of the estate. Roughly 300
 or fewer at 95% means golden base images first and a small DSL; a long, diverse tail means recipes first and the
@@ -103,3 +103,6 @@ agreed (the decision paper is written by people from these numbers, not by the p
 
 8. **Run.** `ReportMain`: `FACTS_DIR`, `DISCOVERY_DIR`, `[LINEAGE_DIR]`, `[EOL_LIST]`, `OUT_DIR`. Writes
    `passes.json`, `archetypes.json`, the tables, the DDL and the dashboard. Untested, like the other mains.
+
+   As built: `ReportRun` holds the run and is tested on the facts fixtures; `ReportMain` only reads the
+   environment. Checked end to end with `./gradlew :report:run` on facts output made from sample Dockerfiles.

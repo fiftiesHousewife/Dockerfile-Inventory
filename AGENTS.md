@@ -49,9 +49,11 @@ lineage/                    Phase 1b: Artifactory images -> family tree -> Docke
                             Inventory: Artifactory -> images.jsonl, configs/; Analysis: everything else, rates
                             run: ARTIFACTORY_URL, ARTIFACTORY_TOKEN, FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [CONCURRENCY]
                             ./gradlew :lineage:run
-report/                     Phase 2 (in progress): facts + manifest (+ lineage) -> passes, archetypes, bases, tables
+report/                     Phase 2: facts + manifest (+ lineage) -> passes, archetypes, bases, tables, dashboard
                             Estate: every Dockerfile with its facts and locations, failures, effective users
                             Passes, NearDuplicates (MinHash), Archetypes (k80, k95), BaseCatalogue (EolList)
+                            Tables (CSV, DDL), Summary and Dashboard (HTML); ReportRun: the run
+                            run: FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [EOL_LIST] ./gradlew :report:run
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
