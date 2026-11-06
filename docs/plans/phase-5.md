@@ -1,6 +1,6 @@
 # Phase 5 — Converter: plan
 
-Status: planned 6 Nov; questions answered. Slices are built test-first, as in the earlier phases.
+Status: built 6 Nov; Phase 5b (building and comparing images, PRs) waits on Buildah and Phase 4b. Slices are built test-first, as in the earlier phases.
 
 Phase 5 maps a parsed Dockerfile to the Phase 4 model and emits a generated builder class; no image migrates
 unless it passes the round-trip check. Module: `converter`, which may import OpenRewrite and depends on `facts`
@@ -57,3 +57,14 @@ so it is Phase 5b; so is delivering PRs, which needs Phase 4b's job.
    environment. Untested, like the other mains.
    16. Passing blobs get a class; failing ones get a `roundtrip.jsonl` row with the difference and no class.
    17. Coverage and the reasons histogram are computed from the conversions.
+
+   As built: the dsl gained `ImageBuilder.of(model)` and `arg(name, default)`, so breaches can be listed for any
+   conversion. `ENV` values come from the parsed pairs; labels from the text (D5). The emitter's test compiles
+   the generated source with the JDK's compiler, loads it and checks its model and round trip.
+
+   Found by running it end to end on the real python 3.11 Dockerfile (passes, 92% typed): JavaPoet's file comment
+   is a format string, so a breach message holding `$INSTALL_PKGS` crashed the emitter; and backslash-newline
+   continuations inside quoted `ENV` and `LABEL` values were kept, where Docker removes them. The round trip did
+   not catch the second, because it compares `ENV` and `LABEL` by key and the converter misread both sides the
+   same way. A conversion that misreads consistently can only be caught by building and comparing the images,
+   which is why Phase 5b's semantic verification stays a gate.

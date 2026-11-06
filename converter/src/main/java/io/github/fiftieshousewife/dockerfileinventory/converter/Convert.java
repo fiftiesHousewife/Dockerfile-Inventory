@@ -112,6 +112,11 @@ public final class Convert {
                 .orElseGet(() -> new Instruction.Run(new RunBody.Shell(List.of(command))));
     }
 
+    /** Docker removes a backslash-newline before it reads an instruction, inside quotes too. */
+    static String withoutContinuations(String text) {
+        return text.replaceAll("\\\\\\r?\\n", "");
+    }
+
     /** One line: continuations joined, comment lines inside dropped (Docker drops them), whitespace collapsed. */
     static String joined(String text) {
         return text.lines()
@@ -151,7 +156,8 @@ public final class Convert {
     private static Map<String, String> env(Docker.Env env) {
         Map<String, String> values = new LinkedHashMap<>();
         env.getPairs().forEach(pair -> {
-            String value = pair.getValue() == null ? "" : text(pair.getValue());
+            Docker.Argument argument = pair.getValue();
+            String value = argument == null ? "" : withoutContinuations(text(argument));
             values.put(pair.getKey().getText(), value.equals("=") ? "" : unquote(value));
         });
         return values;
@@ -168,7 +174,7 @@ public final class Convert {
     }
 
     private static String afterKeyword(String instruction) {
-        String joined = instruction.replaceAll("\\\\\\r?\\n", " ").strip();
+        String joined = withoutContinuations(instruction).strip();
         int space = joined.indexOf(' ');
         return space < 0 ? "" : joined.substring(space + 1);
     }

@@ -61,12 +61,14 @@ rules/                      Phase 3: detect-only rules over facts, parsed Docker
                             run: DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [ALLOW_LIST], [EOL_LIST] ./gradlew :rules:run
 dsl/                        Phase 4: Dockerfile model, PackageInstallRenderer, DockerfileRenderer (Target), ImageBuilder
                             (Policy, PolicyViolation); goldens in src/test/resources/golden, checked by rules' tests
+converter/                  Phase 5: Convert (LST -> model, faithful), Installs, RoundTrip, JavaEmitter (JavaPoet)
+                            ConverterRun: blobs -> roundtrip.jsonl, coverage.json, generated classes for OPT_IN
+                            run: DISCOVERY_DIR, OUT_DIR, [OPT_IN], [ALLOW_LIST] ./gradlew :converter:run
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
 
 ```
-converter/    Phase 5: LST -> model -> generated builder class, round-trip gate
 ```
 
 ## Build and test

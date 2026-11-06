@@ -71,6 +71,14 @@ class JavaEmitterTest {
                 "public final class ServiceImage");
     }
 
+    @Test
+    void aBreachMessageHoldingDollarSignsIsWrittenAsItIs() {
+        String source = JavaEmitter.emit("com.example.images", "ServiceImage", Convert.of(Parsed.of(MULTISTAGE)),
+                List.of(new PolicyViolation.Breach("H1", "install $INSTALL_PKGS without a clean")));
+
+        assertThat(source).contains("// TODO(H1): install $INSTALL_PKGS without a clean");
+    }
+
     private Dockerfile run(String source) throws Exception {
         Path folder = classes.resolve("com/example/images");
         Files.createDirectories(folder);

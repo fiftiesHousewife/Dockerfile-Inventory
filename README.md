@@ -18,7 +18,7 @@ The full plan, with each phase's gate, is the
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need real discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
-| 5. Convert existing Dockerfiles to builders | `converter` | Not started |
+| 5. Convert existing Dockerfiles to builders | `converter` | Built; building and comparing images (5b) needs Buildah |
 
 ## Requirements
 
@@ -164,6 +164,26 @@ its line.
 
 `renovate/dockerfile-estate.json` is a Renovate preset for the central instance: Dockerfile bases pinned by
 digest, base updates grouped into one pull request per repository.
+
+## Convert Dockerfiles to builder classes
+
+```bash
+export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
+export OPT_IN=/data/opt-in.txt                # optional: owner/repo per line; only these get classes
+export ALLOW_LIST=/data/approved-bases.csv    # optional: approved bases, for the TODO list
+export OUT_DIR=/data/converter
+./gradlew :converter:run
+```
+
+Every distinct Dockerfile is converted to the builder model faithfully, so the generated class reproduces the
+image as it is, and is checked by a round trip: the rendered conversion must parse back to the same model and
+have the same instructions as the original. Policy breaches become `// TODO(<rule>)` comments, for later fixes.
+
+| File | Contents |
+| --- | --- |
+| `generated/images/<owner>/<Name>Image.java` | One builder class per opted-in Dockerfile that passed the round trip |
+| `roundtrip.jsonl` | Each Dockerfile, whether it passed, and the first difference when not |
+| `coverage.json` | Typed instructions over all instructions per Dockerfile, and how often each reason left an instruction untyped |
 
 ## Contributing
 

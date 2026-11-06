@@ -66,7 +66,7 @@ public final class JavaEmitter {
                 .build();
         JavaFile.Builder file = JavaFile.builder(packageName, type).skipJavaLangImports(true);
         if (!breaches.isEmpty()) {
-            file.addFileComment(breaches.stream().map(b -> "TODO(" + b.rule() + "): " + b.message())
+            file.addFileComment("$L", breaches.stream().map(b -> "TODO(" + b.rule() + "): " + b.message())
                     .collect(Collectors.joining("\n")));
         }
         return file.build().toString();

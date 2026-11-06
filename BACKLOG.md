@@ -64,6 +64,8 @@ and one line when its gate is met.
 
 - Phase 5 — Converter. Plan: `docs/plans/phase-5.md` (questions answered 6 Nov). Gate: round-trip equivalence;
   opt-in per team. Phase 5b (building and comparing images, delivering PRs) needs Buildah and Phase 4b.
+  - Done: faithful conversion, round trip, JavaPoet classes with TODOs, coverage and raw-reason histogram,
+    `ConverterMain`. Next: run on real discovery output; Phase 5b.
 
 ## Queued
 

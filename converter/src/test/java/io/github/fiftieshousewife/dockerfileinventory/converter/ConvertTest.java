@@ -117,6 +117,21 @@ class ConvertTest {
                 new Instruction.Raw("VOLUME /data", "VOLUME is not modelled"));
     }
 
+    @Test
+    void continuationsInsideEnvAndLabelValuesAreRemovedAsDockerRemovesThem() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                ENV DESCRIPTION="one \\
+                two"
+                LABEL summary="three \\
+                four" team=x
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(
+                new Instruction.Env(java.util.Map.of("DESCRIPTION", "one two")),
+                new Instruction.Label(java.util.Map.of("summary", "three four", "team", "x")));
+    }
+
     private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {
         return new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages)));
     }
