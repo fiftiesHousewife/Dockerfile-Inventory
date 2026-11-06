@@ -29,7 +29,7 @@ public final class ShellTokeniser {
 
     /** First words that open compound commands this reader does not follow. */
     private static final Set<String> COMPOUND = Set.of(
-            "case", "esac", "for", "select", "while", "until", "do", "done", "function");
+            "for", "select", "while", "until", "do", "done", "function");
 
     /**
      * An {@code if}'s keywords and a group's braces: dropped, so its condition and every branch's commands are read
@@ -56,6 +56,12 @@ public final class ShellTokeniser {
     private boolean opaque;
     /** Open {@code ( ... )} subshells: their commands are read as the RUN's own. */
     private int subshells;
+    /**
+     * Open {@code case}s, and whether a pattern ({@code amd64)}, {@code a|b)}) comes next: every branch's commands
+     * are read, as an {@code if}'s are, and the patterns are not commands.
+     */
+    private int cases;
+    private boolean expectingPattern;
     private boolean pipedInto;
     private boolean targetNext;
     private boolean wordQuoted;
@@ -93,6 +99,13 @@ public final class ShellTokeniser {
                 i = substitution(i);
             } else if (c == '`') {
                 i = backticks(i);
+            } else if (c == ')' && (expectingPattern || caseHeader())) {
+                cases += caseHeader() ? 1 : 0;
+                word.setLength(0);
+                command.clear();
+                expectingPattern = false;
+            } else if (c == '|' && (expectingPattern || caseHeader())) {
+                word.append(c);
             } else if (c == '(' && word.isEmpty()) {
                 endCommand();
                 subshells++;
@@ -109,6 +122,10 @@ public final class ShellTokeniser {
                 endWord();
             } else if (c == ';') {
                 endCommand();
+                if (next(i) == ';') {
+                    expectingPattern = cases > 0;
+                    i++;
+                }
             } else if ((c == '&' || c == '|') && next(i) == c) {
                 endCommand();
                 i++;
@@ -224,6 +241,11 @@ public final class ShellTokeniser {
         return c == '$' ? LITERAL_DOLLAR : c;
     }
 
+    /** Inside {@code case WORD in}, before its first pattern has closed. */
+    private boolean caseHeader() {
+        return !command.isEmpty() && command.getFirst().equals("case");
+    }
+
     private char next(int i) {
         return i + 1 < script.length() ? script.charAt(i + 1) : 0;
     }
@@ -258,6 +280,15 @@ public final class ShellTokeniser {
     private void endCommand() {
         endWord();
         while (!command.isEmpty() && BRANCHES.contains(command.getFirst())) {
+            command.removeFirst();
+        }
+        if (!command.isEmpty() && command.getFirst().equals("case")) {
+            cases++;
+            expectingPattern = true;
+            command.clear();
+        } else if (!command.isEmpty() && command.getFirst().equals("esac")) {
+            cases--;
+            expectingPattern = false;
             command.removeFirst();
         }
         if (!command.isEmpty()) {

@@ -45,7 +45,6 @@ class ShellTokeniserTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "case $ARCH in x86_64) echo a;; esac",
         "for p in a b; do echo $p; done",
         "while true; do sleep 1; done",
         "until false; do sleep 1; done",
@@ -164,5 +163,21 @@ class ShellTokeniserTest {
         assertThat(ShellTokeniser.parse("{ echo a; dnf install -y git; } > /tmp/log && ( cd /src && make install )"))
                 .contains(List.of(List.of("echo", "a"), List.of("dnf", "install", "-y", "git"), List.of("cd", "/src"),
                         List.of("make", "install")));
+    }
+
+    @Test
+    void everyBranchOfACaseIsReadButNotItsPatterns() {
+        String script = "dpkgArch=\"$(dpkg --print-architecture)\"; case \"$dpkgArch\" in\n"
+                + "  amd64) ARCH=x64 ;;\n  arm64|aarch64) ARCH=arm64; apk add musl-dev ;;\n"
+                + "  *) echo unsupported; exit 1 ;;\nesac; make";
+
+        assertThat(ShellTokeniser.parse(script)).contains(List.of(List.of("apk", "add", "musl-dev"),
+                List.of("echo", "unsupported"), List.of("exit", "1"), List.of("make")));
+    }
+
+    @Test
+    void aCaseWhoseFirstPatternSharesTheHeadersLineIsReadToo() {
+        assertThat(ShellTokeniser.parse("case \"$arch\" in amd64) apk add a ;; *) apk add b ;; esac"))
+                .contains(List.of(List.of("apk", "add", "a"), List.of("apk", "add", "b")));
     }
 }
