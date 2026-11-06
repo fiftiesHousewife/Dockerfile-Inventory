@@ -1,21 +1,14 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.openrewrite.docker.tree.Docker;
 
 /** S2: a secret-shaped {@code ENV} or {@code ARG} value baked into the image. Only a hash and the line are kept. */
 public final class SecretValue implements Rule {
-
-    private static final List<String> SECRET_WORDS = List.of("PASSWORD", "PASSWD", "SECRET", "TOKEN", "CREDENTIAL");
-    private static final List<Pattern> SECRET_SHAPES = List.of(
-            Pattern.compile("-----BEGIN [A-Z ]*PRIVATE KEY-----"),
-            Pattern.compile("\\bAKIA[0-9A-Z]{16}\\b"),
-            Pattern.compile("\\beyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+"));
 
     @Override
     public String id() {
@@ -58,20 +51,13 @@ public final class SecretValue implements Rule {
                 keyword + " " + name + " has a secret-shaped value", Hashes.sha256(literal.get()), List.of()));
     }
 
-    /**
-     * Names are matched by their parts (split on {@code _}, {@code -} and {@code .}): {@code KEY} only as a whole part,
-     * so {@code VALKEY_PREFIX} and {@code KEYCLOAK_URL} do not count; the longer words anywhere in a part, so
-     * {@code DBPASSWORD} does.
-     */
+    /** As {@link Secrets#secretName}; kept here so S2's tests read as before. */
     static boolean secretName(String name) {
-        List<String> parts = List.of(name.toUpperCase(Locale.ROOT).split("[_.\\-]+"));
-        return parts.contains("KEY")
-                || parts.stream().anyMatch(part -> SECRET_WORDS.stream().anyMatch(part::contains));
+        return Secrets.secretName(name);
     }
 
-    /** Values that are secrets whatever they are called: a private key, an AWS access key ID, a JWT. */
     static boolean secretShape(String value) {
-        return SECRET_SHAPES.stream().anyMatch(shape -> shape.matcher(value).find());
+        return Secrets.secretShape(value);
     }
 
     /**

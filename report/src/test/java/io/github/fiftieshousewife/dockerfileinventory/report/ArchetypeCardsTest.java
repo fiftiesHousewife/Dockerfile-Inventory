@@ -82,4 +82,31 @@ class ArchetypeCardsTest {
                         "Templates saved under a Dockerfile's name (Jinja and similar), not Dockerfiles.", 1, 1,
                         List.of("org/tpl"), "org/tpl: src/Dockerfile", "FROM {{ spec.base }}\n"));
     }
+
+    @Test
+    void anExamplesSecretValuesAreHiddenBeforeItIsShown(@TempDir Path discovery) throws IOException {
+        Files.createDirectories(discovery.resolve("blobs"));
+        Files.writeString(discovery.resolve("blobs/s1"), """
+                FROM ubi9
+                ENV DB_PASSWORD=hunter2 APP_NAME=shop
+                ARG NPM_TOKEN="abc def"
+                ENV API_KEY s3cr3t
+                LABEL build.secret='x'
+                RUN aws configure set key AKIAIOSFODNN7EXAMPLE && echo done
+                """);
+        Dockerfile file = new Dockerfile("s1", "t", "s", "ubi:9|||ROOT||NONE|stages=1", new Base("ubi9", null, null),
+                Set.of(), Set.of(), "ROOT", 1, 0, List.of(new Location("org/app", "Dockerfile", "RELEASED")));
+        Archetype archetype = new Archetype(1, "k", 1, List.of("s1"), file.signature(), "s1", List.of("org/app"));
+
+        assertThat(ArchetypeCards.of(new Ranking(List.of(archetype), 1, 1, 1),
+                new Estate(List.of(file), List.of(), List.of(), Map.of()), discovery).getFirst().exampleText())
+                .isEqualTo("""
+                        FROM ubi9
+                        ENV DB_PASSWORD=(hidden) APP_NAME=shop
+                        ARG NPM_TOKEN=(hidden)
+                        ENV API_KEY (hidden)
+                        LABEL build.secret=(hidden)
+                        RUN aws configure set key (hidden) && echo done
+                        """);
+    }
 }

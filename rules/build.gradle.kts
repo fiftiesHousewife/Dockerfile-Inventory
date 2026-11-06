@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     implementation(project(":facts"))
+    implementation(project(":dsl"))
     implementation(platform(libs.rewrite.bom))
     implementation(libs.rewrite.core)
     implementation(libs.rewrite.docker)

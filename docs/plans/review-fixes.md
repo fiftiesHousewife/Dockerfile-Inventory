@@ -1,13 +1,13 @@
 # Fixes from the code review of 6 Nov: plan
 
-Status: planned 6 Nov; R1 waits on the owner's answer.
+Status: R1 built 6 Nov; R2 next.
 
 A code review of the session's changes (`c0da31d^..HEAD`) found nine likely bugs and one rule breach, all from
 reading the code. Each is fixed test-first: a failing test from the reviewer's scenario, then the fix.
 
 | # | Problem | Fix | Module |
 | --- | --- | --- | --- |
-| R1 | Archetype cards copy whole Dockerfiles into the dashboard, so a secret-shaped `ENV`/`ARG` value would be written out (AGENTS.md forbids it) | Owner's question, below | `report` |
+| R1 | Archetype cards copy whole Dockerfiles into the dashboard, so a secret-shaped `ENV`/`ARG` value would be written out (AGENTS.md forbids it) | Done 6 Nov (owner's choice): the example is shown with secret values hidden: on `ENV`/`ARG`/`LABEL` lines the value of a secret-shaped name, in either form, and any secret-shaped value anywhere. The name and shape rules moved from `rules` to `dsl.Secrets`, shared by S2 and the report | `report`, `dsl`, `rules` |
 | R2 | A word in an exec form that is not valid JSON throws out of the converter and stops the whole run | Such an instruction becomes `Raw` ("exec form that is not valid JSON"), as Docker itself falls back to shell form | `converter` |
 | R3 | `ARG A B` rewritten `ARG A=$A B=$B` loses a global default inside a stage | Facts treats a default that is the ARG's own name (`$A`, `${A}`) as no default, so the global one is inherited | `facts` |
 | R4 | The retry's rewrites touch quoted `ARG` values, continued lines and heredoc bodies | Rewrites apply only to an instruction's own lines outside heredoc bodies; `ARG A B` only when every word is a plain name and the line is not continued | `facts` |
@@ -23,4 +23,4 @@ Order: R1, R2 and R3 (a leak, a crash, wrong facts), then R4 to R11.
 
 ## Questions
 
-1. R1: how the cards show their example Dockerfile.
+1. R1: how the cards show their example Dockerfile. Answered 6 Nov: shown, with secret values hidden.

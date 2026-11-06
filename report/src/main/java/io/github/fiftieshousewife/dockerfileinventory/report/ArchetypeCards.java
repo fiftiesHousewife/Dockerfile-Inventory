@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -13,6 +14,13 @@ import java.util.stream.Collectors;
 final class ArchetypeCards {
 
     private static final int PACKAGES_NAMED = 4;
+    private static final java.util.regex.Pattern PAIRS_INSTRUCTION =
+            java.util.regex.Pattern.compile("(?i)\\s*(ENV|ARG|LABEL)\\s");
+    /** {@code ENV NAME value with spaces}, the legacy form: one name, then its value. */
+    private static final java.util.regex.Pattern LEGACY_PAIR =
+            java.util.regex.Pattern.compile("(?i)(\\s*(?:ENV|LABEL)\\s+([A-Za-z_][\\w.-]*)\\s+)[^=\\s].*");
+    private static final java.util.regex.Pattern PAIR =
+            java.util.regex.Pattern.compile("([A-Za-z_][\\w.-]*)=(\"(?:[^\"\\\\]|\\\\.)*\"|'[^']*'|[^\\s\\\\]+)");
 
     /**
      * One archetype as the dashboard shows it. The example is the representative file (a failure's, for the
@@ -47,9 +55,37 @@ final class ArchetypeCards {
         }).toList();
     }
 
+    /**
+     * The example with its secrets hidden, as AGENTS.md requires of anything written out: on {@code ENV}, {@code ARG}
+     * and {@code LABEL} lines (continuations included) the value of a secret-shaped name, in either form, and
+     * anywhere a value shaped like a secret.
+     */
+    static String hidden(String dockerfile) {
+        StringBuilder out = new StringBuilder();
+        boolean pairs = false;
+        for (String line : dockerfile.split("\n", -1)) {
+            boolean starts = PAIRS_INSTRUCTION.matcher(line).lookingAt();
+            if (starts || pairs) {
+                line = hidePairs(line, starts);
+            }
+            pairs = (starts || pairs) && line.stripTrailing().endsWith("\\");
+            out.append(Secrets.hideShapes(line)).append('\n');
+        }
+        return out.substring(0, out.length() - 1);
+    }
+
+    private static String hidePairs(String line, boolean starts) {
+        var legacy = LEGACY_PAIR.matcher(line);
+        if (starts && legacy.matches()) {
+            return Secrets.secretName(legacy.group(2)) ? legacy.group(1) + "(hidden)" : line;
+        }
+        return PAIR.matcher(line).replaceAll(m -> java.util.regex.Matcher.quoteReplacement(
+                Secrets.secretName(m.group(1)) ? m.group(1) + "=(hidden)" : m.group()));
+    }
+
     private static String text(Path blob) {
         try {
-            return Files.exists(blob) ? Files.readString(blob) : null;
+            return Files.exists(blob) ? hidden(Files.readString(blob)) : null;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
