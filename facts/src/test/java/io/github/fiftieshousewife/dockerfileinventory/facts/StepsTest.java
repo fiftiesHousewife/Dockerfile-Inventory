@@ -18,6 +18,20 @@ class StepsTest {
                 """)).containsExactly(new Step("RUN", "microdnf install -y git && microdnf clean all"));
     }
 
+    @Test
+    void execFormAndHeredocRunAreKeptAsWrittenAndCollapsed() {
+        assertThat(steps("""
+                FROM ubi9/ubi-minimal
+                RUN ["microdnf",   "install", "-y", "git"]
+                RUN <<EOT
+                set -e
+                microdnf clean all
+                EOT
+                """)).containsExactly(
+                        new Step("RUN", "[\"microdnf\", \"install\", \"-y\", \"git\"]"),
+                        new Step("RUN", "<<EOT set -e microdnf clean all EOT"));
+    }
+
     static List<Step> steps(String dockerfile) {
         ParseResult parsed = new FactsParser().parse("sha", dockerfile);
         assertThat(parsed).isInstanceOf(ParseResult.Parsed.class);
