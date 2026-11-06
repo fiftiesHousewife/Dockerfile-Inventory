@@ -21,7 +21,11 @@ public final class HistoryNormaliser {
     }
 
     public static NormalStep normalise(HistoryStep step) {
-        String body = collapse(step.createdBy().substring(SHELL.length()));
+        String text = collapse(step.createdBy() == null ? "" : step.createdBy());
+        if (!text.startsWith(SHELL)) {
+            return new NormalStep("OTHER", text, null, false);
+        }
+        String body = text.substring(SHELL.length());
         if (!body.startsWith(NOP)) {
             return new NormalStep("RUN", withoutBuilderPrefix(body), null, false);
         }
@@ -35,7 +39,7 @@ public final class HistoryNormaliser {
             case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
             case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD" ->
                     new NormalStep(keyword, value, null, false);
-            default -> new NormalStep("OTHER", body, null, false);
+            default -> new NormalStep("OTHER", text, null, false);
         };
     }
 

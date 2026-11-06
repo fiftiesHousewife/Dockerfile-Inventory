@@ -62,6 +62,14 @@ class HistoryNormaliserTest {
                         "SHELL [\"/bin/bash\", \"-c\"]", "ONBUILD RUN make");
     }
 
+    @Test
+    void anythingElseIsOtherWithItsCollapsedText() {
+        assertThat(normalise("/bin/sh -c #(nop) FROBNICATE   x"))
+                .isEqualTo(new NormalStep("OTHER", "/bin/sh -c #(nop) FROBNICATE x", null, false));
+        assertThat(normalise("|1 VERSION=1   /bin/sh -c make").text()).isEqualTo("|1 VERSION=1 /bin/sh -c make");
+        assertThat(normalise(null)).isEqualTo(new NormalStep("OTHER", "", null, false));
+    }
+
     private static NormalStep normalise(String createdBy) {
         return HistoryNormaliser.normalise(new HistoryStep(createdBy, null, false, null));
     }
