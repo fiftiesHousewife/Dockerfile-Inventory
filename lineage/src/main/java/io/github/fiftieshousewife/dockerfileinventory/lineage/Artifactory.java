@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import java.util.List;
+import java.util.Optional;
 
 /** What lineage needs from Artifactory, over REST only (no AQL), so the run can be tested against a fake. */
 public interface Artifactory {
@@ -13,4 +14,7 @@ public interface Artifactory {
 
     /** An image's tags; empty when it has none or no longer exists. */
     List<String> tags(String repository, String image);
+
+    /** The manifest or manifest list a tag or digest names; empty when it no longer exists. */
+    Optional<Manifest> manifest(String repository, String image, String reference);
 }

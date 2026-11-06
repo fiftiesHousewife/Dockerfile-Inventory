@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -21,6 +22,13 @@ public final class ArtifactoryHttp implements Artifactory {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(60);
     private static final int PAGE_SIZE = 1000;
+
+    /** Every manifest and index type, Docker and OCI, so a manifest list comes back as a list and not one platform. */
+    private static final String MANIFEST_TYPES = String.join(", ",
+            "application/vnd.docker.distribution.manifest.v2+json",
+            "application/vnd.docker.distribution.manifest.list.v2+json",
+            "application/vnd.oci.image.manifest.v1+json",
+            "application/vnd.oci.image.index.v1+json");
 
     private final HttpClient http;
     private final URI base;
@@ -56,6 +64,13 @@ public final class ArtifactoryHttp implements Artifactory {
         return paged("api/docker/%s/v2/%s/tags/list".formatted(repository, image), "tags");
     }
 
+    @Override
+    public Optional<Manifest> manifest(String repository, String image, String reference) {
+        return get("api/docker/%s/v2/%s/manifests/%s".formatted(repository, image, reference), MANIFEST_TYPES)
+                .map(r -> new Manifest(r.headers().firstValue("Content-Type").orElse(""),
+                        r.headers().firstValue("Docker-Content-Digest").orElse(""), r.body()));
+    }
+
     /**
      * Docker v2 paging: {@code n} per page, {@code last} the final entry of the previous page. Artifactory does not
      * always send a {@code Link} header, so a page shorter than {@code n} is taken as the end.
@@ -72,14 +87,26 @@ public final class ArtifactoryHttp implements Artifactory {
         return all;
     }
 
+    /** A JSON GET; a 404 reads as an empty document, so callers see nothing listed. */
     private JsonNode getJson(String path) {
+        return get(path, "application/json").map(r -> json.readTree(r.body())).orElseGet(json::createObjectNode);
+    }
+
+    /** A GET; empty for 404, which here means the image, tag or blob no longer exists. */
+    private Optional<HttpResponse<String>> get(String path, String accept) {
         HttpRequest request = HttpRequest.newBuilder(base.resolve(path))
                 .timeout(TIMEOUT)
                 .header("Authorization", "Bearer " + token)
+                .header("Accept", accept)
                 .GET()
                 .build();
+        HttpResponse<String> response = send(request);
+        return response.statusCode() == 404 ? Optional.empty() : Optional.of(response);
+    }
+
+    private HttpResponse<String> send(HttpRequest request) {
         try {
-            return json.readTree(http.send(request, HttpResponse.BodyHandlers.ofString()).body());
+            return http.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
             throw new ArtifactoryException("GET " + request.uri() + " failed", e);
         } catch (InterruptedException e) {

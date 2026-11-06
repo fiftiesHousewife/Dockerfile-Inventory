@@ -22,6 +22,7 @@ class ArtifactoryHttpTest {
     private ArtifactoryHttp artifactory;
     private final List<String> requests = new ArrayList<>();
     private final List<String> authorizations = new ArrayList<>();
+    private final List<String> accepts = new ArrayList<>();
 
     @BeforeEach
     void start() throws IOException {
@@ -71,6 +72,29 @@ class ArtifactoryHttpTest {
         assertThat(requests).contains("GET /artifactory/api/docker/docker-local/v2/team/app/tags/list?n=2&last=1.1");
     }
 
+    @Test
+    void fetchesAManifestAcceptingEveryManifestAndIndexTypeWithItsMediaTypeAndDigest() {
+        route("/artifactory/api/docker/docker-local/v2/team/app/manifests/1.0", exchange -> {
+            accepts.add(exchange.getRequestHeaders().getFirst("Accept"));
+            exchange.getResponseHeaders().add("Docker-Content-Digest", "sha256:" + "a".repeat(64));
+            respond(exchange, 200, "manifest-list.json", "application/vnd.docker.distribution.manifest.list.v2+json");
+        });
+        route("/artifactory/api/docker/docker-local/v2/team/app/manifests/gone",
+                exchange -> respond(exchange, 404, "name-unknown.json"));
+
+        assertThat(artifactory.manifest("docker-local", "team/app", "1.0")).hasValueSatisfying(m -> {
+            assertThat(m.mediaType()).isEqualTo("application/vnd.docker.distribution.manifest.list.v2+json");
+            assertThat(m.digest()).isEqualTo("sha256:" + "a".repeat(64));
+            assertThat(m.body()).contains("\"architecture\": \"amd64\"");
+        });
+        assertThat(artifactory.manifest("docker-local", "team/app", "gone")).isEmpty();
+        assertThat(accepts.getFirst()).contains(
+                "application/vnd.docker.distribution.manifest.v2+json",
+                "application/vnd.docker.distribution.manifest.list.v2+json",
+                "application/vnd.oci.image.manifest.v1+json",
+                "application/vnd.oci.image.index.v1+json");
+    }
+
     private interface Handler {
         void handle(HttpExchange exchange) throws IOException;
     }
@@ -84,8 +108,13 @@ class ArtifactoryHttpTest {
     }
 
     private static void respond(HttpExchange exchange, int status, String fixture) throws IOException {
+        respond(exchange, status, fixture, "application/json");
+    }
+
+    private static void respond(HttpExchange exchange, int status, String fixture, String contentType)
+            throws IOException {
         byte[] body = fixture(fixture);
-        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.getResponseHeaders().add("Content-Type", contentType);
         exchange.sendResponseHeaders(status, body.length == 0 ? -1 : body.length);
         try (var out = exchange.getResponseBody()) {
             out.write(body);
