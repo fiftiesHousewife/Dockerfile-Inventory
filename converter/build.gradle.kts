@@ -25,3 +25,8 @@ application {
 tasks.test {
     inputs.dir("../testdata").withPropertyName("contracts")
 }
+
+// The round-trip test converts the real Dockerfile kept as a facts fixture.
+tasks.test {
+    inputs.dir("../facts/src/test/resources/fixtures/dockerfiles").withPropertyName("dockerfiles")
+}
