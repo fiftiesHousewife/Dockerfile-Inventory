@@ -28,6 +28,9 @@ public final class FactsParser {
     public static final String TEMPLATE = "a template, not a Dockerfile";
 
     private static final Pattern TEMPLATE_MARKER = Pattern.compile("\\{%.*%}|\\{\\{.*}}");
+    /** Jinja only: a block tag, or {@code {{ name.path }}}. Go's {@code {{.Id}}} and {@code {{ index .X }}} differ. */
+    private static final Pattern JINJA =
+            Pattern.compile("\\{%.*%}|\\{\\{\\s+[A-Za-z_]\\w*(\\.[A-Za-z_]\\w*)*\\s*(\\|[^}]*)?}}");
     private static final Pattern HEREDOC = Pattern.compile("<<-?['\"]?(\\w+)");
 
     private final DockerParser parser = DockerParser.builder().build();
@@ -42,7 +45,8 @@ public final class FactsParser {
     public ParseResult parse(String blobSha, String text) {
         ParseResult first = attempt(blobSha, text);
         if (first instanceof ParseResult.Parsed) {
-            return first;
+            return jinja(text).<ParseResult>map(line -> new ParseResult.Failed(blobSha, TEMPLATE + " (" + line
+                    + "); it parses, as its markers happen to be valid Dockerfile text")).orElse(first);
         }
         ParseResult second = attempt(blobSha, withoutComments(text));
         if (second instanceof ParseResult.Parsed) {
@@ -55,8 +59,16 @@ public final class FactsParser {
     }
 
     /**
+     * The first line holding Jinja's markers, which make even a file that parses a template: Jinja's
+     * {@code {{ spec.version }}} is valid in a {@code FROM} or an {@code ENV}, but no real Dockerfile holds it.
+     */
+    static Optional<String> jinja(String text) {
+        return text.lines().filter(line -> JINJA.matcher(line).find()).map(String::strip).findFirst();
+    }
+
+    /**
      * The first line holding Jinja or Go template markers ({@code {% if %}}, {@code {{ spec.version }}}). Asked only
-     * of a file that failed to parse, so a {@code docker inspect --format '{{.Id}}'} in a valid file is never one.
+     * of a file that failed to parse, so a {@code docker inspect --format '{{.Id}}'} in a valid file is not one.
      */
     static Optional<String> template(String text) {
         return text.lines().filter(line -> TEMPLATE_MARKER.matcher(line).find()).map(String::strip).findFirst();

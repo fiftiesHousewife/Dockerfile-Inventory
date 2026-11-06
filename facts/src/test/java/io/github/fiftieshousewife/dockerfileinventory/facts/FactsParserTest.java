@@ -128,9 +128,26 @@ class FactsParserTest {
     }
 
     @Test
-    void aFileThatParsesIsNeverATemplate() {
-        assertThat(new FactsParser().parse("ok", "FROM ubi9\nRUN docker inspect --format '{{.Id}}' x\n"))
-                .isInstanceOf(ParseResult.Parsed.class);
+    void aFileThatParsesButHoldsJinjaMarkersIsATemplate() throws IOException {
+        ParseResult result = new FactsParser().parse("tpl", fixture("mariadb-jinja-template-that-parses.Dockerfile"));
+
+        assertThat(result).isInstanceOfSatisfying(ParseResult.Failed.class, failed -> assertThat(failed.message())
+                .startsWith(FactsParser.TEMPLATE).contains("{{ spec.s2i_base }}"));
+    }
+
+    @Test
+    void aJinjaBlockTagMakesAParsingFileATemplate() {
+        assertThat(new FactsParser().parse("tpl", "FROM ubi9\nLABEL a=\"{% if x %}y{% endif %}\"\n"))
+                .isInstanceOf(ParseResult.Failed.class);
+    }
+
+    @Test
+    void aGoTemplateInAValidFileIsNotATemplate() {
+        assertThat(new FactsParser().parse("ok", """
+                FROM ubi9
+                RUN docker inspect --format '{{.Id}}' x && docker inspect --format '{{ .Config.User }}' x \\
+                    && docker inspect --format '{{ index .Config.Labels "name" }}' x
+                """)).isInstanceOf(ParseResult.Parsed.class);
     }
 
     @Test

@@ -8,3 +8,5 @@ Jinja template saved under a Dockerfile's name, which no Dockerfile parser can r
 a line holding only a backslash after a `COPY`, which rewrite-docker 8.90.4 glues onto the `COPY`.
 `origin-atomic-registry-single-quoted-label.Dockerfile` is trimmed from sclorg's `origin`
 (`examples/atomic-registry/systemd/Dockerfile`): `LABEL` values in single quotes continued over several lines.
+`mariadb-jinja-template-that-parses.Dockerfile` is the first 15 lines of sclorg's `mariadb-container`
+`src/Dockerfile.fedora`: a Jinja template whose markers happen to be valid Dockerfile syntax, so it parses.
