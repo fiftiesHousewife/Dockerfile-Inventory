@@ -26,6 +26,16 @@ class LineageTest {
                 .containsEntry("child", new Parent.Of("base"));
     }
 
+    @Test
+    void siblingsThatDivergeAfterTheirParentsLayersAreNotEachOthersParent() {
+        Map<String, Parent> parents = Lineage.of(List.of(
+                node("base", "L1", "L2"), node("api", "L1", "L2", "A"), node("worker", "L1", "L2", "W", "W2")));
+
+        assertThat(parents)
+                .containsEntry("api", new Parent.Of("base"))
+                .containsEntry("worker", new Parent.Of("base"));
+    }
+
     private static Resolved.Node node(String digest, String... layers) {
         return node(digest, List.of(layers), List.of());
     }
