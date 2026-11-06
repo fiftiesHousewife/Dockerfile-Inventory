@@ -261,6 +261,17 @@ or queued for curation; gap list published and reviewed.
 7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with
    repository, image, tags and last push. Also `outdated-bases.jsonl` (Q12): images whose parent is not the newest
    push of that parent's image name.
+
+   Design: the run knows each node's references (repository, image name, tag, last push); `Gaps.of(images,
+   parents, links)` takes each node with its references and returns three lists. "Image name" means the
+   Artifactory image name without the repository, so a build promoted from `docker-dev` to `docker-prod` is one
+   name (Q10). Tests, in order:
+   1. A non-root image with no link is a gap, with its references and latest push.
+   2. A root with no link is an external base (D1), not a gap.
+   3. A linked image, at any tier, is neither.
+   4. An image whose parent is not the newest push of the parent's image name is outdated, naming the newer image.
+   5. The same image name in two repositories is one name.
+   6. A parent that is the newest push is not outdated; for an ambiguous parent, it is enough that any candidate is.
 8. **Run and rates**: lineage coverage, link tiers, gap count, skipped non-amd64 images.
 
 ## Phase 2 after this
