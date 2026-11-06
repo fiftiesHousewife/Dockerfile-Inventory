@@ -29,13 +29,13 @@ public final class ShellTokeniser {
 
     /** First words that open compound commands this reader does not follow. */
     private static final Set<String> COMPOUND = Set.of(
-            "case", "esac", "for", "select", "while", "until", "do", "done", "function", "{", "}");
+            "case", "esac", "for", "select", "while", "until", "do", "done", "function");
 
     /**
-     * An {@code if}'s keywords: dropped, so its condition and every branch's commands are read (the owner's choice,
-     * 6 Nov): a package installed on one branch counts as one the Dockerfile can install.
+     * An {@code if}'s keywords and a group's braces: dropped, so its condition and every branch's commands are read
+     * (the owner's choice, 6 Nov): a package installed on one branch counts as one the Dockerfile can install.
      */
-    private static final Set<String> BRANCHES = Set.of("if", "then", "elif", "else", "fi");
+    private static final Set<String> BRANCHES = Set.of("if", "then", "elif", "else", "fi", "{", "}");
 
     /** A pipe into one of these runs downloaded or generated code nobody can read here. */
     private static final Set<String> SHELLS = Set.of("sh", "bash", "ash", "dash", "zsh", "ksh");
@@ -54,6 +54,8 @@ public final class ShellTokeniser {
     private List<String> command = new ArrayList<>();
     private final StringBuilder word = new StringBuilder();
     private boolean opaque;
+    /** Open {@code ( ... )} subshells: their commands are read as the RUN's own. */
+    private int subshells;
     private boolean pipedInto;
     private boolean targetNext;
     private boolean wordQuoted;
@@ -91,6 +93,12 @@ public final class ShellTokeniser {
                 i = substitution(i);
             } else if (c == '`') {
                 i = backticks(i);
+            } else if (c == '(' && word.isEmpty()) {
+                endCommand();
+                subshells++;
+            } else if (c == ')' && subshells > 0) {
+                endCommand();
+                subshells--;
             } else if (c == '(' || c == ')' || (c == '<' && next(i) == '<')) {
                 opaque = true;
             } else if (c == '#' && word.isEmpty()) {

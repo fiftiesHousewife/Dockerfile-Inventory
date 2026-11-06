@@ -49,8 +49,6 @@ class ShellTokeniserTest {
         "for p in a b; do echo $p; done",
         "while true; do sleep 1; done",
         "until false; do sleep 1; done",
-        "(cd /tmp && make)",
-        "{ echo a; echo b; }",
         "install_all() { echo a; }",
         "cat <<EOF > /etc/x",
         "echo 'unterminated",
@@ -159,5 +157,12 @@ class ShellTokeniserTest {
     void aSingleQuotedOrEscapedDollarInAnAssignmentIsNotExpanded() {
         assertThat(ShellTokeniser.assignments("B=x && A='$B' && C=\"$B\" && D=\\$B && E=$B"))
                 .containsEntry("A", "$B").containsEntry("C", "x").containsEntry("D", "$B").containsEntry("E", "x");
+    }
+
+    @Test
+    void aGroupOrASubshellIsReadAsItsCommands() {
+        assertThat(ShellTokeniser.parse("{ echo a; dnf install -y git; } > /tmp/log && ( cd /src && make install )"))
+                .contains(List.of(List.of("echo", "a"), List.of("dnf", "install", "-y", "git"), List.of("cd", "/src"),
+                        List.of("make", "install")));
     }
 }
