@@ -1,0 +1,18 @@
+{
+  "architecture": "amd64",
+  "os": "linux",
+  "config": {"User": "1001"},
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    ]
+  },
+  "history": [
+    {"created": "2026-09-01T00:00:00Z", "created_by": "/bin/sh -c #(nop) ADD file:base in / "},
+    {"created": "2026-09-01T00:00:01Z", "created_by": "/bin/sh -c #(nop) LABEL name=base", "empty_layer": true},
+    {"created": "2026-10-02T10:00:00Z", "created_by": "/bin/sh -c microdnf install -y git", "comment": "FROM base:1"},
+    {"created": "2026-10-02T10:00:05Z", "created_by": "/bin/sh -c #(nop) USER 1001", "empty_layer": true}
+  ]
+}

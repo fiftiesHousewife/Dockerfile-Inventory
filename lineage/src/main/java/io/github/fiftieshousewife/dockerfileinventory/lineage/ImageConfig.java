@@ -10,12 +10,13 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /** What lineage reads from an image config: its layers, the user it runs as, and its labels. */
-public record ImageConfig(List<String> diffIds, String user, Map<String, String> labels) {
+public record ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels) {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     public ImageConfig {
         diffIds = List.copyOf(diffIds);
+        history = List.copyOf(history);
         labels = Collections.unmodifiableMap(new TreeMap<>(labels));
     }
 
@@ -26,6 +27,9 @@ public record ImageConfig(List<String> diffIds, String user, Map<String, String>
         root.path("rootfs").path("diff_ids").forEach(d -> diffIds.add(d.asString()));
         Map<String, String> labels = new TreeMap<>();
         config.path("Labels").properties().forEach(e -> labels.put(e.getKey(), e.getValue().asString()));
-        return Optional.of(new ImageConfig(diffIds, config.path("User").stringValue(null), labels));
+        List<HistoryStep> history = new ArrayList<>();
+        root.path("history").forEach(h -> history.add(new HistoryStep(h.path("created_by").stringValue(null),
+                h.path("comment").stringValue(null), h.path("empty_layer").asBoolean(), h.path("created").stringValue(null))));
+        return Optional.of(new ImageConfig(diffIds, history, config.path("User").stringValue(null), labels));
     }
 }

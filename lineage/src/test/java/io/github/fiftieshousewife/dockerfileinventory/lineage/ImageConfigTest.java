@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -22,5 +23,16 @@ class ImageConfigTest {
             assertThat(config.user()).isNull();
             assertThat(config.labels()).isEmpty();
         });
+    }
+
+    @Test
+    void keepsHistoryStepsInOrderWithEmptyLayerFalseWhenAbsent() {
+        assertThat(ImageConfig.parse(Fixtures.artifactory("config-history.json")).orElseThrow().history())
+                .extracting(HistoryStep::createdBy, HistoryStep::comment, HistoryStep::emptyLayer)
+                .containsExactly(
+                        tuple("/bin/sh -c #(nop) ADD file:base in / ", null, false),
+                        tuple("/bin/sh -c #(nop) LABEL name=base", null, true),
+                        tuple("/bin/sh -c microdnf install -y git", "FROM base:1", false),
+                        tuple("/bin/sh -c #(nop) USER 1001", null, true));
     }
 }
