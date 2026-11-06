@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public final class ShellTokeniser {
 
     /** {@code NAME=value} before a command's name sets its environment; it is not the command. */
+    private static final Pattern REFERENCE = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
     private static final Pattern ASSIGNMENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*=.*", Pattern.DOTALL);
 
     /** A redirection operator, optionally with its target joined on ({@code >/dev/null}, {@code 2>&1}). */
@@ -128,11 +129,17 @@ public final class ShellTokeniser {
             } else if (!quoted && redirect.matches()) {
                 targetNext = redirect.group(2).isEmpty();
             } else if (command.isEmpty() && ASSIGNMENT.matcher(w).matches()) {
-                assignments.put(w.substring(0, w.indexOf('=')), w.substring(w.indexOf('=') + 1));
+                assignments.put(w.substring(0, w.indexOf('=')), expanded(w.substring(w.indexOf('=') + 1)));
             } else {
                 command.add(w);
             }
         }
+    }
+
+    /** A value with earlier assignments substituted, so {@code A="$A more"} keeps what {@code A} held. */
+    private String expanded(String value) {
+        return REFERENCE.matcher(value).replaceAll(m -> java.util.regex.Matcher.quoteReplacement(
+                assignments.getOrDefault(m.group(1) != null ? m.group(1) : m.group(2), m.group())));
     }
 
     private void endCommand() {

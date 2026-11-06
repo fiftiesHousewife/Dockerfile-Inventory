@@ -98,4 +98,12 @@ class ShellTokeniserTest {
 
         assertThat(ShellTokeniser.assignments(script)).containsEntry("INSTALL_PKGS", "php php-fpm         tzdata");
     }
+
+    @Test
+    void anAssignmentBuiltUpFromItsEarlierValueKeepsEveryPart() {
+        String script = "INSTALL_PKGS=\"rsync tar\" && INSTALL_PKGS=\"$INSTALL_PKGS pgaudit\" && "
+                + "INSTALL_PKGS=\"${INSTALL_PKGS} util-linux\" && yum install -y $INSTALL_PKGS";
+
+        assertThat(ShellTokeniser.assignments(script)).containsEntry("INSTALL_PKGS", "rsync tar pgaudit util-linux");
+    }
 }
