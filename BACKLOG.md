@@ -19,7 +19,7 @@ and one line when its gate is met.
 
 ## Queued
 
-- Phase 1b — Lineage and effective images. Draft plan with questions: `docs/plans/phase-1b.md`. Gate: lineage for at least 95% of Artifactory images;
+- Phase 1b — Lineage and effective images. Plan ready, questions answered 6 Nov: `docs/plans/phase-1b.md`. Gate: lineage for at least 95% of Artifactory images;
   images matched to Dockerfiles by fingerprint, unmatched images published as the gap list.
 - Phase 2 — Cluster and report. Gate: written decision, base-image route or DSL route.
 - Phase 3 — Quality rules. Gate: false-positive rate per rule below threshold before auto-fix.

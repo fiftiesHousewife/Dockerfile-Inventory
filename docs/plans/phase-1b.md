@@ -1,45 +1,53 @@
-# Phase 1b — Lineage and effective images: draft plan
+# Phase 1b — Lineage and effective images: plan
 
-Status: draft, 6 Nov. No code until the questions below are answered (AGENTS.md: plan, then grill, then build).
+Status: questions answered 6 Nov; ready to build. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
 list: images no scanned Dockerfile matches. Module: `lineage`. Inputs: Artifactory REST and AQL, `facts.jsonl`,
-`manifest.jsonl`. Gate: lineage for at least 95% of Artifactory images; every internal base linked at exact or
-strong tier or queued for curation; gap list published and reviewed.
+`manifest.jsonl`. Gate: lineage for at least 95% of Artifactory images; every internal base linked at strong tier
+or queued for curation; gap list published and reviewed.
 
-## Proposed slices (test-first, as Phases 0 and 1)
+## Answers (6 Nov)
 
-1. **Artifactory client** behind an interface, recorded-response fakes: AQL for `manifest.json` and
-   `list.manifest.json` per Docker repository, paged by `offset`; manifest and config blob downloads from the tag
-   folder. Dedupe on config digest before fetching.
-2. **Image nodes**: reference, config digest, `rootfs.diff_ids`, history, user, labels. Manifest lists pick one
-   platform (Q3).
-3. **Layer-prefix lineage**: parent = the node whose full `diff_ids` list is this one's longest strict prefix. No
-   parent for a non-root image is a finding (squashed, deleted, or stale child).
-4. **History normaliser**, from real Buildah `created_by` samples (Q4): `RUN` text with variable spans wildcarded,
-   `COPY` to its destination, metadata steps to keyword and key.
-5. **Dockerfile links**: candidates whose resolved final `FROM` matches the lineage parent; ordered alignment of
-   the image's own history steps against each candidate's instructions; tiers exact (labels or release database),
-   strong (unique alignment plus one corroborating signal), weak (curation queue).
+| # | Question | Answer | What it changes |
+| --- | --- | --- | --- |
+| Q1 | Artifactory access | No token yet | Slices 1-3 are built against Artifactory's documented response shapes; recorded responses replace them once access exists. The gate waits for access |
+| Q2 | Retention | Nothing is deleted | A missing parent is a real finding (squashed image or stale child), not a deleted tag |
+| Q3 | Multi-arch | `linux/amd64` only | Manifest lists use their amd64 entry; images with no amd64 entry are skipped and counted in the rates |
+| Q4 | History samples | Use public Buildah-built images | The history normaliser is written from public UBI and other Buildah-built images' `created_by` strings, then checked against ours once access exists |
+| Q5 | Internal bases | Any image another image is built on | Worked out from the layer tree; no list to maintain |
+| Q6 | Remote repositories | None | Only local repositories are read |
+| Q7 | Labels | None carried reliably | No label-based links. See D2 |
+| Q8 | External bases (UBI) | Mirrored into a local repository | Mirrored images appear in the tree as roots. See D1 |
+
+## Decisions that follow (say if any is wrong)
+
+| # | Decision | Why |
+| --- | --- | --- |
+| D1 | A root image (no parent in the tree) that no Dockerfile links to is reported as a mirrored external base, not as a gap. The gap list holds only non-root images with no link | Mirrored UBI and similar images have no Dockerfile here and should not swamp the gap list |
+| D2 | With no labels, the tiers are: strong (one candidate Dockerfile whose `FROM` matches the parent and whose instructions align with the image's own history, plus a matching release-database commit for its repository), probable (unique alignment without that corroboration), weak (several candidates, or partial alignment; curation queue). The plan's "exact" tier is dropped | The exact tier needed labels or a release record tied to an image, and neither exists |
+
+## Slices (test list per slice is written before its code)
+
+1. **Artifactory client** behind an interface, with fakes built from documented shapes until recordings exist:
+   AQL for `manifest.json` and `list.manifest.json` per local Docker repository, paged by `offset`; manifest and
+   config blob downloads from the tag folder. Dedupe on config digest before fetching.
+2. **Image nodes**: reference, config digest, `rootfs.diff_ids`, history, user, labels. Manifest lists take their
+   `linux/amd64` entry (Q3).
+3. **Layer-prefix lineage**: parent = the node whose full `diff_ids` list is this one's longest strict prefix. A
+   non-root image with no parent is a finding (Q2).
+4. **History normaliser**, from public Buildah-built `created_by` samples (Q4): `RUN` text with variable spans
+   wildcarded, `COPY` to its destination, metadata steps to keyword and key.
+5. **Dockerfile links**: candidates whose resolved final `FROM` matches the lineage parent; ordered alignment of the
+   image's own history steps against each candidate's instructions; tiers per D2.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,
    `ENV`, labels, `WORKDIR`, `ENTRYPOINT`, `CMD` and packages; `ONBUILD` injected at the child's start.
-7. **Gap list** `gaps.jsonl`: images with no link at any tier, with repository, image, tags and last push.
-8. **Run and rates**: lineage coverage, link tiers, gap count.
-
-## Questions for you
-
-| # | Question | Why it matters |
-| --- | --- | --- |
-| Q1 | Artifactory base URL, the Docker repository names (local, remote, virtual?), and is there a read token with AQL rights yet? | Slice 1 can start on documented shapes, but recorded fixtures and the gate need the real thing |
-| Q2 | Roughly how many images and tags are in Artifactory? Is there a retention policy that deletes old tags? | Sizes the job; deleted parents make "no parent" findings that are not real problems |
-| Q3 | Multi-arch images: scan `linux/amd64` only, or every platform? | One platform keeps the tree simple; arm64-only images would drop out |
-| Q4 | Can you export ten real `created_by` history entries (Buildah-built) from one internal base and one leaf image? | The history normaliser must be written from real strings, not Docker's classic format |
-| Q5 | Which images count as "internal bases": anything another image builds on, or a known list (golden images)? | Decides which images need a Dockerfile link at all |
-| Q6 | Remote (proxied) repositories, such as a Docker Hub or Red Hat registry mirror: include their images as tree roots only, or leave them out? | External bases have no Dockerfile here; they should be roots, not gaps |
-| Q7 | Which labels, if any, do some images carry reliably (`org.opencontainers.image.revision`, `source`, `vcs-ref`)? | Exact-tier links come from them |
+7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with
+   repository, image, tags and last push.
+8. **Run and rates**: lineage coverage, link tiers, gap count, skipped non-amd64 images.
 
 ## Phase 2 after this
 
 Clustering needs only `facts.jsonl`, so it could run before 1b finishes; the effective user (from 1b) refines the
-root versus non-root counts. Its own plan comes after 1b's questions are settled.
+root versus non-root counts. Its own plan comes after 1b.
