@@ -13,7 +13,8 @@ final class FakeArtifactory implements Artifactory {
     private final Map<String, String> blobs = new HashMap<>();
 
     FakeArtifactory manifest(String repository, String image, String reference, String mediaType, String fixture) {
-        manifests.put(key(repository, image, reference), new Manifest(mediaType, reference, Fixtures.artifactory(fixture)));
+        manifests.put(key(repository, image, reference),
+                new Manifest(mediaType, reference, Fixtures.artifactory(fixture)));
         return this;
     }
 

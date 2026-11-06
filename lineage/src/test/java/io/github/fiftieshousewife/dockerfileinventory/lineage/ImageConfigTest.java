@@ -43,4 +43,10 @@ class ImageConfigTest {
         assertThat(ImageConfig.parse(Fixtures.artifactory("config-squashed.json")).orElseThrow().historyMatchesLayers())
                 .isFalse();
     }
+
+    @Test
+    void textThatIsNotJsonOrHasNoRootfsIsUnreadable() {
+        assertThat(ImageConfig.parse("not json")).isEmpty();
+        assertThat(ImageConfig.parse("{\"config\": {}}")).isEmpty();
+    }
 }

@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slice 1 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slices 1 and 2 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -79,6 +79,11 @@ or queued for curation; gap list published and reviewed.
    8. A tag, manifest or config that has gone between listing and fetching is `Skipped(GONE)`.
    9. A config that is not JSON, or has no `rootfs`, is `Skipped(UNREADABLE_CONFIG)`, with the digest, so one bad
       image does not stop the run.
+
+   As built: a list or index is recognised by its `manifests` array and schema 1 by `schemaVersion`, not by
+   `Content-Type`, so a mislabelled response is still read correctly. `ImageNodes.node` (config digest to node)
+   is separate, so the run can skip it for a digest already seen. `Skipped.detail` is the tag reference, or the
+   digest that went missing. A `User` of `""` is kept as written; slice 6 decides what it means (root).
 3. **Layer-prefix lineage**: parent = the node whose full `diff_ids` list is this one's longest strict prefix. A
    non-root image with no parent is a finding (Q2).
 4. **History normaliser**, from public Buildah-built `created_by` samples (Q4): `RUN` text with variable spans

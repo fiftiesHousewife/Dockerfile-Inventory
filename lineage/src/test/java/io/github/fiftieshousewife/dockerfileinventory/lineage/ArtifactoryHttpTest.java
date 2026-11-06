@@ -52,7 +52,8 @@ class ArtifactoryHttpTest {
     @Test
     void pagesTheCatalogueWithNAndLastUntilAShortPage() {
         route("/artifactory/api/docker/docker-local/v2/_catalog", exchange -> respond(exchange, 200,
-                exchange.getRequestURI().getRawQuery().contains("last=") ? "catalog-page2.json" : "catalog-page1.json"));
+                exchange.getRequestURI().getRawQuery().contains("last=")
+                        ? "catalog-page2.json" : "catalog-page1.json"));
 
         assertThat(artifactory.images("docker-local")).containsExactly("team/app", "team/worker", "ubi9/ubi-minimal");
         assertThat(requests).containsExactly(
@@ -117,7 +118,8 @@ class ArtifactoryHttpTest {
 
     @Test
     void readsLastPushFromTheStorageApi() {
-        route("/artifactory/api/storage/docker-local/team/app/1.0", exchange -> respond(exchange, 200, "storage-tag.json"));
+        route("/artifactory/api/storage/docker-local/team/app/1.0",
+                exchange -> respond(exchange, 200, "storage-tag.json"));
 
         assertThat(artifactory.lastPushed("docker-local", "team/app", "1.0"))
                 .contains(Instant.parse("2026-10-02T09:15:00Z"));

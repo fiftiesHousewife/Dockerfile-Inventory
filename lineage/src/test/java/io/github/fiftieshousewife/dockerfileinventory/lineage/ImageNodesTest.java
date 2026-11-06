@@ -27,23 +27,27 @@ class ImageNodesTest {
                     assertThat(node.config().user()).isEqualTo("1001");
                 });
         assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/oci", "2.0"))
-                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest()).isEqualTo(CONFIG_D));
+                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
+                        .isEqualTo(CONFIG_D));
     }
 
     @Test
     void aManifestListOrIndexResolvesThroughItsLinuxAmd64Entry() {
         FakeArtifactory artifactory = new FakeArtifactory()
                 .manifest("docker-local", "team/app", "multi", DOCKER_LIST, "manifest-list.json")
-                .manifest("docker-local", "team/app", "sha256:" + "1".repeat(64), DOCKER_MANIFEST, "manifest-image.json")
+                .manifest("docker-local", "team/app", "sha256:" + "1".repeat(64), DOCKER_MANIFEST,
+                        "manifest-image.json")
                 .manifest("docker-local", "team/oci", "multi", OCI_INDEX, "index-oci.json")
                 .manifest("docker-local", "team/oci", "sha256:" + "e".repeat(64), OCI_MANIFEST, "manifest-oci.json")
                 .blob(CONFIG_C, "config.json")
                 .blob(CONFIG_D, "config-bare.json");
 
         assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "multi"))
-                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest()).isEqualTo(CONFIG_C));
+                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
+                        .isEqualTo(CONFIG_C));
         assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/oci", "multi"))
-                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest()).isEqualTo(CONFIG_D));
+                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
+                        .isEqualTo(CONFIG_D));
     }
 
     @Test
@@ -76,5 +80,15 @@ class ImageNodesTest {
                 .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64)));
         assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "1.0"))
                 .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, CONFIG_C));
+    }
+
+    @Test
+    void anUnreadableConfigIsSkippedNamingItsDigest() {
+        FakeArtifactory artifactory = new FakeArtifactory()
+                .manifest("docker-local", "team/app", "1.0", DOCKER_MANIFEST, "manifest-image.json")
+                .blob(CONFIG_C, "not-json.txt");
+
+        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "1.0"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.UNREADABLE_CONFIG, CONFIG_C));
     }
 }

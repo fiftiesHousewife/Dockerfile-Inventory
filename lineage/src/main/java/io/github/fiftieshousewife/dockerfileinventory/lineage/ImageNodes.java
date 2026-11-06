@@ -34,10 +34,18 @@ public final class ImageNodes {
             }
             manifest = entry.get();
         }
-        String configDigest = manifest.path("config").path("digest").asString();
-        return artifactory.blob(repository, image, configDigest)
-                .<Resolved>map(config -> new Resolved.Node(configDigest, ImageConfig.parse(config).orElseThrow()))
-                .orElseGet(() -> new Resolved.Skipped(Resolved.Reason.GONE, configDigest));
+        return node(artifactory, repository, image, manifest.path("config").path("digest").asString());
+    }
+
+    /** The run skips this fetch for a config digest it has already resolved (slice 8). */
+    static Resolved node(Artifactory artifactory, String repository, String image, String configDigest) {
+        Optional<String> text = artifactory.blob(repository, image, configDigest);
+        if (text.isEmpty()) {
+            return new Resolved.Skipped(Resolved.Reason.GONE, configDigest);
+        }
+        return ImageConfig.parse(text.get())
+                .<Resolved>map(config -> new Resolved.Node(configDigest, config))
+                .orElseGet(() -> new Resolved.Skipped(Resolved.Reason.UNREADABLE_CONFIG, configDigest));
     }
 
     private static Optional<JsonNode> manifest(Artifactory artifactory, String repository, String image, String ref) {

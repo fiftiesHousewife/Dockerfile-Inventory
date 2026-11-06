@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -20,16 +21,28 @@ public record ImageConfig(List<String> diffIds, List<HistoryStep> history, Strin
         labels = Collections.unmodifiableMap(new TreeMap<>(labels));
     }
 
+    /** Empty for text that is not JSON or has no {@code rootfs}: one bad image must not stop the run. */
     static Optional<ImageConfig> parse(String text) {
-        JsonNode root = JSON.readTree(text);
+        JsonNode root;
+        try {
+            root = JSON.readTree(text);
+        } catch (JacksonException e) {
+            return Optional.empty();
+        }
+        if (!root.path("rootfs").isObject()) {
+            return Optional.empty();
+        }
         JsonNode config = root.path("config");
         List<String> diffIds = new ArrayList<>();
         root.path("rootfs").path("diff_ids").forEach(d -> diffIds.add(d.asString()));
         Map<String, String> labels = new TreeMap<>();
         config.path("Labels").properties().forEach(e -> labels.put(e.getKey(), e.getValue().asString()));
         List<HistoryStep> history = new ArrayList<>();
-        root.path("history").forEach(h -> history.add(new HistoryStep(h.path("created_by").stringValue(null),
-                h.path("comment").stringValue(null), h.path("empty_layer").asBoolean(), h.path("created").stringValue(null))));
+        root.path("history").forEach(h -> history.add(new HistoryStep(
+                h.path("created_by").stringValue(null),
+                h.path("comment").stringValue(null),
+                h.path("empty_layer").asBoolean(),
+                h.path("created").stringValue(null))));
         return Optional.of(new ImageConfig(diffIds, history, config.path("User").stringValue(null), labels));
     }
 

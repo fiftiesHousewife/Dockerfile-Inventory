@@ -39,6 +39,7 @@ facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, norm
 lineage/                    Phase 1b (in progress): Artifactory images -> family tree -> Dockerfile links
                             Artifactory (interface) / ArtifactoryHttp: REST only, never AQL; Docker v2 catalogue,
                             tags, manifests and blobs, storage API for last push
+                            ImageNodes: one tag -> manifest (amd64 entry of a list) -> ImageConfig, or Skipped
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

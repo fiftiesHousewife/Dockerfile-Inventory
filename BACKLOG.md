@@ -21,7 +21,8 @@ and one line when its gate is met.
   lineage for at least 95% of Artifactory images; images matched to Dockerfiles by fingerprint, unmatched images
   published as the gap list.
   - Done: slice 1, the Artifactory REST client (`lineage` module), against hand-written fixtures.
-  - Next: slice 2, image nodes. Recorded fixtures wait on an Artifactory token.
+  - Done: slice 2, image nodes: one tag to its amd64 config, or a counted skip.
+  - Next: slice 3, layer-prefix lineage. Recorded fixtures wait on an Artifactory token.
 
 ## Queued
 
