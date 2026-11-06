@@ -1,10 +1,10 @@
 # rewrite-docker issues to raise upstream
 
 Drafts for https://github.com/openrewrite/rewrite (module `rewrite-docker`), found against 8.90.4 on real public
-Dockerfiles (`sclorg`, `openshift`, `konflux-ci`); none is filed yet, as filing is public and the owner's call. Each
+Dockerfiles (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`); none is filed yet, as filing is public and the owner's call. Each
 has a minimal reproduction. This repo works around twelve of them (noted under "Workaround"; most in `FactsParser`'s
 second parse, which runs only after a failure and keeps every line number); delete a workaround and its note when
-upstream fixes the bug. Issues 11 and 14 have no safe workaround.
+upstream fixes the bug. Issues 11, 14 and 15 have no workaround.
 
 ## 1. A comment line inside a continued `RUN` is lexed: an apostrophe starts a string
 
@@ -177,4 +177,15 @@ EOF
 Expected: the file written without variable expansion, as BuildKit does for a quoted delimiter. Actual: a syntax
 error at the body. `COPY <<EOF` parses. Seen in 1 `konflux-ci` file.
 Workaround: none safe (dropping the quotes would change what is copied); the file is counted as a parse failure.
+
+## 15. A legacy `ENV KEY = value` (spaces around `=`) is "not print idempotent"
+
+```dockerfile
+FROM ubi9
+ENV PERL_LWP_SSL_VERIFY_HOSTNAME = 0
+```
+
+Expected: the legacy form, one variable whose value is `= 0`, as Docker reads it. Actual: `IllegalStateException:
+... is not print idempotent`. `ENV A "= 0"` parses. Seen in 1 `redhat-developer` file.
+Workaround: none (one file); it is counted as a parse failure.
 

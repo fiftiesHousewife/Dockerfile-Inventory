@@ -12,7 +12,7 @@ The full plan, with each phase's gate, is the
 
 | Stage | Module | State |
 | --- | --- | --- |
-| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; run on public organisations (`sclorg`, `openshift`, `konflux-ci`); the enterprise pilot waits on a GHE token |
+| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; run on public organisations (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`); the enterprise pilot waits on a GHE token |
 | 1. Parse each Dockerfile into facts | `facts` | Built; parse failures 0-2.3% and unreadable `RUN`s under 3% on the public runs |
 | 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; tried end to end against a local JFrog Container Registry; a real run waits on an Artifactory token |
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need the enterprise discovery and facts runs |
@@ -62,7 +62,8 @@ discovery waits as long as GitHub says and carries on.
 
 A file counts as a Dockerfile when it is named `Dockerfile` or `Containerfile`, or carries either as a prefix or
 suffix (`Dockerfile.rhel9`, `app.Dockerfile`), in any directory. Not counted: files named like Dockerfiles that hold
-source, documents or templates (`dockerfile.go`, `Dockerfile.md`, `Dockerfile.j2`, `Containerfile.dockerignore`),
+source, documents, templates, images or grammars (`dockerfile.go`, `Dockerfile.md`, `Dockerfile.j2`,
+`Containerfile.dockerignore`, `dockerfile.svg`, `dockerfile.bnf`),
 symlinks, third-party copies (`vendor/`, `node_modules/`, `third_party/`) and test inputs (`testdata/`, `testfiles/`).
 
 ### What it writes

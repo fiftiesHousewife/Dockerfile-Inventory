@@ -19,15 +19,19 @@ and one line when its gate is met.
   - Done 6 Nov: twelve fixes from a code review of the session's changes (`docs/plans/review-fixes.md`): secret
     values hidden in the dashboard, a converter crash, multi-value `ARG`s read wrongly, and quoting edge cases.
   - Done 6 Nov: `konflux-ci` (158 repositories, 3,231 locations, 722 files): parse failures 0.7% -> 0.1%, round trip
-    714 -> 720 of 722 (`docs/plans/more-estates.md`). Next estates: redhat-developer, docker-library, bitnami.
+    714 -> 720 of 722 (`docs/plans/more-estates.md`).
+  - Done 6 Nov: `redhat-developer` (288 repositories, 604 locations, 518 files): every file that parses passes the
+    round trip, after the converter reads `ENV` from its text as it does `LABEL`; discovery skips image and grammar
+    files named like Dockerfiles. Next estates: docker-library, bitnami.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.
   - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms; slice 6, the facts run and rates.
   - Fixed 6 Nov: a comment line inside a continued instruction was recorded as a parse failure.
-  - To raise upstream (the owner's call, not filed): fourteen rewrite-docker 8.90.4 issues, drafted with
-    reproductions in `docs/upstream/rewrite-docker-issues.md`; twelve are worked around here, two (a heredoc after
-    a command in `RUN`, a quoted `COPY` heredoc delimiter) are not and those files count as parse failures.
+  - To raise upstream (the owner's call, not filed): fifteen rewrite-docker 8.90.4 issues, drafted with
+    reproductions in `docs/upstream/rewrite-docker-issues.md`; twelve are worked around here, three (a heredoc after
+    a command in `RUN`, a quoted `COPY` heredoc delimiter, `ENV KEY = value`) are not and those files count as parse
+    failures.
 
 - Phase 1b — Lineage and effective images. Plan: `docs/plans/phase-1b.md` (questions answered 6 Nov). Gate:
   lineage for at least 95% of Artifactory images; images matched to Dockerfiles by fingerprint, unmatched images

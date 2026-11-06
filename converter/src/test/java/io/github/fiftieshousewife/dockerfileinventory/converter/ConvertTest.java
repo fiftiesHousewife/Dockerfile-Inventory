@@ -10,6 +10,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ConvertTest {
@@ -210,5 +211,19 @@ class ConvertTest {
 
         assertThat(model.globalArgs()).containsExactly(new Instruction.Arg("GOVERSION", "1.17"),
                 new Instruction.Arg("GO_CHECKSUM", "6bf8"), new Instruction.Arg("DEBIAN_FRONTEND", null));
+    }
+
+    @Test
+    void anEnvIsReadFromItsTextSoACommentedContinuationKeepsItsNames() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM registry.access.redhat.com/ubi9-minimal
+                ENV \\
+                    # Microsoft's images set this to enable detecting when an app is running in a container.
+                    DOTNET_VERSION=$DOTNET_VERSION
+                # ubi-minimal doesn't include timezones, restore them.
+                RUN [ "$IS_CI" == "true" ] || ( echo x )
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions.getFirst()).isEqualTo(new Instruction.Env(Map.of("DOTNET_VERSION", "$DOTNET_VERSION")));
     }
 }

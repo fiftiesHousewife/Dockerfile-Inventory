@@ -126,4 +126,23 @@ class RoundTripTest {
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
     }
+
+    @Test
+    void anEnvContinuedFromABareFirstLineWithCommentsBetweenItsValuesPasses() {
+        String original = """
+                FROM ubi9/dotnet-100-runtime
+                ENV \\
+                    # Microsoft's images set this to enable detecting when an app is running in a container.
+                    DOTNET_RUNNING_IN_CONTAINER=true \\
+                    # Configure ASP.NET Core to use the exposed port
+                    ASPNETCORE_URLS=http://*:8080 \\
+                    APP_UID=1001 \\
+                    # Like Microsoft images, provide the .NET version.
+                    DOTNET_VERSION=$DOTNET_VERSION
+
+                USER 1001
+                """;
+
+        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
 }

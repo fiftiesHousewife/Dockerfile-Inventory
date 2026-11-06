@@ -31,7 +31,9 @@ class DockerfilePathsTest {
         "container_workflow_tool/dockerfile.py", "build/dockerfile.sh", "dockerfile.bash", "lib/dockerfile.rb",
         "src/dockerfile.js", "src/Dockerfile.ts", "src/Dockerfile.java", "Dockerfile.kt", "Dockerfile.groovy",
         "scripts/Dockerfile.ps1", "examples/hyperlight-sandbox/Containerfile.dockerignore",
-        "rootfs.Dockerfile.dockerignore"})
+        "rootfs.Dockerfile.dockerignore", "src/images/dockerfile.svg", "icons/Dockerfile.png",
+        "src/main/java/org/jboss/tools/intellij/image/build/dockerfile.flex", "build/dockerfile.bnf",
+        "grammar/Dockerfile.g4"})
     void rejectsSourceDocumentAndTemplateFilesNamedLikeDockerfiles(String path) {
         assertThat(DockerfilePaths.isDockerfile(path)).isFalse();
     }

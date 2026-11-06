@@ -79,8 +79,8 @@ public final class Convert {
 
     private Instruction instruction(Docker.Instruction instruction) {
         return switch (instruction) {
-            case Docker.Env env -> new Instruction.Env(env(env));
-            case Docker.Label label -> new Instruction.Label(labels(afterKeyword(printed(label))));
+            case Docker.Env env -> new Instruction.Env(pairs(afterKeyword(printed(env))));
+            case Docker.Label label -> new Instruction.Label(pairs(afterKeyword(printed(label))));
             case Docker.Workdir workdir -> new Instruction.Workdir(unquote(text(workdir.getPath())));
             case Docker.User user -> user(user);
             case Docker.Expose expose when single(expose) ->
@@ -188,17 +188,6 @@ public final class Convert {
         return new Instruction.Copy(words.subList(0, words.size() - 1), words.getLast(), chown, from);
     }
 
-    /** rewrite-docker gives an empty {@code KEY=} the value {@code =}, and keeps a value's quotes in its text. */
-    private static Map<String, String> env(Docker.Env env) {
-        Map<String, String> values = new LinkedHashMap<>();
-        env.getPairs().forEach(pair -> {
-            Docker.Argument argument = pair.getValue();
-            String value = argument == null ? "" : withoutContinuations(text(argument));
-            values.put(pair.getKey().getText(), value.equals("=") ? "" : unquote(value));
-        });
-        return values;
-    }
-
     /** One port written as plain digits: no protocol, range or variable; anything else stays {@code Raw} (D2). */
     private static boolean single(Docker.Expose expose) {
         List<Docker.Port> ports = expose.getPorts();
@@ -230,8 +219,11 @@ public final class Convert {
         return parts.length < 2 ? "" : parts[1];
     }
 
-    /** {@code LABEL k=v ...}, or the legacy {@code LABEL key value with spaces}, which sets one label. */
-    private static Map<String, String> labels(String arguments) {
+    /**
+     * {@code ENV} or {@code LABEL} {@code k=v ...}, or the legacy {@code key value with spaces}, which sets one. Read
+     * from the instruction's text, as rewrite-docker 8.90.4 mis-reads pairs in several layouts (upstream issues 4-6).
+     */
+    private static Map<String, String> pairs(String arguments) {
         String first = arguments.split("\\s+", 2)[0];
         if (first.contains("=")) {
             return Pairs.parse(arguments);
