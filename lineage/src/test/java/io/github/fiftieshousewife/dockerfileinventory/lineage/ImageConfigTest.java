@@ -35,4 +35,12 @@ class ImageConfigTest {
                         tuple("/bin/sh -c microdnf install -y git", "FROM base:1", false),
                         tuple("/bin/sh -c #(nop) USER 1001", null, true));
     }
+
+    @Test
+    void saysWhetherTheStepsThatMadeLayersMatchTheLayers() {
+        assertThat(ImageConfig.parse(Fixtures.artifactory("config-history.json")).orElseThrow().historyMatchesLayers())
+                .isTrue();
+        assertThat(ImageConfig.parse(Fixtures.artifactory("config-squashed.json")).orElseThrow().historyMatchesLayers())
+                .isFalse();
+    }
 }

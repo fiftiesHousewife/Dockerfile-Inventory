@@ -32,4 +32,12 @@ public record ImageConfig(List<String> diffIds, List<HistoryStep> history, Strin
                 h.path("comment").stringValue(null), h.path("empty_layer").asBoolean(), h.path("created").stringValue(null))));
         return Optional.of(new ImageConfig(diffIds, history, config.path("User").stringValue(null), labels));
     }
+
+    /**
+     * Whether the history steps that made layers are as many as the layers. A squashed image, or a builder that
+     * writes no history, breaks this, and the history can then not be aligned layer by layer.
+     */
+    public boolean historyMatchesLayers() {
+        return history.stream().filter(h -> !h.emptyLayer()).count() == diffIds.size();
+    }
 }
