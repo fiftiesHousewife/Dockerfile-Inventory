@@ -199,4 +199,11 @@ class FactExtractorTest {
         assertThat(facts.packageCalls().getFirst().call().packages())
                 .containsExactly("python3.11", "python3.11-pip", "tar", "$NOPE");
     }
+
+    @Test
+    void aPackageVariableFromAnEnvContinuedOverLinesHasNoBackslashWords() {
+        ImageFacts facts = facts("FROM ubi9\nENV PKGS=\"php \\\n    php-fpm\"\nRUN yum install -y $PKGS && yum clean all\n");
+
+        assertThat(facts.packageCalls().getFirst().call().packages()).containsExactly("php", "php-fpm");
+    }
 }
