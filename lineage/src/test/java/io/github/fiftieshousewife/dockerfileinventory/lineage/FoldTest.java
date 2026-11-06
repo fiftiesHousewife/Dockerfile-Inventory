@@ -96,6 +96,32 @@ class FoldTest {
         assertThat(effective.user().setBy()).isEqualTo(new SetBy.Image("python", APP_LINK));
     }
 
+    @Test
+    void aPropertyNoRecordedStepSetsIsUnknown() {
+        Resolved.Node squashed = node("squashed", List.of("L1"), "1001", List.of(step("ADD file:all in /")));
+
+        assertThat(Fold.of(List.of(squashed), Map.of("squashed", new Parent.Root()), Map.of("squashed", APP_LINK))
+                .get("squashed").user()).isEqualTo(new Property<>("1001", new SetBy.Unknown()));
+    }
+
+    @Test
+    void anAmbiguousParentIsWalkedThroughItsFirstCandidate() {
+        Link twinLink = new Link(Link.Tier.PROBABLE, List.of("twin-df"), false);
+        List<HistoryStep> twinHistory = List.of(step("ADD file:ubi in /"), step("USER 1001"));
+        Resolved.Node twinA = node("twin-a", List.of("L1"), "1001", twinHistory);
+        Resolved.Node twinB = node("twin-b", List.of("L1"), "1001", twinHistory);
+        List<HistoryStep> appHistory = new ArrayList<>(twinHistory);
+        appHistory.add(step("RUN make"));
+        Resolved.Node app = node("app", List.of("L1", "L2"), "1001", appHistory);
+
+        EffectiveImage effective = Fold.of(List.of(twinA, twinB, app),
+                Map.of("twin-a", new Parent.Root(), "twin-b", new Parent.Root(),
+                        "app", new Parent.Ambiguous(List.of("twin-a", "twin-b"))),
+                Map.of("app", APP_LINK, "twin-a", twinLink, "twin-b", twinLink)).get("app");
+
+        assertThat(effective.user().setBy()).isEqualTo(new SetBy.Image("twin-a", twinLink));
+    }
+
     static HistoryStep step(String instruction) {
         return step(instruction, null);
     }
