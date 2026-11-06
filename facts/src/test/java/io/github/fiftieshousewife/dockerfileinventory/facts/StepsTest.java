@@ -2,9 +2,17 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class StepsTest {
 
@@ -98,6 +106,21 @@ class StepsTest {
                 FROM app AS app
                 RUN make
                 """)).containsExactly(new Step("RUN", "make"));
+    }
+
+    @Test
+    void theRealPython311DockerfileGivesTheStepsItsRealBuildHistoryGives() throws IOException {
+        JsonNode contract = new ObjectMapper().readTree(Path.of("../testdata/contracts/python-311.steps.json").toFile());
+        List<Step> expected = new ArrayList<>();
+        contract.path("steps").forEach(s -> expected.add(new Step(s.path("keyword").asString(), s.path("text").asString())));
+        String dockerfile;
+        try (InputStream in = StepsTest.class.getResourceAsStream("/fixtures/dockerfiles/python-311.Dockerfile")) {
+            dockerfile = new String(Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        assertThat(steps(dockerfile)).containsExactlyElementsOf(expected);
+        assertThat(NormalForms.fromPath(FactExtractorTest.facts(dockerfile).base()))
+                .isEqualTo(contract.path("fromPath").asString());
     }
 
     static List<Step> steps(String dockerfile) {
