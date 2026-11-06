@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slices 1 to 5 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slices 1 to 6 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -252,6 +252,12 @@ or queued for curation; gap list published and reviewed.
    7. An ambiguous parent is walked through its first candidate, as in slice 5.
    8. The chain lists every ancestor with its link, and a repeated image ends the walk.
    9. A child whose parent's config has `OnBuild` triggers is flagged `parentHasOnbuild` (Q18).
+
+   As built: `ImageConfig` gained the runtime fields, with a shorter constructor kept for the tree and links,
+   which need only layers and history. Builder-added label keys (`build-date`, `vcs-ref`) are attributed as
+   unknown, since their steps are dropped from every image's own steps. Tests 6 and 7 passed when first written,
+   since the default and the first-candidate walk were already there; breaking each made its test fail. A chain
+   entry for an image missing from the links map carries no link; the run (slice 8) links every image first.
 7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with
    repository, image, tags and last push. Also `outdated-bases.jsonl` (Q12): images whose parent is not the newest
    push of that parent's image name.

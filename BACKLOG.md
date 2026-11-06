@@ -29,7 +29,8 @@ and one line when its gate is met.
     contract from a real Dockerfile and its real build history.
   - Done: slice 5b, links: exact (strong or probable), weak by ordered alignment on the same base, none, and the
     "parent missing" finding.
-  - Next: slice 6, the effective fold. Recorded fixtures wait on an Artifactory token.
+  - Done: slice 6, the effective fold: each image's properties with the image (and Dockerfile group) that set them.
+  - Next: slice 7, gap list, external bases and outdated bases. Recorded fixtures wait on an Artifactory token.
 
 ## Queued
 

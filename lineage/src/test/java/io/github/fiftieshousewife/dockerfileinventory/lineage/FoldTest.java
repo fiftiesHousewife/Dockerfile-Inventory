@@ -69,7 +69,8 @@ class FoldTest {
         List<HistoryStep> appHistory = new ArrayList<>(baseHistory);
         appHistory.addAll(List.of(step("ENV PATH=/opt/app/bin:$PATH"), step("LABEL name=app")));
         Resolved.Node app = new Resolved.Node("app", new ImageConfig(List.of("L1", "L2"), appHistory, null,
-                Map.of("name", "app", "vendor", "acme"), Map.of("APP_ROOT", "/opt/app", "PATH", "/opt/app/bin:/usr/bin"),
+                Map.of("name", "app", "vendor", "acme"),
+                Map.of("APP_ROOT", "/opt/app", "PATH", "/opt/app/bin:/usr/bin"),
                 null, List.of(), List.of(), List.of()));
 
         EffectiveImage effective = Fold.of(List.of(base, app),
@@ -126,15 +127,33 @@ class FoldTest {
     void theChainListsEveryAncestorWithItsLinkAndARepeatedImageEndsIt() {
         Link baseLink = new Link(Link.Tier.PROBABLE, List.of("base-df"), false);
         Resolved.Node base = node("base", List.of("L1"), null, List.of(step("ADD file:ubi in /")));
-        Resolved.Node app = node("app", List.of("L1", "L2"), null, List.of(step("ADD file:ubi in /"), step("RUN make")));
+        Resolved.Node app = node("app", List.of("L1", "L2"), null,
+                List.of(step("ADD file:ubi in /"), step("RUN make")));
         Map<String, Link> links = Map.of("app", APP_LINK, "base", baseLink);
 
         assertThat(Fold.of(List.of(base, app), Map.of("base", new Parent.Root(), "app", new Parent.Of("base")), links)
                 .get("app").chain())
                 .containsExactly(new ChainEntry("app", APP_LINK), new ChainEntry("base", baseLink));
-        assertThat(Fold.of(List.of(base, app), Map.of("base", new Parent.Of("app"), "app", new Parent.Of("base")), links)
+        Map<String, Parent> cycle = Map.of("base", new Parent.Of("app"), "app", new Parent.Of("base"));
+        assertThat(Fold.of(List.of(base, app), cycle, links)
                 .get("app").chain())
                 .extracting(ChainEntry::configDigest).containsExactly("app", "base");
+    }
+
+    @Test
+    void aChildOfABaseWithOnbuildTriggersIsFlagged() {
+        Resolved.Node base = new Resolved.Node("base", new ImageConfig(List.of("L1"), List.of(step("ADD file:a in /")),
+                null, Map.of(), Map.of(), null, List.of(), List.of(), List.of("RUN make")));
+        Resolved.Node app = node("app", List.of("L1", "L2"), null, List.of(step("ADD file:a in /"), step("RUN make")));
+        Resolved.Node plain = node("plain", List.of("P1"), null, List.of(step("ADD file:p in /")));
+
+        Map<String, EffectiveImage> effective = Fold.of(List.of(base, app, plain),
+                Map.of("base", new Parent.Root(), "app", new Parent.Of("base"), "plain", new Parent.Root()),
+                Map.of("app", APP_LINK, "base", Links.NONE, "plain", Links.NONE));
+
+        assertThat(effective.get("app").parentHasOnbuild()).isTrue();
+        assertThat(effective.get("base").parentHasOnbuild()).isFalse();
+        assertThat(effective.get("plain").parentHasOnbuild()).isFalse();
     }
 
     static HistoryStep step(String instruction) {

@@ -35,21 +35,23 @@ public final class Fold {
                 .collect(Collectors.toMap(Resolved.Node::configDigest, Function.identity()));
         Map<String, EffectiveImage> effective = new HashMap<>();
         for (Resolved.Node image : images) {
-            List<Member> chain = chain(image, parents, byDigest);
-            External external = external(chain.getLast().image());
-            ImageConfig config = image.config();
-            List<ChainEntry> entries = chain.stream()
-                    .map(m -> new ChainEntry(m.image().configDigest(), links.get(m.image().configDigest())))
-                    .toList();
-            effective.put(image.configDigest(), new EffectiveImage(entries,
-                    new Property<>(config.user(), setBy(chain, external, links, keyword("USER"))),
-                    new Property<>(config.workingDir(), setBy(chain, external, links, keyword("WORKDIR"))),
-                    new Property<>(config.entrypoint(), setBy(chain, external, links, keyword("ENTRYPOINT"))),
-                    new Property<>(config.cmd(), setBy(chain, external, links, keyword("CMD"))),
-                    perKey(config.env(), "ENV", chain, external, links),
-                    perKey(config.labels(), "LABEL", chain, external, links)));
+            effective.put(image.configDigest(), effective(image, chain(image, parents, byDigest), links));
         }
         return effective;
+    }
+
+    private static EffectiveImage effective(Resolved.Node image, List<Member> chain, Map<String, Link> links) {
+        Attribution by = new Attribution(chain, external(chain.getLast().image()), links);
+        ImageConfig config = image.config();
+        return new EffectiveImage(
+                chain.stream().map(m -> new ChainEntry(m.image().configDigest(), by.link(m))).toList(),
+                new Property<>(config.user(), by.setBy(keyword("USER"))),
+                new Property<>(config.workingDir(), by.setBy(keyword("WORKDIR"))),
+                new Property<>(config.entrypoint(), by.setBy(keyword("ENTRYPOINT"))),
+                new Property<>(config.cmd(), by.setBy(keyword("CMD"))),
+                by.perKey(config.env(), "ENV"),
+                by.perKey(config.labels(), "LABEL"),
+                chain.size() > 1 && !chain.get(1).image().config().onBuild().isEmpty());
     }
 
     /** The image, then each ancestor to the root; a repeated image ends the walk. */
@@ -66,34 +68,38 @@ public final class Fold {
         return chain;
     }
 
-    /** {@code ENV} and {@code LABEL} steps reduce to their key names, so each key is attributed on its own. */
-    private static Map<String, Property<String>> perKey(Map<String, String> values, String keyword,
-                                                        List<Member> chain, External external,
-                                                        Map<String, Link> links) {
-        Map<String, Property<String>> attributed = new HashMap<>();
-        values.forEach((key, value) -> attributed.put(key, new Property<>(value, setBy(chain, external, links,
-                keyword(keyword).and(i -> List.of(i.text().split(" ")).contains(key))))));
-        return attributed;
-    }
-
     private static Predicate<Instruction> keyword(String keyword) {
         return instruction -> instruction.keyword().equals(keyword);
     }
 
-    /**
-     * The nearest image in the chain whose own steps include one the predicate accepts; failing that, the external
-     * base the root names, if the steps the root inherited from it include one.
-     */
-    private static SetBy setBy(List<Member> chain, External external, Map<String, Link> links,
-                               Predicate<Instruction> sets) {
-        return chain.stream()
-                .filter(member -> member.own().stream().anyMatch(sets))
-                .findFirst()
-                .<SetBy>map(member -> new SetBy.Image(member.image().configDigest(),
-                        links.get(member.image().configDigest())))
-                .orElseGet(() -> external != null && external.steps().stream().anyMatch(sets)
-                        ? new SetBy.ExternalBase(external.path())
-                        : new SetBy.Unknown());
+    /** Attributes properties within one chain. */
+    private record Attribution(List<Member> chain, External external, Map<String, Link> links) {
+
+        Link link(Member member) {
+            return links.get(member.image().configDigest());
+        }
+
+        /**
+         * The nearest image in the chain whose own steps include one the predicate accepts; failing that, the
+         * external base the root names, if the steps the root inherited from it include one.
+         */
+        SetBy setBy(Predicate<Instruction> sets) {
+            return chain.stream()
+                    .filter(member -> member.own().stream().anyMatch(sets))
+                    .findFirst()
+                    .<SetBy>map(member -> new SetBy.Image(member.image().configDigest(), link(member)))
+                    .orElseGet(() -> external != null && external.steps().stream().anyMatch(sets)
+                            ? new SetBy.ExternalBase(external.path())
+                            : new SetBy.Unknown());
+        }
+
+        /** {@code ENV} and {@code LABEL} steps reduce to their key names, so each key is attributed on its own. */
+        Map<String, Property<String>> perKey(Map<String, String> values, String keyword) {
+            Map<String, Property<String>> attributed = new HashMap<>();
+            values.forEach((key, value) -> attributed.put(key, new Property<>(value,
+                    setBy(keyword(keyword).and(i -> List.of(i.text().split(" ")).contains(key))))));
+            return attributed;
+        }
     }
 
     /** The steps before a root's last {@code FROM} comment came from the base that comment names. */
