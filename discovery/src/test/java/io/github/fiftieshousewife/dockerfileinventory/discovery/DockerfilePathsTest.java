@@ -27,7 +27,10 @@ class DockerfilePathsTest {
     @ValueSource(strings = {
         "test/extended/builds/dockerfile.go", "contrib/Docker.tmbundle/Dockerfile.tmPreferences",
         "Dockerfile.tpl", "src/Dockerfile.template", "Dockerfile.j2", "Dockerfile.jinja", "README.Dockerfile.md",
-        "Dockerfile.erb", "Dockerfile.in", "schema/Dockerfile.json", "Dockerfile.yaml", "Dockerfile.txt"})
+        "Dockerfile.erb", "Dockerfile.in", "schema/Dockerfile.json", "Dockerfile.yaml", "Dockerfile.txt",
+        "container_workflow_tool/dockerfile.py", "build/dockerfile.sh", "dockerfile.bash", "lib/dockerfile.rb",
+        "src/dockerfile.js", "src/Dockerfile.ts", "src/Dockerfile.java", "Dockerfile.kt", "Dockerfile.groovy",
+        "scripts/Dockerfile.ps1"})
     void rejectsSourceDocumentAndTemplateFilesNamedLikeDockerfiles(String path) {
         assertThat(DockerfilePaths.isDockerfile(path)).isFalse();
     }
