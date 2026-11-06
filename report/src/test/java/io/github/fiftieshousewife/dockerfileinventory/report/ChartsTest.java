@@ -74,4 +74,13 @@ class ChartsTest {
         assertThat(Charts.stacked("Managers", parts))
                 .contains("<span class=\"key s8\"></span>other 30 (30.0%)").doesNotContain("p9");
     }
+
+    @Test
+    void aBaseNameTooLongForItsLabelIsShortenedButItsHoverTextKeepsAllOfIt() {
+        String name = "platform/team-with-a-long-name/images/runtime-base";
+        String svg = Charts.bases(List.of(new BaseRow(name, "2026.11", "runtime-base", 3, 0, "unknown", null)));
+
+        assertThat(svg).contains("<title>" + name + ":2026.11: 3 locations")
+                .contains(">platform/team-with-a-long-name/images/r\u2026</text>");
+    }
 }

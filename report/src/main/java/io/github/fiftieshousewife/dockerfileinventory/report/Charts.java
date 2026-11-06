@@ -96,6 +96,8 @@ final class Charts {
     private static final int BAR_START = 270;
     private static final int BAR_WIDTH = 330;
     private static final int TOP_BASES = 20;
+    /** What fits left of the bars at the label size; the hover text keeps the whole name. */
+    private static final int LABEL_CHARS = 40;
 
     /**
      * The most-used bases as horizontal bars: length is locations, the class is the end-of-life status (the legend
@@ -115,14 +117,17 @@ final class Charts {
     }
 
     private static String baseRow(BaseRow base, int y, int max) {
-        String name = Dashboard.escape(base.path() + (base.tag() == null ? "" : ":" + base.tag()));
+        String full = base.path() + (base.tag() == null ? "" : ":" + base.tag());
+        String name = Dashboard.escape(full);
+        String shown = Dashboard.escape(
+                full.length() <= LABEL_CHARS ? full : full.substring(0, LABEL_CHARS - 1) + "\u2026");
         double width = (double) base.locations() / max * BAR_WIDTH;
         double pinned = base.locations() == 0 ? 0 : (double) base.pinnedLocations() / base.locations() * width;
         String status = Dashboard.escape(base.status());
         return "<g><title>" + name + ": " + base.locations() + " locations, " + base.pinnedLocations()
                 + " pinned by digest, " + status + "</title>"
                 + "<text class=\"label\" x=\"" + LABEL_END + "\" y=\"" + (y + 13) + "\" text-anchor=\"end\">"
-                + name + "</text>"
+                + shown + "</text>"
                 + "<rect class=\"bar " + status + "\" width=\"" + number(width) + "\" x=\"" + BAR_START
                 + "\" y=\"" + y + "\" height=\"16\" rx=\"3\"/>"
                 + (pinned > 0 ? "<rect class=\"pinned\" width=\"" + number(pinned) + "\" x=\"" + BAR_START
