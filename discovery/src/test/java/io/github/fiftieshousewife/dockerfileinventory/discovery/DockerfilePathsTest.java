@@ -39,8 +39,11 @@ class DockerfilePathsTest {
     @ParameterizedTest
     @ValueSource(strings = {
         "vendor/k8s.io/kubernetes/test/images/redis/Dockerfile", "web/node_modules/pkg/Dockerfile",
-        "third_party/tool/Dockerfile", "a/b/vendor/c/Dockerfile"})
-    void rejectsThirdPartyCopies(String path) {
+        "third_party/tool/Dockerfile", "a/b/vendor/c/Dockerfile",
+        "dockerfile/parser/testfiles/json/Dockerfile",
+        "dockerfile/parser/testfiles-negative/shykes-nested-json/Dockerfile",
+        "pkg/build/testdata/Dockerfile.multistage"})
+    void rejectsThirdPartyCopiesAndTestInputs(String path) {
         assertThat(DockerfilePaths.isDockerfile(path)).isFalse();
     }
 }

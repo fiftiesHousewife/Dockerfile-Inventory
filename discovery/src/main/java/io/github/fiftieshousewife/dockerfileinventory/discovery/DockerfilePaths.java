@@ -8,8 +8,9 @@ import java.util.regex.Pattern;
  * Decides which tree entries are Dockerfiles: {@code Dockerfile}, {@code Containerfile}, and their suffixed and
  * prefixed variants ({@code Dockerfile.rhel9}, {@code app.Dockerfile}), in any directory. Not counted: files
  * named like Dockerfiles but holding source, documents or templates ({@code dockerfile.go}, {@code Dockerfile.tpl}),
- * and anything in a third-party copy ({@code vendor/}, {@code node_modules/}, {@code third_party/}), which is
- * someone else's image, not the estate's.
+ * anything in a third-party copy ({@code vendor/}, {@code node_modules/}, {@code third_party/}), which is
+ * someone else's image, not the estate's, and test inputs ({@code testdata/}, {@code testfiles/}), which nobody
+ * builds.
  */
 public final class DockerfilePaths {
 
@@ -19,7 +20,9 @@ public final class DockerfilePaths {
             "go", "py", "sh", "bash", "rb", "js", "ts", "java", "kt", "groovy", "ps1",
             "md", "txt", "json", "yaml", "yml", "xml", "tmpreferences",
             "tpl", "template", "j2", "jinja", "erb", "in", "dockerignore");
-    private static final Pattern THIRD_PARTY = Pattern.compile("(^|/)(vendor|node_modules|third_party)/");
+    /** Third-party copies, and test inputs (the owner's choice, 6 Nov): files nobody builds an image from. */
+    private static final Pattern THIRD_PARTY =
+            Pattern.compile("(^|/)(vendor|node_modules|third_party|testdata|testfiles|testfiles-negative)/");
 
     private DockerfilePaths() {
     }
