@@ -37,6 +37,12 @@ Found by probing (slice 1), not documented:
 | # | Decision | Why |
 | --- | --- | --- |
 | D1 | Import `org.openrewrite:rewrite-bom` 8.90.4 (latest, 24 Aug 2026) instead of the recipe BOM, whose rewrite is 8.83.0 | Only core modules are needed; newest parser fixes |
+
+Checked 6 Nov: 8.90.4 is still the newest on Maven Central. GitHub has tags up to v8.100.0, but since 8.91.0 they
+are published only to a credentialed repository (`artifacts.codegenomeproject.org`), so the up-to-date gate rightly
+sees nothing newer. Since 8.90.4, the only `rewrite-docker` parser change is #9188 (`=` in ADD/COPY paths, and
+whitespace before commas in JSON arrays). Neither of our two parser bugs is fixed. Recheck Central when a version
+after 8.90.4 appears.
 | D2 | Only `FactsParser` and `FactExtractor` import `org.openrewrite`; everything after them works on our own records | `rewrite-docker` APIs are marked unstable |
 | D3 | Facts describe the final stage (the image that ships); package calls are kept for every stage with the stage index; the signature uses final-stage packages | Builder stages do not reach the image |
 | D4 | Base family = last path segment of the image name (`registry/ubi9/ubi-minimal` gives `ubi-minimal`); major = leading digits of the tag (`9.4-1227` gives `9`) | Simple, explainable; refined once Phase 2 shows real names |
