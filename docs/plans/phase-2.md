@@ -1,6 +1,6 @@
 # Phase 2 — Cluster and report: plan
 
-Status: planned 6 Nov; questions answered. Slices 1 to 6 built 6 Nov. Slices are built test-first, as in the earlier phases.
+Status: planned 6 Nov; questions answered. Slices 1 to 7 built 6 Nov. Slices are built test-first, as in the earlier phases.
 
 Phase 2 produces the number that sets strategy: how many archetypes cover 80% and 95% of the estate. Roughly 300
 or fewer at 95% means golden base images first and a small DSL; a long, diverse tail means recipes first and the
@@ -96,6 +96,10 @@ agreed (the decision paper is written by people from these numbers, not by the p
    22. Every number on the page comes from the same objects the tables are written from.
    23. Text is HTML-escaped.
    24. Without lineage output the user panel says it shows Dockerfile users, not effective ones.
+
+   As built: `Summary` holds every number, computed once; the page only formats it. Shares are of locations,
+   except the parse-failure rate, which is of distinct files as Phase 1 reports it. The page has no charts yet:
+   tiles and tables, light and dark, and readable on a phone.
 
 8. **Run.** `ReportMain`: `FACTS_DIR`, `DISCOVERY_DIR`, `[LINEAGE_DIR]`, `[EOL_LIST]`, `OUT_DIR`. Writes
    `passes.json`, `archetypes.json`, the tables, the DDL and the dashboard. Untested, like the other mains.

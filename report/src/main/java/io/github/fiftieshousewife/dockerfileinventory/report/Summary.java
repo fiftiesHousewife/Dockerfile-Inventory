@@ -42,7 +42,8 @@ public record Summary(int locations, int missing, List<PassCount> passes, int ne
         long released = all.stream().filter(l -> l.scope().equals("RELEASED")).count();
         return new Summary(all.size(), estate.missing().size(), passes, nearDuplicateGroups, ranking.k80(),
                 ranking.k95(), share(estate.failures().size(), blobs), share(opaque, runs),
-                share(pinned, baseLocations), share(eol, baseLocations), managers, users, !estate.effectiveUsers().isEmpty(),
+                share(pinned, baseLocations), share(eol, baseLocations), managers, users,
+                !estate.effectiveUsers().isEmpty(),
                 share(released, all.size()));
     }
 
