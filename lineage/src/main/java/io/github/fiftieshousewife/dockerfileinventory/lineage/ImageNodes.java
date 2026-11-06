@@ -14,6 +14,14 @@ public final class ImageNodes {
     }
 
     public static Resolved resolve(Artifactory artifactory, String repository, String image, String tag) {
+        return switch (locate(artifactory, repository, image, tag)) {
+            case Location.Found found -> node(artifactory, repository, image, found.configDigest());
+            case Resolved.Skipped skipped -> skipped;
+        };
+    }
+
+    /** The tag's config digest, through the amd64 entry of a manifest list, without fetching the config. */
+    public static Location locate(Artifactory artifactory, String repository, String image, String tag) {
         String reference = reference(repository, image, tag);
         Optional<JsonNode> tagged = manifest(artifactory, repository, image, tag);
         if (tagged.isEmpty()) {
@@ -34,11 +42,11 @@ public final class ImageNodes {
             }
             manifest = entry.get();
         }
-        return node(artifactory, repository, image, manifest.path("config").path("digest").asString());
+        return new Location.Found(manifest.path("config").path("digest").asString());
     }
 
-    /** The run skips this fetch for a config digest it has already resolved (slice 8). */
-    static Resolved node(Artifactory artifactory, String repository, String image, String configDigest) {
+    /** The run skips this fetch for a config digest it has already stored (slice 8). */
+    public static Resolved node(Artifactory artifactory, String repository, String image, String configDigest) {
         Optional<String> text = artifactory.blob(repository, image, configDigest);
         if (text.isEmpty()) {
             return new Resolved.Skipped(Resolved.Reason.GONE, configDigest);

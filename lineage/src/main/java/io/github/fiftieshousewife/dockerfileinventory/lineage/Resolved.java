@@ -8,7 +8,7 @@ public sealed interface Resolved {
     }
 
     /** A tag lineage does not read, counted in the rates. {@code detail} names the digest or media type. */
-    record Skipped(Reason reason, String detail) implements Resolved {
+    record Skipped(Reason reason, String detail) implements Resolved, Location {
     }
 
     enum Reason {
