@@ -50,5 +50,6 @@ gets its own test, as AGENTS.md asks.
 Checked by running facts, rules and the converter on openshift and docker-library with the code before the cleanup
 (e5c9841) and after: every output is identical except the `steps` of four docker-library Windows images (mongo
 `nanoserver`), whose `COPY` destination `C:\\Windows\\System32\\` kept only one of its two trailing backslashes before;
-the shared `Continuations` keeps both, as the converter already did. Two behaviour edges changed on purpose and are
-tested: a comment line no longer opens a heredoc in the retry, and a stray `)` keeps a script unreadable.
+the shared `Continuations` keeps both, as the converter already did. One edge changed on purpose, tested: a comment line
+no longer opens a heredoc in the retry, as it already did not when comments are blanked. A new test holds that a
+stray `)` leaves a script unreadable whatever follows, which the split briefly broke.
