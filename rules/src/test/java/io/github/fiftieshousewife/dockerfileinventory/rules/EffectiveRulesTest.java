@@ -43,6 +43,20 @@ class EffectiveRulesTest {
         });
     }
 
+    @Test
+    void s1ReportsAChainWhoseRootIsNotApprovedNamingTheDockerfileBuiltOnIt() {
+        EffectiveRule s1 =
+                new UnapprovedRoot(BaseList.read(java.nio.file.Path.of("src/test/resources/fixtures/allow.csv")));
+        ImageView onUbi = new ImageView("app", "1001", APP, List.of(APP, BASE, UBI), List.of("ubi9/ubi-minimal:9.4"));
+        ImageView onAlpine = new ImageView("app", "1001", APP, List.of(APP, BASE, UBI), List.of("alpine:3.20"));
+
+        assertThat(s1.check(onUbi, b -> null)).isEmpty();
+        assertThat(s1.check(onAlpine, b -> null)).singleElement().satisfies(f -> {
+            assertThat(f.message()).contains("alpine:3.20");
+            assertThat(f.contributing()).containsExactly("base-df");
+        });
+    }
+
     static ImageView image(String user, ImageView.Group setBy) {
         return new ImageView("app", user, setBy, List.of(APP, BASE, UBI), List.of());
     }

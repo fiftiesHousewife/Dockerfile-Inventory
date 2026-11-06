@@ -51,6 +51,7 @@ and one line when its gate is met.
   - Done: slice 1, harness; slice 2, R1, H1, H2, I1, I2 from the facts; slice 3, S2, S3, H3, R3 over the
     parsed Dockerfile, with line numbers.
   - Done: slice 4, S1 (approved list) and R2 (end-of-life list).
+  - Done: slice 5, effective S4 (arbitrary UID) and S1 (chain root), naming the Dockerfile to change.
 
 ## Queued
 

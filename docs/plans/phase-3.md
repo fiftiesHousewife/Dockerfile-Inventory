@@ -1,6 +1,6 @@
 # Phase 3 — Quality rules, detect-only: plan
 
-Status: planned 6 Nov; questions answered. Slices 1 to 4 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
+Status: planned 6 Nov; questions answered. Slices 1 to 5 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
 after people have classified a sample of that rule's findings (the false-positive gate), and H1's fix renders
 through Phase 4's renderer, so fixes get their own plan.
 
@@ -90,6 +90,12 @@ decision: security, then speed of remediation, then hygiene.
    16. S4: a numeric user with no group-0 permission step anywhere in the chain; with one, no finding.
    17. S1 effective: a chain whose root's base path is not approved.
    18. Without lineage output, effective rules are skipped and the rates say so.
+
+   As built: S4's group-0 check reads the raw text of every Dockerfile linked in the chain, since the normal-form
+   steps and Buildah's history both drop `COPY --chown`. An effective finding's `blobSha` is the image's own
+   Dockerfile (its first linked blob) and `contributing` the group to change: the one that set the user, or for a
+   missing group-0 step the image's own, or for S1 the Dockerfile built directly on the root. Test 18 belongs to
+   the run, so it moves to slice 6.
 6. **Outputs.** `findings.jsonl`; `tables/findings.csv` expanded to locations with its DDL; `rates.json` (findings and
    files per rule); `samples/<rule>.csv`, up to 50 findings per rule spread across organisations, from a fixed
    seed, for people to classify.

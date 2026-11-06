@@ -9,8 +9,8 @@ import java.util.function.Function;
 public final class ArbitraryUid implements EffectiveRule {
 
     /**
-     * Steps that let an arbitrary UID in group 0 write: {@code chgrp 0}, {@code chmod g=u} or {@code g+w}/{@code g+rwX},
-     * or a {@code COPY}/{@code ADD}/{@code chown} to group 0.
+     * Steps that let an arbitrary UID in group 0 write: {@code chgrp 0}, {@code chmod g=u} or {@code g+w} (also
+     * {@code g+rwX}), or a {@code COPY}, {@code ADD} or {@code chown} to group 0.
      */
     private static final Pattern GROUP_ZERO = Pattern.compile(
             "\\bchgrp\\s+(-\\S+\\s+)*0\\b"
