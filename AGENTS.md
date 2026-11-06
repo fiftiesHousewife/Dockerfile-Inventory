@@ -54,8 +54,11 @@ report/                     Phase 2: facts + manifest (+ lineage) -> passes, arc
                             Passes, NearDuplicates (MinHash), Archetypes (k80, k95), BaseCatalogue (EolList)
                             Tables (CSV, DDL), Summary and Dashboard (HTML); ReportRun: the run
                             run: FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [EOL_LIST] ./gradlew :report:run
-rules/                      Phase 3 (in progress): detect-only rules over facts, parsed Dockerfiles and lineage
+rules/                      Phase 3: detect-only rules over facts, parsed Dockerfiles and lineage
                             Rule, Finding, Subject, RuleRun (a failing rule is a finding, not a crash)
+                            per-file rules (S1-S3, R1-R3, H1-H3, I1, I2), EffectiveRule (S4, S1 root), Lines
+                            RulesRun: blobs -> findings, table, rates, samples; renovate/ holds the Renovate preset
+                            run: DISCOVERY_DIR, OUT_DIR, [LINEAGE_DIR], [ALLOW_LIST], [EOL_LIST] ./gradlew :rules:run
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

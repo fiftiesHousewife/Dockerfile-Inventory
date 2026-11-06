@@ -16,7 +16,7 @@ The full plan, with each phase's gate, is the
 | 1. Parse each Dockerfile into facts | `facts` | Built; its rates need a discovery run |
 | 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; waiting on an Artifactory token for a real run |
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need real discovery and facts runs |
-| 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Not started |
+| 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Not started |
 | 5. Convert existing Dockerfiles to builders | `converter` | Not started |
 
@@ -124,6 +124,46 @@ version, package managers and packages, user kind, ports, entrypoint form, stage
 | `archetypes.json` | Every archetype by size: its files, signature, a representative file and the repositories using it |
 | `tables/*.csv`, `tables/ddl.sql` | `dockerfiles`, `locations`, `archetypes` and `bases` for loading into Oracle, with the `CREATE TABLE` statements |
 | `dashboard.html` | One self-contained page: the counts, rates, top archetypes and bases, package managers and users |
+
+## Check the estate against the rules
+
+```bash
+export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR: blobs and manifest
+export LINEAGE_DIR=/data/lineage              # optional: rules about inherited users and bases
+export ALLOW_LIST=/data/approved-bases.csv    # optional: imagePath,tagPrefix (rule S1)
+export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate (rule R2)
+export OUT_DIR=/data/rules
+./gradlew :rules:run
+```
+
+Detect-only: nothing is changed. Each distinct Dockerfile is checked once; a rule whose input is missing is
+skipped and listed in `rates.json`. Secret-shaped values are never written out, only a SHA-256 of the value and
+its line.
+
+| Rule | Finds | Severity |
+| --- | --- | --- |
+| S1 | A base, or the base at the root of an image's chain, not on the approved list | High |
+| S2 | A secret-shaped `ENV` or `ARG` value | Critical |
+| S3 | `curl` or `wget` piped to a shell | High |
+| S4 | An image that cannot run as an arbitrary non-root UID (OpenShift's default) | High |
+| R1 | A base not pinned by digest | Medium |
+| R2 | An end-of-life base | Medium |
+| R3 | No OCI revision or source label | Low |
+| H1 | An RPM install with no clean in the same `RUN` | Low |
+| H2 | A shell-form entrypoint | Low |
+| H3 | Adjacent `RUN`s that could be one | Low |
+| I1 | Packages installed without a version | Info |
+| I2 | A Dockerfile the parser cannot read | Medium |
+
+| File | Contents |
+| --- | --- |
+| `findings.jsonl` | One finding per rule per distinct Dockerfile, with its line where known; rules about inherited properties name the Dockerfile to change |
+| `tables/findings.csv`, `tables/ddl.sql` | One row per finding per location, for Oracle |
+| `rates.json` | Findings, files and locations per rule; the rules skipped |
+| `samples/<rule>.csv` | Up to 50 findings per rule, spread across organisations, with a `verdict` column for people to classify before any fix is enabled |
+
+`renovate/dockerfile-estate.json` is a Renovate preset for the central instance: Dockerfile bases pinned by
+digest, base updates grouped into one pull request per repository.
 
 ## Contributing
 

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Dockerfile estate preset (Phase 3, R1 and R2): pin every Dockerfile base by digest and raise base updates as one grouped pull request per repository. The central Renovate instance applies it; the schedule is the instance's.",
+  "packageRules": [
+    {
+      "description": "Pin bases by digest so a rebuild cannot silently pick up a different image, and group their updates.",
+      "matchManagers": ["dockerfile"],
+      "matchDatasources": ["docker"],
+      "pinDigests": true,
+      "groupName": "Dockerfile base images",
+      "groupSlug": "dockerfile-base-images"
+    }
+  ]
+}

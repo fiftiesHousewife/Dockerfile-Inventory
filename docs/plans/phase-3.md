@@ -1,6 +1,6 @@
 # Phase 3 — Quality rules, detect-only: plan
 
-Status: planned 6 Nov; questions answered. Slices 1 to 5 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
+Status: planned 6 Nov; questions answered. All slices built 6 Nov; enabling fixes waits on classified samples. This plan covers detection. Fixes are enabled one rule at a time only
 after people have classified a sample of that rule's findings (the false-positive gate), and H1's fix renders
 through Phase 4's renderer, so fixes get their own plan.
 
@@ -105,5 +105,10 @@ decision: security, then speed of remediation, then hygiene.
 7. **Renovate preset.** `renovate/dockerfile-estate.json`: Dockerfile digest pinning on, base-image updates grouped
    into one PR per repository, schedule left to the instance.
    22. The preset is valid JSON and pins digests for the `dockerfile` manager.
-8. **Run.** `RulesMain`: `FACTS_DIR`, `DISCOVERY_DIR`, `OUT_DIR`, `[LINEAGE_DIR]`, `[ALLOW_LIST]`, `[EOL_LIST]`.
-   Untested, like the other mains.
+8. **Run.** `RulesMain`: `DISCOVERY_DIR`, `OUT_DIR`, `[LINEAGE_DIR]`, `[ALLOW_LIST]`, `[EOL_LIST]`. Untested,
+   like the other mains.
+
+   As built (slices 6 to 8): the run re-parses each blob and takes its facts from that parse, not from
+   `facts.jsonl`, so facts and tree always agree and no `FACTS_DIR` is needed (a change to D3). Effective rules
+   read lineage's `effective.jsonl` and `images.jsonl`, and the raw text of linked blobs. Checked end to end with
+   `./gradlew :rules:run` on sample Dockerfiles.

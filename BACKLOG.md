@@ -52,6 +52,9 @@ and one line when its gate is met.
     parsed Dockerfile, with line numbers.
   - Done: slice 4, S1 (approved list) and R2 (end-of-life list).
   - Done: slice 5, effective S4 (arbitrary UID) and S1 (chain root), naming the Dockerfile to change.
+  - Done: slice 6, run and outputs (findings, table, rates, samples); slice 7, Renovate preset; slice 8,
+    `RulesMain`.
+  - Detection complete. Next: run it on real output, classify each rule's sample, then plan fixes (Phase 3b).
 
 ## Queued
 
