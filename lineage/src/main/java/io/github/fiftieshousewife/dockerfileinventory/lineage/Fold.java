@@ -38,7 +38,10 @@ public final class Fold {
             List<Member> chain = chain(image, parents, byDigest);
             External external = external(chain.getLast().image());
             ImageConfig config = image.config();
-            effective.put(image.configDigest(), new EffectiveImage(
+            List<ChainEntry> entries = chain.stream()
+                    .map(m -> new ChainEntry(m.image().configDigest(), links.get(m.image().configDigest())))
+                    .toList();
+            effective.put(image.configDigest(), new EffectiveImage(entries,
                     new Property<>(config.user(), setBy(chain, external, links, keyword("USER"))),
                     new Property<>(config.workingDir(), setBy(chain, external, links, keyword("WORKDIR"))),
                     new Property<>(config.entrypoint(), setBy(chain, external, links, keyword("ENTRYPOINT"))),

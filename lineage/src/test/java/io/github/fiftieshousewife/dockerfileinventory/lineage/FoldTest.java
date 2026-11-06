@@ -122,6 +122,21 @@ class FoldTest {
         assertThat(effective.user().setBy()).isEqualTo(new SetBy.Image("twin-a", twinLink));
     }
 
+    @Test
+    void theChainListsEveryAncestorWithItsLinkAndARepeatedImageEndsIt() {
+        Link baseLink = new Link(Link.Tier.PROBABLE, List.of("base-df"), false);
+        Resolved.Node base = node("base", List.of("L1"), null, List.of(step("ADD file:ubi in /")));
+        Resolved.Node app = node("app", List.of("L1", "L2"), null, List.of(step("ADD file:ubi in /"), step("RUN make")));
+        Map<String, Link> links = Map.of("app", APP_LINK, "base", baseLink);
+
+        assertThat(Fold.of(List.of(base, app), Map.of("base", new Parent.Root(), "app", new Parent.Of("base")), links)
+                .get("app").chain())
+                .containsExactly(new ChainEntry("app", APP_LINK), new ChainEntry("base", baseLink));
+        assertThat(Fold.of(List.of(base, app), Map.of("base", new Parent.Of("app"), "app", new Parent.Of("base")), links)
+                .get("app").chain())
+                .extracting(ChainEntry::configDigest).containsExactly("app", "base");
+    }
+
     static HistoryStep step(String instruction) {
         return step(instruction, null);
     }
