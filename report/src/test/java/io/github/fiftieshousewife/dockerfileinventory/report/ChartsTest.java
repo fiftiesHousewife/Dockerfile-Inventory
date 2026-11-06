@@ -52,4 +52,26 @@ class ChartsTest {
                 "<title>ubi9/ubi-minimal:9.4: 700 locations, 200 pinned by digest, supported</title>",
                 ">centos:centos7</text>");
     }
+
+    @Test
+    void aStackedBarSplitsItsTotalInTheGivenOrderWithGapsAndALegendOfCountsAndShares() {
+        String html = Charts.stacked("Users", List.of(
+                new Charts.Segment("a", 50), new Charts.Segment("b", 30), new Charts.Segment("c", 20)));
+
+        assertThat(html).contains(
+                "<rect class=\"seg s1\" x=\"20.0\" width=\"298.0\"",
+                "<rect class=\"seg s2\" x=\"320.0\" width=\"178.8\"",
+                "<rect class=\"seg s3\" x=\"500.8\" width=\"119.2\"",
+                "<span class=\"key s1\"></span>a 50 (50.0%)",
+                "<span class=\"key s3\"></span>c 20 (20.0%)");
+    }
+
+    @Test
+    void moreThanEightPartsFoldTheRestIntoOther() {
+        List<Charts.Segment> parts = java.util.stream.IntStream.range(0, 10)
+                .mapToObj(i -> new Charts.Segment("p" + i, 10)).toList();
+
+        assertThat(Charts.stacked("Managers", parts))
+                .contains("<span class=\"key s8\"></span>other 30 (30.0%)").doesNotContain("p9");
+    }
 }

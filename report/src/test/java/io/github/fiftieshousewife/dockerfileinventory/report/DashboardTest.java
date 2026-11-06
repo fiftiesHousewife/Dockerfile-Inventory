@@ -138,8 +138,30 @@ class DashboardTest {
         String page = Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty());
 
         assertThat(page).contains(Charts.bases(BASES))
-                .contains("<span class=\"key eol\"></span>end of life", "<span class=\"key supported\"></span>supported",
+                .contains("<span class=\"key eol\"></span>end of life",
+                        "<span class=\"key supported\"></span>supported",
                         "<span class=\"key unknown\"></span>not on the list", "hatched: pinned by digest")
                 .contains("<details><summary>Table</summary><div class=\"scroll\"><table><tr><th>Image</th>");
+    }
+
+    @Test
+    void usersManagersAndParseOutcomeAreStackedBarsInAFixedOrder() {
+        String page = Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty());
+
+        assertThat(page).contains(Charts.stacked("Final user", List.of(new Charts.Segment("root", 600),
+                        new Charts.Segment("numeric", 634), new Charts.Segment("named", 0),
+                        new Charts.Segment("unresolved", 0))))
+                .contains(Charts.stacked("Package managers", List.of(new Charts.Segment("microdnf", 800))))
+                .contains(Charts.stacked("Parse outcome", List.of(new Charts.Segment("parsed", 879),
+                        new Charts.Segment("templates", 3), new Charts.Segment("failed", 18))));
+    }
+
+    @Test
+    void thePageLoadsNothingFromOutsideAndEscapesEstateTextInsideItsCharts() {
+        List<BaseRow> hostile = List.of(new BaseRow("evil/<script>x</script>", "1", "evil", 5, 0, "unknown", null));
+
+        assertThat(Dashboard.render(SUMMARY, RANKING, hostile, Optional.of(CHAIN)))
+                .doesNotContain("http://", "https://", " src=", "<script>")
+                .contains("evil/&lt;script&gt;x&lt;/script&gt;:1</text>");
     }
 }

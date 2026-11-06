@@ -21,10 +21,12 @@ public final class Dashboard {
     private static final String STYLE = """
             :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --tile: #f5f5f7;
                     --good: #0ca30c; --watch: #fab219; --act: #d03b3b; --series-1: #2a78d6;
-                    --neutral: #a3a29b; }
+                    --neutral: #a3a29b; --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100;
+                    --c5: #e87ba4; --c6: #008300; --c7: #6250d6; --c8: #e34948; }
             @media (prefers-color-scheme: dark) {
               :root { --bg: #1c1c1e; --fg: #f2f2f7; --muted: #a1a1a6; --line: #3a3a3c; --tile: #2c2c2e;
-                      --series-1: #3987e5; --neutral: #6e6d68; }
+                      --series-1: #3987e5; --neutral: #6e6d68; --c1: #3987e5; --c2: #d95926; --c3: #199e70;
+                      --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; }
             }
             body { margin: 0 auto; max-width: 1100px; padding: 24px 16px; background: var(--bg); color: var(--fg);
                    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -55,6 +57,10 @@ public final class Dashboard {
             .key.hatched { background: repeating-linear-gradient(45deg, var(--neutral) 0 3px, var(--bg) 3px 6px); }
             p.legend { color: var(--muted); font-size: 13px; margin: 0 0 8px -12px; }
             details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin: 8px 0; }
+            .s1 { fill: var(--c1); background: var(--c1); } .s2 { fill: var(--c2); background: var(--c2); }
+            .s3 { fill: var(--c3); background: var(--c3); } .s4 { fill: var(--c4); background: var(--c4); }
+            .s5 { fill: var(--c5); background: var(--c5); } .s6 { fill: var(--c6); background: var(--c6); }
+            .s7 { fill: var(--c7); background: var(--c7); } .s8 { fill: var(--c8); background: var(--c8); }
             svg.chart .marker circle { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
             .health { background: var(--tile); border-radius: 10px; padding: 10px 14px; border-left: 6px solid; }
             .health.good { border-left-color: var(--good); } .health.watch { border-left-color: var(--watch); }
@@ -94,9 +100,14 @@ public final class Dashboard {
                         + "<span class=\"key hatched\"></span>hatched: pinned by digest</p>",
                 Charts.bases(bases),
                 "<details><summary>Table</summary><div class=\"scroll\">" + bases(bases) + "</div></details>",
-                "<h2>Package managers</h2>", counts(summary.managers(), "Manager"),
+                "<h2>Parse outcome</h2><p class=\"note\">Distinct files.</p>"
+                        + Charts.stacked("Parse outcome", parseOutcome(summary)),
+                "<h2>Package managers</h2><p class=\"note\">A location using two managers counts for each.</p>"
+                        + Charts.stacked("Package managers", managers(summary.managers())),
+                folded(counts(summary.managers(), "Manager")),
                 "<h2>Final user</h2>", "<p class=\"note\">" + userNote(summary) + "</p>",
-                counts(summary.users(), "User"),
+                Charts.stacked("Final user", users(summary.users())),
+                folded(counts(summary.users(), "User")),
                 "<h2>Lineage</h2>", lineage.map(Dashboard::lineage).orElse(
                         "<p class=\"note\">Lineage has not run: no images from Artifactory are linked to Dockerfiles."
                                 + "</p>"),
@@ -241,6 +252,39 @@ public final class Dashboard {
                 : image.tier().toLowerCase(Locale.ROOT) + ": " + image.dockerfiles().stream().limit(DOCKERFILES_SHOWN)
                         .map(d -> "<code>" + escape(d) + "</code>").collect(Collectors.joining(", "))
                         + (more > 0 ? " and " + count(more) + " more" : "");
+    }
+
+    /** Fixed, so a manager keeps its colour from run to run; any other manager follows, alphabetically. */
+    private static final List<String> MANAGER_ORDER =
+            List.of("dnf", "microdnf", "yum", "apt-get", "apt", "apk", "zypper");
+    private static final List<String> USER_ORDER = List.of("ROOT", "NUMERIC", "NAMED", "UNRESOLVED");
+
+    static List<Charts.Segment> managers(Map<String, Integer> managers) {
+        return managers.entrySet().stream()
+                .sorted(java.util.Comparator.comparing((Map.Entry<String, Integer> e) -> {
+                    int i = MANAGER_ORDER.indexOf(e.getKey());
+                    return i < 0 ? MANAGER_ORDER.size() : i;
+                }).thenComparing(Map.Entry::getKey))
+                .map(e -> new Charts.Segment(e.getKey(), e.getValue()))
+                .toList();
+    }
+
+    static List<Charts.Segment> users(Map<String, Integer> users) {
+        return USER_ORDER.stream()
+                .map(u -> new Charts.Segment(u.toLowerCase(Locale.ROOT), users.getOrDefault(u, 0)))
+                .toList();
+    }
+
+    /** Distinct files: parsed, templates, and failures, the rate being of files other than templates. */
+    static List<Charts.Segment> parseOutcome(Summary s) {
+        int files = s.passes().isEmpty() ? 0 : s.passes().getFirst().groups();
+        int failed = (int) Math.round(s.parseFailureRate() * (files - s.templates()));
+        return List.of(new Charts.Segment("parsed", files - s.templates() - failed),
+                new Charts.Segment("templates", s.templates()), new Charts.Segment("failed", failed));
+    }
+
+    private static String folded(String table) {
+        return "<details><summary>Table</summary>" + table + "</details>";
     }
 
     private static String userNote(Summary s) {

@@ -130,4 +130,56 @@ final class Charts {
                 + "<text class=\"axis\" x=\"" + number(BAR_START + width + 6) + "\" y=\"" + (y + 13) + "\">"
                 + base.locations() + "</text></g>";
     }
+
+    /** One part of a stacked bar. */
+    record Segment(String label, int count) {
+    }
+
+    private static final int SLOTS = 8;
+    private static final int STACK_START = 20;
+    private static final int STACK_WIDTH = 600;
+    private static final int GAP = 2;
+
+    /**
+     * One total split into parts, in the order given, which the caller keeps fixed so a part keeps its colour from run
+     * to run; past {@value #SLOTS} parts the rest fold into "other". The legend gives each part's count and share, so
+     * colour is never the only key.
+     */
+    static String stacked(String name, List<Segment> segments) {
+        List<Segment> parts = folded(segments);
+        int total = parts.stream().mapToInt(Segment::count).sum();
+        double available = STACK_WIDTH - GAP * (parts.size() - 1.0);
+        StringBuilder bars = new StringBuilder();
+        StringBuilder legend = new StringBuilder();
+        double x = STACK_START;
+        for (int i = 0; i < parts.size(); i++) {
+            Segment part = parts.get(i);
+            double share = total == 0 ? 0 : (double) part.count() / total;
+            double width = share * available;
+            String label = Dashboard.escape(part.label());
+            String slot = "s" + (i + 1);
+            bars.append("<rect class=\"seg ").append(slot).append("\" x=\"").append(number(x)).append("\" width=\"")
+                    .append(number(width)).append("\" y=\"4\" height=\"24\" rx=\"3\"><title>").append(label)
+                    .append(": ").append(part.count()).append(" (").append(percent(share)).append(")</title></rect>");
+            legend.append("<span class=\"key ").append(slot).append("\"></span>").append(label).append(' ')
+                    .append(part.count()).append(" (").append(percent(share)).append(')');
+            x += width + GAP;
+        }
+        return "<svg class=\"chart stack\" viewBox=\"0 0 " + WIDTH + " 32\" role=\"img\" aria-label=\""
+                + Dashboard.escape(name) + "\">" + bars + "</svg><p class=\"legend\">" + legend + "</p>";
+    }
+
+    private static List<Segment> folded(List<Segment> segments) {
+        if (segments.size() <= SLOTS) {
+            return segments;
+        }
+        List<Segment> kept = new ArrayList<>(segments.subList(0, SLOTS - 1));
+        kept.add(new Segment("other", segments.subList(SLOTS - 1, segments.size()).stream()
+                .mapToInt(Segment::count).sum()));
+        return kept;
+    }
+
+    private static String percent(double share) {
+        return String.format(Locale.ROOT, "%.1f%%", share * 100);
+    }
 }

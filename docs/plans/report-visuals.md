@@ -1,6 +1,6 @@
 # A more visual report: plan
 
-Status: planned 6 Nov; question 1 answered 6 Nov.
+Status: built 6 Nov.
 
 The owner chose four changes to the dashboard. It stays one self-contained file (Q2 of Phase 2): charts are inline
 SVG written by the report module, hover is the SVG `<title>` element (no script), and every chart keeps its numbers
@@ -42,3 +42,11 @@ automatic flip.
 1. The health strip's metrics and thresholds. Answered: six, good / act, watch between: parse failures <1% / >5%;
    final user root <10% / >30%; bases pinned by digest >80% / <20%; bases at end of life 0% / >5%; scanned at a
    released commit >90% / <50%; RUN too complex <5% / >15%.
+
+## As built
+
+As planned, with: the parse outcome's counts are worked out from the summary (distinct files from the blob pass,
+failures from the rate of non-template files); package managers keep a fixed order (dnf, microdnf, yum, apt-get,
+apt, apk, zypper, then the rest alphabetically) and only those present appear; final user always shows its four
+kinds. Test 5 passed first time: the charts already escaped every label.
+
