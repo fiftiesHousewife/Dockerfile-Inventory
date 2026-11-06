@@ -142,7 +142,7 @@ echo "repository $REPOSITORY ready (images go to $REGISTRY)"
 # Docker clients log in through this endpoint; just after a restart it answers 503 for a while.
 printf 'waiting for the Docker API'
 for _ in $(seq 60); do
-    code=$(curl -s -o /dev/null -w '%{http_code}' -u "admin:$ADMIN_PASSWORD" "$API/api/docker/$REPOSITORY/v2/token")
+    code=$(curl -s -o /dev/null -w '%{http_code}' -u "admin:$ADMIN_PASSWORD" "$API/api/docker/$REPOSITORY/v2/token" || true)
     [[ $code == 200 ]] && break
     printf '.'; sleep 5
 done
@@ -155,13 +155,13 @@ can_read() {
 }
 if [[ -z ${ARTIFACTORY_TOKEN:-} ]]; then
     reply=$(curl -s -u "admin:$ADMIN_PASSWORD" -X POST -H 'Content-Type: application/json' \
-        "http://localhost:$JCR_PORT/access/api/v1/tokens" -d '{"scope":"applied-permissions/admin","expires_in":86400}')
+        "http://localhost:$JCR_PORT/access/api/v1/tokens" -d '{"scope":"applied-permissions/admin","expires_in":86400}' || true)
     ARTIFACTORY_TOKEN=$(jq -r '.access_token // empty' <<<"$reply" 2>/dev/null || true)
     if [[ -z $ARTIFACTORY_TOKEN ]] || ! can_read "$ARTIFACTORY_TOKEN"; then
         echo "the access token API gave no usable token: $(jq -c 'del(.access_token, .refresh_token)' <<<"$reply" \
             2>/dev/null || echo "$reply" | head -c 300)"
         reply=$(curl -s -u "admin:$ADMIN_PASSWORD" -X POST "$API/api/security/token" \
-            -d username=admin -d scope=member-of-groups:readers -d expires_in=86400)
+            -d username=admin -d scope=member-of-groups:readers -d expires_in=86400 || true)
         ARTIFACTORY_TOKEN=$(jq -r '.access_token // empty' <<<"$reply" 2>/dev/null || true)
         [[ -n $ARTIFACTORY_TOKEN ]] && can_read "$ARTIFACTORY_TOKEN" || die "no usable token from the older API \
 either: $(jq -c 'del(.access_token, .refresh_token)' <<<"$reply" 2>/dev/null || echo "$reply" | head -c 300). Create one \
