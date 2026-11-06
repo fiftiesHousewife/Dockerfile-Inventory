@@ -25,7 +25,6 @@ public final class UnpinnedBase implements Rule {
         if (!base.resolved() || base.digestPinned()) {
             return List.of();
         }
-        String reference = base.tag() == null ? base.name() : base.name() + ":" + base.tag();
-        return List.of(finding(subject, null, "base " + reference + " is not pinned by digest"));
+        return List.of(finding(subject, null, "base " + Bases.reference(base) + " is not pinned by digest"));
     }
 }

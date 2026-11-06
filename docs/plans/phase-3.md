@@ -1,6 +1,6 @@
 # Phase 3 — Quality rules, detect-only: plan
 
-Status: planned 6 Nov; questions answered. Slices 1 to 3 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
+Status: planned 6 Nov; questions answered. Slices 1 to 4 built 6 Nov. This plan covers detection. Fixes are enabled one rule at a time only
 after people have classified a sample of that rule's findings (the false-positive gate), and H1's fix renders
 through Phase 4's renderer, so fixes get their own plan.
 
@@ -81,6 +81,10 @@ decision: security, then speed of remediation, then hygiene.
 4. **List rules**: S1 and R2.
    13. S1: a base whose path and tag prefix are not on the list; without a list, S1 is skipped and says so.
    14. R2: a base the end-of-life list marks `eol`.
+
+   As built: both lists read like Phase 2's catalogue: longest tag prefix on a version boundary, path without
+   registry host (facts' `fromPath`). S1 also reports a base set by a build argument with no default, since an
+   unknown base cannot be shown to be approved.
 5. **Effective rules**: S4, and S1 for the chain's root, from lineage output.
    15. S4: an effective user that is root, named or unresolved; the finding names the group that set it.
    16. S4: a numeric user with no group-0 permission step anywhere in the chain; with one, no finding.

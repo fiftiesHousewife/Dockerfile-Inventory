@@ -50,6 +50,7 @@ and one line when its gate is met.
   false-positive rate per rule below threshold before auto-fix.
   - Done: slice 1, harness; slice 2, R1, H1, H2, I1, I2 from the facts; slice 3, S2, S3, H3, R3 over the
     parsed Dockerfile, with line numbers.
+  - Done: slice 4, S1 (approved list) and R2 (end-of-life list).
 
 ## Queued
 
