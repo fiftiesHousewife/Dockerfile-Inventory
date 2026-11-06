@@ -2,9 +2,13 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class SummaryTest {
 
@@ -29,5 +33,18 @@ class SummaryTest {
         assertThat(summary.users()).isEqualTo(Map.of("NUMERIC", 2, "ROOT", 1));
         assertThat(summary.effectiveUsers()).isFalse();
         assertThat(summary.releasedShare()).isEqualTo(3.0 / 4);
+    }
+
+    @Test
+    void theEndOfLifeShareIsOfLocationsOnBasesTheListMarksEol(@TempDir Path dir) throws IOException {
+        Estate estate = Estate.read(EstateTest.FIXTURES, EstateTest.FIXTURES, null);
+        Path csv = dir.resolve("eol.csv");
+        Files.writeString(csv, "ubi9/ubi-minimal,9.4,eol,2026-01-01\n");
+        List<BaseRow> bases = BaseCatalogue.of(estate, EolList.read(csv));
+
+        Summary summary = Summary.of(estate, Passes.exact(estate), 2,
+                Archetypes.rank(Passes.signatureGroups(estate), estate), bases);
+
+        assertThat(summary.eolShare()).isEqualTo(1.0);
     }
 }

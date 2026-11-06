@@ -12,7 +12,8 @@ import java.util.stream.Stream;
  * effective (from lineage) where a Dockerfile has a linked image, and as written otherwise (D4).
  */
 public record Summary(int locations, int missing, List<PassCount> passes, int nearDuplicateGroups, int k80, int k95,
-                      double parseFailureRate, double opaqueRunRate, double pinnedShare, Map<String, Integer> managers,
+                      double parseFailureRate, double opaqueRunRate, double pinnedShare, double eolShare,
+                      Map<String, Integer> managers,
                       Map<String, Integer> users, boolean effectiveUsers, double releasedShare) {
 
     public Summary {
@@ -30,6 +31,7 @@ public record Summary(int locations, int missing, List<PassCount> passes, int ne
         int opaque = estate.dockerfiles().stream().mapToInt(Dockerfile::opaqueRuns).sum();
         int baseLocations = bases.stream().mapToInt(BaseRow::locations).sum();
         int pinned = bases.stream().mapToInt(BaseRow::pinnedLocations).sum();
+        int eol = bases.stream().filter(b -> b.status().equals("eol")).mapToInt(BaseRow::locations).sum();
         Map<String, Integer> managers = new TreeMap<>();
         Map<String, Integer> users = new TreeMap<>();
         estate.dockerfiles().forEach(d -> {
@@ -40,7 +42,7 @@ public record Summary(int locations, int missing, List<PassCount> passes, int ne
         long released = all.stream().filter(l -> l.scope().equals("RELEASED")).count();
         return new Summary(all.size(), estate.missing().size(), passes, nearDuplicateGroups, ranking.k80(),
                 ranking.k95(), share(estate.failures().size(), blobs), share(opaque, runs),
-                share(pinned, baseLocations), managers, users, !estate.effectiveUsers().isEmpty(),
+                share(pinned, baseLocations), share(eol, baseLocations), managers, users, !estate.effectiveUsers().isEmpty(),
                 share(released, all.size()));
     }
 
