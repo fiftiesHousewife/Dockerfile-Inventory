@@ -4,7 +4,7 @@
 set -uo pipefail
 
 JCR=inventory-jcr
-IMAGE=${JCR_IMAGE:-releases-docker.jfrog.io/jfrog/artifactory-jcr:latest}
+IMAGE=${JCR_IMAGE:-releases-docker.jfrog.io/jfrog/artifactory-jcr:7.77.17}
 LOGS=/var/opt/jfrog/artifactory/log
 JCR_PORT=${JCR_PORT:-8082}
 

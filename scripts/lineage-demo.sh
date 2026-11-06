@@ -25,7 +25,9 @@ FACTS_DIR=${FACTS_DIR:-out/demo5/facts}
 OUT=${OUT:-out/lineage-demo}
 SCOPE=${SCOPE:-chain}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
-JCR_IMAGE=${JCR_IMAGE:-releases-docker.jfrog.io/jfrog/artifactory-jcr:latest}
+# 7.77 (early 2024): 7.191 refused Derby, then left its Docker API at 503 when its licence check (GetEntitlements)
+# failed. Every version from 7.77 on publishes arm64.
+JCR_IMAGE=${JCR_IMAGE:-releases-docker.jfrog.io/jfrog/artifactory-jcr:7.77.17}
 BUILDAH_IMAGE=${BUILDAH_IMAGE:-quay.io/buildah/stable:v1.37.0}
 POSTGRES_IMAGE=${POSTGRES_IMAGE:-postgres:16.4}
 NETWORK=inventory-demo
@@ -65,6 +67,10 @@ for _ in $(seq 60); do
 done
 docker exec $POSTGRES pg_isready -q -U artifactory -d artifactory || die "PostgreSQL did not start; docker logs $POSTGRES"
 echo " up"
+# A JCR of another version cannot open this one's database, so its volumes have to go: that is left to you.
+running_image=$(docker inspect -f '{{.Config.Image}}' $JCR 2>/dev/null || true)
+[[ -z $running_image || $running_image == "$JCR_IMAGE" ]] || die "JCR runs $running_image, not $JCR_IMAGE. To start \
+again on empty data: docker rm -f $JCR $POSTGRES; docker volume rm $JCR $POSTGRES"
 # A JCR published on another port is started again on JCR_PORT; its data volume is kept.
 if [[ -n $(docker ps -q -f name=^$JCR$) ]] && ! docker port $JCR 8082/tcp | grep -q ":$JCR_PORT\$"; then
     docker rm -f $JCR >/dev/null
