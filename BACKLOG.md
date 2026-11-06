@@ -25,8 +25,9 @@ and one line when its gate is met.
     files named like Dockerfiles.
   - Done 6 Nov: `docker-library` (48 repositories, 594 locations, 581 files): no parse failures; 35% of its RUNs were
     unreadable, which led to S4 (`docs/plans/shell-reading.md`): groups, `case`, loops and functions read, PowerShell
-    counted apart; every estate now 0-1.2% unreadable. Open: 4 docker-library conversions render text that does not
-    parse. Next estate: bitnami.
+    counted apart; every estate now 0-1.2% unreadable. Round trip 580 of 581 after a fix for Windows `COPY`
+    destinations ending in a backslash (mongo). Next: a cleanup of the parsing code (`docs/plans/parsing-cleanup.md`),
+    then bitnami.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.

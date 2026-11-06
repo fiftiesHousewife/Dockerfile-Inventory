@@ -45,7 +45,7 @@ beside the existing one. Planned as its own slice.
 | Unique files | 579 | 2,833 | 722 | 518 | 581 |
 | Parse failures, templates left out | 0% | 2.2% (61) | 0.1% (1) | 1.4% (7; 3 not Dockerfiles) | 0% |
 | Unreadable `RUN`s (after S4) | 0% | 0.7% | 1.2% | 1.0% | 0.75% (96 more in PowerShell) |
-| Round trip passed | 568 of 568 | 2,730 of 2,833 | 720 of 722 | 502 of 518 (every file that parses) | 576 of 581 |
+| Round trip passed | 568 of 568 | 2,730 of 2,833 | 720 of 722 | 502 of 518 (every file that parses) | 580 of 581 (every file that parses) |
 
 openshift's fixes are in `openshift-fixes.md`. konflux-ci (3,231 locations, only 722 distinct files: much copying)
 needed two: `ARG A=` (an empty default) fails to parse, upstream issue 13, written `ARG A=""` in the retry; and a
@@ -61,7 +61,10 @@ parser's pairs, so the converter now reads `ENV` from its text, as it already di
 rejects too.
 
 docker-library parsed completely, but 35% of its RUNs were unreadable (loops, `case`, groups, functions), which led
-to S4 (`shell-reading.md`). Left: 4 conversions whose rendering does not parse.
+to S4 (`shell-reading.md`). Four mongo Windows images (`nanoserver`) failed the round trip: a `COPY` destination ending
+in a backslash (`C:\\Windows\\System32\\`) lost it in the converter, and once rendered the backslash read as joining the
+next line. The converter now keeps a backslash ending an instruction's last line, and the renderer follows such an
+instruction with a blank line, as the original does.
 
 The lineage of openshift's published OKD images is still to plan (above).
 
