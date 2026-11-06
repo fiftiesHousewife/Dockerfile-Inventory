@@ -45,7 +45,6 @@ class ShellTokeniserTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "if [ -f /etc/x ]; then echo y; fi",
         "case $ARCH in x86_64) echo a;; esac",
         "for p in a b; do echo $p; done",
         "while true; do sleep 1; done",
@@ -136,5 +135,23 @@ class ShellTokeniserTest {
         assertThat(ShellTokeniser.parse(
                 "echo -e \"http.cors.allow-origin: \\\"*\\\"\" >> /usr/share/elasticsearch/config/elasticsearch.yml"))
                 .contains(List.of(List.of("echo", "-e", "http.cors.allow-origin: \"*\"")));
+    }
+
+    @Test
+    void everyBranchOfAnIfIsReadAndItsConditionIsReadAsACommand() {
+        assertThat(ShellTokeniser.parse("if [ \"$ARCH\" = x86_64 ]; then dnf install -y intel-tools; "
+                + "else dnf install -y arm-tools; fi && dnf clean all"))
+                .contains(List.of(List.of("[", "$ARCH", "=", "x86_64", "]"),
+                        List.of("dnf", "install", "-y", "intel-tools"), List.of("dnf", "install", "-y", "arm-tools"),
+                        List.of("dnf", "clean", "all")));
+    }
+
+    @Test
+    void nestedIfsElifsAndAnAssignmentAfterThenAreReadToo() {
+        String script = "if a; then if b; then dnf install -y x; fi; elif c; then V=1 apk add y; fi";
+
+        assertThat(ShellTokeniser.parse(script)).contains(List.of(List.of("a"), List.of("b"),
+                List.of("dnf", "install", "-y", "x"), List.of("c"), List.of("apk", "add", "y")));
+        assertThat(ShellTokeniser.assignments(script)).containsEntry("V", "1");
     }
 }

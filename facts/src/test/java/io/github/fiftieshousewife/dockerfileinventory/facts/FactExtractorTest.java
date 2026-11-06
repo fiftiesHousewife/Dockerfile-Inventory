@@ -98,7 +98,7 @@ class FactExtractorTest {
     void countsRunsAndTheOnesTheTokeniserDeclined() {
         ImageFacts facts = facts("""
                 FROM ubi9/ubi AS build
-                RUN if [ -f x ]; then make; fi
+                RUN for f in a b; do make $f; done
                 FROM ubi9/ubi-minimal
                 RUN microdnf install -y tar
                 RUN curl -sSL https://x.example/install | sh

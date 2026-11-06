@@ -1,6 +1,6 @@
 # Fixes from the openshift run: plan
 
-Status: planned 6 Nov; S1 started.
+Status: S1 and S2 built 6 Nov (unreadable RUNs 663 -> 323); S3 started.
 
 `openshift` (862 repositories, 3,180 locations, 2,833 files): 97 parse failures besides 32 templates (3.4%), 663 of
 6,019 shell-form `RUN`s too complex to read (10.7%), and 230 files failing the round trip. Fixed test-first, using
@@ -16,7 +16,7 @@ What makes the 663 unreadable, counted by a probe over every openshift `RUN` (a 
 | --- | --- | --- | --- |
 | S1 | A command substitution makes the whole `RUN` unreadable, when usually one word is unknown (`ARCH=$(uname -m) && curl .../$ARCH.tar.gz`) | `$( ... )` and backticks, nested or quoted, become one word whose value is unknown; the commands around them are read. A substitution's own commands are not counted as the `RUN`'s | `facts` |
 | S2 | An escaped quote inside double quotes (`"a \"b\" c"`) ends the quoted text early | Inside double quotes, `\"`, `\\`, `` \` `` and `\$` are escapes, as in the shell | `facts` |
-| S3 | `if`/`then`/`else`/`fi` makes the `RUN` unreadable | Question for the owner before building: count every branch's commands (a package installed on one branch counts), or keep `if` unreadable | `facts` |
+| S3 | `if`/`then`/`else`/`fi` makes the `RUN` unreadable | Answered 6 Nov: count every branch's commands, so a package installed on one branch counts as one this Dockerfile can install. The keywords `if`, `then`, `elif`, `else`, `fi` are dropped and the commands they introduce are read; the condition is read as a command too | `facts` |
 | S4 | `for`/`while`, groups, `case` | After S1-S3, measured again; planned then | `facts` |
 
 Tests, in order (S1, S2): 1. `ARCH=$(uname -m) && curl -o x https://h/$ARCH.tgz` gives two commands, the

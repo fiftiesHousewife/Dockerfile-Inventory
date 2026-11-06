@@ -27,10 +27,15 @@ public final class ShellTokeniser {
     /** A redirection operator, optionally with its target joined on ({@code >/dev/null}, {@code 2>&1}). */
     private static final Pattern REDIRECT = Pattern.compile("\\d*(&>>?|>>?|<)(.*)");
 
-    /** First words that open compound commands. */
+    /** First words that open compound commands this reader does not follow. */
     private static final Set<String> COMPOUND = Set.of(
-            "if", "then", "elif", "else", "fi", "case", "esac", "for", "select", "while", "until", "do", "done",
-            "function", "{", "}");
+            "case", "esac", "for", "select", "while", "until", "do", "done", "function", "{", "}");
+
+    /**
+     * An {@code if}'s keywords: dropped, so its condition and every branch's commands are read (the owner's choice,
+     * 6 Nov): a package installed on one branch counts as one the Dockerfile can install.
+     */
+    private static final Set<String> BRANCHES = Set.of("if", "then", "elif", "else", "fi");
 
     /** A pipe into one of these runs downloaded or generated code nobody can read here. */
     private static final Set<String> SHELLS = Set.of("sh", "bash", "ash", "dash", "zsh", "ksh");
@@ -215,7 +220,7 @@ public final class ShellTokeniser {
                 targetNext = false;
             } else if (!quoted && redirect.matches()) {
                 targetNext = redirect.group(2).isEmpty();
-            } else if (command.isEmpty() && ASSIGNMENT.matcher(w).matches()) {
+            } else if (BRANCHES.containsAll(command) && ASSIGNMENT.matcher(w).matches()) {
                 assignments.put(w.substring(0, w.indexOf('=')), expanded(w.substring(w.indexOf('=') + 1)));
             } else {
                 command.add(w);
@@ -231,6 +236,9 @@ public final class ShellTokeniser {
 
     private void endCommand() {
         endWord();
+        while (!command.isEmpty() && BRANCHES.contains(command.getFirst())) {
+            command.removeFirst();
+        }
         if (!command.isEmpty()) {
             if (COMPOUND.contains(command.getFirst()) || (pipedInto && SHELLS.contains(command.getFirst()))) {
                 opaque = true;
