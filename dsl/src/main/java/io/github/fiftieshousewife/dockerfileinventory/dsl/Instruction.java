@@ -15,7 +15,10 @@ public sealed interface Instruction {
         }
     }
 
-    /** Values as written inside double quotes: {@code $NAME} expands, {@code \$} is a dollar, {@code \\} a backslash. */
+    /**
+     * Values as written inside double quotes: {@code $NAME} expands, {@code \$} is a dollar, {@code \\} a
+     * backslash.
+     */
     record Env(Map<String, String> values) implements Instruction {
 
         public Env {
@@ -23,7 +26,10 @@ public sealed interface Instruction {
         }
     }
 
-    /** Values as written inside double quotes: {@code $NAME} expands, {@code \$} is a dollar, {@code \\} a backslash. */
+    /**
+     * Values as written inside double quotes: {@code $NAME} expands, {@code \$} is a dollar, {@code \\} a
+     * backslash.
+     */
     record Label(Map<String, String> values) implements Instruction {
 
         public Label {
