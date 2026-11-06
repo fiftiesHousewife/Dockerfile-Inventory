@@ -1,7 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,22 @@ class BaseCatalogueTest {
         assertThat(BaseCatalogue.of(estate, EolList.empty())).containsExactly(
                 new BaseRow("ubi9/ubi-minimal", "9.4", "ubi-minimal", 4, 3, "unknown", null),
                 new BaseRow("ubi9/ubi-minimal", "9.2", "ubi-minimal", 2, 0, "unknown", null));
+    }
+
+    @Test
+    void statusComesFromTheInternalListByPathAndLongestTagPrefixEndingOnAVersionBoundary() {
+        Estate estate = estate(dockerfile("a", new Base("ubi9/ubi-minimal", "9.4", null), 3),
+                dockerfile("b", new Base("ubi9/ubi-minimal", "9.2-1100", null), 2),
+                dockerfile("c", new Base("ubi9/ubi-minimal", "91", null), 1),
+                dockerfile("d", new Base("alpine", "3.20", null), 1));
+
+        assertThat(BaseCatalogue.of(estate, EolList.read(Path.of("src/test/resources/fixtures/eol.csv"))))
+                .extracting(BaseRow::tag, BaseRow::status, BaseRow::eolDate)
+                .containsExactly(
+                        tuple("9.4", "supported", LocalDate.parse("2032-05-31")),
+                        tuple("9.2-1100", "eol", LocalDate.parse("2025-11-30")),
+                        tuple("3.20", "unknown", null),
+                        tuple("91", "unknown", null));
     }
 
     static Estate estate(Dockerfile... dockerfiles) {

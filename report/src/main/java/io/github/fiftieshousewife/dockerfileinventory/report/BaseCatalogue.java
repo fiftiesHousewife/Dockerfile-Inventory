@@ -23,7 +23,10 @@ public final class BaseCatalogue {
             List<Dockerfile> users = e.getValue();
             int locations = users.stream().mapToInt(d -> d.locations().size()).sum();
             int pinned = users.stream().filter(d -> d.base().digest() != null).mapToInt(d -> d.locations().size()).sum();
-            return new BaseRow(path, tag, Passes.family(users.getFirst().base()), locations, pinned, "unknown", null);
+            var status = eol.lookup(path, tag);
+            return new BaseRow(path, tag, Passes.family(users.getFirst().base()), locations, pinned,
+                    status.map(EolList.Entry::status).orElse("unknown"),
+                    status.map(EolList.Entry::eolDate).orElse(null));
         }).sorted(Comparator.comparingInt(BaseRow::locations).reversed().thenComparing(BaseRow::path)).toList();
     }
 
