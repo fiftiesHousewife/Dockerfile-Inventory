@@ -53,6 +53,8 @@ public final class Analysis {
         files.write("gaps.jsonl", gaps.gaps().stream().map(json::writeValueAsString).toList());
         files.write("external-bases.jsonl", gaps.externalBases().stream().map(json::writeValueAsString).toList());
         files.write("outdated-bases.jsonl", gaps.outdatedBases().stream().map(json::writeValueAsString).toList());
+        files.write("rates.json", List.of(json.writerWithDefaultPrettyPrinter().writeValueAsString(
+                LineageRates.of(tags, parents.values(), links.values(), effective.values(), gaps))));
     }
 
     /** Every reference to each config digest; skipped tags name none. */

@@ -35,10 +35,10 @@ class AnalysisTest {
         String baseStep = "{\"created_by\": \"/bin/sh -c #(nop) USER 1001\", \"comment\": \"FROM registry.access.redhat.com/ubi9:9.8\"}";
         String appStep = "{\"created_by\": \"/bin/sh -c make\", \"comment\": \"FROM registry.example.com/team/base:1\"}";
         String strayStep = "{\"created_by\": \"/bin/sh -c ./unknown.sh\", \"comment\": \"FROM registry.example.com/team/base:1\"}";
-        image(files, "team/base", "1", "base", "2026-09-01T00:00:00Z", "1001", List.of("L1"), ubiStep, baseStep);
-        image(files, "team/app", "1", "app", "2026-10-01T00:00:00Z", "1001", List.of("L1", "L2"),
+        image(files, "team/base", "1", "base", "2026-09-01T00:00:00Z", "1001", List.of("U1", "L1"), ubiStep, baseStep);
+        image(files, "team/app", "1", "app", "2026-10-01T00:00:00Z", "1001", List.of("U1", "L1", "L2"),
                 ubiStep, baseStep, appStep);
-        image(files, "team/stray", "1", "stray", "2026-10-02T00:00:00Z", "1001", List.of("L1", "L3"),
+        image(files, "team/stray", "1", "stray", "2026-10-02T00:00:00Z", "1001", List.of("U1", "L1", "L3"),
                 ubiStep, baseStep, strayStep);
         image(files, "ubi9", "9.8", "ubi", "2026-08-01T00:00:00Z", null, List.of("U1"), ubiStep);
         files.record(new TagRow("docker-local", "team/arm", "1", Instant.parse("2026-10-03T00:00:00Z"), null,
@@ -59,7 +59,8 @@ class AnalysisTest {
 
         assertThat(byDigest("lineage.jsonl")).satisfies(lineage -> {
             assertThat(lineage.get("app").path("parent").path("configDigest").asString()).isEqualTo("base");
-            assertThat(lineage.get("base").path("parent").path("kind").asString()).isEqualTo("Root");
+            assertThat(lineage.get("base").path("parent").path("configDigest").asString()).isEqualTo("ubi");
+            assertThat(lineage.get("ubi").path("parent").path("kind").asString()).isEqualTo("Root");
         });
         assertThat(byDigest("links.jsonl")).satisfies(links -> {
             assertThat(links.get("app").path("tier").asString()).isEqualTo("STRONG");
@@ -79,6 +80,26 @@ class AnalysisTest {
         assertThat(byDigest("gaps.jsonl")).containsOnlyKeys("stray");
         assertThat(byDigest("external-bases.jsonl")).containsOnlyKeys("ubi");
         assertThat(Files.readAllLines(out.resolve("outdated-bases.jsonl"))).isEmpty();
+    }
+
+    @Test
+    void writesTheRates() throws IOException {
+        new Analysis(out, facts, discovery).run();
+
+        JsonNode rates = JSON.readTree(out.resolve("rates.json").toFile());
+        assertThat(rates.path("tags").asInt()).isEqualTo(5);
+        assertThat(rates.path("images").asInt()).isEqualTo(4);
+        assertThat(rates.path("skipped").path("NO_AMD64").asInt()).isEqualTo(1);
+        assertThat(rates.path("lineageCoverage").asDouble()).isEqualTo(1.0);
+        assertThat(rates.path("ambiguousParents").asInt()).isZero();
+        assertThat(rates.path("links").path("STRONG").asInt()).isEqualTo(1);
+        assertThat(rates.path("links").path("PROBABLE").asInt()).isEqualTo(1);
+        assertThat(rates.path("links").path("NONE").asInt()).isEqualTo(2);
+        assertThat(rates.path("parentMissing").asInt()).isZero();
+        assertThat(rates.path("onbuildChildren").asInt()).isZero();
+        assertThat(rates.path("gaps").asInt()).isEqualTo(1);
+        assertThat(rates.path("externalBases").asInt()).isEqualTo(1);
+        assertThat(rates.path("outdatedBases").asInt()).isZero();
     }
 
     private Map<String, JsonNode> byDigest(String file) throws IOException {
