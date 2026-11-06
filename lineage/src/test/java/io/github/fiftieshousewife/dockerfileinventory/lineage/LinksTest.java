@@ -55,6 +55,26 @@ class LinksTest {
                 .containsEntry("app", new Link(Link.Tier.WEAK, List.of("near", "near-under-repo-key"), false));
     }
 
+    @Test
+    void aRootWhoseDockerfileNamesABaseArtifactoryHoldsHasAMissingParent() {
+        List<Resolved.Node> images = List.of(
+                image("orphan", "FROM registry.example.com/team/base:1", "RUN make"),
+                image("on-external", "FROM registry.access.redhat.com/ubi9:9.8", "RUN npm ci"),
+                image("with-parent", "FROM registry.example.com/team/base:1", "RUN go build"));
+        List<Dockerfile> dockerfiles = List.of(
+                dockerfile("orphan-df", "docker-local/team/base", false, "RUN make"),
+                dockerfile("external-df", "ubi9", false, "RUN npm ci"),
+                dockerfile("parented-df", "team/base", false, "RUN go build"));
+        Map<String, Parent> parents = Map.of(
+                "orphan", new Parent.Root(), "on-external", new Parent.Root(), "with-parent", new Parent.Of("base"));
+
+        Map<String, Link> links = Links.of(images, parents, dockerfiles, Set.of("team/base", "team/app"));
+
+        assertThat(links.get("orphan").parentMissing()).isTrue();
+        assertThat(links.get("on-external").parentMissing()).isFalse();
+        assertThat(links.get("with-parent").parentMissing()).isFalse();
+    }
+
     static Resolved.Node image(String digest, String fromComment, String... steps) {
         List<HistoryStep> history = new java.util.ArrayList<>();
         history.add(new HistoryStep("/bin/sh -c #(nop) ADD file:base in / ", null, false, null));

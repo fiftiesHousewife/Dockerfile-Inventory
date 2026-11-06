@@ -43,6 +43,7 @@ lineage/                    Phase 1b (in progress): Artifactory images -> family
                             ImageNodes: one tag -> manifest (amd64 entry of a list) -> ImageConfig, or Skipped
                             Lineage: every image's Parent (Root, Of, Ambiguous) from layer prefixes and history
                             HistoryNormaliser: Buildah created_by -> NormalStep (keyword, comparable text, FROM)
+                            OwnSteps and Links: an image's own steps -> its Dockerfile group, tier, parent missing
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

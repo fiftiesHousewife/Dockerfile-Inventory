@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov. Slices 1 to 4 and 5a built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slices 1 to 5 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -218,6 +218,14 @@ or queued for curation; gap list published and reviewed.
    14. A root whose linked Dockerfile names a base that should be in Artifactory is a "parent missing" finding (Q2);
        the base should be there when its `fromPath`, as written or without its first segment (Q15), is the name of
        some image in Artifactory.
+
+   As built (5b, 6 Nov): an image's base path for weak links comes from its last `FROM` comment. An image whose
+   history records none gets no weak link, since scoring it against every Dockerfile would cost too much and mean
+   little; slice 8 can add the parent's Artifactory names once references reach the run. The contract test on
+   this side passed when first written, as the contract was derived from the same history. It now holds the two
+   normal forms together. `ImagePaths` was tested after the code: two of three deliberate breaks survived until
+   cases with a port-only host and a port without a tag were added. An ambiguous parent's first candidate gives
+   the own steps; the candidates share history, so any would do.
 6. **Effective fold**: walk each Dockerfile's chain to the root, recording which Dockerfile contributed the user,
    `ENV`, labels, `WORKDIR`, `ENTRYPOINT`, `CMD` and packages; `ONBUILD` injected at the child's start.
 7. **Gap list** `gaps.jsonl` (non-root images with no link, D1) and `external-bases.jsonl` (unlinked roots), with

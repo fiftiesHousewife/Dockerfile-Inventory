@@ -26,11 +26,18 @@ public final class Links {
                 .collect(Collectors.toMap(Resolved.Node::configDigest, Function.identity()));
         Map<List<Instruction>, List<Dockerfile>> groups = dockerfiles.stream()
                 .collect(Collectors.groupingBy(Dockerfile::steps));
+        Map<String, Dockerfile> byBlob = dockerfiles.stream()
+                .collect(Collectors.toMap(Dockerfile::blobSha, Function.identity(), (a, b) -> a));
         Map<String, Link> links = new HashMap<>();
         for (Resolved.Node image : images) {
-            List<Instruction> own = OwnSteps.of(image, parentNode(parents.get(image.configDigest()), byDigest));
+            Parent parent = parents.get(image.configDigest());
+            List<Instruction> own = OwnSteps.of(image, parentNode(parent, byDigest));
             List<Dockerfile> group = groups.get(own);
-            links.put(image.configDigest(), group != null ? exact(group) : weak(own, basePath(image), dockerfiles));
+            Link link = group != null ? exact(group) : weak(own, basePath(image), dockerfiles);
+            boolean missing = (parent == null || parent instanceof Parent.Root) && link.blobShas().stream()
+                    .map(byBlob::get)
+                    .anyMatch(d -> heldByArtifactory(d, artifactoryImageNames));
+            links.put(image.configDigest(), missing ? new Link(link.tier(), link.blobShas(), true) : link);
         }
         return links;
     }
@@ -79,6 +86,12 @@ public final class Links {
         }
         int longer = Math.max(a.size(), b.size());
         return longer == 0 ? 0 : (double) lcs[a.size()][b.size()] / longer;
+    }
+
+    /** Q2: nothing is deleted, so a base Artifactory holds should have been found as the image's parent. */
+    private static boolean heldByArtifactory(Dockerfile dockerfile, Set<String> imageNames) {
+        String path = dockerfile.fromPath();
+        return path != null && (imageNames.contains(path) || imageNames.contains(withoutFirstSegment(path)));
     }
 
     /** Q15: a Dockerfile may name an Artifactory image with or without the repository key as its first segment. */

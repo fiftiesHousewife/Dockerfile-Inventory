@@ -17,7 +17,8 @@ class OwnStepsTest {
     private static final Path CONTRACT = Path.of("../testdata/contracts/python-311.steps.json");
 
     private static final HistoryStep BASE = step("/bin/sh -c #(nop) ADD file:base in / ", null);
-    private static final HistoryStep APP_FROM = step("/bin/sh -c #(nop) EXPOSE 8080", "FROM registry.example.com/base:1");
+    private static final HistoryStep APP_FROM =
+            step("/bin/sh -c #(nop) EXPOSE 8080", "FROM registry.example.com/base:1");
     private static final HistoryStep APP_RUN = step("/bin/sh -c make", null);
     private static final HistoryStep BUILDINFO = step("/bin/sh -c #(nop) COPY file:1 in /root/buildinfo/x.json ", null);
 

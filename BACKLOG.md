@@ -27,7 +27,9 @@ and one line when its gate is met.
   - Done: slice 4, history normaliser, from public Konflux/Buildah-built UBI images.
   - Done: slice 5a, `facts` writes each Dockerfile's steps and base path, held to lineage's normal form by a
     contract from a real Dockerfile and its real build history.
-  - Next: slice 5b, links in `lineage`. Recorded fixtures wait on an Artifactory token.
+  - Done: slice 5b, links: exact (strong or probable), weak by ordered alignment on the same base, none, and the
+    "parent missing" finding.
+  - Next: slice 6, the effective fold. Recorded fixtures wait on an Artifactory token.
 
 ## Queued
 
