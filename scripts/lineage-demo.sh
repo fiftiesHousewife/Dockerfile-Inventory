@@ -13,7 +13,7 @@
 #   SCOPE=all scripts/lineage-demo.sh       # every Dockerfile.c9s discovery found (45 on sclorg; hours, emulated)
 #
 # Settings (environment): DISCOVERY_DIR (out/demo4/discovery), FACTS_DIR (out/demo5/facts), OUT (out/lineage-demo),
-# JCR_PORT (the Mac's port for JCR, 8082), ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, POSTGRES_IMAGE, BUILDAH_IMAGE,
+# ACCEPT_JCR_EULA=yes (accepts JFrog's JCR licence agreement for you; read it first), JCR_PORT (the Mac's port, 8082), ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, POSTGRES_IMAGE, BUILDAH_IMAGE,
 # ARTIFACTORY_TOKEN (skips creating one). Rerunning is safe: running containers, an existing repository and
 # existing clones are reused. The database password is a fixed local one: PostgreSQL is reachable only on the
 # demo's Docker network. Remove everything afterwards:
@@ -138,6 +138,16 @@ if ! repository_exists; then
     repository_exists || die "still no local Docker repository named $REPOSITORY"
 fi
 echo "repository $REPOSITORY ready (images go to $REGISTRY)"
+
+# JCR keeps its Docker API at 503 until its end-user licence agreement is accepted, normally at the first UI login.
+# Accepting it is the user's call, so it happens only with ACCEPT_JCR_EULA=yes.
+if curl -s -u "admin:$ADMIN_PASSWORD" "$API/api/docker/$REPOSITORY/v2/" | grep -q 'accept the EULA'; then
+    [[ ${ACCEPT_JCR_EULA:-} == yes ]] || die "JCR's Docker API stays off until JFrog's JCR licence agreement is \
+accepted. Read it at http://localhost:$JCR_PORT/ui (shown at the first login), then either accept it there or rerun \
+with ACCEPT_JCR_EULA=yes to accept it through the API"
+    curl -s -o /dev/null -u "admin:$ADMIN_PASSWORD" -X POST "$API/ui/jcr/eula/accept" || true
+    echo "accepted JCR's licence agreement (ACCEPT_JCR_EULA=yes)"
+fi
 
 # Docker clients log in through this endpoint; just after a restart it answers 503 for a while.
 printf 'waiting for the Docker API'
