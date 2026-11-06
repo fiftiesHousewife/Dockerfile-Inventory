@@ -20,10 +20,11 @@ public final class Dashboard {
 
     private static final String STYLE = """
             :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #e5e5ea; --tile: #f5f5f7;
-                    --good: #0ca30c; --watch: #fab219; --act: #d03b3b; --series-1: #2a78d6; }
+                    --good: #0ca30c; --watch: #fab219; --act: #d03b3b; --series-1: #2a78d6;
+                    --neutral: #a3a29b; }
             @media (prefers-color-scheme: dark) {
               :root { --bg: #1c1c1e; --fg: #f2f2f7; --muted: #a1a1a6; --line: #3a3a3c; --tile: #2c2c2e;
-                      --series-1: #3987e5; }
+                      --series-1: #3987e5; --neutral: #6e6d68; }
             }
             body { margin: 0 auto; max-width: 1100px; padding: 24px 16px; background: var(--bg); color: var(--fg);
                    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -45,6 +46,15 @@ public final class Dashboard {
             svg.chart .baseline { stroke: var(--muted); stroke-width: 1; }
             svg.chart .axis { fill: var(--muted); font-size: 11px; }
             svg.chart .label { fill: var(--fg); font-size: 12px; }
+            svg.chart .bar.eol, .key.eol { fill: var(--act); background: var(--act); }
+            svg.chart .bar.supported, .key.supported { fill: var(--good); background: var(--good); }
+            svg.chart .bar.unknown, .key.unknown { fill: var(--neutral); background: var(--neutral); }
+            svg.chart .hatch { stroke: var(--bg); stroke-width: 2.5; }
+            .key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin: 0 6px 0 12px;
+                   vertical-align: -1px; }
+            .key.hatched { background: repeating-linear-gradient(45deg, var(--neutral) 0 3px, var(--bg) 3px 6px); }
+            p.legend { color: var(--muted); font-size: 13px; margin: 0 0 8px -12px; }
+            details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin: 8px 0; }
             svg.chart .marker circle { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
             .health { background: var(--tile); border-radius: 10px; padding: 10px 14px; border-left: 6px solid; }
             .health.good { border-left-color: var(--good); } .health.watch { border-left-color: var(--watch); }
@@ -78,7 +88,12 @@ public final class Dashboard {
                         + count(summary.k80()) + " cover 80%, " + count(summary.k95()) + " cover 95%.</p>"
                         + Charts.coverage(ranking),
                 "<h2>Top " + TOP + " archetypes</h2>", "<div class=\"scroll\">" + archetypes(ranking) + "</div>",
-                "<h2>Top " + TOP + " bases</h2>", "<div class=\"scroll\">" + bases(bases) + "</div>",
+                "<h2>Top " + TOP + " bases</h2>",
+                "<p class=\"legend\"><span class=\"key eol\"></span>end of life <span class=\"key supported\"></span>"
+                        + "supported <span class=\"key unknown\"></span>not on the list "
+                        + "<span class=\"key hatched\"></span>hatched: pinned by digest</p>",
+                Charts.bases(bases),
+                "<details><summary>Table</summary><div class=\"scroll\">" + bases(bases) + "</div></details>",
                 "<h2>Package managers</h2>", counts(summary.managers(), "Manager"),
                 "<h2>Final user</h2>", "<p class=\"note\">" + userNote(summary) + "</p>",
                 counts(summary.users(), "User"),

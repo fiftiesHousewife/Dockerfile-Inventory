@@ -38,4 +38,18 @@ class ChartsTest {
 
         assertThat(List.of(points.split(" "))).hasSizeLessThanOrEqualTo(202).last().isEqualTo("628.0,12.0");
     }
+
+    @Test
+    void aBasesBarIsAsLongAsItsLocationsColouredByStatusWithItsPinnedPartHatched() {
+        String svg = Charts.bases(List.of(
+                new BaseRow("ubi9/ubi-minimal", "9.4", "ubi-minimal", 700, 200, "supported", null),
+                new BaseRow("centos", "centos7", "centos", 350, 0, "eol", null)));
+
+        assertThat(svg).startsWith("<svg").contains(
+                "<rect class=\"bar supported\" width=\"330.0\"",
+                "<rect class=\"pinned\" width=\"94.3\"",
+                "<rect class=\"bar eol\" width=\"165.0\"",
+                "<title>ubi9/ubi-minimal:9.4: 700 locations, 200 pinned by digest, supported</title>",
+                ">centos:centos7</text>");
+    }
 }

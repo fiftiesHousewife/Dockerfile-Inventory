@@ -132,4 +132,14 @@ class DashboardTest {
                 .contains(Charts.coverage(RANKING));
         assertThat(page.indexOf(Charts.coverage(RANKING))).isLessThan(page.indexOf("archetypes</h2>"));
     }
+
+    @Test
+    void theBasesChartHasALegendInWordsAndKeepsItsTableUnderneath() {
+        String page = Dashboard.render(SUMMARY, RANKING, BASES, Optional.empty());
+
+        assertThat(page).contains(Charts.bases(BASES))
+                .contains("<span class=\"key eol\"></span>end of life", "<span class=\"key supported\"></span>supported",
+                        "<span class=\"key unknown\"></span>not on the list", "hatched: pinned by digest")
+                .contains("<details><summary>Table</summary><div class=\"scroll\"><table><tr><th>Image</th>");
+    }
 }
