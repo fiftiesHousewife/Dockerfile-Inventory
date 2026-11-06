@@ -5,6 +5,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
+import io.github.fiftieshousewife.dockerfileinventory.facts.FactExtractor;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -43,7 +44,7 @@ public final class Convert {
 
     private Conversion convert() {
         List<Instruction.Arg> globalArgs = file.getGlobalArgs().stream()
-                .map(Convert::arg)
+                .flatMap(arg -> args(arg).stream())
                 .toList();
         Set<String> earlierStages = new HashSet<>();
         List<Stage> stages = new ArrayList<>();
@@ -58,8 +59,16 @@ public final class Convert {
             boolean onStage = tag == null && digest == null && earlierStages.contains(image);
             BaseImage base = onStage ? null : new BaseImage(image, tag == null ? null : text(tag),
                     digest == null ? null : text(digest));
-            List<Instruction> instructions = stage.getInstructions().stream().map(this::instruction).toList();
-            comments.add(stage.getInstructions().stream().map(this::comments).toList());
+            List<Instruction> instructions = new ArrayList<>();
+            List<List<String>> stageComments = new ArrayList<>();
+            for (Docker.Instruction instruction : stage.getInstructions()) {
+                List<Instruction> converted = instruction instanceof Docker.Arg arg
+                        ? List.copyOf(args(arg)) : List.of(instruction(instruction));
+                instructions.addAll(converted);
+                stageComments.add(comments(instruction));
+                converted.stream().skip(1).forEach(extra -> stageComments.add(List.of()));
+            }
+            comments.add(stageComments);
             stages.add(new Stage(name, base, onStage ? image : null, instructions));
             if (name != null) {
                 earlierStages.add(name);
@@ -70,7 +79,6 @@ public final class Convert {
 
     private Instruction instruction(Docker.Instruction instruction) {
         return switch (instruction) {
-            case Docker.Arg arg -> arg(arg);
             case Docker.Env env -> new Instruction.Env(env(env));
             case Docker.Label label -> new Instruction.Label(labels(afterKeyword(printed(label))));
             case Docker.Workdir workdir -> new Instruction.Workdir(unquote(text(workdir.getPath())));
@@ -97,9 +105,18 @@ public final class Convert {
         };
     }
 
-    private static Instruction.Arg arg(Docker.Arg arg) {
+    /**
+     * One model {@code ARG} per name the instruction declares: rewrite-docker folds {@code ARG A=1 B=2} into one
+     * name (upstream issue 12), so the names come from facts' reader and the values, in the model's form, from
+     * {@link Pairs}.
+     */
+    private static List<Instruction.Arg> args(Docker.Arg arg) {
+        Map<String, String> declared = FactExtractor.argPairs(arg);
         Docker.Argument value = arg.getValue();
-        return new Instruction.Arg(arg.getName().getText(), value == null ? null : unquote(text(value)));
+        Map<String, String> values = Pairs.parse(arg.getName().getText() + (value == null ? "" : "=" + text(value)));
+        return declared.entrySet().stream()
+                .map(e -> new Instruction.Arg(e.getKey(), e.getValue() == null ? null : values.get(e.getKey())))
+                .toList();
     }
 
     private static Instruction.User user(Docker.User user) {

@@ -76,7 +76,7 @@ public final class FactExtractor {
      * as rewrite-docker 8.90.4 folds {@code ARG A=1 B=2} into one name whose value is {@code 1 B=2} (upstream issue
      * 12). Words split on whitespace outside quotes; quotes are removed.
      */
-    static Map<String, String> argPairs(Docker.Arg arg) {
+    public static Map<String, String> argPairs(Docker.Arg arg) {
         Docker.Argument value = arg.getValue();
         String written = arg.getName().getText() + (value == null ? "" : "=" + text(value, Map.of()));
         Map<String, String> pairs = new java.util.LinkedHashMap<>();

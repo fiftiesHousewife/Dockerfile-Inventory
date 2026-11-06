@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
@@ -180,5 +181,21 @@ class ConvertTest {
 
         assertThat(instructions).containsExactly(
                 new Instruction.Raw("CMD [\"grep\", \"\\d+\"]", "exec form that is not valid JSON"));
+    }
+
+    @Test
+    void anArgWithSeveralNamesBecomesOneArgPerNameGloballyAndInAStage() {
+        Dockerfile model = Convert.of(Parsed.of("""
+                ARG REG=quay.io TAG="9"
+                FROM $REG/ubi9:$TAG
+                # build arguments
+                ARG UID=1001 GROUP
+                USER $UID
+                """)).model();
+
+        assertThat(model.globalArgs()).containsExactly(new Instruction.Arg("REG", "quay.io"),
+                new Instruction.Arg("TAG", "9"));
+        assertThat(model.stages().getFirst().instructions()).startsWith(new Instruction.Arg("UID", "1001"),
+                new Instruction.Arg("GROUP", null));
     }
 }
