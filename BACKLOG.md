@@ -17,10 +17,14 @@ and one line when its gate is met.
   - To raise upstream (rewrite-docker 8.90.4): an unrecognised line is appended to the previous argument
     silently; a `# syntax=` line after the first instruction is rejected, though Docker reads it as a comment.
 
+- Phase 1b — Lineage and effective images. Plan: `docs/plans/phase-1b.md` (questions answered 6 Nov). Gate:
+  lineage for at least 95% of Artifactory images; images matched to Dockerfiles by fingerprint, unmatched images
+  published as the gap list.
+  - Done: slice 1, the Artifactory REST client (`lineage` module), against hand-written fixtures.
+  - Next: slice 2, image nodes. Recorded fixtures wait on an Artifactory token.
+
 ## Queued
 
-- Phase 1b — Lineage and effective images. Plan ready, questions answered 6 Nov: `docs/plans/phase-1b.md`. Gate: lineage for at least 95% of Artifactory images;
-  images matched to Dockerfiles by fingerprint, unmatched images published as the gap list.
 - Phase 2 — Cluster and report. Gate: written decision, base-image route or DSL route.
 - Phase 3 — Quality rules. Gate: false-positive rate per rule below threshold before auto-fix.
 - Phase 4 — DSL, builders, renderer.

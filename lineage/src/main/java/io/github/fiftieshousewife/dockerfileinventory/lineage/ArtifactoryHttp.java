@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -45,7 +46,10 @@ public final class ArtifactoryHttp implements Artifactory {
 
     ArtifactoryHttp(URI base, String token, int pageSize) {
         // Artifactory can redirect blob downloads to its file store.
-        this.http = HttpClient.newBuilder().connectTimeout(TIMEOUT).followRedirects(HttpClient.Redirect.NORMAL).build();
+        this.http = HttpClient.newBuilder()
+                .connectTimeout(TIMEOUT)
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
         this.base = URI.create(base.toString().replaceAll("/+$", "") + "/");
         this.token = token;
         this.pageSize = pageSize;
@@ -84,7 +88,7 @@ public final class ArtifactoryHttp implements Artifactory {
     @Override
     public Optional<Instant> lastPushed(String repository, String image, String tag) {
         return get("api/storage/%s/%s/%s".formatted(repository, image, tag), "application/json")
-                .map(r -> json.readTree(r.body()).path("lastModified").stringValue(null))
+                .map(r -> parse(r).path("lastModified").stringValue(null))
                 .map(t -> OffsetDateTime.parse(t).toInstant());
     }
 
@@ -106,7 +110,15 @@ public final class ArtifactoryHttp implements Artifactory {
 
     /** A JSON GET; a 404 reads as an empty document, so callers see nothing listed. */
     private JsonNode getJson(String path) {
-        return get(path, "application/json").map(r -> json.readTree(r.body())).orElseGet(json::createObjectNode);
+        return get(path, "application/json").map(this::parse).orElseGet(json::createObjectNode);
+    }
+
+    private JsonNode parse(HttpResponse<String> response) {
+        try {
+            return json.readTree(response.body());
+        } catch (JacksonException e) {
+            throw new ArtifactoryException("unreadable JSON from " + response.uri(), e);
+        }
     }
 
     /** A GET; empty for 404, which here means the image, tag or blob no longer exists. */
@@ -118,7 +130,16 @@ public final class ArtifactoryHttp implements Artifactory {
                 .GET()
                 .build();
         HttpResponse<String> response = send(request);
-        return response.statusCode() == 404 ? Optional.empty() : Optional.of(response);
+        return switch (response.statusCode()) {
+            case 200 -> Optional.of(response);
+            case 404 -> Optional.empty();
+            default -> throw new ArtifactoryException("GET %s returned %d: %s".formatted(
+                    request.uri(), response.statusCode(), abbreviated(response.body())));
+        };
+    }
+
+    private static String abbreviated(String body) {
+        return body.length() > 300 ? body.substring(0, 300) : body;
     }
 
     private HttpResponse<String> send(HttpRequest request) {

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -136,6 +137,28 @@ class ArtifactoryHttpTest {
 
         assertThat(artifactory.dockerRepositories()).containsExactly("docker-local", "base-images");
         assertThat(calls).hasValue(3);
+    }
+
+    @Test
+    void anyOtherStatusIsAnErrorNamingTheRequestAndStatusButNotTheToken() {
+        route("/artifactory/api/docker/docker-local/v2/team/app/manifests/1.0",
+                exchange -> respond(exchange, 500, "server-error.json"));
+
+        assertThatExceptionOfType(ArtifactoryException.class)
+                .isThrownBy(() -> artifactory.manifest("docker-local", "team/app", "1.0"))
+                .withMessageContaining("GET http://127.0.0.1:")
+                .withMessageContaining("/api/docker/docker-local/v2/team/app/manifests/1.0")
+                .withMessageContaining("500")
+                .withMessageNotContaining("t0ken");
+    }
+
+    @Test
+    void unreadableJsonIsAnError() {
+        route("/artifactory/api/repositories", exchange -> respond(exchange, 200, "not-json.txt"));
+
+        assertThatExceptionOfType(ArtifactoryException.class)
+                .isThrownBy(() -> artifactory.dockerRepositories())
+                .withMessageContaining("/api/repositories");
     }
 
     private static void slowDown(HttpExchange exchange, int status) throws IOException {

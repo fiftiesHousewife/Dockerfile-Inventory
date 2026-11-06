@@ -36,12 +36,14 @@ facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, norm
                             FactsParser and FactExtractor are the only classes that import org.openrewrite;
                             ShellTokeniser and PackageCalls read RUN bodies; FactsRun: the run
                             run: DISCOVERY_DIR, OUT_DIR ./gradlew :facts:run
+lineage/                    Phase 1b (in progress): Artifactory images -> family tree -> Dockerfile links
+                            Artifactory (interface) / ArtifactoryHttp: REST only, never AQL; Docker v2 catalogue,
+                            tags, manifests and blobs, storage API for last push
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
 
 ```
-lineage/      Phase 1b: Artifactory REST (no AQL), layer-prefix family tree, Dockerfile links, effective fold
 report/       Phase 2: four-pass clustering, archetype counts, Oracle export
 rules/        Phase 3: detect-only recipes, then auto-fixes; depends on facts and renderer
 dsl/          Phase 4: instruction model, builders, renderer. Depends on nothing from OpenRewrite

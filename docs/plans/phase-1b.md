@@ -1,6 +1,6 @@
 # Phase 1b — Lineage and effective images: plan
 
-Status: questions answered 6 Nov; ready to build. Slices are built test-first, as in Phases 0 and 1.
+Status: questions answered 6 Nov. Slice 1 built 6 Nov. Slices are built test-first, as in Phases 0 and 1.
 
 Phase 1b rebuilds the image family tree from Artifactory REST, links internal base images to the Dockerfiles that
 built them by fingerprint, folds inherited properties into an effective image per Dockerfile, and publishes the gap
@@ -49,6 +49,12 @@ or queued for curation; gap list published and reviewed.
    6. Last push is the storage API's `lastModified`.
    7. A 429 or 503 is retried after `Retry-After`, then the answer is returned.
    8. Any other status, or unreadable JSON, is an `ArtifactoryException` naming the method, URL and status, never the token.
+
+   As built: test 3 passed when first written, because a 404 body has no `tags` field. Test 8 later made other
+   statuses throw, and test 3 then held 404 as "no tags". The retry decision (`Retry`) has its own tests; with no
+   `Retry-After` it waits 5 seconds, for at most six attempts. To check against the real service: whether a blob
+   redirect goes to a different host (S3 or another store), since `java.net.http` re-sends the `Authorization`
+   header on a redirect, and some stores reject a request that carries one.
 
 2. **Image nodes**: reference, config digest, `rootfs.diff_ids`, history, user, labels. Manifest lists take their
    `linux/amd64` entry (Q3).
