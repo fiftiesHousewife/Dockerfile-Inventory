@@ -29,13 +29,15 @@ public final class ShellTokeniser {
 
     /** First words that open compound commands this reader does not follow. */
     private static final Set<String> COMPOUND = Set.of(
-            "for", "select", "while", "until", "do", "done", "function");
+            "select", "function");
 
     /**
-     * An {@code if}'s keywords and a group's braces: dropped, so its condition and every branch's commands are read
-     * (the owner's choice, 6 Nov): a package installed on one branch counts as one the Dockerfile can install.
+     * An {@code if}'s keywords, a group's braces and a loop's: dropped, so a condition, every branch and a loop's body
+     * are read (the owner's choices, 6 Nov): a package installed on one branch, or in a loop, counts as one the
+     * Dockerfile can install.
      */
-    private static final Set<String> BRANCHES = Set.of("if", "then", "elif", "else", "fi", "{", "}");
+    private static final Set<String> BRANCHES =
+            Set.of("if", "then", "elif", "else", "fi", "{", "}", "while", "until", "do", "done");
 
     /** A pipe into one of these runs downloaded or generated code nobody can read here. */
     private static final Set<String> SHELLS = Set.of("sh", "bash", "ash", "dash", "zsh", "ksh");
@@ -241,6 +243,20 @@ public final class ShellTokeniser {
         return c == '$' ? LITERAL_DOLLAR : c;
     }
 
+    /**
+     * {@code for NAME in WORDS}: the loop variable takes the words, so {@code $NAME} in the body expands to them;
+     * unknown when a word is a glob or command output, whose values only the build knows.
+     */
+    private void forList(List<String> header) {
+        if (header.size() < 3 || !header.get(2).equals("in")) {
+            return;
+        }
+        List<String> words = header.subList(3, header.size());
+        if (words.stream().noneMatch(w -> w.contains("*") || w.contains("?") || PackageCalls.substituted(w))) {
+            assignments.put(header.get(1), expanded(String.join(" ", words)));
+        }
+    }
+
     /** Inside {@code case WORD in}, before its first pattern has closed. */
     private boolean caseHeader() {
         return !command.isEmpty() && command.getFirst().equals("case");
@@ -281,6 +297,10 @@ public final class ShellTokeniser {
         endWord();
         while (!command.isEmpty() && BRANCHES.contains(command.getFirst())) {
             command.removeFirst();
+        }
+        if (!command.isEmpty() && command.getFirst().equals("for")) {
+            forList(command);
+            command.clear();
         }
         if (!command.isEmpty() && command.getFirst().equals("case")) {
             cases++;

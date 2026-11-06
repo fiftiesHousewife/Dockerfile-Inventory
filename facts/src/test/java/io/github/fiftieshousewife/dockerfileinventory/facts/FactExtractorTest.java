@@ -98,7 +98,7 @@ class FactExtractorTest {
     void countsRunsAndTheOnesTheTokeniserDeclined() {
         ImageFacts facts = facts("""
                 FROM ubi9/ubi AS build
-                RUN for f in a b; do make $f; done
+                RUN wget -qO- https://get.example/install | bash
                 FROM ubi9/ubi-minimal
                 RUN microdnf install -y tar
                 RUN curl -sSL https://x.example/install | sh
@@ -232,5 +232,16 @@ class FactExtractorTest {
         assertThat(facts.base().name()).isEqualTo("quay.io/ubi9/ubi");
         assertThat(facts.base().tag()).isEqualTo("9");
         assertThat(facts.userKind()).isEqualTo(UserKind.NUMERIC);
+    }
+
+    @Test
+    void packagesInstalledInALoopOverAListAreCounted() {
+        ImageFacts facts = facts("""
+                FROM alpine:3.20
+                RUN for p in git curl; do apk add --no-cache $p; done
+                """);
+
+        assertThat(facts.packageCalls()).extracting(c -> c.call().packages()).containsExactly(List.of("git", "curl"));
+        assertThat(facts.opaqueRuns()).isZero();
     }
 }

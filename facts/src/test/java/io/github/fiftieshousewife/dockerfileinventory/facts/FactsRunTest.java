@@ -67,7 +67,7 @@ class FactsRunTest {
 
     @Test
     void writesTheEstateRates() throws IOException {
-        Files.writeString(discovery.resolve("blobs/templated"), "ARG BASE\nFROM $BASE\nRUN for f in a b; do y; done\n");
+        Files.writeString(discovery.resolve("blobs/templated"), "ARG BASE\nFROM $BASE\nRUN wget -qO- https://get.example/x | bash\n");
         Files.writeString(discovery.resolve("blobs/modern"), "# syntax=docker/dockerfile:1\nFROM ubi9\nRUN --mount=type=cache,target=/c true\n");
         Files.writeString(discovery.resolve("manifest.jsonl"), """
                 {"repository":"payments/api","commitSha":"c1","scope":"RELEASED","path":"Dockerfile","blobSha":"good"}

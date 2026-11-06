@@ -45,9 +45,6 @@ class ShellTokeniserTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "for p in a b; do echo $p; done",
-        "while true; do sleep 1; done",
-        "until false; do sleep 1; done",
         "install_all() { echo a; }",
         "cat <<EOF > /etc/x",
         "echo 'unterminated",
@@ -179,5 +176,17 @@ class ShellTokeniserTest {
     void aCaseWhoseFirstPatternSharesTheHeadersLineIsReadToo() {
         assertThat(ShellTokeniser.parse("case \"$arch\" in amd64) apk add a ;; *) apk add b ;; esac"))
                 .contains(List.of(List.of("apk", "add", "a"), List.of("apk", "add", "b")));
+    }
+
+    @Test
+    void aLoopsBodyIsReadOnceAndAForVariableTakesItsList() {
+        String loop = "for p in git curl; do apk add --no-cache $p; done";
+        String files = "for f in /etc/*.conf; do sed -i s/a/b/ $f; done";
+
+        assertThat(ShellTokeniser.parse(loop)).contains(List.of(List.of("apk", "add", "--no-cache", "$p")));
+        assertThat(ShellTokeniser.assignments(loop)).containsEntry("p", "git curl");
+        assertThat(ShellTokeniser.assignments(files)).doesNotContainKey("f");
+        assertThat(ShellTokeniser.parse("while read -r line; do echo $line; done < /tmp/list"))
+                .contains(List.of(List.of("read", "-r", "line"), List.of("echo", "$line")));
     }
 }
