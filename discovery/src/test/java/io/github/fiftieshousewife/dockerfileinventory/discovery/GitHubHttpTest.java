@@ -67,6 +67,18 @@ class GitHubHttpTest {
     }
 
     @Test
+    void githubDotComHasRestAtTheRootAndGraphqlBesideIt() {
+        assertThat(GitHubHttp.restPrefix(URI.create("https://api.github.com/"))).isEmpty();
+        assertThat(GitHubHttp.restPrefix(URI.create("https://github.example.com/api/"))).isEqualTo("v3/");
+        GitHubHttp dotCom = new GitHubHttp(java.net.http.HttpClient.newHttpClient(),
+                URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/"), "t0ken", "");
+        route("/repos/payments/ledger-api/git/trees/abc", exchange -> respond(exchange, 200, "tree.json"));
+
+        assertThat(dotCom.tree("payments/ledger-api", "abc", true)).isPresent();
+        assertThat(requests).containsExactly("GET /repos/payments/ledger-api/git/trees/abc?recursive=1");
+    }
+
+    @Test
     void readsARecursiveTree() {
         route("/api/v3/repos/payments/ledger-api/git/trees/abc", exchange -> respond(exchange, 200, "tree.json"));
 

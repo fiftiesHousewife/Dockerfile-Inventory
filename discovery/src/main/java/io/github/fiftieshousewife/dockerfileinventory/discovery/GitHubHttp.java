@@ -43,16 +43,30 @@ public final class GitHubHttp implements GitHub {
     private final HttpClient http;
     private final URI apiBase;
     private final String token;
+    private final String restPrefix;
     private final ObjectMapper json = new ObjectMapper();
 
     public GitHubHttp(URI apiBase, String token) {
-        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build(), apiBase, token);
+        this(HttpClient.newBuilder().connectTimeout(TIMEOUT).build(), apiBase, token, restPrefix(apiBase));
     }
 
     GitHubHttp(HttpClient http, URI apiBase, String token) {
+        this(http, apiBase, token, restPrefix(apiBase));
+    }
+
+    GitHubHttp(HttpClient http, URI apiBase, String token, String restPrefix) {
         this.http = http;
         this.apiBase = URI.create(apiBase.toString().replaceAll("/+$", "") + "/");
         this.token = token;
+        this.restPrefix = restPrefix;
+    }
+
+    /**
+     * GitHub Enterprise Server serves REST under {@code /api/v3/} and GraphQL at {@code /api/graphql}; github.com
+     * (and Enterprise Cloud) serve REST at the root of {@code api.github.com} and GraphQL at {@code /graphql}.
+     */
+    static String restPrefix(URI apiBase) {
+        return "api.github.com".equals(apiBase.getHost()) ? "" : "v3/";
     }
 
     @Override
@@ -60,7 +74,7 @@ public final class GitHubHttp implements GitHub {
         List<String> logins = new ArrayList<>();
         long since = 0;
         while (true) {
-            JsonNode page = rest("v3/organizations?per_page=%d&since=%d".formatted(PAGE_SIZE, since)).orElseThrow();
+            JsonNode page = rest(restPrefix + "organizations?per_page=%d&since=%d".formatted(PAGE_SIZE, since)).orElseThrow();
             if (page.isEmpty()) {
                 return logins;
             }
@@ -84,7 +98,7 @@ public final class GitHubHttp implements GitHub {
 
     @Override
     public Optional<Tree> tree(String repository, String sha, boolean recursive) {
-        return rest("v3/repos/%s/git/trees/%s%s".formatted(repository, sha, recursive ? "?recursive=1" : ""))
+        return rest(restPrefix + "repos/%s/git/trees/%s%s".formatted(repository, sha, recursive ? "?recursive=1" : ""))
                 .map(GitHubHttp::tree);
     }
 

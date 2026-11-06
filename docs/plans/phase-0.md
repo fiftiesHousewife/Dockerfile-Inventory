@@ -70,3 +70,12 @@ Also measure: `GET /api/v3/rate_limit` for the scanner token; record the limits 
 
 None blocking slice 2. Slice 3 and 4 wait on the scanner token and release-index export (see the delivery
 plan's "Before Phase 0" checklist).
+
+## Slice 5 — github.com and named organisations (6 Nov)
+
+For a demonstration on public data (sclorg) and for a GHE pilot: `GHE_API_URL=https://api.github.com` works
+(REST at the root, GraphQL at `/graphql`, as Enterprise Cloud too), and `ORGANIZATIONS` limits the scan to named
+organisations instead of listing every one on the server.
+
+1. Named organisations are the only ones scanned.
+2. github.com's REST paths have no `v3/` prefix; GraphQL sits beside them.

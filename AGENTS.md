@@ -31,7 +31,7 @@ gradle/libs.versions.toml   the one version catalogue, shared by build-logic and
 discovery/                  Phase 0: repos -> trees at the released commit -> Dockerfile blobs, once per SHA
                             GitHub (interface) / GitHubHttp: REST trees and orgs, GraphQL repos and blobs
                             RepoScan: one repository; Discovery: the run; DiscoveryOutput: the files
-                            run: GHE_API_URL, GHE_TOKEN, OUT_DIR, [RELEASE_INDEX], [CONCURRENCY] ./gradlew :discovery:run
+                            run: GHE_API_URL, GHE_TOKEN, OUT_DIR, [ORGANIZATIONS], [RELEASE_INDEX], [CONCURRENCY]
 facts/                      Phase 1: blobs -> rewrite-docker -> ImageFacts, normal-form hashes, rates
                             FactsParser, FactExtractor and Steps are the only classes that import org.openrewrite;
                             ShellTokeniser and PackageCalls read RUN bodies; FactsRun: the run
