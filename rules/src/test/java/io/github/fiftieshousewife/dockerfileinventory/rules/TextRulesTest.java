@@ -86,4 +86,13 @@ class TextRulesTest {
                 FROM ubi9
                 """))).hasSize(1);
     }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+        "VALKEY_PREFIX, false", "KEYCLOAK_URL, false", "MONKEY, false", "PUBLIC_KEYRING, false",
+        "API_KEY, true", "KEY, true", "DB_PASSWORD, true", "DBPASSWORD, true", "GITHUB_TOKEN, true",
+        "client-secret, true", "aws.credentials, true", "ssh_passwd, true"})
+    void secretNamesMatchByTheirPartsSoKeyMustBeAWholePart(String name, boolean secret) {
+        assertThat(SecretValue.secretName(name)).isEqualTo(secret);
+    }
 }

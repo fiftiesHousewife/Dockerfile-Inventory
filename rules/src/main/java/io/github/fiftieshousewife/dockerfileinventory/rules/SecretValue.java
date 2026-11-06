@@ -11,8 +11,7 @@ import org.openrewrite.docker.tree.Docker;
 /** S2: a secret-shaped {@code ENV} or {@code ARG} value baked into the image. Only a hash and the line are kept. */
 public final class SecretValue implements Rule {
 
-    private static final List<String> SECRET_NAMES =
-            List.of("PASSWORD", "PASSWD", "SECRET", "TOKEN", "KEY", "CREDENTIAL");
+    private static final List<String> SECRET_WORDS = List.of("PASSWORD", "PASSWD", "SECRET", "TOKEN", "CREDENTIAL");
     private static final List<Pattern> SECRET_SHAPES = List.of(
             Pattern.compile("-----BEGIN [A-Z ]*PRIVATE KEY-----"),
             Pattern.compile("\\bAKIA[0-9A-Z]{16}\\b"),
@@ -59,9 +58,15 @@ public final class SecretValue implements Rule {
                 keyword + " " + name + " has a secret-shaped value", Hashes.sha256(literal.get()), List.of()));
     }
 
+    /**
+     * Names are matched by their parts (split on {@code _}, {@code -} and {@code .}): {@code KEY} only as a whole part,
+     * so {@code VALKEY_PREFIX} and {@code KEYCLOAK_URL} do not count; the longer words anywhere in a part, so
+     * {@code DBPASSWORD} does.
+     */
     static boolean secretName(String name) {
-        String upper = name.toUpperCase(Locale.ROOT);
-        return SECRET_NAMES.stream().anyMatch(upper::contains);
+        List<String> parts = List.of(name.toUpperCase(Locale.ROOT).split("[_.\\-]+"));
+        return parts.contains("KEY")
+                || parts.stream().anyMatch(part -> SECRET_WORDS.stream().anyMatch(part::contains));
     }
 
     /** Values that are secrets whatever they are called: a private key, an AWS access key ID, a JWT. */

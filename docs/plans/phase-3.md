@@ -14,7 +14,7 @@ decision: security, then speed of remediation, then hygiene.
 | # | Question | Answer | What it changes |
 | --- | --- | --- | --- |
 | Q1 | What runs the recipes | Our own runner | `rules` runs in-process over each distinct Dockerfile once, as facts does; no clones |
-| Q2 | Secret-shaped (S2) | Name and value patterns | Name contains `PASSWORD`, `PASSWD`, `SECRET`, `TOKEN`, `KEY` or `CREDENTIAL` and the value is a non-empty literal (no variable); or the value has a known secret shape (private key header, AWS access key, JWT) under any name. Only a SHA-256 of the value and its line are kept |
+| Q2 | Secret-shaped (S2) | Name and value patterns | A name part (split on `_`, `-`, `.`) is `KEY`, or contains `PASSWORD`, `PASSWD`, `SECRET`, `TOKEN` or `CREDENTIAL` (6 Nov: `KEY` inside `VALKEY` was a false positive on sclorg), and the value is a non-empty literal (no variable); or the value has a known secret shape (private key header, AWS access key, JWT) under any name. Only a SHA-256 of the value and its line are kept |
 | Q3 | S4 check | Numeric user and group 0 | Finding unless the effective user is numeric and non-root and the chain makes writable paths group-0 writable (`chgrp ... 0`, `chmod g=u` or `g+w`, `COPY --chown=...:0`) |
 | Q4 | Renovate | A shared preset | This repo provides a Renovate preset (Dockerfile digest pinning, grouped base updates); the central instance applies it. R1 and R2 are also reported as findings |
 
