@@ -4,9 +4,9 @@
 #
 #   1. starts PostgreSQL (JCR 7.19x refuses its old built-in Derby) and JCR on it, and waits for JCR; creates the local Docker repository (or asks you to, in its UI)
 #   2. clones each chosen Dockerfile's repository at the commit discovery scanned
-#   3. mirrors the public CentOS Stream roots into JCR, then builds every chosen Dockerfile with Buildah (inside a
-#      linux/amd64 container, as lineage reads amd64 only), each FROM pointed at the image built before it, and pushes
-#   4. creates an access token (held in this shell only) and runs lineage, then report and rules with LINEAGE_DIR
+#   3. mirrors the public CentOS Stream roots into JCR, then builds every chosen Dockerfile with Buildah for
+#      linux/amd64 (lineage reads amd64 only), each FROM pointed at the image built before it, and pushes
+#   4. runs lineage with an access token made in step 1 (held in this shell only), then report and rules
 #
 # Usage, from the repository root:
 #   scripts/lineage-demo.sh                 # the chain: centos stream9 -> s2i-core -> s2i-base -> python 3.12, nginx
@@ -131,6 +131,39 @@ if ! repository_exists; then
 fi
 echo "repository $REPOSITORY ready (images go to $REGISTRY)"
 
+# Docker clients log in through this endpoint; just after a restart it answers 503 for a while.
+printf 'waiting for the Docker API'
+for _ in $(seq 60); do
+    code=$(curl -s -o /dev/null -w '%{http_code}' -u "admin:$ADMIN_PASSWORD" "$API/api/docker/$REPOSITORY/v2/token")
+    [[ $code == 200 ]] && break
+    printf '.'; sleep 5
+done
+[[ $code == 200 ]] || die "the Docker API still answers $code; scripts/jcr-diagnose.sh may say why"
+echo " up"
+
+# Lineage reads with a bearer token. Made now, so a refusal shows before the long builds; never printed or saved.
+can_read() {
+    [[ $(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $1" "$API/api/repositories") == 200 ]]
+}
+if [[ -z ${ARTIFACTORY_TOKEN:-} ]]; then
+    reply=$(curl -s -u "admin:$ADMIN_PASSWORD" -X POST -H 'Content-Type: application/json' \
+        "http://localhost:$JCR_PORT/access/api/v1/tokens" -d '{"scope":"applied-permissions/admin","expires_in":86400}')
+    ARTIFACTORY_TOKEN=$(jq -r '.access_token // empty' <<<"$reply" 2>/dev/null || true)
+    if [[ -z $ARTIFACTORY_TOKEN ]] || ! can_read "$ARTIFACTORY_TOKEN"; then
+        echo "the access token API gave no usable token: $(jq -c 'del(.access_token, .refresh_token)' <<<"$reply" \
+            2>/dev/null || echo "$reply" | head -c 300)"
+        reply=$(curl -s -u "admin:$ADMIN_PASSWORD" -X POST "$API/api/security/token" \
+            -d username=admin -d scope=member-of-groups:readers -d expires_in=86400)
+        ARTIFACTORY_TOKEN=$(jq -r '.access_token // empty' <<<"$reply" 2>/dev/null || true)
+        [[ -n $ARTIFACTORY_TOKEN ]] && can_read "$ARTIFACTORY_TOKEN" || die "no usable token from the older API \
+either: $(jq -c 'del(.access_token, .refresh_token)' <<<"$reply" 2>/dev/null || echo "$reply" | head -c 300). Create one \
+in the UI (Administration > User Management > Access Tokens) and rerun with ARTIFACTORY_TOKEN set in your shell"
+    fi
+fi
+can_read "$ARTIFACTORY_TOKEN" || die "ARTIFACTORY_TOKEN cannot list JCR's repositories"
+export ARTIFACTORY_TOKEN
+echo "access token ready (held in this shell only)"
+
 step "2. Dockerfiles to build, and their repositories at the scanned commit"
 # One line per Dockerfile: image name, repository, commit, path, the base it is built FROM (as written).
 plan=$OUT/plan.txt
@@ -165,7 +198,7 @@ cut -f2,3 "$plan.ordered" | sort -u | while read -r repo commit; do
     fi
 done
 
-step "3. Build with Buildah (linux/amd64, emulated on Apple silicon) and push to JCR"
+step "3. Build linux/amd64 images with Buildah and push them to JCR"
 # The image a FROM resolves to inside JCR: the public name without quay.io/, sclorg's tag defaulting to c9s.
 cat > "$OUT/build.sh" <<'INNER'
 set -uo pipefail
@@ -174,15 +207,19 @@ local_name() {
     [[ $ref == *:* ]] || ref=$ref:c9s
     echo "$REGISTRY/$ref"
 }
+# JCR here speaks plain HTTP, so every pull and push needs --tls-verify=false. Buildah runs natively and builds
+# for amd64 (lineage reads amd64 only); only the commands inside RUN are emulated.
 login=(--tls-verify=false --creds "admin:$ADMIN_PASSWORD")
+platform=(--platform linux/amd64)
 for root in $(cut -f5 /work/plan.txt.ordered | grep '^quay.io/centos/' | sort -u); do
     echo "-- mirror $root"
-    buildah pull -q "$root" >/dev/null && buildah tag "$root" "$(local_name "$root")" \
+    buildah pull -q "${platform[@]}" "$root" >/dev/null && buildah tag "$root" "$(local_name "$root")" \
         && buildah push -q "${login[@]}" "$(local_name "$root")" || echo "FAILED mirror $root"
 done
 while IFS=$'\t' read -r name repo commit path base; do
     echo "-- build $name from $repo $path"
-    if buildah build -q --layers=false --from "$(local_name "$base")" -f "/src/$repo/$commit/$path" \
+    if buildah build -q --layers=false "${platform[@]}" "${login[@]}" --from "$(local_name "$base")" \
+            -f "/src/$repo/$commit/$path" \
             -t "$REGISTRY/$name" "/src/$repo/$commit" >/dev/null \
         && buildah push -q "${login[@]}" "$REGISTRY/$name"; then
         echo "pushed $REGISTRY/$name"
@@ -191,20 +228,12 @@ while IFS=$'\t' read -r name repo commit path base; do
     fi
 done < /work/plan.txt.ordered
 INNER
-docker run --rm --privileged --platform linux/amd64 --network $NETWORK \
+docker run --rm --privileged --network $NETWORK \
     -e REGISTRY="$REGISTRY" -e ADMIN_PASSWORD="$ADMIN_PASSWORD" -e STORAGE_DRIVER=vfs \
     -v "$OUT/src:/src:ro" -v "$OUT:/work" -v inventory-demo-buildah:/var/lib/containers \
     "$BUILDAH_IMAGE" bash /work/build.sh | tee "$OUT/build.log"
 
 step "4. Lineage, then report and rules with it"
-if [[ -z ${ARTIFACTORY_TOKEN:-} ]]; then
-    ARTIFACTORY_TOKEN=$(curl -s -u "admin:$ADMIN_PASSWORD" -X POST -H 'Content-Type: application/json' \
-        "http://localhost:$JCR_PORT/access/api/v1/tokens" \
-        -d '{"scope":"applied-permissions/admin","expires_in":86400}' | jq -r '.access_token // empty')
-fi
-[[ -n $ARTIFACTORY_TOKEN ]] || die "no token: create one in the UI (Administration > User Management > Access \
-Tokens), then rerun with ARTIFACTORY_TOKEN set in your shell"
-export ARTIFACTORY_TOKEN
 ARTIFACTORY_URL=$API FACTS_DIR=$FACTS_DIR DISCOVERY_DIR=$DISCOVERY_DIR OUT_DIR=$OUT/lineage CONCURRENCY=4 \
     ./gradlew -q :lineage:run
 FACTS_DIR=$FACTS_DIR DISCOVERY_DIR=$DISCOVERY_DIR LINEAGE_DIR=$OUT/lineage OUT_DIR=$OUT/report ./gradlew -q :report:run
