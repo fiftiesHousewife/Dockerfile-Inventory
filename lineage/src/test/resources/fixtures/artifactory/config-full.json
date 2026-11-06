@@ -1,0 +1,15 @@
+{
+  "architecture": "amd64",
+  "os": "linux",
+  "config": {
+    "User": "1001",
+    "Env": ["PATH=/opt/app-root/bin:/usr/bin", "APP_ROOT=/opt/app-root", "EMPTY="],
+    "WorkingDir": "/opt/app-root/src",
+    "Entrypoint": ["container-entrypoint"],
+    "Cmd": ["/bin/sh", "-c", "$STI_SCRIPTS_PATH/usage"],
+    "OnBuild": ["RUN make"],
+    "Labels": {"name": "team/app"}
+  },
+  "rootfs": {"type": "layers", "diff_ids": ["sha256:5555555555555555555555555555555555555555555555555555555555555555"]},
+  "history": [{"created_by": "/bin/sh -c #(nop) ADD file:base in / "}]
+}

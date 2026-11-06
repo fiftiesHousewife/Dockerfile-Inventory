@@ -49,4 +49,22 @@ class ImageConfigTest {
         assertThat(ImageConfig.parse("not json")).isEmpty();
         assertThat(ImageConfig.parse("{\"config\": {}}")).isEmpty();
     }
+
+    @Test
+    void readsEnvWorkingDirEntrypointCmdAndOnBuild() {
+        assertThat(ImageConfig.parse(Fixtures.artifactory("config-full.json"))).hasValueSatisfying(config -> {
+            assertThat(config.env()).containsExactly(
+                    Map.entry("PATH", "/opt/app-root/bin:/usr/bin"), Map.entry("APP_ROOT", "/opt/app-root"),
+                    Map.entry("EMPTY", ""));
+            assertThat(config.workingDir()).isEqualTo("/opt/app-root/src");
+            assertThat(config.entrypoint()).containsExactly("container-entrypoint");
+            assertThat(config.cmd()).containsExactly("/bin/sh", "-c", "$STI_SCRIPTS_PATH/usage");
+            assertThat(config.onBuild()).containsExactly("RUN make");
+        });
+        assertThat(ImageConfig.parse(Fixtures.artifactory("config-bare.json"))).hasValueSatisfying(config -> {
+            assertThat(config.workingDir()).isNull();
+            assertThat(config.entrypoint()).isEmpty();
+            assertThat(config.onBuild()).isEmpty();
+        });
+    }
 }

@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,7 +12,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /** What lineage reads from an image config: its layers, the user it runs as, and its labels. */
-public record ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels) {
+public record ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels,
+                          Map<String, String> env, String workingDir, List<String> entrypoint, List<String> cmd,
+                          List<String> onBuild) {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -19,6 +22,15 @@ public record ImageConfig(List<String> diffIds, List<HistoryStep> history, Strin
         diffIds = List.copyOf(diffIds);
         history = List.copyOf(history);
         labels = Collections.unmodifiableMap(new TreeMap<>(labels));
+        env = Collections.unmodifiableMap(new LinkedHashMap<>(env));
+        entrypoint = List.copyOf(entrypoint);
+        cmd = List.copyOf(cmd);
+        onBuild = List.copyOf(onBuild);
+    }
+
+    /** An image with layers, history, user and labels only, as the tree and links need. */
+    public ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels) {
+        this(diffIds, history, user, labels, Map.of(), null, List.of(), List.of(), List.of());
     }
 
     /** Empty for text that is not JSON or has no {@code rootfs}: one bad image must not stop the run. */
@@ -43,7 +55,21 @@ public record ImageConfig(List<String> diffIds, List<HistoryStep> history, Strin
                 h.path("comment").stringValue(null),
                 h.path("empty_layer").asBoolean(),
                 h.path("created").stringValue(null))));
-        return Optional.of(new ImageConfig(diffIds, history, config.path("User").stringValue(null), labels));
+        Map<String, String> env = new LinkedHashMap<>();
+        config.path("Env").forEach(e -> {
+            String pair = e.asString();
+            int equals = pair.indexOf('=');
+            env.put(equals < 0 ? pair : pair.substring(0, equals), equals < 0 ? "" : pair.substring(equals + 1));
+        });
+        return Optional.of(new ImageConfig(diffIds, history, config.path("User").stringValue(null), labels, env,
+                config.path("WorkingDir").stringValue(null), strings(config.path("Entrypoint")),
+                strings(config.path("Cmd")), strings(config.path("OnBuild"))));
+    }
+
+    private static List<String> strings(JsonNode array) {
+        List<String> values = new ArrayList<>();
+        array.forEach(v -> values.add(v.asString()));
+        return values;
     }
 
     /**
