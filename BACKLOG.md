@@ -56,9 +56,12 @@ and one line when its gate is met.
     `RulesMain`.
   - Detection complete. Next: run it on real output, classify each rule's sample, then plan fixes (Phase 3b).
 
+- Phase 4 — DSL, builders, renderer. Plan: `docs/plans/phase-4.md` (questions answered 6 Nov). Gate: every golden
+  passes the Phase 3 rules with zero findings; builders refuse each invariant breach. Phase 4b (central generator
+  repository and PR job) waits on a GHE token with write access.
+
 ## Queued
 
-- Phase 4 — DSL, builders, renderer.
 - Phase 5 — Converter. Gate: round-trip equivalence; opt-in per team.
 
 ## Shipped
