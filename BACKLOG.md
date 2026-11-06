@@ -24,6 +24,10 @@ and one line when its gate is met.
 - Phase 1b — Lineage and effective images. Plan: `docs/plans/phase-1b.md` (questions answered 6 Nov). Gate:
   lineage for at least 95% of Artifactory images; images matched to Dockerfiles by fingerprint, unmatched images
   published as the gap list.
+  - Tried 6 Nov against a real Artifactory (local JCR 7.77, `scripts/lineage-demo.sh`): four sclorg images built
+    with Buildah from discovered Dockerfiles; every parent right, each image linked to its own Dockerfile
+    (PROBABLE, as no release index). nginx 1.24 also linked to 1.20, 1.22 and c8s files whose steps differ only in
+    ENV values, which the normal form leaves out.
   - Done: slice 1, the Artifactory REST client (`lineage` module), against hand-written fixtures.
   - Done: slice 2, image nodes: one tag to its amd64 config, or a counted skip.
   - Done: slice 3, the family tree from layer prefixes (OCI chain IDs), ambiguous parents reported.
