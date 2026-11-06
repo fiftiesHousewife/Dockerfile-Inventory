@@ -40,7 +40,7 @@ final class RepoScan {
                     : result(repository, RepoOutcome.Status.EMPTY, scope, commit, List.of(), "no tree");
         }
         List<Located> found = tree.get().entries().stream()
-                .filter(e -> e.isBlob() && DockerfilePaths.isDockerfile(e.path()))
+                .filter(e -> e.isBlob() && !e.isSymlink() && DockerfilePaths.isDockerfile(e.path()))
                 .map(e -> new Located(repository.nameWithOwner(), commit, scope, e.path(), e.sha()))
                 .toList();
         RepoOutcome.Status status = tree.get().truncated() ? RepoOutcome.Status.TRUNCATED : RepoOutcome.Status.SCANNED;

@@ -52,7 +52,7 @@ class TreeWalkTest {
 
     @Test
     void keepsRootFilesAndSubmodulesWithoutListingSubmodules() {
-        Tree.Entry submodule = new Tree.Entry("vendor/base", "commit", "s1");
+        Tree.Entry submodule = new Tree.Entry("vendor/base", "160000", "commit", "s1");
         gitHub.tree("pay/mono", COMMIT, truncated(file("Dockerfile", "d0")))
                 .listing("pay/mono", COMMIT, tree(file("Dockerfile", "d0"), submodule, dir("svc", "t-svc")))
                 .tree("pay/mono", "t-svc", tree(file("Dockerfile", "d1")));

@@ -52,11 +52,15 @@ final class FakeGitHub implements GitHub {
     }
 
     static Tree.Entry file(String path, String sha) {
-        return new Tree.Entry(path, "blob", sha);
+        return new Tree.Entry(path, "100644", "blob", sha);
+    }
+
+    static Tree.Entry link(String path, String sha) {
+        return new Tree.Entry(path, "120000", "blob", sha);
     }
 
     static Tree.Entry dir(String path, String sha) {
-        return new Tree.Entry(path, "tree", sha);
+        return new Tree.Entry(path, "040000", "tree", sha);
     }
 
     @Override

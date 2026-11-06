@@ -70,6 +70,12 @@ Lineage's history normaliser reads the legacy `LABEL key value` form as facts no
 | --- | --- | --- | --- |
 | F12 | Three symlinks fetched as Dockerfiles: git stores a symlink as a blob holding its target path (`../../../Dockerfile.fedora`) | Tree entries keep their mode; an entry with mode `120000` (a symlink) is not a Dockerfile | `discovery` |
 | F13 | `postgresql-container` `13/Dockerfile.rhel9` rejected at line 46 (`extraneous input '='`) | Find the cause; fix ours, draft upstream what is the parser's | `facts` or docs |
+| F14 | `INSTALL_PKGS="$INSTALL_PKGS pgaudit"` lost the earlier packages: each assignment replaced the last | An assigned value expands `$NAME` and `${NAME}` from the assignments before it in the same `RUN` | `facts` |
 
 Tests: 20. a symlink entry named `Dockerfile` is not collected, and the REST tree's `mode` is read; 21. the
-postgresql case, from its real lines.
+postgresql case, from its real lines; 22. an assignment built up from its earlier value keeps every part.
+
+As built (third round): tree entries carry git's mode, read from the REST tree, and discovery collects a blob only
+when it is not a symlink. The postgresql file held a line of only a backslash between comments and a `RUN`; Docker
+reads it as continuing into the `RUN`, the parser glued it onto the `EXPOSE` before. The retry blanks such a line,
+and the bug is drafted upstream as issue 7. Found on the same file, F14 was added to the round.

@@ -83,9 +83,9 @@ class GitHubHttpTest {
         Tree tree = gitHub.tree("payments/ledger-api", "abc", true).orElseThrow();
 
         assertThat(tree.truncated()).isFalse();
-        assertThat(tree.entries()).extracting(Tree.Entry::path, Tree.Entry::isBlob)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple("Dockerfile", true),
-                        org.assertj.core.groups.Tuple.tuple("src", false));
+        assertThat(tree.entries()).extracting(Tree.Entry::path, Tree.Entry::mode, Tree.Entry::isBlob)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("Dockerfile", "100644", true),
+                        org.assertj.core.groups.Tuple.tuple("src", "040000", false));
         assertThat(requests).containsExactly("GET /api/v3/repos/payments/ledger-api/git/trees/abc?recursive=1");
     }
 

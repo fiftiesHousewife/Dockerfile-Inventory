@@ -13,12 +13,15 @@ import java.util.regex.Pattern;
  * subset Dockerfiles mostly use: words, quotes, backslash escapes and continuations, comments, redirections
  * (dropped with their targets), and the separators newline,
  * {@code &&}, {@code ||}, {@code ;} and pipes. Anything else (control flow, subshells, command substitution, groups,
- * functions, heredocs, a pipe into a shell) makes the whole body opaque (empty), which callers count rather than guess at.
+ * functions, heredocs, a pipe into a shell) makes the whole body opaque (empty), which callers count rather than
+ * guess at.
  */
 public final class ShellTokeniser {
 
+    /** {@code $NAME} or {@code ${NAME}} in an assigned value, expanded from the assignments before it. */
+    private static final Pattern REFERENCE =
+            Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
     /** {@code NAME=value} before a command's name sets its environment; it is not the command. */
-    private static final Pattern REFERENCE = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
     private static final Pattern ASSIGNMENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*=.*", Pattern.DOTALL);
 
     /** A redirection operator, optionally with its target joined on ({@code >/dev/null}, {@code 2>&1}). */

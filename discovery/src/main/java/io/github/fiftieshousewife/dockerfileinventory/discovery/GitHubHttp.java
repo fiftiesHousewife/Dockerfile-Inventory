@@ -150,7 +150,8 @@ public final class GitHubHttp implements GitHub {
     private static Tree tree(JsonNode node) {
         List<Tree.Entry> entries = new ArrayList<>();
         node.path("tree").forEach(e -> entries.add(
-                new Tree.Entry(e.path("path").asString(), e.path("type").asString(), e.path("sha").asString())));
+                new Tree.Entry(e.path("path").asString(), e.path("mode").asString(), e.path("type").asString(),
+                        e.path("sha").asString())));
         return new Tree(node.path("truncated").asBoolean(), entries);
     }
 

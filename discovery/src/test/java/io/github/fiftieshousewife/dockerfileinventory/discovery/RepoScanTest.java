@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.file;
+import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.link;
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.repo;
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.tree;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +34,15 @@ class RepoScanTest {
         assertThat(result.found()).containsExactly(
                 new Located("pay/api", RELEASED, Scope.RELEASED, "Dockerfile", "d1"),
                 new Located("pay/api", RELEASED, Scope.RELEASED, "ops/Containerfile.ubi9", "d2"));
+    }
+
+    @Test
+    void skipsASymlinkNamedLikeADockerfile() {
+        gitHub.tree("pay/api", HEAD, tree(file("Dockerfile", "d1"), link("10/Dockerfile.fedora", "l1")));
+
+        RepoScan.Result result = new RepoScan(gitHub, ReleaseIndex.empty()).scan(repo("pay/api", HEAD));
+
+        assertThat(result.found()).extracting(Located::path).containsExactly("Dockerfile");
     }
 
     @Test
@@ -85,7 +95,7 @@ class RepoScanTest {
 
     @Test
     void ignoresADirectoryNamedLikeADockerfile() {
-        gitHub.tree("pay/api", HEAD, tree(new Tree.Entry("Dockerfile", "tree", "t1")));
+        gitHub.tree("pay/api", HEAD, tree(new Tree.Entry("Dockerfile", "040000", "tree", "t1")));
 
         assertThat(new RepoScan(gitHub, ReleaseIndex.empty()).scan(repo("pay/api", HEAD)).found()).isEmpty();
     }
