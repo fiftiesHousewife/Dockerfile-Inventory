@@ -1,0 +1,64 @@
+package io.github.fiftieshousewife.dockerfileinventory.dsl;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+
+class DockerfileRendererTest {
+
+    private static final String DIGEST = "sha256:" + "a".repeat(64);
+
+    static final Dockerfile MODEL = new Dockerfile(List.of(new Instruction.Arg("VERSION", "1.0")), List.of(
+            new Stage("build", new BaseImage("registry.example.com/ubi9/ubi", "9.4", DIGEST), null, List.of(
+                    new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.DNF, List.of("make")))),
+                    new Instruction.Run(new RunBody.Shell(List.of("make build"))))),
+            new Stage(null, new BaseImage("registry.example.com/ubi9/ubi-minimal", "9.4", DIGEST), null, List.of(
+                    new Instruction.Label(ordered("org.opencontainers.image.revision", "${REVISION}",
+                            "summary", "say \"hi\"")),
+                    new Instruction.Env(ordered("APP_HOME", "/opt/app")),
+                    new Instruction.Workdir("/opt/app"),
+                    new Instruction.Copy(List.of("/src/out/app"), "/opt/app/", "1001:0", "build"),
+                    new Instruction.Run(new RunBody.Shell(List.of("chgrp -R 0 /opt/app", "chmod -R g=u /opt/app"))),
+                    new Instruction.Expose(8080),
+                    new Instruction.User("1001"),
+                    new Instruction.Entrypoint(List.of("/opt/app/app", "--config", "/etc/app \"main\".yaml")),
+                    new Instruction.Cmd(List.of("serve")),
+                    new Instruction.Raw("HEALTHCHECK NONE", "not modelled")))));
+
+    @Test
+    void everyInstructionRendersAsDockerReadsItWithOneCommandPerLineAndStagesSeparated() {
+        assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo("""
+                ARG VERSION="1.0"
+
+                FROM registry.example.com/ubi9/ubi:9.4@%1$s AS build
+                RUN dnf install -y --nodocs --setopt=install_weak_deps=0 make \\
+                    && dnf clean all
+                RUN make build
+
+                FROM registry.example.com/ubi9/ubi-minimal:9.4@%1$s
+                LABEL org.opencontainers.image.revision="${REVISION}" \\
+                      summary="say \\"hi\\""
+                ENV APP_HOME="/opt/app"
+                WORKDIR /opt/app
+                COPY --from=build --chown=1001:0 /src/out/app /opt/app/
+                RUN chgrp -R 0 /opt/app \\
+                    && chmod -R g=u /opt/app
+                EXPOSE 8080
+                USER 1001
+                ENTRYPOINT ["/opt/app/app", "--config", "/etc/app \\"main\\".yaml"]
+                CMD ["serve"]
+                HEALTHCHECK NONE
+                """.formatted(DIGEST));
+    }
+
+    private static Map<String, String> ordered(String... pairs) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (int i = 0; i < pairs.length; i += 2) {
+            map.put(pairs[i], pairs[i + 1]);
+        }
+        return map;
+    }
+}

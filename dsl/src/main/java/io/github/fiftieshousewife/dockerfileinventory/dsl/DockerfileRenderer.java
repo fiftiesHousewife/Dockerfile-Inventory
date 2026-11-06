@@ -1,0 +1,86 @@
+package io.github.fiftieshousewife.dockerfileinventory.dsl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * The one renderer: builders and Phase 3's fixes both produce Dockerfile text through it, so new and migrated
+ * Dockerfiles converge on the same lines. Output is stable: one model always renders the same text. A {@code RUN}
+ * with several commands puts each after {@code &&} on its own line, and {@code ENV} and {@code LABEL} put each pair
+ * on its own line, so diffs stay readable.
+ */
+public final class DockerfileRenderer {
+
+    private static final String CONTINUE = " \\\n";
+
+    private DockerfileRenderer() {
+    }
+
+    public static String render(Dockerfile dockerfile, Target target) {
+        List<String> blocks = new ArrayList<>();
+        if (!dockerfile.globalArgs().isEmpty()) {
+            blocks.add(dockerfile.globalArgs().stream().map(DockerfileRenderer::instruction)
+                    .collect(Collectors.joining("\n")));
+        }
+        dockerfile.stages().forEach(stage -> blocks.add(stage(stage)));
+        return String.join("\n\n", blocks) + "\n";
+    }
+
+    private static String stage(Stage stage) {
+        List<String> lines = new ArrayList<>();
+        lines.add("FROM " + (stage.base() != null ? reference(stage.base()) : stage.fromStage())
+                + (stage.name() == null ? "" : " AS " + stage.name()));
+        stage.instructions().forEach(i -> lines.add(instruction(i)));
+        return String.join("\n", lines);
+    }
+
+    private static String reference(BaseImage base) {
+        return base.name() + (base.tag() == null ? "" : ":" + base.tag())
+                + (base.digest() == null ? "" : "@" + base.digest());
+    }
+
+    static String instruction(Instruction instruction) {
+        return switch (instruction) {
+            case Instruction.Arg arg -> "ARG " + arg.name()
+                    + (arg.defaultValue() == null ? "" : "=" + quote(arg.defaultValue()));
+            case Instruction.Env env -> pairs("ENV", env.values());
+            case Instruction.Label label -> pairs("LABEL", label.values());
+            case Instruction.Run run -> "RUN " + commands(run.body());
+            case Instruction.Copy copy -> "COPY" + (copy.fromStage() == null ? "" : " --from=" + copy.fromStage())
+                    + (copy.chown() == null ? "" : " --chown=" + copy.chown())
+                    + " " + String.join(" ", copy.sources()) + " " + copy.destination();
+            case Instruction.User user -> "USER " + user.user();
+            case Instruction.Workdir workdir -> "WORKDIR " + workdir.path();
+            case Instruction.Expose expose -> "EXPOSE " + expose.port();
+            case Instruction.Entrypoint entrypoint -> "ENTRYPOINT " + json(entrypoint.command());
+            case Instruction.Cmd cmd -> "CMD " + json(cmd.command());
+            case Instruction.Raw raw -> raw.text();
+        };
+    }
+
+    private static String commands(RunBody body) {
+        List<String> commands = switch (body) {
+            case RunBody.Install install -> PackageInstallRenderer.commands(install.install());
+            case RunBody.Shell shell -> shell.commands();
+        };
+        return String.join(CONTINUE + "    && ", commands);
+    }
+
+    private static String pairs(String keyword, Map<String, String> values) {
+        String indent = " ".repeat(keyword.length() + 1);
+        return keyword + " " + values.entrySet().stream()
+                .map(e -> e.getKey() + "=" + quote(e.getValue()))
+                .collect(Collectors.joining(CONTINUE + indent));
+    }
+
+    /** Double-quoted, so spaces survive and {@code $VARIABLES} still expand as Docker expands them. */
+    private static String quote(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    private static String json(List<String> command) {
+        return command.stream().map(DockerfileRenderer::quote).collect(Collectors.joining(", ", "[", "]"));
+    }
+}
