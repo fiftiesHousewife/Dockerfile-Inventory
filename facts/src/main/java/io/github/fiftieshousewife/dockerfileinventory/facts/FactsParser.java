@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.openrewrite.InMemoryExecutionContext;
+import org.openrewrite.ParseExceptionResult;
 import org.openrewrite.Parser;
 import org.openrewrite.SourceFile;
 import org.openrewrite.docker.DockerIsoVisitor;
@@ -23,6 +24,10 @@ import org.openrewrite.docker.tree.Docker;
 public final class FactsParser {
 
 
+    /** How a template's failure message starts, so rates can count templates apart from parser failures. */
+    public static final String TEMPLATE = "a template, not a Dockerfile";
+
+    private static final Pattern TEMPLATE_MARKER = Pattern.compile("\\{%.*%}|\\{\\{.*}}");
     private static final Pattern HEREDOC = Pattern.compile("<<-?['\"]?(\\w+)");
 
     private final DockerParser parser = DockerParser.builder().build();
@@ -40,7 +45,21 @@ public final class FactsParser {
             return first;
         }
         ParseResult second = attempt(blobSha, withoutComments(text));
-        return second instanceof ParseResult.Parsed ? second : first;
+        if (second instanceof ParseResult.Parsed) {
+            return second;
+        }
+        return template(text)
+                .<ParseResult>map(line -> new ParseResult.Failed(blobSha, TEMPLATE + " (" + line + "); the parser said: "
+                        + ((ParseResult.Failed) first).message()))
+                .orElse(first);
+    }
+
+    /**
+     * The first line holding Jinja or Go template markers ({@code {% if %}}, {@code {{ spec.version }}}). Asked only
+     * of a file that failed to parse, so a {@code docker inspect --format '{{.Id}}'} in a valid file is never one.
+     */
+    static Optional<String> template(String text) {
+        return text.lines().filter(line -> TEMPLATE_MARKER.matcher(line).find()).map(String::strip).findFirst();
     }
 
     /**
@@ -90,7 +109,9 @@ public final class FactsParser {
         if (!errors.isEmpty()) {
             return new ParseResult.Failed(blobSha, errors.getFirst().getMessage());
         }
-        Docker.File file = (Docker.File) files.getFirst();
+        if (!(files.getFirst() instanceof Docker.File file)) {
+            return new ParseResult.Failed(blobSha, parseError(files.getFirst()));
+        }
         return gluedLine(file)
                 .<ParseResult>map(line -> new ParseResult.Failed(blobSha,
                         "unrecognised line merged into an argument: " + line))
@@ -114,6 +135,14 @@ public final class FactsParser {
             }
         }.visit(file, 0);
         return Optional.ofNullable(found.get());
+    }
+
+    /** A source the parser gave up on (it could not print the input back exactly), as its recorded message. */
+    private static String parseError(SourceFile source) {
+        return source.getMarkers().findFirst(ParseExceptionResult.class)
+                .map(ParseExceptionResult::getMessage)
+                .map(message -> message.lines().findFirst().orElse(message))
+                .orElse("the parser could not read the file");
     }
 
     /**

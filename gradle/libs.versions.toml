@@ -43,6 +43,8 @@ foojay-resolver = { module = "org.gradle.toolchains:foojay-resolver", version.re
 
 # SpotBugs logs through slf4j-simple at a version its plugin pins; pinned here so it stays current.
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 
 [plugins]
 spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs-plugin" }

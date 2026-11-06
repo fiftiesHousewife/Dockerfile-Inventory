@@ -117,6 +117,22 @@ class FactsParserTest {
         assertThat(((ParseResult.Parsed) new FactsParser().parse("ok", text)).file().printAll()).isEqualTo(text);
     }
 
+    @Test
+    void aFileThatFailsAndHoldsTemplateMarkersIsATemplateWithTheParsersOwnMessage() throws IOException {
+        ParseResult result = new FactsParser().parse("tpl", fixture("s2i-nodejs-jinja-template.Dockerfile"));
+
+        assertThat(result).isInstanceOfSatisfying(ParseResult.Failed.class, failed -> assertThat(failed.message())
+                .startsWith(FactsParser.TEMPLATE)
+                .contains("{{ spec.s2i_base }}")
+                .doesNotContain("Could not initialize"));
+    }
+
+    @Test
+    void aFileThatParsesIsNeverATemplate() {
+        assertThat(new FactsParser().parse("ok", "FROM ubi9\nRUN docker inspect --format '{{.Id}}' x\n"))
+                .isInstanceOf(ParseResult.Parsed.class);
+    }
+
     private static String fixture(String name) throws IOException {
         return Files.readString(Path.of("src/test/resources/fixtures/dockerfiles", name));
     }
