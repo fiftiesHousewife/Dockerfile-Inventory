@@ -20,6 +20,8 @@ or queued for curation; gap list published and reviewed.
 | Q6 | Remote repositories | None | Only local repositories are read |
 | Q7 | Labels | None carried reliably | No label-based links. See D2 |
 | Q8 | External bases (UBI) | Mirrored into a local repository | Mirrored images appear in the tree as roots. See D1 |
+| Q9 | Which tags (slice 2) | Every tag | One manifest request per tag; configs fetched once per digest |
+| Q10 | Promoted images (slice 2) | One image, every reference | One node per config digest, listing each repository and tag; counts are per distinct image |
 
 ## Decisions that follow (say if any is wrong)
 
@@ -58,6 +60,25 @@ or queued for curation; gap list published and reviewed.
 
 2. **Image nodes**: reference, config digest, `rootfs.diff_ids`, history, user, labels. Manifest lists take their
    `linux/amd64` entry (Q3).
+
+   Design: `ImageNodes.resolve(artifactory, repository, image, tag)` returns a sealed `Resolved`: `Node(configDigest,
+   ImageConfig)` or `Skipped(reason)`. `ImageConfig.parse(text)` reads the config: `rootfs.diff_ids`, history
+   steps (`created_by`, `empty_layer`, `comment`, `created`), `config.User`, `config.Labels`. The node's identity
+   is its config digest, so a tag, a second tag, and the same image promoted into another repository are one node
+   with several references. Dedupe across references is the run's job (slice 8), which skips the config fetch for
+   a digest it has seen; this slice only resolves one reference. Pure parsing is kept apart from fetching, so
+   `ImageConfig` is tested on text alone. Tests, in order:
+   1. A config's diff IDs, user and labels are read; missing `User` and `Labels` give none.
+   2. History steps keep `created_by`, `comment` and `empty_layer` (absent means false), in order.
+   3. History steps that make layers match the diff IDs in number; a config where they do not is still read, and
+      says so (`historyMatchesLayers` false), for slice 4 to fall back on.
+   4. A single Docker v2 or OCI manifest resolves through its `config.digest` to a node.
+   5. A manifest list or OCI index resolves through its `linux/amd64` entry's manifest to a node.
+   6. A list with no `linux/amd64` entry is `Skipped(NO_AMD64)`.
+   7. A schema 1 manifest (old Docker, no config) is `Skipped(SCHEMA_1)`.
+   8. A tag, manifest or config that has gone between listing and fetching is `Skipped(GONE)`.
+   9. A config that is not JSON, or has no `rootfs`, is `Skipped(UNREADABLE_CONFIG)`, with the digest, so one bad
+      image does not stop the run.
 3. **Layer-prefix lineage**: parent = the node whose full `diff_ids` list is this one's longest strict prefix. A
    non-root image with no parent is a finding (Q2).
 4. **History normaliser**, from public Buildah-built `created_by` samples (Q4): `RUN` text with variable spans
