@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class EstateTest {
@@ -44,5 +45,12 @@ class EstateTest {
             assertThat(failure.message()).startsWith("Syntax error");
             assertThat(failure.locations()).containsExactly(new Location("platform/old", "Dockerfile", "RELEASED"));
         });
+    }
+
+    @Test
+    void effectiveUsersComeFromEachDockerfilesNewestLinkedImageAndAreAbsentWithoutLineage() {
+        assertThat(Estate.read(FIXTURES, FIXTURES, null).effectiveUsers()).isEmpty();
+        assertThat(Estate.read(FIXTURES, FIXTURES, Path.of("src/test/resources/fixtures/lineage")).effectiveUsers())
+                .containsExactly(Map.entry("blob-a", UserKind.NUMERIC));
     }
 }

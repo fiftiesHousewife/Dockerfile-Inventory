@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -16,7 +17,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /** Every Dockerfile in the estate, with its facts and locations, read from the earlier stages' files. */
-public record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<Location> missing) {
+public record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<Location> missing,
+                     Map<String, UserKind> effectiveUsers) {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -24,6 +26,7 @@ public record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<
         dockerfiles = List.copyOf(dockerfiles);
         failures = List.copyOf(failures);
         missing = List.copyOf(missing);
+        effectiveUsers = Map.copyOf(effectiveUsers);
     }
 
     public static Estate read(Path factsDir, Path discoveryDir, Path lineageDir) {
@@ -47,7 +50,29 @@ public record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<
                 .flatMap(e -> e.getValue().stream())
                 .sorted(Comparator.comparing(Location::repository).thenComparing(Location::path))
                 .toList();
-        return new Estate(dockerfiles, failures, missing);
+        return new Estate(dockerfiles, failures, missing, lineageDir == null ? Map.of() : effectiveUsers(lineageDir));
+    }
+
+    /** D4: each Dockerfile's effective user is its newest linked image's, by last push. */
+    private static Map<String, UserKind> effectiveUsers(Path lineageDir) {
+        Map<String, Instant> pushed = new HashMap<>();
+        lines(lineageDir.resolve("images.jsonl")).stream()
+                .filter(row -> !row.path("configDigest").isNull() && !row.path("lastPushed").isNull())
+                .forEach(row -> pushed.merge(row.path("configDigest").asString(),
+                        Instant.parse(row.path("lastPushed").asString()), (a, b) -> a.isAfter(b) ? a : b));
+        Map<String, String> users = new HashMap<>();
+        lines(lineageDir.resolve("effective.jsonl")).forEach(row -> users.put(row.path("configDigest").asString(),
+                row.path("user").path("value").stringValue(null)));
+        Map<String, String> newest = new HashMap<>();
+        lines(lineageDir.resolve("links.jsonl")).stream()
+                .filter(row -> !row.path("tier").asString().equals("NONE"))
+                .forEach(row -> row.path("blobShas").forEach(blob -> newest.merge(blob.asString(),
+                        row.path("configDigest").asString(),
+                        (a, b) -> pushed.getOrDefault(a, Instant.MIN).isAfter(pushed.getOrDefault(b, Instant.MIN))
+                                ? a : b)));
+        Map<String, UserKind> kinds = new HashMap<>();
+        newest.forEach((blob, image) -> kinds.put(blob, UserKind.of(users.get(image))));
+        return kinds;
     }
 
     private static Dockerfile dockerfile(JsonNode row, List<Location> locations) {

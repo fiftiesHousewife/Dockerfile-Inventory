@@ -49,12 +49,13 @@ lineage/                    Phase 1b: Artifactory images -> family tree -> Docke
                             Inventory: Artifactory -> images.jsonl, configs/; Analysis: everything else, rates
                             run: ARTIFACTORY_URL, ARTIFACTORY_TOKEN, FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [CONCURRENCY]
                             ./gradlew :lineage:run
+report/                     Phase 2 (in progress): facts + manifest (+ lineage) -> passes, archetypes, bases, tables
+                            Estate: every Dockerfile with its facts and locations, failures, effective users
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):
 
 ```
-report/       Phase 2: four-pass clustering, archetype counts, Oracle export
 rules/        Phase 3: detect-only recipes, then auto-fixes; depends on facts and renderer
 dsl/          Phase 4: instruction model, builders, renderer. Depends on nothing from OpenRewrite
 converter/    Phase 5: LST -> model -> generated builder class, round-trip gate

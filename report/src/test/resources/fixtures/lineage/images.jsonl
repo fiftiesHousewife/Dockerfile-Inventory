@@ -1,0 +1,2 @@
+{"repository":"docker-local","image":"payments/api","tag":"1.0","lastPushed":"2026-09-01T00:00:00Z","configDigest":"img-old","skipped":null,"skipDetail":null}
+{"repository":"docker-local","image":"payments/api","tag":"1.1","lastPushed":"2026-10-01T00:00:00Z","configDigest":"img-new","skipped":null,"skipDetail":null}

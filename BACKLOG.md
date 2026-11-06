@@ -36,6 +36,7 @@ and one line when its gate is met.
 
 - Phase 2 — Cluster and report. Plan: `docs/plans/phase-2.md` (questions answered 6 Nov). Gate: written
   decision, base-image route or DSL route.
+  - Done: slice 1, `report` module and inputs.
 
 ## Queued
 

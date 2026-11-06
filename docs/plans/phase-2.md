@@ -1,6 +1,6 @@
 # Phase 2 — Cluster and report: plan
 
-Status: planned 6 Nov; questions answered. Slices are built test-first, as in the earlier phases.
+Status: planned 6 Nov; questions answered. Slice 1 built 6 Nov. Slices are built test-first, as in the earlier phases.
 
 Phase 2 produces the number that sets strategy: how many archetypes cover 80% and 95% of the estate. Roughly 300
 or fewer at 95% means golden base images first and a small DSL; a long, diverse tail means recipes first and the
@@ -36,6 +36,10 @@ agreed (the decision paper is written by people from these numbers, not by the p
       reported as missing, not dropped.
    3. Parse failures are read with their locations (D5).
    4. Without a lineage directory, links and effective users are absent, not an error.
+
+   As built: the fixtures are the facts stage's real output for three small Dockerfiles. Final-stage packages are
+   the packages of package calls in the last stage, as the signature uses. `UserKind.of` applies the facts
+   classification to an effective user (`1001:0` is numeric) and has its own table test, written after it.
 
 2. **Exact passes.** `Passes.exact(estate)` gives the count after blob SHA, text-normal hash and signature hash,
    each as distinct groups and as locations (D1).
