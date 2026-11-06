@@ -10,4 +10,7 @@ public interface Artifactory {
 
     /** Image names in a repository, from the Docker v2 catalogue ({@code team/app}). */
     List<String> images(String repository);
+
+    /** An image's tags; empty when it has none or no longer exists. */
+    List<String> tags(String repository, String image);
 }

@@ -56,6 +56,21 @@ class ArtifactoryHttpTest {
                 "GET /artifactory/api/docker/docker-local/v2/_catalog?n=2&last=team%2Fworker");
     }
 
+    @Test
+    void pagesTagsAndTreatsNullTagsAndAMissingImageAsNoTags() {
+        route("/artifactory/api/docker/docker-local/v2/team/app/tags/list", exchange -> respond(exchange, 200,
+                exchange.getRequestURI().getRawQuery().contains("last=") ? "tags-page2.json" : "tags-page1.json"));
+        route("/artifactory/api/docker/docker-local/v2/team/empty/tags/list",
+                exchange -> respond(exchange, 200, "tags-null.json"));
+        route("/artifactory/api/docker/docker-local/v2/team/gone/tags/list",
+                exchange -> respond(exchange, 404, "name-unknown.json"));
+
+        assertThat(artifactory.tags("docker-local", "team/app")).containsExactly("1.0", "1.1", "latest");
+        assertThat(artifactory.tags("docker-local", "team/empty")).isEmpty();
+        assertThat(artifactory.tags("docker-local", "team/gone")).isEmpty();
+        assertThat(requests).contains("GET /artifactory/api/docker/docker-local/v2/team/app/tags/list?n=2&last=1.1");
+    }
+
     private interface Handler {
         void handle(HttpExchange exchange) throws IOException;
     }

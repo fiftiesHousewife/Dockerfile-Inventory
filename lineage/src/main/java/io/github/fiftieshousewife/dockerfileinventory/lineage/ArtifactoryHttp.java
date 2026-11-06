@@ -51,6 +51,11 @@ public final class ArtifactoryHttp implements Artifactory {
         return paged("api/docker/%s/v2/_catalog".formatted(repository), "repositories");
     }
 
+    @Override
+    public List<String> tags(String repository, String image) {
+        return paged("api/docker/%s/v2/%s/tags/list".formatted(repository, image), "tags");
+    }
+
     /**
      * Docker v2 paging: {@code n} per page, {@code last} the final entry of the previous page. Artifactory does not
      * always send a {@code Link} header, so a page shorter than {@code n} is taken as the end.
