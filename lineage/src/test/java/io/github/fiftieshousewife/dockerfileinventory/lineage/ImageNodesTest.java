@@ -63,4 +63,18 @@ class ImageNodesTest {
         assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/legacy", "0.9"))
                 .isEqualTo(new Resolved.Skipped(Resolved.Reason.SCHEMA_1, "docker-local/team/legacy:0.9"));
     }
+
+    @Test
+    void aTagListEntryOrConfigThatHasGoneIsSkippedNamingWhatWentMissing() {
+        FakeArtifactory artifactory = new FakeArtifactory()
+                .manifest("docker-local", "team/app", "multi", DOCKER_LIST, "manifest-list.json")
+                .manifest("docker-local", "team/app", "1.0", DOCKER_MANIFEST, "manifest-image.json");
+
+        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "gone"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "docker-local/team/app:gone"));
+        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "multi"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64)));
+        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "1.0"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, CONFIG_C));
+    }
 }

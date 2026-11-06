@@ -14,21 +14,34 @@ public final class ImageNodes {
     }
 
     public static Resolved resolve(Artifactory artifactory, String repository, String image, String tag) {
-        JsonNode manifest = JSON.readTree(artifactory.manifest(repository, image, tag).orElseThrow().body());
+        String reference = reference(repository, image, tag);
+        Optional<JsonNode> tagged = manifest(artifactory, repository, image, tag);
+        if (tagged.isEmpty()) {
+            return new Resolved.Skipped(Resolved.Reason.GONE, reference);
+        }
+        JsonNode manifest = tagged.get();
         if (manifest.path("schemaVersion").asInt() == 1) {
-            return new Resolved.Skipped(Resolved.Reason.SCHEMA_1, reference(repository, image, tag));
+            return new Resolved.Skipped(Resolved.Reason.SCHEMA_1, reference);
         }
         if (manifest.has("manifests")) {
             Optional<String> amd64 = amd64(manifest);
             if (amd64.isEmpty()) {
-                return new Resolved.Skipped(Resolved.Reason.NO_AMD64, reference(repository, image, tag));
+                return new Resolved.Skipped(Resolved.Reason.NO_AMD64, reference);
             }
-            String entry = amd64.get();
-            manifest = JSON.readTree(artifactory.manifest(repository, image, entry).orElseThrow().body());
+            Optional<JsonNode> entry = manifest(artifactory, repository, image, amd64.get());
+            if (entry.isEmpty()) {
+                return new Resolved.Skipped(Resolved.Reason.GONE, amd64.get());
+            }
+            manifest = entry.get();
         }
         String configDigest = manifest.path("config").path("digest").asString();
-        String config = artifactory.blob(repository, image, configDigest).orElseThrow();
-        return new Resolved.Node(configDigest, ImageConfig.parse(config).orElseThrow());
+        return artifactory.blob(repository, image, configDigest)
+                .<Resolved>map(config -> new Resolved.Node(configDigest, ImageConfig.parse(config).orElseThrow()))
+                .orElseGet(() -> new Resolved.Skipped(Resolved.Reason.GONE, configDigest));
+    }
+
+    private static Optional<JsonNode> manifest(Artifactory artifactory, String repository, String image, String ref) {
+        return artifactory.manifest(repository, image, ref).map(m -> JSON.readTree(m.body()));
     }
 
     private static String reference(String repository, String image, String tag) {
