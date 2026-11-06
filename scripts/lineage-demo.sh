@@ -2,7 +2,7 @@
 # Lineage, end to end, on a laptop: a local JFrog Container Registry (JCR), images built with Buildah from the
 # Dockerfiles discovery found, then lineage, report and rules against them.
 #
-#   1. starts JCR in Docker and waits for it; creates the local Docker repository (or asks you to, in its UI)
+#   1. starts PostgreSQL (JCR 7.19x refuses its old built-in Derby) and JCR on it, and waits for JCR; creates the local Docker repository (or asks you to, in its UI)
 #   2. clones each chosen Dockerfile's repository at the commit discovery scanned
 #   3. mirrors the public CentOS Stream roots into JCR, then builds every chosen Dockerfile with Buildah (inside a
 #      linux/amd64 container, as lineage reads amd64 only), each FROM pointed at the image built before it, and pushes
@@ -13,9 +13,11 @@
 #   SCOPE=all scripts/lineage-demo.sh       # every Dockerfile.c9s discovery found (45 on sclorg; hours, emulated)
 #
 # Settings (environment): DISCOVERY_DIR (out/demo4/discovery), FACTS_DIR (out/demo5/facts), OUT (out/lineage-demo),
-# ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, BUILDAH_IMAGE, ARTIFACTORY_TOKEN (skips
-# creating one). Rerunning is safe: a running JCR, an existing repository and existing clones are reused.
-# Stop and remove JCR afterwards: docker rm -f inventory-jcr && docker volume rm inventory-jcr
+# ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, POSTGRES_IMAGE, BUILDAH_IMAGE,
+# ARTIFACTORY_TOKEN (skips creating one). Rerunning is safe: running containers, an existing repository and
+# existing clones are reused. The database password is a fixed local one: PostgreSQL is reachable only on the
+# demo's Docker network. Remove everything afterwards:
+#   docker rm -f inventory-jcr inventory-postgres && docker volume rm inventory-jcr inventory-postgres
 set -euo pipefail
 
 DISCOVERY_DIR=${DISCOVERY_DIR:-out/demo4/discovery}
@@ -25,8 +27,10 @@ SCOPE=${SCOPE:-chain}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
 JCR_IMAGE=${JCR_IMAGE:-releases-docker.jfrog.io/jfrog/artifactory-jcr:latest}
 BUILDAH_IMAGE=${BUILDAH_IMAGE:-quay.io/buildah/stable:v1.37.0}
+POSTGRES_IMAGE=${POSTGRES_IMAGE:-postgres:16.4}
 NETWORK=inventory-demo
 JCR=inventory-jcr
+POSTGRES=inventory-postgres
 REPOSITORY=docker-local
 REGISTRY=$JCR:8082/$REPOSITORY
 API=http://localhost:8082/artifactory
@@ -45,19 +49,36 @@ Resources > Memory). If JCR already started short of memory: docker rm -f $JCR; 
 mkdir -p "$OUT/src"
 OUT=$(cd "$OUT" && pwd)
 
-step "1. JFrog Container Registry"
+step "1. PostgreSQL and the JFrog Container Registry"
 docker network inspect $NETWORK >/dev/null 2>&1 || docker network create $NETWORK >/dev/null
+if [[ -z $(docker ps -q -f name=^$POSTGRES$) ]]; then
+    docker rm -f $POSTGRES >/dev/null 2>&1 || true
+    docker run -d --name $POSTGRES --network $NETWORK -v $POSTGRES:/var/lib/postgresql/data \
+        -e POSTGRES_USER=artifactory -e POSTGRES_PASSWORD=artifactory -e POSTGRES_DB=artifactory \
+        "$POSTGRES_IMAGE" >/dev/null
+fi
+printf 'waiting for PostgreSQL'
+for _ in $(seq 60); do
+    docker exec $POSTGRES pg_isready -q -U artifactory -d artifactory 2>/dev/null && break
+    printf '.'; sleep 2
+done
+docker exec $POSTGRES pg_isready -q -U artifactory -d artifactory || die "PostgreSQL did not start; docker logs $POSTGRES"
+echo " up"
 if [[ -z $(docker ps -q -f name=^$JCR$) ]]; then
     docker rm -f $JCR >/dev/null 2>&1 || true
     docker run -d --name $JCR --network $NETWORK -p 8081:8081 -p 8082:8082 \
-        -v $JCR:/var/opt/jfrog/artifactory "$JCR_IMAGE" >/dev/null
+        -v $JCR:/var/opt/jfrog/artifactory \
+        -e JF_SHARED_DATABASE_TYPE=postgresql -e JF_SHARED_DATABASE_DRIVER=org.postgresql.Driver \
+        -e JF_SHARED_DATABASE_URL=jdbc:postgresql://$POSTGRES:5432/artifactory \
+        -e JF_SHARED_DATABASE_USERNAME=artifactory -e JF_SHARED_DATABASE_PASSWORD=artifactory \
+        "$JCR_IMAGE" >/dev/null
 fi
 printf 'waiting for JCR to answer (a first start takes a few minutes)'
 for _ in $(seq 120); do
     [[ $(curl -s "$API/api/system/ping" || true) == OK ]] && break
     printf '.'; sleep 5
 done
-[[ $(curl -s "$API/api/system/ping" || true) == OK ]] || die "JCR did not start; see: docker logs $JCR"
+[[ $(curl -s "$API/api/system/ping" || true) == OK ]] || die "JCR did not start; scripts/jcr-diagnose.sh says why"
 echo " up"
 
 repository_exists() {
