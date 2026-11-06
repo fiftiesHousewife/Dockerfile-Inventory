@@ -23,6 +23,20 @@ class GapsTest {
         assertThat(report.gaps()).containsExactly(new GapRow("app", refs, Instant.parse("2026-10-05T00:00:00Z")));
     }
 
+    @Test
+    void aRootWithNoLinkIsAnExternalBaseAndALinkedImageIsNeither() {
+        List<Reference> ubi = List.of(ref("base-images", "ubi9/ubi-minimal", "9.4", "2026-09-01T00:00:00Z"));
+
+        GapReport report = Gaps.of(
+                Map.of("ubi", ubi, "app", List.of(), "squashed", List.of()),
+                Map.of("ubi", new Parent.Root(), "app", new Parent.Of("ubi"), "squashed", new Parent.Root()),
+                Map.of("ubi", Links.NONE, "app", LINKED, "squashed", LINKED));
+
+        assertThat(report.externalBases())
+                .containsExactly(new GapRow("ubi", ubi, Instant.parse("2026-09-01T00:00:00Z")));
+        assertThat(report.gaps()).isEmpty();
+    }
+
     static Reference ref(String repository, String image, String tag, String pushed) {
         return new Reference(repository, image, tag, Instant.parse(pushed));
     }

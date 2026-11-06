@@ -14,13 +14,18 @@ public final class Gaps {
 
     public static GapReport of(Map<String, List<Reference>> references, Map<String, Parent> parents,
                                Map<String, Link> links) {
-        List<GapRow> gaps = references.entrySet().stream()
+        return new GapReport(unlinked(references, parents, links, false), unlinked(references, parents, links, true));
+    }
+
+    /** Unlinked images: roots are external bases mirrored in (D1); the rest were built here from no scanned file. */
+    private static List<GapRow> unlinked(Map<String, List<Reference>> references, Map<String, Parent> parents,
+                                         Map<String, Link> links, boolean roots) {
+        return references.entrySet().stream()
                 .filter(e -> links.get(e.getKey()).tier() == Link.Tier.NONE)
-                .filter(e -> !(parents.get(e.getKey()) instanceof Parent.Root))
+                .filter(e -> parents.get(e.getKey()) instanceof Parent.Root == roots)
                 .map(e -> row(e.getKey(), e.getValue()))
                 .sorted(Comparator.comparing(GapRow::configDigest))
                 .toList();
-        return new GapReport(gaps);
     }
 
     private static GapRow row(String configDigest, List<Reference> references) {
