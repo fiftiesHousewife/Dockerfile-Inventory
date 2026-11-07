@@ -55,8 +55,10 @@ final class LineagePage {
 
     private static String root(ImageRow root, Tree tree) {
         List<ImageRow> below = tree.children().getOrDefault(root.name(), List.of());
+        int descendants = descendants(root.name(), tree);
         return "<details" + (below.size() < OPEN_BELOW ? " open" : "") + "><summary>" + line(root, tree)
-                + " &#x2013; " + plural(descendants(root.name(), tree), "image", "images") + " built on it</summary>"
+                + " &#x2013; " + (descendants == 0 ? "nothing in Artifactory is built on it"
+                        : plural(descendants, "image", "images") + " built on it") + "</summary>"
                 + files(root) + children(below, tree) + "</details>";
     }
 

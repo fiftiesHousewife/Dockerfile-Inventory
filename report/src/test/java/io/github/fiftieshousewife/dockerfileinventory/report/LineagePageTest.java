@@ -41,6 +41,16 @@ class LineagePageTest {
     }
 
     @Test
+    void aRootNothingIsBuiltOnSaysSo() {
+        LineageView view = new LineageView(LineageSummaryTest.OKD.counts(),
+                List.of(new LineageView.ImageRow("r/base:1", null, "NONE", List.of())), List.of(), List.of(),
+                List.of());
+
+        assertThat(LineagePage.tree(view)).contains("<strong>base:1</strong> <span class=\"tier\">no Dockerfile</span>"
+                + " &#x2013; nothing in Artifactory is built on it</summary>");
+    }
+
+    @Test
     void thePageHasALegendForTheTiersOrSaysLineageHasNotRun() {
         assertThat(LineagePage.body(Optional.of(LineageSummaryTest.OKD)))
                 .contains("<li><strong>weak</strong>: the closest Dockerfile on the same base");
