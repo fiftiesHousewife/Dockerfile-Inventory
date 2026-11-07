@@ -7,8 +7,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.openrewrite.docker.tree.Docker;
 
-/** S2: a secret-shaped {@code ENV} or {@code ARG} value baked into the image. Only a hash and the line are kept. */
-public final class SecretValue implements Rule {
+final class SecretValue implements Rule {
 
     @Override
     public String id() {
@@ -26,23 +25,29 @@ public final class SecretValue implements Rule {
             return List.of();
         }
         Lines lines = Lines.of(subject.file());
-        List<Finding> findings = new ArrayList<>();
-        List<Docker.Instruction> instructions = new ArrayList<>(subject.file().getGlobalArgs());
-        subject.file().getStages().forEach(stage -> instructions.addAll(stage.getInstructions()));
-        for (Docker.Instruction instruction : instructions) {
-            switch (instruction) {
-                case Docker.Env env -> env.getPairs().forEach(pair -> check(subject, lines.of(env), "ENV",
-                        pair.getKey().getText(), pair.getValue()).ifPresent(findings::add));
-                case Docker.Arg arg -> check(subject, lines.of(arg), "ARG", arg.getName().getText(), arg.getValue())
-                        .ifPresent(findings::add);
-                default -> {
-                }
-            }
-        }
-        return findings;
+        return instructions(subject.file()).stream()
+                .flatMap(instruction -> findings(subject, lines.of(instruction), instruction).stream())
+                .toList();
     }
 
-    private Optional<Finding> check(Subject subject, int line, String keyword, String name, Docker.Argument value) {
+    static List<Docker.Instruction> instructions(Docker.File file) {
+        List<Docker.Instruction> instructions = new ArrayList<>(file.getGlobalArgs());
+        file.getStages().forEach(stage -> instructions.addAll(stage.getInstructions()));
+        return instructions;
+    }
+
+    List<Finding> findings(Subject subject, int line, Docker.Instruction instruction) {
+        return switch (instruction) {
+            case Docker.Env env -> env.getPairs().stream()
+                    .flatMap(pair -> check(subject, line, "ENV", pair.getKey().getText(), pair.getValue()).stream())
+                    .toList();
+            case Docker.Arg arg -> check(subject, line, "ARG", arg.getName().getText(), arg.getValue()).stream()
+                    .toList();
+            default -> List.of();
+        };
+    }
+
+    Optional<Finding> check(Subject subject, int line, String keyword, String name, Docker.Argument value) {
         Optional<String> literal = literal(value);
         if (literal.isEmpty() || !Secrets.secret(name, literal.get())) {
             return Optional.empty();
@@ -51,20 +56,6 @@ public final class SecretValue implements Rule {
                 keyword + " " + name + " has a secret-shaped value", Hashes.sha256(literal.get()), List.of()));
     }
 
-    /** As {@link Secrets#secretName}; kept here so S2's tests read as before. */
-    static boolean secretName(String name) {
-        return Secrets.secretName(name);
-    }
-
-    static boolean secretShape(String value) {
-        return Secrets.secretShape(value);
-    }
-
-    /**
-     * The value when it is written out in full: no variable in it, and not empty once quotes are removed.
-     * rewrite-docker 8.90.4 leaves {@code $NAME} inside an {@code ENV} value as plain text, so a {@code $} outside
-     * single quotes counts as a variable; and it gives an empty {@code KEY=} the value {@code =}.
-     */
     static Optional<String> literal(Docker.Argument value) {
         if (value == null || !value.getContents().stream().allMatch(c -> c instanceof Docker.Literal)) {
             return Optional.empty();
@@ -74,6 +65,7 @@ public final class SecretValue implements Rule {
                 .collect(Collectors.joining())
                 .strip();
         boolean singleQuoted = text.length() >= 2 && text.startsWith("'") && text.endsWith("'");
+        // rewrite-docker issues 5 and 6 (docs/upstream/): an empty KEY= is "=", and $NAME stays plain text
         if (!singleQuoted && text.contains("$") || text.equals("=")) {
             return Optional.empty();
         }

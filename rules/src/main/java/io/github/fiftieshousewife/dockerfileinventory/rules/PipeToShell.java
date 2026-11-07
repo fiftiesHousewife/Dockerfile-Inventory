@@ -6,10 +6,8 @@ import java.util.regex.Pattern;
 import org.openrewrite.Cursor;
 import org.openrewrite.docker.tree.Docker;
 
-/** S3: a script downloaded and run in one step, so nothing records what ran. */
-public final class PipeToShell implements Rule {
+final class PipeToShell implements Rule {
 
-    /** {@code curl} or {@code wget}, then a pipe (no other command between) into a shell, perhaps through sudo. */
     private static final Pattern PIPED =
             Pattern.compile("\\b(curl|wget)\\b[^|;&]*\\|\\s*(sudo\\s+(-\\S+\\s+)*)?(ba|da|z|k)?sh\\b");
 
@@ -33,9 +31,12 @@ public final class PipeToShell implements Rule {
         return subject.file().getStages().stream()
                 .flatMap(stage -> stage.getInstructions().stream())
                 .filter(i -> i instanceof Docker.Run)
-                .filter(run -> PIPED.matcher(Continuations.removed(run.printTrimmed(cursor))).find())
+                .filter(run -> piped(run.printTrimmed(cursor)))
                 .map(run -> finding(subject, lines.of(run), "a downloaded script is piped straight into a shell"))
                 .toList();
     }
 
+    static boolean piped(String run) {
+        return PIPED.matcher(Continuations.removed(run)).find();
+    }
 }

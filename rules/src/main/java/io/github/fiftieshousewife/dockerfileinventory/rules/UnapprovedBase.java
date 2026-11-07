@@ -4,12 +4,11 @@ import io.github.fiftieshousewife.dockerfileinventory.facts.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.facts.NormalForms;
 import java.util.List;
 
-/** S1: the final base is not on the approved list (D1), or cannot be known. */
-public final class UnapprovedBase implements Rule {
+final class UnapprovedBase implements Rule {
 
     private final BaseList list;
 
-    public UnapprovedBase(BaseList list) {
+    UnapprovedBase(BaseList list) {
         this.list = list;
     }
 

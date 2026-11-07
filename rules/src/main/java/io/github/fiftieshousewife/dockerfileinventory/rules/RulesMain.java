@@ -12,19 +12,18 @@ public final class RulesMain {
     }
 
     public static void main(String[] args) {
-        Path out = Path.of(required("OUT_DIR"));
-        new RulesRun(Path.of(required("DISCOVERY_DIR")), optional("LINEAGE_DIR"), optional("ALLOW_LIST"),
-                optional("EOL_LIST"), out).run();
+        Path out = Path.of(required("OUT_DIR", System.getenv("OUT_DIR")));
+        new RulesRun(Path.of(required("DISCOVERY_DIR", System.getenv("DISCOVERY_DIR"))),
+                optional(System.getenv("LINEAGE_DIR")), optional(System.getenv("ALLOW_LIST")),
+                optional(System.getenv("EOL_LIST")), out).run();
         System.out.println("Findings written to " + out.resolve("findings.jsonl"));
     }
 
-    private static Path optional(String name) {
-        String value = System.getenv(name);
+    static Path optional(String value) {
         return value == null || value.isBlank() ? null : Path.of(value);
     }
 
-    private static String required(String name) {
-        String value = System.getenv(name);
+    static String required(String name, String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(name + " is not set");
         }

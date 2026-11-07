@@ -8,12 +8,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * A list of bases by image path and tag prefix: the approved list (S1, {@code imagePath,tagPrefix}) or the
- * end-of-life list (R2, {@code imagePath,tagPrefix,status,eolDate}); a header line is optional. A base takes the
- * entry for its path with the longest tag prefix ending on a version boundary: {@code 9} covers {@code 9.4} and
- * {@code 9-1100}, not {@code 91}; an empty prefix covers every tag. Phase 2's catalogue reads the same way.
- */
 final class BaseList {
 
     record Entry(String path, String tagPrefix, String status, String eolDate) {
@@ -21,7 +15,7 @@ final class BaseList {
 
     private final List<Entry> entries;
 
-    private BaseList(List<Entry> entries) {
+    BaseList(List<Entry> entries) {
         this.entries = List.copyOf(entries);
     }
 
@@ -29,13 +23,17 @@ final class BaseList {
         try {
             return new BaseList(Files.readAllLines(csv).stream()
                     .filter(line -> !line.isBlank() && !line.startsWith("imagePath,"))
-                    .map(line -> line.split(",", -1))
-                    .map(f -> new Entry(f[0].strip(), f.length > 1 ? f[1].strip() : "",
-                            f.length > 2 ? f[2].strip() : null, f.length > 3 ? f[3].strip() : null))
+                    .map(BaseList::entry)
                     .toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    static Entry entry(String line) {
+        String[] f = line.split(",", -1);
+        return new Entry(f[0].strip(), f.length > 1 ? f[1].strip() : "",
+                f.length > 2 ? f[2].strip() : null, f.length > 3 ? f[3].strip() : null);
     }
 
     Optional<Entry> lookup(String path, String tag) {
@@ -45,7 +43,7 @@ final class BaseList {
                 .max(Comparator.comparingInt(e -> e.tagPrefix().length()));
     }
 
-    private static boolean covers(String prefix, String tag) {
+    static boolean covers(String prefix, String tag) {
         return prefix.isEmpty() || tag.equals(prefix) || tag.startsWith(prefix + ".") || tag.startsWith(prefix + "-");
     }
 }

@@ -3,11 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 import io.github.fiftieshousewife.dockerfileinventory.facts.BaseImage;
 import java.util.List;
 
-/**
- * R1: the final base is not pinned by digest, so a rebuild can silently pick up a different image. {@code scratch} is
- * Docker's empty base, not an image, so it has no digest to pin.
- */
-public final class UnpinnedBase implements Rule {
+final class UnpinnedBase implements Rule {
 
     @Override
     public String id() {

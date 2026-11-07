@@ -3,8 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 import java.util.List;
 import java.util.Set;
 
-/** H1: an RPM install whose cache stays in the layer because no clean follows in the same {@code RUN}. */
-public final class UncleanedInstall implements Rule {
+final class UncleanedInstall implements Rule {
 
     private static final Set<String> RPM = Set.of("dnf", "yum", "microdnf");
     private static final Set<String> INSTALLS = Set.of("install", "reinstall");
