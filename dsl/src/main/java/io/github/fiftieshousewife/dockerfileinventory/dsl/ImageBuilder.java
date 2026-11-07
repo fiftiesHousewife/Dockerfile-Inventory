@@ -71,6 +71,12 @@ public final class ImageBuilder extends InstructionBuilder {
         return thenStage(null, base);
     }
 
+    /** Makes the instruction just added run in images built {@code FROM} this one rather than in this one. */
+    public ImageBuilder asOnbuild() {
+        stages.getLast().onbuildLast();
+        return this;
+    }
+
     /** Paths the process writes to at run time, made writable by group 0 for an arbitrary UID (S4). */
     public ImageBuilder writablePaths(String... paths) {
         writable.addAll(Arrays.asList(paths));

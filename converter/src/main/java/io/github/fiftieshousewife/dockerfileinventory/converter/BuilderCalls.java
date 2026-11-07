@@ -2,18 +2,20 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.CodeBlock;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 final class BuilderCalls {
 
     private static final ClassName LIST = ClassName.get(List.class);
-    private static final ClassName MAP = ClassName.get(Map.class);
 
     private BuilderCalls() {
     }
@@ -41,6 +43,11 @@ final class BuilderCalls {
             case Instruction.Volume volume -> CodeBlock.of(".volume($L, $L)", list(volume.paths()), volume.jsonForm());
             case Instruction.StopSignal stopSignal -> CodeBlock.of(".stopSignal($S)", stopSignal.signal());
             case Instruction.Maintainer maintainer -> CodeBlock.of(".maintainer($S)", maintainer.name());
+            case Instruction.Healthcheck healthcheck -> healthcheck.command().isEmpty()
+                    ? CodeBlock.of(".healthcheckNone()")
+                    : CodeBlock.of(".healthcheck($L, $L, $T.$L)", map(healthcheck.options()),
+                            list(healthcheck.command()), CommandForm.class, healthcheck.form().name());
+            case Instruction.Onbuild onbuild -> CodeBlock.of("$L.asOnbuild()", call(onbuild.instruction()));
             case Instruction.Raw raw -> CodeBlock.of(".raw($S, $S)", raw.text(), raw.reason());
         };
     }
@@ -87,10 +94,8 @@ final class BuilderCalls {
         return CodeBlock.of("$T.of($L)", LIST, strings(values));
     }
 
-    private static CodeBlock map(Map<String, String> values) {
-        CodeBlock entries = values.entrySet().stream()
-                .map(e -> CodeBlock.of("$T.entry($S, $S)", MAP, e.getKey(), e.getValue()))
-                .collect(CodeBlock.joining(", "));
-        return CodeBlock.of("$T.ofEntries($L)", MAP, entries);
+    static CodeBlock map(Map<String, String> values) {
+        return CodeBlock.of("$T.of($L)", OrderedMap.class, strings(values.entrySet().stream()
+                .flatMap(e -> Stream.of(e.getKey(), e.getValue())).toList()));
     }
 }

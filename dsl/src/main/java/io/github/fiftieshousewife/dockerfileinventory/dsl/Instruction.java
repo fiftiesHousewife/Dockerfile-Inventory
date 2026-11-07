@@ -83,6 +83,31 @@ public sealed interface Instruction {
         }
     }
 
+    /**
+     * {@code HEALTHCHECK}: options ({@code interval}, {@code timeout}, {@code start-period}, {@code start-interval},
+     * {@code retries}) in the order written, then the command; {@link #NONE} turns off a base's check.
+     */
+    record Healthcheck(Map<String, String> options, List<String> command, CommandForm form) implements Instruction {
+
+        public static final Healthcheck NONE = new Healthcheck(Map.of(), List.of(), CommandForm.EXEC);
+
+        public Healthcheck {
+            options = Collections.unmodifiableMap(new LinkedHashMap<>(options));
+            command = List.copyOf(command);
+            Checks.healthcheck(options, command, form);
+        }
+    }
+
+    /** {@code ONBUILD}: the instruction runs in images built {@code FROM} this one. */
+    record Onbuild(Instruction instruction) implements Instruction {
+
+        public Onbuild {
+            if (instruction instanceof Onbuild || instruction instanceof Maintainer) {
+                throw new IllegalArgumentException("ONBUILD cannot hold " + instruction);
+            }
+        }
+    }
+
     record User(String user) implements Instruction {
 
         public User {

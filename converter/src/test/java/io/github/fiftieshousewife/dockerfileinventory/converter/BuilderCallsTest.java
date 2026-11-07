@@ -2,7 +2,9 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
@@ -21,7 +23,8 @@ class BuilderCallsTest {
                 new Instruction.Raw("VOLUME /d", "VOLUME is not modelled")))
                 .map(instruction -> BuilderCalls.call(instruction).toString())
                 .containsExactly(".arg(\"A\")", ".arg(\"A\", \"1\")",
-                        ".env(java.util.Map.ofEntries(java.util.Map.entry(\"K\", \"v\")))", ".expose(\"8080\")",
+                        ".env(io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"
+                                + ".of(\"K\", \"v\"))", ".expose(\"8080\")",
                         ".raw(\"VOLUME /d\", \"VOLUME is not modelled\")");
     }
 
@@ -80,6 +83,13 @@ class BuilderCallsTest {
     }
 
     @Test
+    void aMapIsWrittenInItsOrder() {
+        assertThat(BuilderCalls.map(OrderedMap.of("B", "2", "A", "1")).toString())
+                .isEqualTo("io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"
+                        + ".of(\"B\", \"2\", \"A\", \"1\")");
+    }
+
+    @Test
     void anExecOrHeredocRunIsWrittenWithItsFlags() {
         List<RunFlag> none = List.of();
         assertThat(List.of(new Instruction.Run(new RunBody.Exec(List.of("make", "all")), none),
@@ -87,5 +97,18 @@ class BuilderCallsTest {
                 .map(instruction -> BuilderCalls.call(instruction).toString())
                 .containsExactly(".runExec(java.util.List.of(), \"make\", \"all\")",
                         ".runHeredoc(java.util.List.of(), \"\", \"EOF\", true, java.util.List.of(\"make\"))");
+    }
+
+    @Test
+    void aHealthcheckIsWrittenAsWrittenAndAnOnbuildAsItsInstructionThenAsOnbuild() {
+        assertThat(List.of(Instruction.Healthcheck.NONE,
+                new Instruction.Healthcheck(Map.of("retries", "3"), List.of("true"), CommandForm.SHELL),
+                new Instruction.Onbuild(new Instruction.User("1001"))))
+                .map(instruction -> BuilderCalls.call(instruction).toString())
+                .containsExactly(".healthcheckNone()",
+                        ".healthcheck(io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"
+                                + ".of(\"retries\", \"3\"), java.util.List.of(\"true\"), "
+                                + "io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm.SHELL)",
+                        ".user(\"1001\").asOnbuild()");
     }
 }

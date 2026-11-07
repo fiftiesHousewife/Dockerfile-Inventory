@@ -128,7 +128,7 @@ class ConvertTest {
                 ENTRYPOINT java -jar app.jar
                 CMD ./start.sh
                 EXPOSE ${PORT:-8080}
-                HEALTHCHECK NONE
+                RUN --device=/dev/fuse make
                 VOLUME /data
                 """)).model().stages().getFirst().instructions();
 
@@ -141,7 +141,7 @@ class ConvertTest {
                 new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),
                 new Instruction.Raw("EXPOSE ${PORT:-8080}",
                         "EXPOSE with a port that is not a number, range or variable"),
-                new Instruction.Raw("HEALTHCHECK NONE", "HEALTHCHECK is not modelled"),
+                new Instruction.Raw("RUN --device=/dev/fuse make", "RUN with flag --device"),
                 new Instruction.Volume(List.of("/data"), false));
     }
 

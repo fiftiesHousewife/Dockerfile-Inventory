@@ -29,6 +29,13 @@ final class Draft {
         instructions.add(instruction);
     }
 
+    void onbuildLast() {
+        if (instructions.isEmpty()) {
+            throw new IllegalStateException("no instruction to run ONBUILD");
+        }
+        instructions.add(new Instruction.Onbuild(instructions.removeLast()));
+    }
+
     List<Instruction> instructions() {
         return List.copyOf(instructions);
     }

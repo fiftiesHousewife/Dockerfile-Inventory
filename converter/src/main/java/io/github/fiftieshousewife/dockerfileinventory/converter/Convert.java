@@ -100,11 +100,25 @@ final class Convert {
             case Docker.Entrypoint entrypoint -> new Instruction.Raw(printed.text(entrypoint), "shell-form ENTRYPOINT");
             case Docker.Cmd cmd -> new Instruction.Raw(printed.text(cmd), "shell-form CMD");
             case Docker.Shell shell -> ConvertMetadata.shell(shell, printed.text(shell));
+            case Docker.Healthcheck healthcheck -> ConvertMetadata.healthcheck(healthcheck, printed.text(healthcheck));
+            case Docker.Onbuild onbuild -> onbuild(onbuild);
             case Docker.Volume volume -> ConvertMetadata.volume(volume, printed.text(volume));
             case Docker.Stopsignal signal -> new Instruction.StopSignal(Values.text(signal.getSignal()).strip());
             case Docker.Maintainer maintainer -> new Instruction.Maintainer(Values.text(maintainer.getText()).strip());
             default -> notModelled(printed.text(instruction));
         };
+    }
+
+    Instruction onbuild(Docker.Onbuild onbuild) {
+        Instruction inner = instruction(onbuild.getInstruction());
+        if (inner instanceof Instruction.Raw raw) {
+            return new Instruction.Raw(printed.text(onbuild), "ONBUILD with " + raw.reason());
+        }
+        try {
+            return new Instruction.Onbuild(inner);
+        } catch (IllegalArgumentException notAllowed) {
+            return new Instruction.Raw(printed.text(onbuild), "ONBUILD with an instruction Docker refuses there");
+        }
     }
 
     static Instruction.Raw notModelled(String text) {

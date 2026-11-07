@@ -37,7 +37,7 @@ class ConverterRunTest {
                 FROM ubi9/ubi-minimal:9.4
                 RUN microdnf install -y git && microdnf clean all
                 USER 1001
-                HEALTHCHECK NONE
+                RUN --device=/dev/fuse make
                 """);
         Files.writeString(discovery.resolve("blobs/elsewhere"), "FROM ubi9/ubi-minimal:9.4\nUSER 1001\n");
         Files.writeString(discovery.resolve("blobs/odd-digest"), "FROM ubi9@${DIGEST}\n");
@@ -75,7 +75,7 @@ class ConverterRunTest {
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(coverage.path("images").path("good").asDouble()).isEqualTo(2.0 / 3);
             softly.assertThat(coverage.path("images").path("elsewhere").asDouble()).isEqualTo(1.0);
-            softly.assertThat(coverage.path("rawReasons").path("HEALTHCHECK is not modelled").asInt()).isEqualTo(1);
+            softly.assertThat(coverage.path("rawReasons").path("RUN with flag --device").asInt()).isEqualTo(1);
             softly.assertThat(out.resolve("generated")).doesNotExist();
         });
     }

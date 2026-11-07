@@ -43,4 +43,20 @@ class ValuesTest {
 
         assertThat(volume.getValues()).map(Values::written).containsExactly("\"/a b\"", "'/c'", "/d");
     }
+
+    @Test
+    void aFlagIsItsNameWithoutDashesAndItsValueAsWrittenOrEmpty() {
+        var run = (Docker.Run) Parsed.of("FROM ubi9\nRUN --network=\"none\" --mount=type=cache,target=/c make\n")
+                .getStages().getFirst().getInstructions().getFirst();
+
+        assertThat(run.getFlags()).map(flag -> Values.flagName(flag) + " " + Values.flagValue(flag))
+                .containsExactly("network \"none\"", "mount type=cache,target=/c");
+    }
+
+    @Test
+    void flagsAreNoneWhenTheParserHasNone() {
+        var run = (Docker.Run) Parsed.of("FROM ubi9\nRUN make\n").getStages().getFirst().getInstructions().getFirst();
+
+        assertThat(Values.flags(run.getFlags())).isEmpty();
+    }
 }

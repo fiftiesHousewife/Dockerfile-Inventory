@@ -14,7 +14,7 @@ class CoverageTest {
     @Test
     void ofIsTypedInstructionsOverAllAfterFrom() {
         assertThat(Coverage.of(Convert.of(Parsed.of(
-                "FROM ubi9\nUSER 1001\nHEALTHCHECK NONE\nONBUILD RUN make\nWORKDIR /w\n"))))
+                "FROM ubi9\nUSER 1001\nRUN --device=/dev/fuse make\nCOPY --exclude=x . /s/\nWORKDIR /w\n"))))
                 .isEqualTo(0.5);
     }
 
@@ -26,7 +26,8 @@ class CoverageTest {
     @Test
     void jsonHoldsEachImagesCoverageAndHowOftenEachRawReasonOccurs() {
         Coverage coverage = new Coverage();
-        coverage.add("b", Convert.of(Parsed.of("FROM ubi9\nHEALTHCHECK NONE\nHEALTHCHECK NONE\n")));
+        coverage.add("b", Convert.of(Parsed.of(
+                "FROM ubi9\nRUN --device=/dev/fuse make\nRUN --device=/dev/fuse make\n")));
         coverage.add("a", Convert.of(Parsed.of("FROM ubi9\nUSER 1001\n")));
 
         JsonNode json = JSON.readTree(coverage.json(JSON));
@@ -34,7 +35,7 @@ class CoverageTest {
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(json.path("images").propertyNames()).containsExactly("a", "b");
             softly.assertThat(json.path("images").path("b").asDouble()).isZero();
-            softly.assertThat(json.path("rawReasons").path("HEALTHCHECK is not modelled").asInt()).isEqualTo(2);
+            softly.assertThat(json.path("rawReasons").path("RUN with flag --device").asInt()).isEqualTo(2);
         });
     }
 }

@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.LinkedHashMap;
@@ -211,6 +212,19 @@ class ImageBuilderTest {
                 .instructions())
                 .containsExactly(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve"))),
                         new Instruction.Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))));
+    }
+
+    @Test
+    void theInstructionJustAddedCanBeMadeAnOnbuildAndAHealthcheckGiven() {
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).copy(".", "/app/").asOnbuild()
+                .healthcheck(Map.of("retries", "3"), "curl", "-f", "http://localhost/").healthcheckNone().model()
+                .stages().getFirst().instructions())
+                .containsExactly(new Instruction.Onbuild(new Instruction.Copy(List.of("."), "/app/", null, null)),
+                        new Instruction.Healthcheck(Map.of("retries", "3"), List.of("curl", "-f", "http://localhost/"),
+                                CommandForm.EXEC),
+                        Instruction.Healthcheck.NONE);
+        assertThatIllegalStateException()
+                .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).asOnbuild());
     }
 
     @Test

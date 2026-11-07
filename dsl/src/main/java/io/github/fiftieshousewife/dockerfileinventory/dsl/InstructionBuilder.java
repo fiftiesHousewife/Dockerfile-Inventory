@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-abstract sealed class InstructionBuilder extends FileInstructionBuilder permits ImageBuilder {
+abstract sealed class InstructionBuilder extends MetadataInstructionBuilder permits ImageBuilder {
 
     InstructionBuilder() {
     }
@@ -85,15 +85,6 @@ abstract sealed class InstructionBuilder extends FileInstructionBuilder permits 
         return add(new Instruction.Workdir(path));
     }
 
-    public ImageBuilder expose(int port) {
-        return add(new Instruction.Expose(List.of(Port.of(port))));
-    }
-
-    /** Ports as Docker writes them: {@code "8080"}, {@code "53/udp"}, {@code "8000-8010"}, {@code "${PORT}"}. */
-    public ImageBuilder expose(String... specs) {
-        return add(new Instruction.Expose(Arrays.stream(specs).map(Port::new).toList()));
-    }
-
     public ImageBuilder user(int uid) {
         return add(new Instruction.User(Integer.toString(uid)));
     }
@@ -112,28 +103,6 @@ abstract sealed class InstructionBuilder extends FileInstructionBuilder permits 
     }
 
     /** Text the model cannot type; allowed, but every use is listed in {@link Built#raw}. */
-    public ImageBuilder shell(String... command) {
-        return add(new Instruction.Shell(List.of(command)));
-    }
-
-    /** {@code VOLUME ["/data"]}. */
-    public ImageBuilder volume(String... paths) {
-        return volume(List.of(paths), true);
-    }
-
-    public ImageBuilder volume(List<String> paths, boolean jsonForm) {
-        return add(new Instruction.Volume(paths, jsonForm));
-    }
-
-    public ImageBuilder stopSignal(String signal) {
-        return add(new Instruction.StopSignal(signal));
-    }
-
-    /** For converted Dockerfiles only: Docker deprecates {@code MAINTAINER}; a new image says it with a label. */
-    public ImageBuilder maintainer(String name) {
-        return add(new Instruction.Maintainer(name));
-    }
-
     public ImageBuilder raw(String text, String reason) {
         return add(new Instruction.Raw(text, reason));
     }

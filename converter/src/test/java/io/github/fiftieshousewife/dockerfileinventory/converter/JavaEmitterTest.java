@@ -39,7 +39,8 @@ class JavaEmitterTest {
             USER 1001
             ENTRYPOINT ["/usr/local/bin/server"]
             CMD ["--port", "8080"]
-            HEALTHCHECK NONE
+            HEALTHCHECK --timeout=3s --interval=30s --retries=3 --start-period=5s CMD ["/usr/local/bin/server", "check"]
+            ONBUILD COPY . /app/
             MAINTAINER payments team
             SHELL ["/bin/bash", "-c"]
             VOLUME /data

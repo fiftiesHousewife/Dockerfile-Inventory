@@ -107,13 +107,6 @@ class DockerfileRendererTest {
     }
 
     @Test
-    void aHeredocsDelimiterIsSingleQuotedWhenQuotedAndAnEmptyBodyHasNoLines() {
-        assertThat(List.of(new Instruction.CopyHeredoc("/a", "EOF", true, List.of()),
-                new Instruction.CopyHeredoc("/a", "EOF", false, List.of("x"))))
-                .map(DockerfileRenderer::heredoc).containsExactly("COPY <<'EOF' /a\nEOF", "COPY <<EOF /a\nx\nEOF");
-    }
-
-    @Test
     void anAddRendersItsFlagsBeforeItsPathsInItsForm() {
         Dockerfile file = single(
                 new Instruction.Add(List.of("https://example.com/a.tgz"), "/opt/", "1001:0", "644", "sha256:abc", false,
@@ -128,27 +121,23 @@ class DockerfileRendererTest {
     }
 
     @Test
-    void aRunBodyIsItsJoinedCommandsItsJsonArrayOrItsHeredoc() {
-        assertThat(List.of(new RunBody.Shell(List.of("a", "b")), new RunBody.Exec(List.of("a", "b")),
-                new RunBody.Heredoc("", "EOF", true, List.of("a"))))
-                .map(DockerfileRenderer::body)
-                .containsExactly("a \\\n    && b", "[\"a\", \"b\"]", "<<'EOF'\na\nEOF");
-        assertThat(DockerfileRenderer.body(new RunBody.Heredoc("cat > /etc/x", "EOF", true, List.of("a"))))
-                .isEqualTo("cat > /etc/x <<'EOF'\na\nEOF");
-    }
+    void aHealthcheckRendersItsOptionsInOrderThenItsCommandInItsFormAndOnbuildItsInstruction() {
+        Map<String, String> options = new LinkedHashMap<>();
+        options.put("interval", "30s");
+        options.put("timeout", "3s");
+        Dockerfile file = single(
+                new Instruction.Healthcheck(options, List.of("curl", "-f", "http://localhost/"), CommandForm.EXEC),
+                new Instruction.Healthcheck(Map.of(), List.of("curl -f http://localhost/ || exit 1"),
+                        CommandForm.SHELL),
+                Instruction.Healthcheck.NONE,
+                new Instruction.Onbuild(new Instruction.Copy(List.of("."), "/app/", null, null)));
 
-    @Test
-    void aHeredocPutsWhatFollowsTheMarkerOnItsFirstLine() {
-        assertThat(List.of(DockerfileRenderer.heredoc("EOF", false, "", List.of("x")),
-                DockerfileRenderer.heredoc("END", true, "/etc/a", List.of())))
-                .containsExactly("<<EOF\nx\nEOF", "<<'END' /etc/a\nEND");
-    }
-
-    @Test
-    void aCopysPathsEndWithTheDestinationInItsForm() {
-        assertThat(List.of(DockerfileRenderer.paths(List.of("a", "b"), "/c/", false),
-                DockerfileRenderer.paths(List.of("a b"), "/c/", true)))
-                .containsExactly("a b /c/", "[\"a b\", \"/c/\"]");
+        assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("""
+                HEALTHCHECK --interval=30s --timeout=3s CMD ["curl", "-f", "http://localhost/"]
+                HEALTHCHECK CMD curl -f http://localhost/ || exit 1
+                HEALTHCHECK NONE
+                ONBUILD COPY . /app/
+                """);
     }
 
     @Test
@@ -271,14 +260,6 @@ class DockerfileRendererTest {
         assertThat(DockerfileRenderer.supported("RUN make", Target.DEFAULT)).isEqualTo("RUN make");
         assertThat(DockerfileRenderer.supported("RUN --network=none --mount=type=cache make", new Target(false, true)))
                 .contains("--mount");
-    }
-
-    @Test
-    void copyWritesFromBeforeChownAndLeavesOutWhatIsNotSet() {
-        assertThat(DockerfileRenderer.copy(new Instruction.Copy(List.of("a", "b"), "/d/", null, null)))
-                .isEqualTo("COPY a b /d/");
-        assertThat(DockerfileRenderer.copy(new Instruction.Copy(List.of("a"), "/d/", "1:0", "build")))
-                .isEqualTo("COPY --from=build --chown=1:0 a /d/");
     }
 
     @Test

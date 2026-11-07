@@ -1,8 +1,13 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import tools.jackson.core.JacksonException;
 
 final class ConvertMetadata {
@@ -28,6 +33,28 @@ final class ConvertMetadata {
             return new Instruction.Volume(paths, volume.isJsonForm());
         } catch (JacksonException e) {
             return Convert.notModelled(printed);
+        }
+    }
+
+    static Instruction healthcheck(Docker.Healthcheck healthcheck, String printed) {
+        if (healthcheck.isNone()) {
+            return Instruction.Healthcheck.NONE;
+        }
+        Map<String, String> options = new LinkedHashMap<>();
+        Values.flags(healthcheck.getFlags())
+                .forEach(flag -> options.put(Values.flagName(flag), Values.flagValue(flag)));
+        Docker.CommandForm command = Objects.requireNonNull(healthcheck.getCmd()).getCommand();
+        try {
+            return switch (command) {
+                case Docker.ExecForm exec -> ConvertCommands.arguments(exec)
+                        .<Instruction>map(words -> new Instruction.Healthcheck(options, words, CommandForm.EXEC))
+                        .orElseGet(() -> new Instruction.Raw(printed, "HEALTHCHECK in exec form that is not JSON"));
+                case Docker.ShellForm shell -> new Instruction.Healthcheck(options,
+                        List.of(Continuations.oneLine(shell.getArgument().getText())), CommandForm.SHELL);
+                default -> Convert.notModelled(printed);
+            };
+        } catch (IllegalArgumentException notDockers) {
+            return new Instruction.Raw(printed, "HEALTHCHECK with an option Docker lacks");
         }
     }
 }

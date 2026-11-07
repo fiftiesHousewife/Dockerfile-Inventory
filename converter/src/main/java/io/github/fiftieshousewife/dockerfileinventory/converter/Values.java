@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
@@ -36,6 +37,19 @@ final class Values {
             case SINGLE -> "'" + literal.getText() + "'";
             case null, default -> literal.getText();
         };
+    }
+
+    static List<Docker.Flag> flags(List<Docker.Flag> flags) {
+        return flags == null ? List.of() : flags;
+    }
+
+    static String flagName(Docker.Flag flag) {
+        return flag.getName().replaceFirst("^-+", "");
+    }
+
+    static String flagValue(Docker.Flag flag) {
+        Docker.Argument value = flag.getValue();
+        return value == null ? "" : written(value);
     }
 
     static String unquote(String value) {

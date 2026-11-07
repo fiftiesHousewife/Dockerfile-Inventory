@@ -2,7 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
 import java.util.List;
 
-abstract sealed class FileInstructionBuilder permits InstructionBuilder {
+abstract sealed class FileInstructionBuilder permits MetadataInstructionBuilder {
 
     FileInstructionBuilder() {
     }

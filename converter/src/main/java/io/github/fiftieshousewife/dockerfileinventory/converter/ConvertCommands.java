@@ -23,8 +23,9 @@ final class ConvertCommands {
     static Instruction run(Docker.Run run, String printed) {
         Optional<List<RunFlag>> flags = flags(run);
         if (flags.isEmpty()) {
-            return new Instruction.Raw(printed, "RUN with flag --" + name(written(run).stream()
-                    .filter(flag -> flag(flag).isEmpty()).findFirst().orElseThrow()));
+            Docker.Flag unknown = Values.flags(run.getFlags()).stream().filter(flag -> flag(flag).isEmpty())
+                    .findFirst().orElseThrow();
+            return new Instruction.Raw(printed, "RUN with flag --" + Values.flagName(unknown));
         }
         return body(run.getCommand())
                 .<Instruction>map(body -> new Instruction.Run(body, flags.get()))
@@ -61,28 +62,19 @@ final class ConvertCommands {
 
     // Empty when any flag is one the model lacks.
     static Optional<List<RunFlag>> flags(Docker.Run run) {
-        List<Optional<RunFlag>> flags = written(run).stream().map(ConvertCommands::flag).toList();
+        List<Optional<RunFlag>> flags = Values.flags(run.getFlags()).stream().map(ConvertCommands::flag).toList();
         return flags.stream().allMatch(Optional::isPresent)
                 ? Optional.of(flags.stream().map(Optional::orElseThrow).toList()) : Optional.empty();
     }
 
     static Optional<RunFlag> flag(Docker.Flag flag) {
-        Docker.Argument argument = flag.getValue();
-        String value = argument == null ? "" : Values.written(argument);
-        return switch (name(flag)) {
+        String value = Values.flagValue(flag);
+        return switch (Values.flagName(flag)) {
             case "mount" -> Optional.of(RunFlag.Mount.parse(value));
             case "network" -> Optional.of(new RunFlag.Network(value));
             case "security" -> Optional.of(new RunFlag.Security(value));
             default -> Optional.empty();
         };
-    }
-
-    private static String name(Docker.Flag flag) {
-        return flag.getName().replaceFirst("^-+", "");
-    }
-
-    private static List<Docker.Flag> written(Docker.Run run) {
-        return run.getFlags() == null ? List.of() : run.getFlags();
     }
 
     // Empty when a word is not valid JSON ("\d+"): Docker then reads the whole instruction as shell form.

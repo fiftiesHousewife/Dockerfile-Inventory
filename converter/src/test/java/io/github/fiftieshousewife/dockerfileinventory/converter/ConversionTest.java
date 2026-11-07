@@ -11,14 +11,14 @@ class ConversionTest {
     void rawIsEveryUntypedInstructionInEveryStageInOrder() {
         Conversion conversion = Convert.of(Parsed.of("""
                 FROM ubi9 AS build
-                HEALTHCHECK NONE
+                RUN --device=/dev/fuse make
                 USER 1001
                 FROM ubi9
-                ONBUILD RUN make
+                COPY --exclude=x . /s/
                 """));
 
         assertThat(conversion.raw()).containsExactly(
-                new Instruction.Raw("HEALTHCHECK NONE", "HEALTHCHECK is not modelled"),
-                new Instruction.Raw("ONBUILD RUN make", "ONBUILD is not modelled"));
+                new Instruction.Raw("RUN --device=/dev/fuse make", "RUN with flag --device"),
+                new Instruction.Raw("COPY --exclude=x . /s/", "COPY with flag --exclude"));
     }
 }

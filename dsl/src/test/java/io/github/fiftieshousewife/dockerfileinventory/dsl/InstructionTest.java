@@ -54,6 +54,27 @@ class InstructionTest {
     }
 
     @Test
+    void aHealthcheckTakesDockersOptionsAShellFormOfOneCommandAndNoOptionsWithNone() {
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Healthcheck(Map.of("every", "5s"),
+                List.of("true"), CommandForm.EXEC)).withMessageContaining("every");
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Healthcheck(Map.of(),
+                List.of("curl", "-f"), CommandForm.SHELL));
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Healthcheck(Map.of("retries", "3"),
+                List.of(), CommandForm.EXEC));
+        assertThat(Instruction.Healthcheck.NONE.command()).isEmpty();
+    }
+
+    @Test
+    void anOnbuildRefusesAnOnbuildOrAMaintainerInside() {
+        Instruction user = new Instruction.User("1001");
+
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Onbuild(new Instruction.Onbuild(user)));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new Instruction.Onbuild(new Instruction.Maintainer("payments")));
+        assertThat(new Instruction.Onbuild(user).instruction()).isEqualTo(user);
+    }
+
+    @Test
     void aCopyWrittenWithoutOptionsHasNone() {
         assertThat(new Instruction.Copy(List.of("a"), "/b/", null, null))
                 .isEqualTo(new Instruction.Copy(List.of("a"), "/b/", null, null, null, false, false));
