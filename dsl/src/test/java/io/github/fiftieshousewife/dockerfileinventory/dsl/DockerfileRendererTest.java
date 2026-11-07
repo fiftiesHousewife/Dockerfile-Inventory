@@ -128,6 +128,23 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void aRunBodyIsItsJoinedCommandsItsJsonArrayOrItsHeredoc() {
+        assertThat(List.of(new RunBody.Shell(List.of("a", "b")), new RunBody.Exec(List.of("a", "b")),
+                new RunBody.Heredoc("", "EOF", true, List.of("a"))))
+                .map(DockerfileRenderer::body)
+                .containsExactly("a \\\n    && b", "[\"a\", \"b\"]", "<<'EOF'\na\nEOF");
+        assertThat(DockerfileRenderer.body(new RunBody.Heredoc("cat > /etc/x", "EOF", true, List.of("a"))))
+                .isEqualTo("cat > /etc/x <<'EOF'\na\nEOF");
+    }
+
+    @Test
+    void aHeredocPutsWhatFollowsTheMarkerOnItsFirstLine() {
+        assertThat(List.of(DockerfileRenderer.heredoc("EOF", false, "", List.of("x")),
+                DockerfileRenderer.heredoc("END", true, "/etc/a", List.of())))
+                .containsExactly("<<EOF\nx\nEOF", "<<'END' /etc/a\nEND");
+    }
+
+    @Test
     void aCopysPathsEndWithTheDestinationInItsForm() {
         assertThat(List.of(DockerfileRenderer.paths(List.of("a", "b"), "/c/", false),
                 DockerfileRenderer.paths(List.of("a b"), "/c/", true)))
@@ -150,6 +167,22 @@ class DockerfileRendererTest {
                 .endsWith("RUN --mount=type=cache,target=/root/.m2 --network=none mvn package\n");
         assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file, Target.DEFAULT))
                 .withMessageContaining("--mount");
+    }
+
+    @Test
+    void anExecRunIsAJsonArrayAndAHeredocRunIsItsLinesRefusedUnlessTheTargetAllowsHeredocs() {
+        Dockerfile file = single(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve", "/configs"))),
+                new Instruction.Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))));
+
+        assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
+                RUN ["/bin/opm", "serve", "/configs"]
+                RUN <<EOF
+                set -e
+                make
+                EOF
+                """);
+        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file, Target.DEFAULT))
+                .withMessageContaining("heredoc");
     }
 
     @Test

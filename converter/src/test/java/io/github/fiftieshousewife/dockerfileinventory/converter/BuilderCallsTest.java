@@ -78,4 +78,14 @@ class BuilderCallsTest {
                 .containsExactly(".shell(\"/bin/bash\", \"-c\")", ".volume(java.util.List.of(\"/data\"), false)",
                         ".stopSignal(\"SIGTERM\")", ".maintainer(\"payments\")");
     }
+
+    @Test
+    void anExecOrHeredocRunIsWrittenWithItsFlags() {
+        List<RunFlag> none = List.of();
+        assertThat(List.of(new Instruction.Run(new RunBody.Exec(List.of("make", "all")), none),
+                new Instruction.Run(new RunBody.Heredoc("", "EOF", true, List.of("make")), none)))
+                .map(instruction -> BuilderCalls.call(instruction).toString())
+                .containsExactly(".runExec(java.util.List.of(), \"make\", \"all\")",
+                        ".runHeredoc(java.util.List.of(), \"\", \"EOF\", true, java.util.List.of(\"make\"))");
+    }
 }

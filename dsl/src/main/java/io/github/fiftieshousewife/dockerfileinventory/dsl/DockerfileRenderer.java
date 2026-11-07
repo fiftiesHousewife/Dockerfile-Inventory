@@ -69,7 +69,7 @@ public final class DockerfileRenderer {
             case Instruction.Env env -> pairs("ENV", env.values());
             case Instruction.Label label -> pairs("LABEL", label.values());
             case Instruction.Run run -> "RUN " + run.flags().stream().map(flag -> flag.written() + " ")
-                    .collect(Collectors.joining()) + String.join(CONTINUE + "    && ", RunCommands.of(run.body()));
+                    .collect(Collectors.joining()) + body(run.body());
             case Instruction.Copy copy -> copy(copy);
             case Instruction.CopyHeredoc heredoc -> heredoc(heredoc);
             case Instruction.Add add -> add(add);
@@ -105,10 +105,23 @@ public final class DockerfileRenderer {
                 + " " + paths(add.sources(), add.destination(), add.jsonForm());
     }
 
+    static String body(RunBody body) {
+        return switch (body) {
+            case RunBody.Exec exec -> DockerQuotes.jsonArray(exec.arguments());
+            case RunBody.Heredoc heredoc -> (heredoc.command().isEmpty() ? "" : heredoc.command() + " ")
+                    + heredoc(heredoc.delimiter(), heredoc.quoted(), "", heredoc.lines());
+            case RunBody.Install install -> String.join(CONTINUE + "    && ", RunCommands.of(install));
+            case RunBody.Shell shell -> String.join(CONTINUE + "    && ", RunCommands.of(shell));
+        };
+    }
+
     static String heredoc(Instruction.CopyHeredoc heredoc) {
-        String delimiter = heredoc.delimiter();
-        return "COPY <<" + (heredoc.quoted() ? "'" + delimiter + "'" : delimiter) + " " + heredoc.destination() + "\n"
-                + heredoc.lines().stream().map(line -> line + "\n").collect(Collectors.joining()) + delimiter;
+        return "COPY " + heredoc(heredoc.delimiter(), heredoc.quoted(), heredoc.destination(), heredoc.lines());
+    }
+
+    static String heredoc(String delimiter, boolean quoted, String after, List<String> lines) {
+        return "<<" + (quoted ? "'" + delimiter + "'" : delimiter) + (after.isEmpty() ? "" : " " + after) + "\n"
+                + lines.stream().map(line -> line + "\n").collect(Collectors.joining()) + delimiter;
     }
 
     static String paths(List<String> sources, String destination, boolean jsonForm) {

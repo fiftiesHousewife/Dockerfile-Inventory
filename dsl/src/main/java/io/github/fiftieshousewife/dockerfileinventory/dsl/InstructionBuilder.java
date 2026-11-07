@@ -34,6 +34,20 @@ abstract sealed class InstructionBuilder extends FileInstructionBuilder permits 
         return add(new Instruction.Run(new RunBody.Shell(Arrays.asList(commands)), flags));
     }
 
+    public ImageBuilder runExec(String... arguments) {
+        return runExec(List.of(), arguments);
+    }
+
+    public ImageBuilder runExec(List<RunFlag> flags, String... arguments) {
+        return add(new Instruction.Run(new RunBody.Exec(Arrays.asList(arguments)), flags));
+    }
+
+    /** A command reading a heredoc, or a script when the command is empty; the target must allow heredocs. */
+    public ImageBuilder runHeredoc(List<RunFlag> flags, String command, String delimiter, boolean quoted,
+            List<String> lines) {
+        return add(new Instruction.Run(new RunBody.Heredoc(command, delimiter, quoted, lines), flags));
+    }
+
     /** An install with its {@code RUN}'s flags and its own, rendered exactly, for the faithful path. */
     public ImageBuilder install(List<RunFlag> runFlags, PackageManager manager, List<String> flags,
             List<String> packages) {

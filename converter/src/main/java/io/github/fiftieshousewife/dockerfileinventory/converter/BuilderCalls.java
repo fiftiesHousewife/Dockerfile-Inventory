@@ -46,15 +46,21 @@ final class BuilderCalls {
     }
 
     static CodeBlock run(Instruction.Run run) {
-        CodeBlock flags = run.flags().isEmpty() ? CodeBlock.of("")
-                : CodeBlock.of("$L, ", CodeBlock.of("java.util.List.of($L)", CodeBlock.join(
-                        run.flags().stream().map(BuilderCalls::flag).toList(), ", ")));
+        CodeBlock flags = run.flags().isEmpty() ? CodeBlock.of("") : CodeBlock.of("$L, ", flags(run));
         return switch (run.body()) {
             case RunBody.Install install -> CodeBlock.of(".install($L$T.$L, $L, $L)", flags, PackageManager.class,
                     install.install().manager().name(), list(install.install().flags()),
                     list(install.install().packages()));
             case RunBody.Shell shell -> CodeBlock.of(".run($L$L)", flags, strings(shell.commands()));
+            case RunBody.Exec exec -> CodeBlock.of(".runExec($L, $L)", flags(run), strings(exec.arguments()));
+            case RunBody.Heredoc heredoc -> CodeBlock.of(".runHeredoc($L, $S, $S, $L, $L)", flags(run),
+                    heredoc.command(), heredoc.delimiter(), heredoc.quoted(), list(heredoc.lines()));
         };
+    }
+
+    static CodeBlock flags(Instruction.Run run) {
+        return CodeBlock.of("$T.of($L)", LIST, CodeBlock.join(run.flags().stream().map(BuilderCalls::flag).toList(),
+                ", "));
     }
 
     static CodeBlock flag(RunFlag flag) {

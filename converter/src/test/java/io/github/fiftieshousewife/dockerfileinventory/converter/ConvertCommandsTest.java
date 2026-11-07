@@ -32,8 +32,12 @@ class ConvertCommandsTest {
     void aRunWithAFlagTheModelLacksOrInExecFormStaysRawAsPrinted() {
         assertThat(ConvertCommands.run(run("RUN --device=/dev/fuse make"), "printed"))
                 .isEqualTo(new Instruction.Raw("printed", "RUN with flag --device"));
-        assertThat(ConvertCommands.run(run("RUN [\"make\"]"), "printed"))
-                .isEqualTo(new Instruction.Raw("printed", "RUN in exec or heredoc form"));
+        assertThat(List.of(run("RUN [\"grep\", \"\\d+\"]"), run("RUN <<EOF bash\necho hi\nEOF\n"),
+                run("RUN <<-EOF\n\techo hi\nEOF\n")))
+                .map(run -> ConvertCommands.run(run, "printed"))
+                .containsExactly(new Instruction.Raw("printed", "RUN in exec form that is not JSON"),
+                        new Instruction.Raw("printed", "RUN with a heredoc that is not one plain script"),
+                        new Instruction.Raw("printed", "RUN with a heredoc that is not one plain script"));
     }
 
     @Test
@@ -47,6 +51,19 @@ class ConvertCommandsTest {
                         new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.APK,
                                 List.of("--no-cache"), List.of("git"))),
                                 List.of(RunFlag.Mount.parse("type=secret,id=t"), new RunFlag.Security("insecure"))));
+    }
+
+    @Test
+    void anExecRunIsTypedWithItsArgumentsAndAPlainHeredocWithItsLines() {
+        assertThat(List.of(run("RUN --network=none [\"/bin/opm\", \"serve\"]"),
+                run("RUN <<EOF\nset -e\nmake\nEOF\n"), run("RUN <<'END'\necho $HOME\nEND\n"),
+                run("RUN cat > /etc/x.conf <<'EOF'\na = 1\nEOF\n")))
+                .map(run -> ConvertCommands.run(run, "printed"))
+                .containsExactly(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve")),
+                                List.of(new RunFlag.Network("none"))),
+                        new Instruction.Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))),
+                        new Instruction.Run(new RunBody.Heredoc("", "END", true, List.of("echo $HOME"))),
+                        new Instruction.Run(new RunBody.Heredoc("cat > /etc/x.conf", "EOF", true, List.of("a = 1"))));
     }
 
     @Test

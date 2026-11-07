@@ -90,6 +90,17 @@ class RunMergeTest {
     }
 
     @Test
+    void anExecOrHeredocRunIsNeverJoined() {
+        Instruction.Run exec = new Instruction.Run(new RunBody.Exec(List.of("make")));
+        Instruction.Run heredoc = new Instruction.Run(new RunBody.Heredoc("", "EOF", true, List.of("make")));
+        Instruction.Run plain = new Instruction.Run(new RunBody.Shell(List.of("x")));
+
+        assertThat(List.of(RunMerge.joinable(exec, plain), RunMerge.joinable(plain, exec),
+                RunMerge.joinable(heredoc, plain), RunMerge.joinable(plain, heredoc)))
+                .containsExactly(false, false, false, false);
+    }
+
+    @Test
     void joinedRendersAnInstallAsItsCommandsFollowedByTheShellCommands() {
         Instruction.Run install = new Instruction.Run(
                 new RunBody.Install(new PackageInstall(PackageManager.APK, List.of("git"))));

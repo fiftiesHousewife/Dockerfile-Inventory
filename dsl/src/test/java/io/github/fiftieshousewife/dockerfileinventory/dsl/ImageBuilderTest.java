@@ -205,6 +205,15 @@ class ImageBuilderTest {
     }
 
     @Test
+    void aRunCanBeInExecFormOrAHeredoc() {
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).runExec("/bin/opm", "serve")
+                .runHeredoc(List.of(), "", "EOF", false, List.of("set -e", "make")).model().stages().getFirst()
+                .instructions())
+                .containsExactly(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve"))),
+                        new Instruction.Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))));
+    }
+
+    @Test
     void portsCanBeGivenAsDockerWritesThemAndABadOneIsRefused() {
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090).model()
                 .stages().getFirst().instructions())

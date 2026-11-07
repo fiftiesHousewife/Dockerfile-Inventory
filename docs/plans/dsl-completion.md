@@ -19,7 +19,7 @@ estate, by reason:
 | `SHELL` | 346 | `Shell(command)` | `SHELL ["/bin/bash", "-c"]` |
 | shell-form `CMD` | 337 | `Cmd(command, form)`, form exec or shell (question 1) | `CMD node server.js` |
 | `VOLUME` | 304 | `Volume(paths)` | `VOLUME ["/data"]` |
-| `RUN` exec form, heredoc | 196 | `RunBody.Exec(arguments)`, `RunBody.Heredoc(delimiter, quoted, lines)` | `RUN ["a", "b"]`; `RUN <<EOF ... EOF`, refused unless the target allows heredocs |
+| `RUN` exec form, heredoc | 196 | `RunBody.Exec(arguments)`, `RunBody.Heredoc(command, delimiter, quoted, lines)` | `RUN ["a", "b"]`; `RUN <<EOF ... EOF`, refused unless the target allows heredocs |
 | `EXPOSE` with protocol, range, variable, several | 160 | `Expose(ports)` with `Port(spec)`: `8080`, `53/udp`, `8000-8010`, `$PORT` | `EXPOSE 8080 53/udp` |
 | `MAINTAINER` | 153 | `Maintainer(name)` (deprecated by Docker: the converter keeps it, the builders do not offer it) | `MAINTAINER name` |
 | `STOPSIGNAL` | 117 | `StopSignal(signal)` | `STOPSIGNAL SIGTERM` |
@@ -102,6 +102,7 @@ representatives first.
 | `COPY --chmod`, `--link`, JSON form; `CopyHeredoc` (one plain heredoc; with flags, several or `<<-` stays `Raw`) | 94.5% | 3,691 | 5,149 |
 | `ADD` with `--chown`, `--chmod`, `--checksum`, `--keep-git-dir`, `--link`, JSON form; the builders' `add` takes only a URL, a Git repository or a tar archive | 97.7% | 4,193 | 5,149 |
 | `RUN` flags as `RunFlag`s (`Mount` with its options as written, `Network`, `Security`) in written order, since a `RUN` step's normal form keeps them; a flagged `RUN` is never merged | 98.2% | 4,538 | 5,149 |
+| `RunBody.Exec`; `RunBody.Heredoc(command, delimiter, quoted, lines)`, the command being what precedes the marker (`cat > /etc/x <<'EOF'`, `bash <<'EOF'`; empty for a bare script); several heredocs, `<<-` or a marker that is not last stays `Raw`; H1 reads a heredoc's lines | 98.8% | 4,724 | 5,149 |
 
 A shell-form `VOLUME` keeps each word as written, quotes included (`Values.written`), found when `VOLUME "/test_dir"`
 lost its quotes on the first try.

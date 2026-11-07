@@ -6,6 +6,8 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag;
 import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -13,6 +15,7 @@ import tools.jackson.databind.ObjectMapper;
 final class ConvertCommands {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final Pattern PLAIN_MARKER = Pattern.compile("(?s)(.*?)\\s*<<(['\"]?)(\\w+)\\2");
 
     private ConvertCommands() {
     }
@@ -23,13 +26,37 @@ final class ConvertCommands {
             return new Instruction.Raw(printed, "RUN with flag --" + name(written(run).stream()
                     .filter(flag -> flag(flag).isEmpty()).findFirst().orElseThrow()));
         }
-        if (!(run.getCommand() instanceof Docker.ShellForm shell)) {
-            return new Instruction.Raw(printed, "RUN in exec or heredoc form");
+        return body(run.getCommand())
+                .<Instruction>map(body -> new Instruction.Run(body, flags.get()))
+                .orElseGet(() -> new Instruction.Raw(printed, run.getCommand() instanceof Docker.ExecForm
+                        ? "RUN in exec form that is not JSON" : "RUN with a heredoc that is not one plain script"));
+    }
+
+    static Optional<RunBody> body(Docker.CommandForm command) {
+        return switch (command) {
+            case Docker.ShellForm shell -> Optional.of(shell(Continuations.oneLine(shell.getArgument().getText())));
+            case Docker.ExecForm exec -> arguments(exec).map(RunBody.Exec::new);
+            case Docker.HeredocForm heredoc -> heredoc(heredoc);
+            default -> Optional.empty();
+        };
+    }
+
+    static RunBody shell(String command) {
+        return Installs.of(command).<RunBody>map(RunBody.Install::new)
+                .orElseGet(() -> new RunBody.Shell(List.of(command)));
+    }
+
+    static Optional<RunBody> heredoc(Docker.HeredocForm form) {
+        Matcher marker = PLAIN_MARKER.matcher(form.getPreamble().strip());
+        if (form.getBodies().size() != 1 || !marker.matches()) {
+            return Optional.empty();
         }
-        String command = Continuations.oneLine(shell.getArgument().getText());
-        return Installs.of(command)
-                .<Instruction>map(install -> new Instruction.Run(new RunBody.Install(install), flags.get()))
-                .orElseGet(() -> new Instruction.Run(new RunBody.Shell(List.of(command)), flags.get()));
+        Docker.HeredocBody body = form.getBodies().getFirst();
+        List<String> lines = String.join("", body.getContentLines()).lines().toList();
+        return body.getClosing().strip().equals(marker.group(3))
+                ? Optional.of(new RunBody.Heredoc(Continuations.oneLine(marker.group(1)), marker.group(3),
+                        !marker.group(2).isEmpty(), lines))
+                : Optional.empty();
     }
 
     // Empty when any flag is one the model lacks.

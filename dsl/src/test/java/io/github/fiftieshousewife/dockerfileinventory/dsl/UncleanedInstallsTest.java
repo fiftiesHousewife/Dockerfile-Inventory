@@ -23,6 +23,14 @@ class UncleanedInstallsTest {
     }
 
     @Test
+    void runTextReadsAHeredocsLinesAndAnExecRunsArguments() {
+        assertThat(UncleanedInstalls.runText(new Instruction.Run(new RunBody.Heredoc("", "EOF", true,
+                List.of("set -e", "dnf install -y git"))))).contains("set -e\ndnf install -y git");
+        assertThat(UncleanedInstalls.runText(new Instruction.Run(new RunBody.Exec(List.of("apk", "add", "git")))))
+                .contains("apk add git");
+    }
+
+    @Test
     void uncleanedKnowsEachManagersInstallAndItsClean() {
         assertThat(UncleanedInstalls.uncleaned("microdnf -y install git")).isTrue();
         assertThat(UncleanedInstalls.uncleaned("yum install git && rm -rf /var/cache/yum")).isFalse();

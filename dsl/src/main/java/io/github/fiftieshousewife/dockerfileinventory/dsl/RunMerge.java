@@ -26,7 +26,8 @@ final class RunMerge {
     }
 
     static boolean joinable(Instruction.Run previous, Instruction.Run next) {
-        return previous.flags().isEmpty() && next.flags().isEmpty() && !changesShellState(previous);
+        return previous.flags().isEmpty() && next.flags().isEmpty() && RunCommands.joins(previous.body())
+                && RunCommands.joins(next.body()) && !changesShellState(previous);
     }
 
     static Instruction.Run joined(Instruction.Run first, Instruction.Run second) {
