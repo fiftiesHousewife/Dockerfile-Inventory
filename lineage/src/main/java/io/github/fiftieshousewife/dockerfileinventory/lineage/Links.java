@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +11,8 @@ import java.util.stream.Collectors;
 
 /**
  * Links each image to the Dockerfiles whose steps match its own. Dockerfiles with the same steps form one group
- * (Q17), indexed by those steps, so an exact match is one lookup per image.
+ * (Q17), indexed by those steps, so an exact match is one lookup per image. An image whose source label names a
+ * repository the estate holds is linked only among that repository's Dockerfiles (the owner's choice, 7 Nov).
  */
 public final class Links {
 
@@ -28,18 +30,37 @@ public final class Links {
                 .collect(Collectors.groupingBy(Dockerfile::steps));
         Map<String, Dockerfile> byBlob = dockerfiles.stream()
                 .collect(Collectors.toMap(Dockerfile::blobSha, Function.identity(), (a, b) -> a));
+        Map<String, List<Dockerfile>> byRepository = new HashMap<>();
+        dockerfiles.forEach(d -> d.repositories()
+                .forEach(r -> byRepository.computeIfAbsent(r, k -> new ArrayList<>()).add(d)));
         Map<String, Link> links = new HashMap<>();
         for (Resolved.Node image : images) {
             Parent parent = parents.get(image.configDigest());
             List<Instruction> own = OwnSteps.of(image, parentNode(parent, byDigest));
-            List<Dockerfile> group = groups.get(own);
-            Link link = group != null ? exact(group) : weak(own, basePath(image), dockerfiles);
+            Link link = SourceLabels.repository(image.config().labels()).map(byRepository::get)
+                    .map(inRepository -> labelled(own, inRepository))
+                    .orElseGet(() -> unlabelled(own, groups.get(own), basePath(image), dockerfiles));
             boolean missing = (parent == null || parent instanceof Parent.Root) && link.blobShas().stream()
                     .map(byBlob::get)
                     .anyMatch(d -> heldByArtifactory(d, artifactoryImageNames));
             links.put(image.configDigest(), missing ? new Link(link.tier(), link.blobShas(), true) : link);
         }
         return links;
+    }
+
+    private static Link unlabelled(List<Instruction> own, List<Dockerfile> group, String basePath,
+            List<Dockerfile> dockerfiles) {
+        return group != null ? exact(group) : weak(own, basePath, dockerfiles);
+    }
+
+    /**
+     * Among the Dockerfiles of the repository the image's label names: those with the image's steps, else those that
+     * align best, whatever base they name (the label already says where the image came from, and a release pipeline
+     * often swaps the base). None aligning is no link: the label rules out other repositories.
+     */
+    private static Link labelled(List<Instruction> own, List<Dockerfile> inRepository) {
+        List<Dockerfile> same = inRepository.stream().filter(d -> d.steps().equals(own)).toList();
+        return same.isEmpty() ? bestAligned(own, inRepository) : exact(same);
     }
 
     private static Link exact(List<Dockerfile> group) {
@@ -56,13 +77,15 @@ public final class Links {
         if (basePath == null) {
             return NONE;
         }
+        return bestAligned(own, dockerfiles.stream()
+                .filter(d -> d.fromPath() != null && samePath(d.fromPath(), basePath)).toList());
+    }
+
+    /** The candidates tied for the best alignment with the image's steps, when it reaches {@link #MIN_ALIGNMENT}. */
+    private static Link bestAligned(List<Instruction> own, List<Dockerfile> candidates) {
         Map<List<Instruction>, Double> scores = new HashMap<>();
         Map<String, Double> byBlob = new HashMap<>();
-        for (Dockerfile dockerfile : dockerfiles) {
-            if (dockerfile.fromPath() != null && samePath(dockerfile.fromPath(), basePath)) {
-                byBlob.put(dockerfile.blobSha(), scores.computeIfAbsent(dockerfile.steps(), s -> alignment(own, s)));
-            }
-        }
+        candidates.forEach(d -> byBlob.put(d.blobSha(), scores.computeIfAbsent(d.steps(), s -> alignment(own, s))));
         double best = byBlob.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
         if (best < MIN_ALIGNMENT) {
             return NONE;
@@ -74,18 +97,27 @@ public final class Links {
                 .toList(), false);
     }
 
-    /** The longest common subsequence of two step lists, as a share of the longer. */
+    /** The longest common subsequence of an image's steps and a Dockerfile's, as a share of the longer. */
     static double alignment(List<Instruction> a, List<Instruction> b) {
         int[][] lcs = new int[a.size() + 1][b.size() + 1];
         for (int i = 1; i <= a.size(); i++) {
             for (int j = 1; j <= b.size(); j++) {
-                lcs[i][j] = a.get(i - 1).equals(b.get(j - 1))
+                lcs[i][j] = aligns(a.get(i - 1), b.get(j - 1))
                         ? lcs[i - 1][j - 1] + 1
                         : Math.max(lcs[i - 1][j], lcs[i][j - 1]);
             }
         }
         int longer = Math.max(a.size(), b.size());
         return longer == 0 ? 0 : (double) lcs[a.size()][b.size()] / longer;
+    }
+
+    /**
+     * The same step, or a {@code LABEL} holding every key of the Dockerfile's: build tooling adds keys to an image's
+     * labels (Red Hat's release tooling merges a Dockerfile's {@code LABEL}s into one and adds its own).
+     */
+    static boolean aligns(Instruction image, Instruction dockerfile) {
+        return image.equals(dockerfile) || image.keyword().equals("LABEL") && dockerfile.keyword().equals("LABEL")
+                && Set.of(image.text().split(" ")).containsAll(List.of(dockerfile.text().split(" ")));
     }
 
     /** Q2: nothing is deleted, so a base Artifactory holds should have been found as the image's parent. */

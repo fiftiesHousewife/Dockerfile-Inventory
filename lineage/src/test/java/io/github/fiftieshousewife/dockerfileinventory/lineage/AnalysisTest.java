@@ -124,6 +124,37 @@ class AnalysisTest {
         assertThat(link.path("blobShas").get(0).asString()).isEqualTo("python-df");
     }
 
+    @Test
+    void theOkdImageLinksByItsSourceLabelToTheRealDockerfileThatBuiltIt(@TempDir Path real) throws IOException {
+        LineageFiles files = new LineageFiles(real);
+        ObjectNode config = (ObjectNode) JSON.readTree(Fixtures.history("okd-cluster-storage-operator.json"));
+        config.putObject("config").putObject("Labels").put("io.openshift.build.source-location",
+                "https://github.com/openshift/cluster-storage-operator");
+        files.record(new TagRow("docker-local", "okd/cluster-storage-operator", "5.0.0-okd-scos.5",
+                Instant.parse("2026-11-05T00:00:00Z"), "okd-cso", null, null));
+        files.storeConfig("okd-cso", config.toString());
+        String steps = """
+                [{"keyword":"COPY","text":"/usr/bin/"},{"keyword":"COPY","text":"/usr/bin/"},
+                 {"keyword":"COPY","text":"/manifests"},
+                 {"keyword":"ENTRYPOINT","text":"[\\"/usr/bin/cluster-storage-operator\\"]"},
+                 {"keyword":"LABEL","text":"io.openshift.release.operator"},
+                 {"keyword":"LABEL","text":"io.k8s.description io.k8s.display-name io.openshift.tags"}]"""
+                .replace("\n", "");
+        Files.writeString(facts.resolve("facts.jsonl"),
+                "{\"blobSha\":\"cso-rhel7\",\"fromPath\":\"ocp/4.8\",\"steps\":" + steps + "}\n"
+                + "{\"blobSha\":\"cso-plain\",\"fromPath\":\"ocp/4.8\",\"steps\":[{\"keyword\":\"RUN\",\"text\":\"make\"}]}\n");
+        Files.writeString(discovery.resolve("manifest.jsonl"), """
+                {"repository":"openshift/cluster-storage-operator","scope":"RELEASED","blobSha":"cso-rhel7"}
+                {"repository":"openshift/cluster-storage-operator","scope":"RELEASED","blobSha":"cso-plain"}
+                """);
+
+        new Analysis(real, facts, discovery).run();
+
+        JsonNode link = JSON.readTree(Files.readAllLines(real.resolve("links.jsonl")).getFirst());
+        assertThat(link.path("tier").asString()).isEqualTo("WEAK");
+        assertThat(link.path("blobShas").get(0).asString()).isEqualTo("cso-rhel7");
+    }
+
     private Map<String, JsonNode> byDigest(String file) throws IOException {
         return Files.readAllLines(out.resolve(file)).stream()
                 .map(JSON::readTree)

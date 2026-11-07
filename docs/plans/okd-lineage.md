@@ -1,6 +1,6 @@
 # openshift's lineage from published OKD images: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; O2 built (O3 needed nothing), O4 next.
+Status: planned 7 Nov; questions answered 7 Nov; O2 and O4 built (O3 needed nothing), O1 and O5 next.
 
 The JCR demo (`lineage-from-jcr.md`) proved lineage on five images we built ourselves with Buildah, from Dockerfiles
 we chose. The real estate's images are built by other people's tooling, from Dockerfiles that may have moved on since.
@@ -43,7 +43,7 @@ local JCR, and linked to the openshift Dockerfiles discovery found.
 | Parent by layer prefix | Works on any layers | Squashed images have few layers: a parent is found only if its layers are a prefix, which holds when both were squashed onto the same base. Measured, not assumed |
 | Own steps | History after the parent's, steps a build service added dropped (Q13) | O2, built 7 Nov: `OwnSteps.withoutReleaseTooling` cuts the wrapper by position (after the last `ENV __doozer=`, before the `USER 0` that precedes the repository swap, through `rm -rf /tmp/art`); the buildinfo `COPY`s and the final OCI `LABEL` were already dropped |
 | Normal form | Reads `#(nop)` and `COPY file:<hash> in <dest>` | O3: nothing to do; it already reads them, as Konflux writes the same |
-| Link to a Dockerfile | Step fingerprint against facts' steps | O4: a source label (`io.openshift.build.source-location`, or OCI's `org.opencontainers.image.source`) picks the repository; the steps pick the Dockerfile in it and show whether it still matches. Without a label, steps alone, as today (the owner's choice, 7 Nov) |
+| Link to a Dockerfile | Step fingerprint against facts' steps | O4, built 7 Nov: a source label (`io.openshift.build.source-location`, or OCI's `org.opencontainers.image.source`) picks the repository; the steps pick the Dockerfile in it and show whether it still matches. Without a label, or when the estate holds none of that repository's Dockerfiles, steps alone, as today (the owner's choice, 7 Nov). In alignment a `LABEL` matches a Dockerfile's whose keys it all holds, as the tooling merges `LABEL`s and adds keys; the real image aligns 5 of 6 with its `Dockerfile.rhel7` |
 | Dockerfiles at the image's commit | Discovery read each repository's default branch | O5: a script writes a release index (repository -> commit) from the chosen images' labels; discovery reruns on those repositories with `RELEASE_INDEX`, as the real estate uses the release database, then facts (the owner's choice, 7 Nov) |
 
 ## Questions
@@ -63,8 +63,9 @@ images: the shared bases and components whose source repository discovery scanne
 
 1. Built: the OKD fixture's own steps are the Dockerfile's (`COPY`, `COPY`, `COPY`, `ENTRYPOINT`, the merged
    `LABEL`), the wrapper cut; a Dockerfile's own `USER 0` and what follows the wrapper are kept.
-2. O4: an image whose source label names a repository links to the best-aligned Dockerfile in that repository on its
-   base, even when another repository's Dockerfile has the same steps; without a label, as today.
+2. Built: an image whose source label names a repository links only among that repository's Dockerfiles, whatever
+   base they name, even when another repository's Dockerfile has the same steps; none aligning is no link; a
+   repository the estate does not hold links as before; the real OKD image links (weak) to its `Dockerfile.rhel7`.
 3. Recorded fixtures (manifest and config, trimmed) of two real images, a base and one built on it, give the right
    parent and own steps.
 4. The demo on the chosen images: parents, links and gaps reported, with a table of what linked and why the rest did

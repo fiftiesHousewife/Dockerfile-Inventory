@@ -66,18 +66,26 @@ public final class Analysis {
         return references;
     }
 
-    /** Each parsed Dockerfile's steps and base path, released when any location of it is at a released commit. */
+    /**
+     * Each parsed Dockerfile's steps and base path, released when any location of it is at a released commit, with
+     * the repositories that hold it.
+     */
     private List<Dockerfile> dockerfiles() {
-        Set<String> released = lines(discoveryDir.resolve("manifest.jsonl")).stream()
+        List<JsonNode> locations = lines(discoveryDir.resolve("manifest.jsonl"));
+        Set<String> released = locations.stream()
                 .filter(n -> n.path("scope").asString().equals("RELEASED"))
                 .map(n -> n.path("blobSha").asString())
                 .collect(Collectors.toSet());
+        Map<String, Set<String>> repositories = locations.stream().collect(Collectors.groupingBy(
+                n -> n.path("blobSha").asString(), Collectors.mapping(n -> n.path("repository").asString(),
+                        Collectors.toSet())));
         return lines(factsDir.resolve("facts.jsonl")).stream().map(row -> {
             List<Instruction> steps = new ArrayList<>();
             row.path("steps").forEach(s -> steps.add(
                     new Instruction(s.path("keyword").asString(), s.path("text").asString())));
             String sha = row.path("blobSha").asString();
-            return new Dockerfile(sha, steps, row.path("fromPath").stringValue(null), released.contains(sha));
+            return new Dockerfile(sha, steps, row.path("fromPath").stringValue(null), released.contains(sha),
+                    repositories.getOrDefault(sha, Set.of()));
         }).toList();
     }
 

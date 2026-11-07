@@ -75,6 +75,49 @@ class LinksTest {
         assertThat(links.get("with-parent").parentMissing()).isFalse();
     }
 
+    @Test
+    void aSourceLabelLimitsTheLinkToThatRepositorysDockerfilesWhoseStepsMustStillAlign() {
+        Map<String, String> labels = Map.of("io.openshift.build.source-location", "https://github.com/team/app");
+        Resolved.Node image = labelled("app", labels, "FROM quay.io/elsewhere/base@sha256:1",
+                "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 1001");
+        List<Dockerfile> dockerfiles = List.of(
+                dockerfile("same-steps-elsewhere", "team/base", true,
+                        "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 1001").in("other/copy"),
+                dockerfile("in-repo", "ci/builder", false, "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 0")
+                        .in("team/app"),
+                dockerfile("in-repo-unrelated", "ci/builder", false, "RUN npm ci").in("team/app"));
+
+        assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()))
+                .containsEntry("app", new Link(Link.Tier.WEAK, List.of("in-repo"), false));
+    }
+
+    @Test
+    void aLabelledRepositoryWithNoAligningDockerfileGivesNoLinkAndAnUnscannedOneLinksAsBefore() {
+        Resolved.Node drifted = labelled("drifted",
+                Map.of("org.opencontainers.image.source", "https://github.com/team/app"),
+                "FROM registry.example.com/team/base:1", "RUN make");
+        Resolved.Node unscanned = labelled("unscanned",
+                Map.of("org.opencontainers.image.source", "https://github.com/team/unscanned"),
+                "FROM registry.example.com/team/base:1", "RUN make");
+        List<Dockerfile> dockerfiles = List.of(
+                dockerfile("elsewhere", "team/base", false, "RUN make").in("other/copy"),
+                dockerfile("in-repo", "team/base", false, "RUN npm ci").in("team/app"));
+
+        assertThat(Links.of(List.of(drifted, unscanned),
+                Map.of("drifted", new Parent.Root(), "unscanned", new Parent.Root()), dockerfiles, Set.of()))
+                .containsEntry("drifted", Links.NONE)
+                .containsEntry("unscanned", new Link(Link.Tier.PROBABLE, List.of("elsewhere"), false));
+    }
+
+    @Test
+    void aLabelStepAlignsWithADockerfileLabelWhoseKeysItHoldsAsBuildToolingAddsKeys() {
+        assertThat(Links.alignment(
+                List.of(instruction("LABEL io.k8s.display-name name vendor version"), instruction("USER 0")),
+                List.of(instruction("LABEL io.k8s.display-name"), instruction("USER 0")))).isEqualTo(1.0);
+        assertThat(Links.alignment(List.of(instruction("LABEL name")), List.of(instruction("LABEL io.k8s.display-name"))))
+                .isZero();
+    }
+
     static Resolved.Node image(String digest, String fromComment, String... steps) {
         List<HistoryStep> history = new java.util.ArrayList<>();
         history.add(new HistoryStep("/bin/sh -c #(nop) ADD file:base in / ", null, false, null));
@@ -82,6 +125,11 @@ class LinksTest {
             history.add(new HistoryStep(createdBy(steps[i]), i == 0 ? fromComment : null, false, null));
         }
         return new Resolved.Node(digest, new ImageConfig(List.of("L-" + digest), history, null, Map.of()));
+    }
+
+    static Resolved.Node labelled(String digest, Map<String, String> labels, String fromComment, String... steps) {
+        ImageConfig config = image(digest, fromComment, steps).config();
+        return new Resolved.Node(digest, new ImageConfig(config.diffIds(), config.history(), null, labels));
     }
 
     static Dockerfile dockerfile(String blobSha, String fromPath, boolean released, String... steps) {
