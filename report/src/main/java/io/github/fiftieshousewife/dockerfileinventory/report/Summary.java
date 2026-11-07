@@ -35,8 +35,10 @@ public record Summary(int locations, int missing, List<PassCount> passes, int ne
         int templates = (int) estate.failures().stream().filter(f -> f.message().startsWith(TEMPLATE)).count();
         int runs = estate.dockerfiles().stream().mapToInt(Dockerfile::runs).sum();
         int opaque = estate.dockerfiles().stream().mapToInt(Dockerfile::opaqueRuns).sum();
+        List<BaseRow> pinnable = bases.stream().filter(b -> !b.path().equals("scratch")).toList();
+        int pinned = pinnable.stream().mapToInt(BaseRow::pinnedLocations).sum();
+        int pinnableLocations = pinnable.stream().mapToInt(BaseRow::locations).sum();
         int baseLocations = bases.stream().mapToInt(BaseRow::locations).sum();
-        int pinned = bases.stream().mapToInt(BaseRow::pinnedLocations).sum();
         int eol = bases.stream().filter(b -> b.status().equals("eol")).mapToInt(BaseRow::locations).sum();
         Map<String, Integer> managers = new TreeMap<>();
         Map<String, Integer> users = new TreeMap<>();
@@ -48,7 +50,7 @@ public record Summary(int locations, int missing, List<PassCount> passes, int ne
         long released = all.stream().filter(l -> l.scope().equals("RELEASED")).count();
         return new Summary(all.size(), estate.missing().size(), passes, nearDuplicateGroups, ranking.k80(),
                 ranking.k95(), share(estate.failures().size() - templates, blobs - templates), share(opaque, runs),
-                share(pinned, baseLocations), share(eol, baseLocations), managers, users,
+                share(pinned, pinnableLocations), share(eol, baseLocations), managers, users,
                 !estate.effectiveUsers().isEmpty(),
                 share(released, all.size()), templates,
                 estate.dockerfiles().stream().mapToInt(Dockerfile::otherShellRuns).sum());

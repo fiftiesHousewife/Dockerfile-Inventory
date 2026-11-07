@@ -62,3 +62,7 @@ Answers (7 Nov): 1, as `apt-get`; 2, yes, an array holds its words; 3, yes, skip
 
 bitnami's round trip stays 266 of 266.
 
+Follow-up (7 Nov): the dashboard's "Bases pinned by digest" counted `scratch` as an unpinned base too; `Summary` now
+leaves it out of that share (the base table keeps its row). bitnami 0.8% -> 0.9% (2 of 224: its bases really are
+unpinned); konflux-ci, with 526 `scratch` locations, the largest change.
+

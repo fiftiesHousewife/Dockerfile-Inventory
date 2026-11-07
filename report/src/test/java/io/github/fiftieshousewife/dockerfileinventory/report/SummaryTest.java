@@ -36,6 +36,16 @@ class SummaryTest {
     }
 
     @Test
+    void scratchIsLeftOutOfThePinnedShareAsItHasNoDigest() {
+        Estate estate = Estate.read(EstateTest.FIXTURES, EstateTest.FIXTURES, null);
+        List<BaseRow> bases = List.of(new BaseRow("ubi9", "9.4", "ubi9", 3, 3, "unknown", null),
+                new BaseRow("scratch", null, "scratch", 5, 0, "unknown", null));
+
+        assertThat(Summary.of(estate, List.of(), 0, Archetypes.rank(List.of(), estate), bases).pinnedShare())
+                .isEqualTo(1.0);
+    }
+
+    @Test
     void theEndOfLifeShareIsOfLocationsOnBasesTheListMarksEol(@TempDir Path dir) throws IOException {
         Estate estate = Estate.read(EstateTest.FIXTURES, EstateTest.FIXTURES, null);
         Path csv = dir.resolve("eol.csv");

@@ -15,7 +15,8 @@ final class About {
                     + "where lineage linked a built image, the user written in the Dockerfile otherwise. Good at 10% "
                     + "or less; act above 30%."),
             Map.entry("Bases pinned by digest", "Share of locations whose base image is pinned by digest "
-                    + "(@sha256:...), so a rebuild gets exactly the same base. Good at 80% or more; act below 20%."),
+                    + "(@sha256:...), so a rebuild gets exactly the same base; scratch, the empty base, has no digest and is "
+                    + "left out. Good at 80% or more; act below 20%."),
             Map.entry("Bases at end of life", "Share of locations built on a base the end-of-life list marks as end "
                     + "of life. Good at 0%; act above 5%. Needs EOL_LIST."),
             Map.entry("Scanned at a released commit", "Share of locations read at the commit the release index says "
