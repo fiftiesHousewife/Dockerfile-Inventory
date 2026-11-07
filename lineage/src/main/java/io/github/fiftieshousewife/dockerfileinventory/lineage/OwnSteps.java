@@ -5,14 +5,7 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-/**
- * The steps an image's own Dockerfile made, as opposed to those it inherited. With a parent in the tree, they are
- * the history after the parent's; without one, they start at the last step Buildah marked {@code FROM <base>}; with
- * neither, the whole history is the image's own. Steps a build service added are dropped (Q13), as is the wrapper
- * Red Hat's release tooling puts around a Dockerfile's steps. {@code ARG} steps are left out, as facts leaves them
- * out of a Dockerfile's.
- */
-public final class OwnSteps {
+final class OwnSteps {
 
     private static final String ART_REPO_SWAP = "rm -f /etc/yum.repos.d/art-* ";
     private static final String ART_CLEANUP = "rm -rf /tmp/art";
@@ -21,7 +14,8 @@ public final class OwnSteps {
     private OwnSteps() {
     }
 
-    public static List<Instruction> of(Resolved.Node image, Resolved.Node parent) {
+    // ARG steps are left out, as facts leaves them out of a Dockerfile's.
+    static List<Instruction> of(Resolved.Node image, Resolved.Node parent) {
         List<NormalStep> steps = image.config().history().stream().map(HistoryNormaliser::normalise).toList();
         int start = parent != null ? parent.config().history().size() : lastFrom(steps);
         return withoutReleaseTooling(steps.subList(Math.min(start, steps.size()), steps.size())).stream()
@@ -30,13 +24,10 @@ public final class OwnSteps {
                 .toList();
     }
 
-    /**
-     * Red Hat's release tooling (ART's doozer) wraps a Dockerfile's steps in its own: before them, build settings,
-     * a {@code /tmp/art} of yum repositories and certificates, ending with {@code ENV __doozer=merge}; after them,
-     * {@code USER 0}, the repositories swapped back and {@code rm -rf /tmp/art}. Only their order marks them (a
-     * Dockerfile can hold a {@code USER 0} or a yum {@code COPY} too), so they are cut by position. Steps without
-     * the wrapper are returned as they are.
-     */
+    // Red Hat's release tooling (ART's doozer) wraps a Dockerfile's steps in its own: before them, build settings,
+    // a /tmp/art of yum repositories and certificates, ending with ENV __doozer=merge; after them, USER 0, the
+    // repositories swapped back and rm -rf /tmp/art. Only their order marks them (a Dockerfile can hold a USER 0 or
+    // a yum COPY too), so they are cut by position.
     static List<NormalStep> withoutReleaseTooling(List<NormalStep> steps) {
         int merge = lastIndex(steps, OwnSteps::doozerEnv);
         if (merge < 0) {
@@ -50,20 +41,20 @@ public final class OwnSteps {
                 steps.subList(Math.min(after, steps.size()), steps.size()).stream()).toList();
     }
 
-    private static boolean doozerEnv(NormalStep step) {
+    static boolean doozerEnv(NormalStep step) {
         return step.keyword().equals("ENV") && List.of(step.text().split(" ")).contains("__doozer");
     }
 
-    private static boolean runStarts(NormalStep step, String prefix) {
+    static boolean runStarts(NormalStep step, String prefix) {
         return step.keyword().equals("RUN") && step.text().startsWith(prefix);
     }
 
-    private static int lastIndex(List<NormalStep> steps, Predicate<NormalStep> test) {
+    static int lastIndex(List<NormalStep> steps, Predicate<NormalStep> test) {
         return IntStream.iterate(steps.size() - 1, i -> i >= 0, i -> i - 1).filter(i -> test.test(steps.get(i)))
                 .findFirst().orElse(-1);
     }
 
-    private static int lastFrom(List<NormalStep> steps) {
+    static int lastFrom(List<NormalStep> steps) {
         return Math.max(0, lastIndex(steps, step -> step.from() != null));
     }
 }

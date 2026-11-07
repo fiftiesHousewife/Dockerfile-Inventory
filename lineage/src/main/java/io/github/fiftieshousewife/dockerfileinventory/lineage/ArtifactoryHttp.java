@@ -1,13 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -17,41 +13,28 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Artifactory over REST. {@code base} is the {@code /artifactory/} URL; the Docker v2 API for a repository lives
- * under {@code api/docker/<repo>/v2/}. Only {@code java.net.http} is used.
- */
-public final class ArtifactoryHttp implements Artifactory {
+final class ArtifactoryHttp implements Artifactory {
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(60);
     private static final int PAGE_SIZE = 1000;
-    private static final int MAX_ATTEMPTS = 6;
 
-    /** Every manifest and index type, Docker and OCI, so a manifest list comes back as a list and not one platform. */
+    // Every manifest and index type, Docker and OCI: accepting fewer, Artifactory answers a manifest list with one
+    // platform's manifest.
     private static final String MANIFEST_TYPES = String.join(", ",
             "application/vnd.docker.distribution.manifest.v2+json",
             "application/vnd.docker.distribution.manifest.list.v2+json",
             "application/vnd.oci.image.manifest.v1+json",
             "application/vnd.oci.image.index.v1+json");
 
-    private final HttpClient http;
-    private final URI base;
-    private final String token;
+    private final ArtifactoryClient client;
     private final int pageSize;
     private final ObjectMapper json = new ObjectMapper();
 
-    public ArtifactoryHttp(URI base, String token) {
+    ArtifactoryHttp(URI base, String token) {
         this(base, token, PAGE_SIZE);
     }
 
     ArtifactoryHttp(URI base, String token, int pageSize) {
-        // Artifactory can redirect blob downloads to its file store.
-        this.http = HttpClient.newBuilder()
-                .connectTimeout(TIMEOUT)
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
-        this.base = URI.create(base.toString().replaceAll("/+$", "") + "/");
-        this.token = token;
+        this.client = new ArtifactoryClient(base, token);
         this.pageSize = pageSize;
     }
 
@@ -74,89 +57,54 @@ public final class ArtifactoryHttp implements Artifactory {
 
     @Override
     public Optional<Manifest> manifest(String repository, String image, String reference) {
-        return get("api/docker/%s/v2/%s/manifests/%s".formatted(repository, image, reference), MANIFEST_TYPES)
-                .map(r -> new Manifest(r.headers().firstValue("Content-Type").orElse(""),
-                        r.headers().firstValue("Docker-Content-Digest").orElse(""), r.body()));
+        return client.get("api/docker/%s/v2/%s/manifests/%s".formatted(repository, image, reference), MANIFEST_TYPES)
+                .map(ArtifactoryHttp::manifest);
     }
 
     @Override
     public Optional<String> blob(String repository, String image, String digest) {
-        return get("api/docker/%s/v2/%s/blobs/%s".formatted(repository, image, digest), "*/*")
+        return client.get("api/docker/%s/v2/%s/blobs/%s".formatted(repository, image, digest), "*/*")
                 .map(HttpResponse::body);
     }
 
     @Override
     public Optional<Instant> lastPushed(String repository, String image, String tag) {
-        return get("api/storage/%s/%s/%s".formatted(repository, image, tag), "application/json")
+        return client.get("api/storage/%s/%s/%s".formatted(repository, image, tag), "application/json")
                 .map(r -> parse(r).path("lastModified").stringValue(null))
                 .map(t -> OffsetDateTime.parse(t).toInstant());
     }
 
-    /**
-     * Docker v2 paging: {@code n} per page, {@code last} the final entry of the previous page. Artifactory does not
-     * always send a {@code Link} header, so a page shorter than {@code n} is taken as the end.
-     */
-    private List<String> paged(String path, String field) {
+    static Manifest manifest(HttpResponse<String> response) {
+        return new Manifest(response.headers().firstValue("Content-Type").orElse(""),
+                response.headers().firstValue("Docker-Content-Digest").orElse(""), response.body());
+    }
+
+    // Artifactory does not always send a Link header, so a page shorter than n is taken as the end.
+    List<String> paged(String path, String field) {
         List<String> all = new ArrayList<>();
         int pageLength;
         do {
-            String last = all.isEmpty() ? "" : "&last=" + URLEncoder.encode(all.getLast(), StandardCharsets.UTF_8);
-            JsonNode entries = getJson(path + "?n=" + pageSize + last).path(field);
+            JsonNode entries = getJson(path + "?n=" + pageSize + after(all)).path(field);
             entries.forEach(e -> all.add(e.asString()));
             pageLength = entries.size();
         } while (pageLength == pageSize);
         return all;
     }
 
-    /** A JSON GET; a 404 reads as an empty document, so callers see nothing listed. */
-    private JsonNode getJson(String path) {
-        return get(path, "application/json").map(this::parse).orElseGet(json::createObjectNode);
+    static String after(List<String> listed) {
+        return listed.isEmpty() ? "" : "&last=" + URLEncoder.encode(listed.getLast(), StandardCharsets.UTF_8);
     }
 
-    private JsonNode parse(HttpResponse<String> response) {
+    // A 404 reads as an empty document, so callers see nothing listed.
+    JsonNode getJson(String path) {
+        return client.get(path, "application/json").map(this::parse).orElseGet(json::createObjectNode);
+    }
+
+    JsonNode parse(HttpResponse<String> response) {
         try {
             return json.readTree(response.body());
         } catch (JacksonException e) {
             throw new ArtifactoryException("unreadable JSON from " + response.uri(), e);
-        }
-    }
-
-    /** A GET; empty for 404, which here means the image, tag or blob no longer exists. */
-    private Optional<HttpResponse<String>> get(String path, String accept) {
-        HttpRequest request = HttpRequest.newBuilder(base.resolve(path))
-                .timeout(TIMEOUT)
-                .header("Authorization", "Bearer " + token)
-                .header("Accept", accept)
-                .GET()
-                .build();
-        HttpResponse<String> response = send(request);
-        return switch (response.statusCode()) {
-            case 200 -> Optional.of(response);
-            case 404 -> Optional.empty();
-            default -> throw new ArtifactoryException("GET %s returned %d: %s".formatted(
-                    request.uri(), response.statusCode(), abbreviated(response.body())));
-        };
-    }
-
-    private static String abbreviated(String body) {
-        return body.length() > 300 ? body.substring(0, 300) : body;
-    }
-
-    private HttpResponse<String> send(HttpRequest request) {
-        try {
-            for (int attempt = 1; ; attempt++) {
-                HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-                Optional<Duration> wait = Retry.waitBeforeRetry(response.statusCode(), response.headers());
-                if (wait.isEmpty() || attempt == MAX_ATTEMPTS) {
-                    return response;
-                }
-                Thread.sleep(wait.get());
-            }
-        } catch (IOException e) {
-            throw new ArtifactoryException("GET " + request.uri() + " failed", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ArtifactoryException("interrupted calling " + request.uri(), e);
         }
     }
 }

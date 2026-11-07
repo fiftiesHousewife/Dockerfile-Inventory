@@ -5,8 +5,39 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 class ImageConfigTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    @Test
+    void textThatIsNotJsonReadsAsNothing() {
+        assertThat(ImageConfig.json("{")).isEmpty();
+        assertThat(ImageConfig.json("{\"a\": 1}")).hasValueSatisfying(node -> assertThat(node.has("a")).isTrue());
+    }
+
+    @Test
+    void anEnvEntryWithoutAnEqualsSignHasAnEmptyValue() {
+        assertThat(ImageConfig.env(JSON.readTree("[\"A=1=2\", \"BARE\"]")))
+                .containsExactly(Map.entry("A", "1=2"), Map.entry("BARE", ""));
+    }
+
+    @Test
+    void historyEntriesKeepTheirFieldsAndMissingOnesAreNull() {
+        assertThat(ImageConfig.history(JSON.readTree(
+                "[{\"created_by\": \"make\", \"empty_layer\": true, \"created\": \"2026\"}, {}]")))
+                .containsExactly(new HistoryStep("make", null, true, "2026"), new HistoryStep(null, null, false, null));
+    }
+
+    @Test
+    void ofReadsAConfigWithoutAConfigSection() {
+        assertThat(ImageConfig.of(JSON.readTree("{\"rootfs\": {\"diff_ids\": [\"L1\"]}}"))).satisfies(config -> {
+            assertThat(config.diffIds()).containsExactly("L1");
+            assertThat(config.user()).isNull();
+            assertThat(config.env()).isEmpty();
+        });
+    }
 
     @Test
     void readsDiffIdsUserAndLabels() {

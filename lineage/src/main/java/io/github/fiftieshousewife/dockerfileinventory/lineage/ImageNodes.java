@@ -5,24 +5,22 @@ import java.util.stream.StreamSupport;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/** Resolves one tag to its image: manifest, then the amd64 entry of a list, then the config. */
-public final class ImageNodes {
+final class ImageNodes {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private ImageNodes() {
     }
 
-    public static Resolved resolve(Artifactory artifactory, String repository, String image, String tag) {
+    static Resolved resolve(Artifactory artifactory, String repository, String image, String tag) {
         return switch (locate(artifactory, repository, image, tag)) {
             case Location.Found found -> node(artifactory, repository, image, found.configDigest());
             case Resolved.Skipped skipped -> skipped;
         };
     }
 
-    /** The tag's config digest, through the amd64 entry of a manifest list, without fetching the config. */
-    public static Location locate(Artifactory artifactory, String repository, String image, String tag) {
-        String reference = reference(repository, image, tag);
+    static Location locate(Artifactory artifactory, String repository, String image, String tag) {
+        String reference = repository + "/" + image + ":" + tag;
         Optional<JsonNode> tagged = manifest(artifactory, repository, image, tag);
         if (tagged.isEmpty()) {
             return new Resolved.Skipped(Resolved.Reason.GONE, reference);
@@ -31,22 +29,26 @@ public final class ImageNodes {
         if (manifest.path("schemaVersion").asInt() == 1) {
             return new Resolved.Skipped(Resolved.Reason.SCHEMA_1, reference);
         }
-        if (manifest.has("manifests")) {
-            Optional<String> amd64 = amd64(manifest);
-            if (amd64.isEmpty()) {
-                return new Resolved.Skipped(Resolved.Reason.NO_AMD64, reference);
-            }
-            Optional<JsonNode> entry = manifest(artifactory, repository, image, amd64.get());
-            if (entry.isEmpty()) {
-                return new Resolved.Skipped(Resolved.Reason.GONE, amd64.get());
-            }
-            manifest = entry.get();
+        return manifest.has("manifests") ? throughList(artifactory, repository, image, manifest, reference)
+                : found(manifest);
+    }
+
+    static Location throughList(Artifactory artifactory, String repository, String image, JsonNode list,
+                                String reference) {
+        Optional<String> amd64 = amd64(list);
+        if (amd64.isEmpty()) {
+            return new Resolved.Skipped(Resolved.Reason.NO_AMD64, reference);
         }
+        return manifest(artifactory, repository, image, amd64.get())
+                .<Location>map(ImageNodes::found)
+                .orElseGet(() -> new Resolved.Skipped(Resolved.Reason.GONE, amd64.get()));
+    }
+
+    private static Location found(JsonNode manifest) {
         return new Location.Found(manifest.path("config").path("digest").asString());
     }
 
-    /** The run skips this fetch for a config digest it has already stored (slice 8). */
-    public static Resolved node(Artifactory artifactory, String repository, String image, String configDigest) {
+    static Resolved node(Artifactory artifactory, String repository, String image, String configDigest) {
         Optional<String> text = artifactory.blob(repository, image, configDigest);
         if (text.isEmpty()) {
             return new Resolved.Skipped(Resolved.Reason.GONE, configDigest);
@@ -60,11 +62,6 @@ public final class ImageNodes {
         return artifactory.manifest(repository, image, ref).map(m -> JSON.readTree(m.body()));
     }
 
-    private static String reference(String repository, String image, String tag) {
-        return repository + "/" + image + ":" + tag;
-    }
-
-    /** The digest of a manifest list's {@code linux/amd64} entry (Q3: one platform only). */
     static Optional<String> amd64(JsonNode list) {
         return StreamSupport.stream(list.path("manifests").spliterator(), false)
                 .filter(m -> m.path("platform").path("os").asString().equals("linux"))

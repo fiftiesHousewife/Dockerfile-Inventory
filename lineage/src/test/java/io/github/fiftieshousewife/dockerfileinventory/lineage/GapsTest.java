@@ -18,7 +18,7 @@ class GapsTest {
 
         GapReport report = Gaps.of(Map.of("app", refs, "base", List.of()),
                 Map.of("app", new Parent.Of("base"), "base", new Parent.Root()),
-                Map.of("app", Links.NONE, "base", LINKED));
+                Map.of("app", Link.NONE, "base", LINKED));
 
         assertThat(report.gaps()).containsExactly(new GapRow("app", refs, Instant.parse("2026-10-05T00:00:00Z")));
     }
@@ -30,11 +30,13 @@ class GapsTest {
         GapReport report = Gaps.of(
                 Map.of("ubi", ubi, "app", List.of(), "squashed", List.of()),
                 Map.of("ubi", new Parent.Root(), "app", new Parent.Of("ubi"), "squashed", new Parent.Root()),
-                Map.of("ubi", Links.NONE, "app", LINKED, "squashed", LINKED));
+                Map.of("ubi", Link.NONE, "app", LINKED, "squashed", LINKED));
 
-        assertThat(report.externalBases())
-                .containsExactly(new GapRow("ubi", ubi, Instant.parse("2026-09-01T00:00:00Z")));
-        assertThat(report.gaps()).isEmpty();
+        assertThat(report).satisfies(r -> {
+            assertThat(r.externalBases())
+                    .containsExactly(new GapRow("ubi", ubi, Instant.parse("2026-09-01T00:00:00Z")));
+            assertThat(r.gaps()).isEmpty();
+        });
     }
 
     @Test
@@ -76,6 +78,53 @@ class GapsTest {
                         "on-newest", LINKED, "on-twins", LINKED, "on-undated", LINKED));
 
         assertThat(report.outdatedBases()).isEmpty();
+    }
+
+    @Test
+    void anImagesOutdatedCandidatesComeFromItsParent() {
+        assertThat(Gaps.candidates(new Parent.Of("base"))).containsExactly("base");
+        assertThat(Gaps.candidates(new Parent.Ambiguous(List.of("a", "b")))).containsExactly("a", "b");
+        assertThat(Gaps.candidates(new Parent.Root())).isEmpty();
+    }
+
+    @Test
+    void theNewestDigestOfEachImageNameIgnoresUndatedPushes() {
+        assertThat(Gaps.newestByName(Map.of(
+                "old", List.of(ref("docker-local", "team/base", "1", "2026-09-01T00:00:00Z")),
+                "new", List.of(ref("docker-local", "team/base", "2", "2026-10-01T00:00:00Z")),
+                "undated", List.of(new Reference("docker-local", "team/base", "3", null)))))
+                .isEqualTo(Map.of("team/base", "new"));
+    }
+
+    @Test
+    void aGapRowWithNoDatedPushHasNoLatestPush() {
+        List<Reference> undated = List.of(new Reference("docker-local", "team/app", "1", null));
+
+        assertThat(Gaps.row("app", undated)).isEqualTo(new GapRow("app", undated, null));
+    }
+
+    @Test
+    void unlinkedSplitsRootsFromBuiltImages() {
+        Map<String, List<Reference>> references = Map.of("root", List.of(), "built", List.of());
+        Map<String, Parent> parents = Map.of("root", new Parent.Root(), "built", new Parent.Of("root"));
+        Map<String, Link> links = Map.of("root", Link.NONE, "built", Link.NONE);
+
+        assertThat(Gaps.unlinked(references, parents, links, true)).extracting(GapRow::configDigest)
+                .containsExactly("root");
+        assertThat(Gaps.unlinked(references, parents, links, false)).extracting(GapRow::configDigest)
+                .containsExactly("built");
+    }
+
+    @Test
+    void anImageIsOutdatedOncePerImageNameItsParentWasPushedUnder() {
+        Map<String, List<Reference>> references = Map.of("old", List.of(
+                ref("docker-local", "team/base", "1", "2026-09-01T00:00:00Z"),
+                ref("docker-local", "team/alias", "1", "2026-09-01T00:00:00Z")));
+
+        assertThat(Gaps.outdated("app", List.of("old"), references,
+                Map.of("team/base", "new", "team/alias", "newer")))
+                .containsExactly(new Outdated("app", "old", "team/alias", "newer"),
+                        new Outdated("app", "old", "team/base", "new"));
     }
 
     static Reference ref(String repository, String image, String tag, String pushed) {

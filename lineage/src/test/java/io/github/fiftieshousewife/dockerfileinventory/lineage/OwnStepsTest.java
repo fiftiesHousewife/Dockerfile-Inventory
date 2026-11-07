@@ -16,7 +16,6 @@ import tools.jackson.databind.ObjectMapper;
 
 class OwnStepsTest {
 
-    /** Shared with facts, which must reduce the Dockerfile that built this image to the same steps. */
     private static final Path CONTRACT = Path.of("../testdata/contracts/python-311.steps.json");
 
     private static final HistoryStep BASE = step("/bin/sh -c #(nop) ADD file:base in / ", null);
@@ -128,5 +127,37 @@ class OwnStepsTest {
 
     private static Resolved.Node node(List<HistoryStep> history) {
         return new Resolved.Node("sha256:x", new ImageConfig(List.of("L1"), history, null, Map.of()));
+    }
+
+    @Test
+    void theLastIndexIsTheLastStepThatPassesOrMinusOne() {
+        List<NormalStep> steps = List.of(new NormalStep("RUN", "a", null, false),
+                new NormalStep("RUN", "b", null, false),
+                new NormalStep("USER", "0", null, false));
+
+        assertThat(OwnSteps.lastIndex(steps, step -> step.keyword().equals("RUN"))).isEqualTo(1);
+        assertThat(OwnSteps.lastIndex(steps, step -> step.keyword().equals("CMD"))).isEqualTo(-1);
+    }
+
+    @Test
+    void theOwnStepsStartAtTheLastFromCommentOrAtTheFirstStep() {
+        NormalStep from = new NormalStep("RUN", "make", "ubi9", false);
+        NormalStep plain = new NormalStep("USER", "0", null, false);
+
+        assertThat(OwnSteps.lastFrom(List.of(plain, from, plain))).isEqualTo(1);
+        assertThat(OwnSteps.lastFrom(List.of(plain, plain))).isZero();
+    }
+
+    @Test
+    void theDoozerMarkerIsAnEnvSettingTheDoozerKey() {
+        assertThat(OwnSteps.doozerEnv(new NormalStep("ENV", "A __doozer", null, false))).isTrue();
+        assertThat(OwnSteps.doozerEnv(new NormalStep("ENV", "__doozer_other", null, false))).isFalse();
+        assertThat(OwnSteps.doozerEnv(new NormalStep("LABEL", "__doozer", null, false))).isFalse();
+    }
+
+    @Test
+    void aRunStartsWithAPrefixOnlyAsARun() {
+        assertThat(OwnSteps.runStarts(new NormalStep("RUN", "rm -rf /tmp/art", null, false), "rm -rf")).isTrue();
+        assertThat(OwnSteps.runStarts(new NormalStep("CMD", "rm -rf /tmp/art", null, false), "rm -rf")).isFalse();
     }
 }

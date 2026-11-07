@@ -7,11 +7,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * The repository an image says it was built from, by label: OpenShift builds'
- * {@code io.openshift.build.source-location}, else OCI's {@code org.opencontainers.image.source}. A label names the
- * repository and lineage's steps say which of its Dockerfiles (the owner's choice, 7 Nov).
- */
 final class SourceLabels {
 
     private static final List<String> LABELS =
@@ -20,12 +15,11 @@ final class SourceLabels {
     private SourceLabels() {
     }
 
-    /** {@code org/name}, from a URL on any Git host; a path inside it ({@code /tree/main/...}) is dropped. */
     static Optional<String> repository(Map<String, String> labels) {
         return LABELS.stream().map(labels::get).filter(Objects::nonNull).findFirst().flatMap(SourceLabels::fromUrl);
     }
 
-    private static Optional<String> fromUrl(String url) {
+    static Optional<String> fromUrl(String url) {
         try {
             String path = new URI(url.strip()).getPath();
             String[] segments = path == null ? new String[0] : path.replaceFirst("^/", "").split("/");

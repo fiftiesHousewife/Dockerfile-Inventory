@@ -129,6 +129,39 @@ class HistoryNormaliserTest {
                 .isEqualTo("MAINTAINER");
     }
 
+    @Test
+    void anInstructionWithoutTheShellIsOtherAndAShellCommandIsRun() {
+        assertThat(HistoryNormaliser.instruction("/usr/bin/make"))
+                .isEqualTo(new NormalStep("OTHER", "/usr/bin/make", null, false));
+        assertThat(HistoryNormaliser.instruction("/bin/sh -c make"))
+                .isEqualTo(new NormalStep("RUN", "make", null, false));
+        assertThat(HistoryNormaliser.instruction("/bin/sh -c #(nop) ONBUILD"))
+                .isEqualTo(new NormalStep("ONBUILD", "", null, false));
+    }
+
+    @Test
+    void metadataKnowsOnlyDockerfileKeywords() {
+        assertThat(HistoryNormaliser.metadata("USER", "1001")).contains(new NormalStep("USER", "1001", null, false));
+        assertThat(HistoryNormaliser.metadata("FROBNICATE", "x")).isEmpty();
+    }
+
+    @Test
+    void theDestinationIsWhatFollowsTheLastIn() {
+        assertThat(HistoryNormaliser.destination("file:abc in /tmp/x in /app")).isEqualTo("/app");
+    }
+
+    @Test
+    void envKeysReadTheKeyValueFormAndTheLegacyForm() {
+        assertThat(HistoryNormaliser.envKeys("B=1 A=2")).isEqualTo("A B");
+        assertThat(HistoryNormaliser.envKeys("\"KEY\" some value")).isEqualTo("KEY");
+    }
+
+    @Test
+    void onlyAKnownBuilderPrefixIsRemoved() {
+        assertThat(HistoryNormaliser.withoutBuilderPrefix(". /cachi2/cachi2.env && make")).isEqualTo("make");
+        assertThat(HistoryNormaliser.withoutBuilderPrefix(". ./env && make")).isEqualTo(". ./env && make");
+    }
+
     private static NormalStep normalise(String createdBy) {
         return HistoryNormaliser.normalise(new HistoryStep(createdBy, null, false, null));
     }
