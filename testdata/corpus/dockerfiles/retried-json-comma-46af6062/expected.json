@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/insights-runtime-extractor",
+    "path": "runtime-samples/python/3.9.19/Containerfile",
+    "commit": "68a7815cb622c7919e07bfba0e08334576189a25",
+    "blobSha": "46af60624feb89c738d194ffd592e132711746c4"
+  },
+  "why": "a space before a comma in an exec form's JSON (rewrite-docker issue 8)",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

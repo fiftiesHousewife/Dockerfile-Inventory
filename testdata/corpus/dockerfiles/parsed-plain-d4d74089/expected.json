@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/assisted-service",
+    "path": "ci-images/Dockerfile.unit-tests",
+    "commit": "25f92c67e44fd08c5f282664cdd569bb8a0f63aa",
+    "blobSha": "d4d74089b5b223135c3b09ca5103f1fe993e9f6e"
+  },
+  "why": "a plain Dockerfile that parses first time",
+  "parse": "parsed",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}
