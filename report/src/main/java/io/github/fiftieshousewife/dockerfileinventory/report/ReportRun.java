@@ -44,6 +44,9 @@ final class ReportRun {
         write("archetypes.json", pretty(ranking));
         tables.forEach(t -> write("tables/" + t.name() + ".csv", t.csv()));
         write("tables/ddl.sql", tables.stream().map(Table::ddl).collect(Collectors.joining("\n")));
+        Pages.all(Report.of(estate, ranking, passes.subList(0, 3), archetypeGroups.size(), eol,
+                Optional.ofNullable(lineageDir).map(dir -> LineageFiles.read(dir, locations(estate))), discoveryDir))
+                .forEach(this::write);
     }
 
     static Map<String, Object> passesSummary(Ranking ranking, List<PassCount> passes) {
@@ -68,7 +71,8 @@ final class ReportRun {
 
     private void write(String file, String text) {
         try {
-            Files.createDirectories(outDir.resolve("tables"));
+            int slash = file.lastIndexOf('/');
+            Files.createDirectories(slash < 0 ? outDir : outDir.resolve(file.substring(0, slash)));
             Files.writeString(outDir.resolve(file), text, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

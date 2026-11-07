@@ -21,7 +21,7 @@ public final class ReportMain {
         new ReportRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
                 lineage == null ? null : Path.of(lineage),
                 eolList == null ? EolList.empty() : EolList.read(Path.of(eolList)), out).run();
-        System.out.println("Report written to " + out.resolve("dashboard.html"));
+        System.out.println("Report written to " + out.resolve("index.html"));
     }
 
     static String required(Map<String, String> env, String name) {

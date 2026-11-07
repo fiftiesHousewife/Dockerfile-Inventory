@@ -22,7 +22,8 @@ class BasesPageTest {
                     + "75.0% pinned by digest</summary>");
             assertThat(page).contains("<tr><td class=\"code\">ubi8/ubi-minimal</td><td class=\"code\"></td>"
                     + "<td class=\"num\">10</td><td class=\"num\">0</td><td>end of life (2024-05-31)</td></tr>");
-            assertThat(page.indexOf("<strong>ubi-minimal</strong>")).isLessThan(page.indexOf("<strong>debian</strong>"));
+            assertThat(page.indexOf("<strong>ubi-minimal</strong>"))
+                    .isLessThan(page.indexOf("<strong>debian</strong>"));
         });
     }
 

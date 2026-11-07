@@ -19,7 +19,7 @@ class ReportRunTest {
     Path out;
 
     @Test
-    void writesPassesArchetypesTablesDdlAndDashboard() throws IOException {
+    void writesPassesArchetypesTablesDdlAndThePages() throws IOException {
         new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, EolList.empty(), out).run();
 
         JsonNode passes = new ObjectMapper().readTree(out.resolve("passes.json").toFile());
@@ -31,6 +31,10 @@ class ReportRunTest {
             softly.assertThat(read("tables/dockerfiles.csv")).startsWith("blob_sha,");
             softly.assertThat(read("tables/ddl.sql"))
                     .contains("CREATE TABLE dockerfiles").contains("CREATE TABLE bases");
+            softly.assertThat(read("index.html")).startsWith("<!doctype html>");
+            softly.assertThat(read("orgs/payments.html")).contains("<h1>payments</h1>");
+            softly.assertThat(read("archetypes/1.html")).contains("<h1>Archetype 1: ");
+            softly.assertThat(out.resolve("dashboard.html")).doesNotExist();
         });
     }
 
