@@ -1,6 +1,8 @@
 # Running inside a corporate network: plan
 
-Status: planned 7 Nov; questions answered 7 Nov. The `http` module is built first; wiring it into the clients follows the code review's branches are merged (`quality-review.md`), as
+Status: planned 7 Nov; questions answered 7 Nov. Built 7 Nov: the `http` module, wired into discovery and lineage
+(C1-C6, C8, C9 and the waits of C7). Next: rate pacing (the rest of C7), Gradle mirrors (C10), the pod image (C11).
+Originally: the `http` module is built first; wiring it into the clients follows the code review's branches are merged (`quality-review.md`), as
 the HTTP classes are being split there.
 
 The owner asked what will fail inside a corporate network, and for everything to be configurable with sensible
