@@ -4,12 +4,11 @@ import io.github.fiftieshousewife.dockerfileinventory.facts.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.facts.NormalForms;
 import java.util.List;
 
-/** R2: the final base is past end of life by the internal list (D2). */
-public final class EndOfLifeBase implements Rule {
+final class EndOfLifeBase implements Rule {
 
     private final BaseList list;
 
-    public EndOfLifeBase(BaseList list) {
+    EndOfLifeBase(BaseList list) {
         this.list = list;
     }
 

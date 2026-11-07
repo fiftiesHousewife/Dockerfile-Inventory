@@ -7,10 +7,6 @@ import java.util.Map;
 import org.openrewrite.Cursor;
 import org.openrewrite.docker.tree.Docker;
 
-/**
- * Line numbers for instructions, which the tree does not store. Each instruction's own text is found in the printed
- * file, in file order, where it starts a line; its line is one more than the newlines before it.
- */
 final class Lines {
 
     private final Map<Docker, Integer> lines;
@@ -20,16 +16,11 @@ final class Lines {
     }
 
     static Lines of(Docker.File file) {
-        List<Docker> ordered = new ArrayList<>(file.getGlobalArgs());
-        file.getStages().forEach(stage -> {
-            ordered.add(stage.getFrom());
-            ordered.addAll(stage.getInstructions());
-        });
         Map<Docker, Integer> lines = new IdentityHashMap<>();
         Cursor cursor = new Cursor(null, file);
         String text = file.printAll();
         int from = 0;
-        for (Docker node : ordered) {
+        for (Docker node : ordered(file)) {
             String own = withoutLeadingComments(node.printTrimmed(cursor));
             int at = startOfLine(text, own, from);
             if (at >= 0) {
@@ -40,7 +31,15 @@ final class Lines {
         return new Lines(lines);
     }
 
-    /** The printed prefix can carry the comment lines before an instruction; its own text starts after them. */
+    static List<Docker> ordered(Docker.File file) {
+        List<Docker> ordered = new ArrayList<>(file.getGlobalArgs());
+        file.getStages().forEach(stage -> {
+            ordered.add(stage.getFrom());
+            ordered.addAll(stage.getInstructions());
+        });
+        return ordered;
+    }
+
     static String withoutLeadingComments(String printed) {
         String rest = printed.stripLeading();
         while (rest.startsWith("#")) {
@@ -50,8 +49,7 @@ final class Lines {
         return rest;
     }
 
-    /** The next place {@code own} starts a line (only whitespace before it), so text in a comment never matches. */
-    private static int startOfLine(String text, String own, int from) {
+    static int startOfLine(String text, String own, int from) {
         for (int at = text.indexOf(own, from); at >= 0; at = text.indexOf(own, at + 1)) {
             int lineStart = text.lastIndexOf('\n', at - 1) + 1;
             if (text.substring(lineStart, at).isBlank()) {
@@ -65,7 +63,7 @@ final class Lines {
         return lines.getOrDefault(instruction, 0);
     }
 
-    private static int newlines(CharSequence text) {
+    static int newlines(CharSequence text) {
         return (int) text.chars().filter(c -> c == '\n').count();
     }
 }

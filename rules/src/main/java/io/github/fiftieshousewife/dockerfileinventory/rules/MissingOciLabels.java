@@ -8,8 +8,7 @@ import java.util.stream.Collectors;
 import org.openrewrite.Cursor;
 import org.openrewrite.docker.tree.Docker;
 
-/** R3: the image does not say which commit and repository it was built from. */
-public final class MissingOciLabels implements Rule {
+final class MissingOciLabels implements Rule {
 
     private static final List<String> REQUIRED =
             List.of("org.opencontainers.image.revision", "org.opencontainers.image.source");
@@ -29,14 +28,18 @@ public final class MissingOciLabels implements Rule {
         if (!subject.isParsed()) {
             return List.of();
         }
-        Cursor cursor = new Cursor(null, subject.file());
-        Set<String> labels = FinalImage.instructions(subject.file()).stream()
+        Set<String> labels = labels(subject.file());
+        List<String> missing = REQUIRED.stream().filter(label -> !labels.contains(label)).toList();
+        return missing.isEmpty() ? List.of()
+                : List.of(finding(subject, null, "the image has no " + String.join(" or ", missing) + " label"));
+    }
+
+    static Set<String> labels(Docker.File file) {
+        Cursor cursor = new Cursor(null, file);
+        return FinalImage.instructions(file).stream()
                 .filter(i -> i instanceof Docker.Label)
                 .map(i -> Continuations.removed(Lines.withoutLeadingComments(i.printTrimmed(cursor))).strip())
                 .flatMap(text -> KeyValuePairs.keys(text.substring(text.indexOf(' ') + 1)).stream())
                 .collect(Collectors.toSet());
-        List<String> missing = REQUIRED.stream().filter(label -> !labels.contains(label)).toList();
-        return missing.isEmpty() ? List.of()
-                : List.of(finding(subject, null, "the image has no " + String.join(" or ", missing) + " label"));
     }
 }

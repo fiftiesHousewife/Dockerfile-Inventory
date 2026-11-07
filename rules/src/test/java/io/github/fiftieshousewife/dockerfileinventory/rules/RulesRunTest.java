@@ -1,12 +1,15 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,24 +44,27 @@ class RulesRunTest {
     void writesFindingsPerDockerfileAndSkipsRulesWhoseInputsAreMissing() throws IOException {
         new RulesRun(discovery, null, null, null, out).run();
 
-        List<JsonNode> findings = lines("findings.jsonl");
-        assertThat(findings).extracting(f -> f.path("rule").asString() + "@" + f.path("blobSha").asString())
+        assertThat(lines("findings.jsonl"))
+                .extracting(f -> f.path("rule").asString() + "@" + f.path("blobSha").asString())
                 .contains("R1@a", "S3@a", "R3@a", "S2@secret", "I2@bad")
                 .doesNotContain("R1@secret", "R3@secret");
         JsonNode rates = JSON.readTree(out.resolve("rates.json").toFile());
-        assertThat(rates.path("skipped")).extracting(JsonNode::asString).containsExactly("R2", "S1", "S4");
-        assertThat(rates.path("rules").path("S3").path("findings").asInt()).isEqualTo(1);
-        assertThat(rates.path("rules").path("S3").path("locations").asInt()).isEqualTo(3);
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(rates.path("skipped")).extracting(JsonNode::asString).containsExactly("R2", "S1", "S4");
+            softly.assertThat(rates.path("rules").path("S3").path("findings").asInt()).isEqualTo(1);
+            softly.assertThat(rates.path("rules").path("S3").path("locations").asInt()).isEqualTo(3);
+        });
     }
 
     @Test
     void theFindingsTableHasOneRowPerFindingPerLocation() throws IOException {
         new RulesRun(discovery, null, null, null, out).run();
 
-        List<String> csv = Files.readAllLines(out.resolve("tables/findings.csv"));
-        assertThat(csv.getFirst())
-                .isEqualTo("rule,severity,repository,path,blob_sha,line,message,value_hash,contributing");
-        assertThat(csv).filteredOn(line -> line.startsWith("S3,")).hasSize(3);
+        assertThat(Files.readAllLines(out.resolve("tables/findings.csv"))).satisfies(csv -> {
+            assertThat(csv.getFirst())
+                    .isEqualTo("rule,severity,repository,path,blob_sha,line,message,value_hash,contributing");
+            assertThat(csv).filteredOn(line -> line.startsWith("S3,")).hasSize(3);
+        });
         assertThat(Files.readString(out.resolve("tables/ddl.sql"))).contains("CREATE TABLE findings");
     }
 
@@ -78,9 +84,9 @@ class RulesRunTest {
         new RulesRun(discovery, null, null, null, out).run();
 
         try (Stream<Path> files = Files.walk(out)) {
-            for (Path file : files.filter(Files::isRegularFile).toList()) {
-                assertThat(Files.readString(file)).as(file.toString()).doesNotContain("hunter2");
-            }
+            assertThat(files.filter(Files::isRegularFile).toList()).isNotEmpty()
+                    .allSatisfy(file -> assertThat(Files.readString(file)).as(file.toString())
+                            .doesNotContain("hunter2"));
         }
     }
 
@@ -100,6 +106,61 @@ class RulesRunTest {
                 .singleElement().satisfies(f -> assertThat(f.path("blobSha").asString()).isEqualTo("a"));
         assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("skipped"))
                 .extracting(JsonNode::asString).containsExactly("R2", "S1");
+    }
+
+    @Test
+    void withBothListsTheirRulesRun() throws IOException {
+        Path allow = Path.of("src/test/resources/fixtures/allow.csv");
+        Path eol = Path.of("src/test/resources/fixtures/eol.csv");
+
+        new RulesRun(discovery, null, allow, eol, out).run();
+
+        assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("skipped"))
+                .extracting(JsonNode::asString).containsExactly("S4");
+    }
+
+    @Test
+    void listIsReadOnlyWhenAPathIsGiven() {
+        assertThat(RulesRun.list(null)).isNull();
+        assertThat(RulesRun.list(Path.of("src/test/resources/fixtures/allow.csv")).lookup("ubi9/ubi", "9"))
+                .isPresent();
+    }
+
+    @Test
+    void effectiveRunsEveryRuleOverEachImageInTurn() {
+        EffectiveRule always = new EffectiveRule() {
+            @Override
+            public String id() {
+                return "E1";
+            }
+
+            @Override
+            public Severity severity() {
+                return Severity.LOW;
+            }
+
+            @Override
+            public List<Finding> check(ImageView image, Function<String, String> blobText) {
+                return List.of(new Finding(id(), severity(), image.configDigest(), null, blobText.apply("x"), null,
+                        List.of()));
+            }
+        };
+        List<ImageView> images = List.of(new ImageView("one", null, null, List.of(), List.of()),
+                new ImageView("two", null, null, List.of(), List.of()));
+
+        assertThat(RulesRun.effective(List.of(always), images, sha -> "text of " + sha))
+                .extracting(Finding::blobSha, Finding::message)
+                .containsExactly(tuple("one", "text of x"), tuple("two", "text of x"));
+    }
+
+    @Test
+    void jsonLinesWritesOneFindingPerLineEndingInANewlineOrNothingForNone() {
+        RulesRun run = new RulesRun(discovery, null, null, null, out);
+        Finding finding = new Finding("H2", Severity.LOW, "a", 3, "m", null, List.of("b"));
+
+        assertThat(run.jsonLines(List.of(finding))).isEqualTo("{\"rule\":\"H2\",\"severity\":\"LOW\",\"blobSha\":\"a\","
+                + "\"line\":3,\"message\":\"m\",\"valueHash\":null,\"contributing\":[\"b\"]}\n");
+        assertThat(run.jsonLines(List.of())).isEmpty();
     }
 
     private List<JsonNode> lines(String file) throws IOException {

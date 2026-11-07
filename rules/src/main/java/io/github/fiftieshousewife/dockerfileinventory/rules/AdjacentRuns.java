@@ -1,11 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.openrewrite.docker.tree.Docker;
 
-/** H3: a shell-form {@code RUN} straight after another, which could be one layer. */
-public final class AdjacentRuns implements Rule {
+final class AdjacentRuns implements Rule {
 
     @Override
     public String id() {
@@ -23,20 +22,19 @@ public final class AdjacentRuns implements Rule {
             return List.of();
         }
         Lines lines = Lines.of(subject.file());
-        List<Finding> findings = new ArrayList<>();
-        for (Docker.Stage stage : subject.file().getStages()) {
-            List<Docker.Instruction> instructions = stage.getInstructions();
-            for (int i = 1; i < instructions.size(); i++) {
-                if (combinable(instructions.get(i - 1)) && combinable(instructions.get(i))) {
-                    findings.add(finding(subject, lines.of(instructions.get(i)),
-                            "this RUN could join the RUN before it"));
-                }
-            }
-        }
-        return findings;
+        return subject.file().getStages().stream()
+                .flatMap(stage -> joinable(stage.getInstructions()).stream())
+                .map(run -> finding(subject, lines.of(run), "this RUN could join the RUN before it"))
+                .toList();
     }
 
-    /** A shell-form {@code RUN} with no flags: a {@code --mount} or {@code --network} changes what joining means. */
+    static List<Docker.Instruction> joinable(List<Docker.Instruction> instructions) {
+        return IntStream.range(1, instructions.size())
+                .filter(i -> combinable(instructions.get(i - 1)) && combinable(instructions.get(i)))
+                .mapToObj(instructions::get)
+                .toList();
+    }
+
     static boolean combinable(Docker.Instruction instruction) {
         if (!(instruction instanceof Docker.Run run) || !(run.getCommand() instanceof Docker.ShellForm)) {
             return false;

@@ -2,8 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import java.util.List;
 
-/** I2: a Dockerfile the parser rejects, which no other rule can read. */
-public final class Unparseable implements Rule {
+final class Unparseable implements Rule {
 
     @Override
     public String id() {

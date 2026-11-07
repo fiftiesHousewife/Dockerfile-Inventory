@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -55,10 +56,17 @@ class RuleRunTest {
         List<Finding> findings = new RuleRun(List.of(FAILS_ON_B, EVERY_FILE))
                 .run(List.of(Subject.failed("a", "x"), Subject.failed("b", "x")));
 
-        assertThat(findings).extracting(Finding::rule, Finding::blobSha).containsExactly(
-                org.assertj.core.groups.Tuple.tuple("T1", "a"),
-                org.assertj.core.groups.Tuple.tuple("T2", "b"),
-                org.assertj.core.groups.Tuple.tuple("T1", "b"));
-        assertThat(findings.get(1).message()).startsWith("rule failed: cannot read b");
+        assertThat(findings).satisfies(f -> {
+            assertThat(f).extracting(Finding::rule, Finding::blobSha)
+                    .containsExactly(tuple("T1", "a"), tuple("T2", "b"), tuple("T1", "b"));
+            assertThat(f.get(1).message()).startsWith("rule failed: cannot read b");
+        });
+    }
+
+    @Test
+    void checkTurnsAThrowingRuleIntoOneFindingNamingTheFailure() {
+        assertThat(RuleRun.check(FAILS_ON_B, Subject.failed("b", "x"))).singleElement()
+                .isEqualTo(new Finding("T2", Severity.HIGH, "b", null, "rule failed: cannot read b", null, List.of()));
+        assertThat(RuleRun.check(FAILS_ON_B, Subject.failed("a", "x"))).isEmpty();
     }
 }
