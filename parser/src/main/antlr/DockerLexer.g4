@@ -6,6 +6,7 @@
 // Modified by Dockerfile Inventory, 2026: a backslash before a newline never joins a word (issue 7).
 // Modified by Dockerfile Inventory, 2026: parser directives only before the first instruction (issue 2).
 // Modified by Dockerfile Inventory, 2026: a comment line inside a string spanning lines is part of it (issue 1).
+// Modified by Dockerfile Inventory, 2026: a heredoc's word may be quoted, as in COPY <<'EOF' (issue 14).
 
 lexer grammar DockerLexer;
 
@@ -79,15 +80,18 @@ MAINTAINER : 'MAINTAINER' { if (!atLineStart) setType(UNQUOTED_TEXT); atLineStar
 AS         : 'AS' { if (!afterFrom) setType(UNQUOTED_TEXT); atLineStart = false; afterFrom = false; };
 
 // Heredoc start - captures <<EOF or <<-EOF including the identifier and switches to HEREDOC_PREAMBLE mode
-HEREDOC_START : '<<' '-'? [A-Z_][A-Z0-9_]* {
+HEREDOC_START : '<<' '-'? HEREDOC_MARKER {
     // Extract and store the heredoc marker identifier in FIFO order
     String text = getText();
     int prefixLen = text.charAt(2) == '-' ? 3 : 2;
-    String marker = text.substring(prefixLen);
+    String marker = text.substring(prefixLen).replaceAll("^(['\"])(.*)\\1$", "$2");
     heredocIdentifiers.add(marker);
     heredocIdentifierCaptured = true;
     atLineStart = false;
 } -> pushMode(HEREDOC_PREAMBLE);
+
+// A heredoc's word, bare or quoted ('EOF' or "EOF": the body is not expanded); the closing line is the bare word (issue 14)
+fragment HEREDOC_MARKER : [A-Z_][A-Z0-9_]* | '\'' [A-Z_][A-Z0-9_]* '\'' | '"' [A-Z_][A-Z0-9_]* '"';
 
 // Line continuation - HIDDEN in main mode
 // Supports both backslash (Linux) and backtick (Windows with # escape=`)
@@ -209,11 +213,11 @@ HP_COMMENT : '/*' .*? '*/'  -> channel(HIDDEN);
 HP_LINE_COMMENT : ('//' | '#') ~[\r\n]* '\r'? -> channel(HIDDEN);
 
 // Additional heredoc marker in preamble (for multi-heredoc support)
-HP_HEREDOC_START : '<<' '-'? [A-Z_][A-Z0-9_]* {
+HP_HEREDOC_START : '<<' '-'? HEREDOC_MARKER {
     // Extract and store the heredoc marker identifier in FIFO order
     String text = getText();
     int prefixLen = text.charAt(2) == '-' ? 3 : 2;
-    String marker = text.substring(prefixLen);
+    String marker = text.substring(prefixLen).replaceAll("^(['\"])(.*)\\1$", "$2");
     heredocIdentifiers.add(marker);
 } -> type(HEREDOC_START);
 

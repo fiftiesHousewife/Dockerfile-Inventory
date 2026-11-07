@@ -189,7 +189,8 @@ EOF
 
 Expected: the file written without variable expansion, as BuildKit does for a quoted delimiter. Actual: a syntax
 error at the body. `COPY <<EOF` parses. Seen in 1 `konflux-ci` file.
-Workaround: none safe (dropping the quotes would change what is copied); the file is counted as a parse failure.
+Fixed in the fork (a heredoc's word may be in single or double quotes, in `RUN` too; the closing line is the bare word
+and the preamble keeps the quotes as written).
 
 ## 15. A legacy `ENV KEY = value` (spaces around `=`) is "not print idempotent"
 
