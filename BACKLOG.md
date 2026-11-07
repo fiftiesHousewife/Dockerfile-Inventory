@@ -5,6 +5,10 @@ and one line when its gate is met.
 
 ## Active
 
+- Queued 7 Nov, in order: a bank of real cases (`docs/plans/fixture-bank.md`); the parser fork and its 15 fixes
+  (`docs/plans/parser-fork.md`); the report's usability (`docs/plans/report-usability.md`); the corporate network
+  settings wired into discovery and lineage, Gradle mirrors and the pod image (`docs/plans/corporate-readiness.md`,
+  the `http` module built).
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Next (planned 7 Nov, `docs/plans/corporate-readiness.md`): running inside a corporate network: proxies, a
