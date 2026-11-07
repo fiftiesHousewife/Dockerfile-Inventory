@@ -1,4 +1,3 @@
-// Included build producing the convention plugins. Shares the root version catalogue.
 dependencyResolutionManagement {
     repositories {
         gradlePluginPortal()

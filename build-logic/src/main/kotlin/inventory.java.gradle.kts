@@ -1,4 +1,3 @@
-// Shared shape for every module: Java toolchain, tests, coverage gate, SpotBugs.
 // Change a gate here, or through the inventory.* keys in gradle.properties, never in a module.
 
 plugins {
@@ -9,7 +8,8 @@ plugins {
 
 val libs = versionCatalogs.named("libs")
 fun lib(alias: String) = libs.findLibrary(alias).orElseThrow { IllegalStateException("missing library: $alias") }
-fun ver(alias: String) = libs.findVersion(alias).orElseThrow { IllegalStateException("missing version: $alias") }.requiredVersion
+fun ver(alias: String) =
+    libs.findVersion(alias).orElseThrow { IllegalStateException("missing version: $alias") }.requiredVersion
 
 val javaRelease = providers.gradleProperty("inventory.javaRelease").orElse("25").get().toInt()
 

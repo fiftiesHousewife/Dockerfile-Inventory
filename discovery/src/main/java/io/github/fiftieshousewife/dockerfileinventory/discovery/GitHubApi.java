@@ -5,18 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Where a GitHub's API lives, worked out from whatever URL people know it by:
- * <ul>
- *   <li>GitHub Enterprise Server on its own host ({@code https://github.mycompany.com}, with or without
- *       {@code /api} or {@code /api/v3}): REST under {@code /api/v3/}, GraphQL at {@code /api/graphql}.</li>
- *   <li>github.com, which Enterprise Cloud also uses ({@code https://github.com/MyInternalOrg}): REST at the root
- *       of {@code api.github.com}, GraphQL at {@code /graphql}.</li>
- *   <li>Enterprise Cloud with data residency ({@code https://myco.ghe.com}): the same, at
- *       {@code api.myco.ghe.com}.</li>
- * </ul>
- * An organisation in the path ({@code github.com/MyInternalOrg}) is the one to scan.
- */
+// GitHub Enterprise Server serves REST under /api/v3/ and GraphQL at /api/graphql on its own host; github.com
+// (Enterprise Cloud too) and data-residency <sub>.ghe.com serve REST at the root of api.<host> and GraphQL at /graphql.
 record GitHubApi(URI base, String restPrefix, Optional<String> organization) {
 
     private static final String DOT_COM = "github.com";
@@ -25,9 +15,7 @@ record GitHubApi(URI base, String restPrefix, Optional<String> organization) {
     static GitHubApi from(String url) {
         URI uri = URI.create(url.strip());
         String host = uri.getHost();
-        List<String> path = Arrays.stream(uri.getPath() == null ? new String[0] : uri.getPath().split("/"))
-                .filter(segment -> !segment.isEmpty())
-                .toList();
+        List<String> path = segments(uri);
         if (host.equals(DOT_COM) || host.equals("api." + DOT_COM)) {
             return cloud(DOT_COM, host.equals(DOT_COM) ? first(path) : Optional.empty());
         }
@@ -38,6 +26,12 @@ record GitHubApi(URI base, String restPrefix, Optional<String> organization) {
         String authority = uri.getScheme() + "://" + uri.getRawAuthority();
         Optional<String> organization = first(path).filter(segment -> !segment.equals("api"));
         return new GitHubApi(URI.create(authority + "/api/"), "v3/", organization);
+    }
+
+    static List<String> segments(URI uri) {
+        return Arrays.stream(uri.getPath() == null ? new String[0] : uri.getPath().split("/"))
+                .filter(segment -> !segment.isEmpty())
+                .toList();
     }
 
     private static GitHubApi cloud(String host, Optional<String> organization) {

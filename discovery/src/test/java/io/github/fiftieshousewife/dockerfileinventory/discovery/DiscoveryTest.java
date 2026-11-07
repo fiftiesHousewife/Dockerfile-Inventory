@@ -8,6 +8,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,8 +35,9 @@ class DiscoveryTest {
     void fetchesACopyPastedDockerfileOnce() throws IOException {
         Discovery.Summary summary = discovery().run();
 
-        assertThat(summary.dockerfiles()).isEqualTo(3);
-        assertThat(summary.uniqueBlobs()).isEqualTo(2);
+        assertThat(summary).satisfies(
+                s -> assertThat(s.dockerfiles()).isEqualTo(3),
+                s -> assertThat(s.uniqueBlobs()).isEqualTo(2));
         assertThat(gitHub.blobCalls).singleElement().satisfies(batch -> assertThat(batch).hasSize(2));
         assertThat(Files.readString(out.resolve("blobs/same"))).isEqualTo("FROM ubi9-minimal\n");
     }
@@ -87,7 +91,7 @@ class DiscoveryTest {
 
         new Discovery(many, ReleaseIndex.empty(), new DiscoveryOutput(out), 4).run();
 
-        assertThat(many.blobCalls).extracting(java.util.List::size).containsExactly(50, 50, 20);
+        assertThat(many.blobCalls).extracting(List::size).containsExactly(50, 50, 20);
     }
 
     @Test
@@ -95,10 +99,43 @@ class DiscoveryTest {
         gitHub.repository("ops", repo("ops/tools", A)).tree("ops/tools", A, tree(file("Dockerfile", "same")));
 
         Discovery.Summary summary = new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4,
-                java.util.List.of("ops")).run();
+                List.of("ops")).run();
 
         assertThat(summary.repositories()).isEqualTo(1);
         assertThat(gitHub.treeCalls).containsOnly("ops/tools");
+    }
+
+    @Test
+    void scansTheNamedOrganisationsOrElseEveryOne() {
+        gitHub.repository("ops", repo("ops/tools", A));
+        var output = new DiscoveryOutput(out);
+
+        assertThat(new Discovery(gitHub, ReleaseIndex.empty(), output, 1, List.of("ops")).repositories())
+                .extracting(Repository::nameWithOwner).containsExactly("ops/tools");
+        assertThat(new Discovery(gitHub, ReleaseIndex.empty(), output, 1).repositories()).hasSize(3);
+    }
+
+    @Test
+    void leavesOutFinishedRepositories() {
+        assertThat(Discovery.unfinished(List.of(repo("pay/api", A), repo("pay/worker", B)), Set.of("pay/api")))
+                .extracting(Repository::nameWithOwner).containsExactly("pay/worker");
+    }
+
+    @Test
+    void keepsTheFirstLocationOfEachBlob() {
+        var first = new Located("pay/api", A, Scope.RELEASED, "Dockerfile", "same");
+        var copy = new Located("pay/worker", B, Scope.RELEASED, "Dockerfile", "same");
+
+        assertThat(Discovery.firstByBlob(List.of(first, copy))).isEqualTo(Map.of("same", first));
+    }
+
+    @Test
+    void asksOnlyForBlobsNeitherStoredNorReported() {
+        var stored = new Located("pay/api", A, Scope.RELEASED, "Dockerfile", "same");
+        var missing = new Located("pay/worker", B, Scope.RELEASED, "debug/Dockerfile", "other");
+
+        assertThat(Discovery.missing(List.of(stored, missing), "same"::equals))
+                .containsExactly(new BlobRequest("pay/worker", "other"));
     }
 
     private Discovery discovery() {

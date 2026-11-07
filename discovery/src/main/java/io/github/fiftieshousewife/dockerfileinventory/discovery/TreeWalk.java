@@ -1,13 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-/**
- * Lists a repository's whole tree at a commit. GitHub truncates a recursive listing past 100,000 entries or 7 MB;
- * a truncated tree is listed one level down instead, and each subtree recursively, splitting again where needed.
- */
+// GitHub truncates a recursive tree listing past 100,000 entries or 7 MB, so a truncated tree is listed one level
+// down instead and each subtree recursively, splitting again where needed.
 final class TreeWalk {
 
     static final int MAX_DEPTH = 8;
@@ -28,26 +26,27 @@ final class TreeWalk {
         return gitHub.tree(repository, commitSha, true).map(whole -> complete(repository, commitSha, whole, 0));
     }
 
-    /** {@code depth} counts the splits above this tree; past {@code maxDepth} a truncated listing is kept as it is. */
-    private Tree complete(String repository, String sha, Tree recursive, int depth) {
-        if (!recursive.truncated() || depth >= maxDepth) {
+    Tree complete(String repository, String sha, Tree recursive, int splits) {
+        if (!recursive.truncated() || splits >= maxDepth) {
             return recursive;
         }
-        boolean truncated = false;
-        List<Tree.Entry> entries = new ArrayList<>();
-        for (Tree.Entry child : listed(repository, sha, false).entries()) {
-            entries.add(child);
-            if (child.isTree()) {
-                Tree subtree = complete(repository, child.sha(), listed(repository, child.sha(), true), depth + 1);
-                truncated |= subtree.truncated();
-                subtree.entries().forEach(e -> entries.add(e.under(child.path())));
-            }
-        }
-        return new Tree(truncated, entries);
+        List<Tree> parts = listed(repository, sha, false).entries().stream()
+                .map(child -> withSubtree(repository, child, splits))
+                .toList();
+        return new Tree(parts.stream().anyMatch(Tree::truncated),
+                parts.stream().flatMap(part -> part.entries().stream()).toList());
     }
 
-    /** A tree the walk already knows exists; its absence means the repository changed under the scan. */
-    private Tree listed(String repository, String sha, boolean recursive) {
+    Tree withSubtree(String repository, Tree.Entry child, int splits) {
+        if (!child.isTree()) {
+            return new Tree(false, List.of(child));
+        }
+        Tree subtree = complete(repository, child.sha(), listed(repository, child.sha(), true), splits + 1);
+        return new Tree(subtree.truncated(),
+                Stream.concat(Stream.of(child), subtree.entries().stream().map(e -> e.under(child.path()))).toList());
+    }
+
+    Tree listed(String repository, String sha, boolean recursive) {
         return gitHub.tree(repository, sha, recursive).orElseThrow(() -> new GitHubException(
                 "tree %s in %s disappeared during the scan".formatted(sha, repository)));
     }

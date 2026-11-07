@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class DockerfilePathsTest {
@@ -47,5 +48,15 @@ class DockerfilePathsTest {
         "pkg/build/testdata/Dockerfile.multistage"})
     void rejectsThirdPartyCopiesAndTestInputs(String path) {
         assertThat(DockerfilePaths.isDockerfile(path)).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "Dockerfile           | ''",
+        "a.b/Dockerfile       | ''",
+        "src/Dockerfile.TPL   | tpl",
+        "build/app.Dockerfile | dockerfile"})
+    void extensionIsTheFileNamesLastSuffixInLowerCase(String path, String extension) {
+        assertThat(DockerfilePaths.extension(path)).isEqualTo(extension);
     }
 }
