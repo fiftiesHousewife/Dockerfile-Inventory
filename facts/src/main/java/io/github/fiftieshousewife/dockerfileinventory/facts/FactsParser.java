@@ -32,7 +32,8 @@ public final class FactsParser {
      */
     public ParseResult parse(String blobSha, String text) {
         ParseResult first = attempt(blobSha, text);
-        ParseResult parsed = first instanceof ParseResult.Parsed ? first : attempt(blobSha, RetryText.of(text));
+        ParseResult parsed = first instanceof ParseResult.Parsed ? first
+                : retried(attempt(blobSha, RetryText.of(text)));
         return switch (parsed) {
             case ParseResult.Parsed p -> Templates.jinja(text)
                     .map(line -> template(blobSha, line, PARSES_ANYWAY))
@@ -41,6 +42,10 @@ public final class FactsParser {
                     .map(line -> template(blobSha, line, "the parser said: " + ((ParseResult.Failed) first).message()))
                     .orElse(first);
         };
+    }
+
+    static ParseResult retried(ParseResult result) {
+        return result instanceof ParseResult.Parsed p ? new ParseResult.Parsed(p.blobSha(), p.file(), true) : result;
     }
 
     private static ParseResult template(String blobSha, String line, String detail) {

@@ -96,6 +96,18 @@ class FactsRunTest {
     }
 
     @Test
+    void aFileThatParsedOnlyOnTheRetryIsMarkedAndCounted() throws IOException {
+        Files.writeString(discovery.resolve("blobs/spaced"), "FROM php:8.5\nCMD [\"php\" , \"-S\"]\n");
+
+        new FactsRun(discovery, out).run();
+
+        assertThat(Files.readAllLines(out.resolve("facts.jsonl")))
+                .anySatisfy(line -> assertThat(line).contains("\"blobSha\":\"spaced\"").contains("\"retried\":true"))
+                .anySatisfy(line -> assertThat(line).contains("\"blobSha\":\"good\"").contains("\"retried\":false"));
+        assertThat(rates().parsedOnRetry()).isEqualTo(1);
+    }
+
+    @Test
     void templatesAreCountedApartAndLeftOutOfTheParseFailureRate() throws IOException {
         Files.writeString(discovery.resolve("blobs/jinja"), "FROM {{ spec.base }}\n{% if x %}RUN y{% endif %}\n");
 

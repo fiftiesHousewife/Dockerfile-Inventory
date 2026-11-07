@@ -18,7 +18,7 @@ import tools.jackson.databind.json.JsonMapper;
 final class FactsRun {
 
     record FactRow(String blobSha, String textHash, String signatureHash, String signature, ImageFacts facts,
-                   List<Step> steps, String fromPath) {
+                   List<Step> steps, String fromPath, boolean retried) {
 
         FactRow {
             steps = steps == null ? List.of() : List.copyOf(steps);
@@ -74,7 +74,7 @@ final class FactsRun {
                 ImageFacts facts = FactExtractor.extract(result.file());
                 append("facts.jsonl", new FactRow(sha, NormalForms.textHash(text), NormalForms.signatureHash(facts),
                         NormalForms.signature(facts), facts, Steps.of(result.file()),
-                        NormalForms.fromPath(facts.base())));
+                        NormalForms.fromPath(facts.base()), result.retried()));
                 yield true;
             }
             case ParseResult.Failed result -> {

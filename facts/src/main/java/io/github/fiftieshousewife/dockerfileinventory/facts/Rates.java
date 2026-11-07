@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 record Rates(int blobs, int templates, int parseFailures, double parseFailureRate, int runs, int opaqueRuns,
              double opaqueRunRate, Map<String, Integer> unresolvedFromByOrganisation,
-             Map<String, Integer> buildKitFeatures, int otherShellRuns) {
+             Map<String, Integer> buildKitFeatures, int otherShellRuns, int parsedOnRetry) {
 
     Rates {
         unresolvedFromByOrganisation = Collections.unmodifiableMap(new TreeMap<>(unresolvedFromByOrganisation));
@@ -26,7 +26,8 @@ record Rates(int blobs, int templates, int parseFailures, double parseFailureRat
         int parseFailures = failures.size() - templates;
         return new Rates(blobs, templates, parseFailures, ratio(parseFailures, blobs - templates),
                 runs, opaque, ratio(opaque, runs), unresolvedByOrganisation(facts, locations), featureCounts(facts),
-                facts.stream().mapToInt(f -> f.facts().otherShellRuns()).sum());
+                facts.stream().mapToInt(f -> f.facts().otherShellRuns()).sum(),
+                (int) facts.stream().filter(FactsRun.FactRow::retried).count());
     }
 
     static Map<String, Integer> unresolvedByOrganisation(List<FactsRun.FactRow> facts,

@@ -139,6 +139,14 @@ class FactsParserTest {
     }
 
     @Test
+    void aParseSaysWhetherItNeededTheRetrysWorkarounds() {
+        assertThat(new FactsParser().parse("clean", "FROM ubi9\nRUN make\n"))
+                .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isFalse());
+        assertThat(new FactsParser().parse("php", "FROM php:8.5\nCMD [\"php\" , \"-S\"]\n"))
+                .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isTrue());
+    }
+
+    @Test
     void anExecFormWithASpaceBeforeACommaParsesAndKeepsItsWords() {
         String dockerfile = "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n";
 

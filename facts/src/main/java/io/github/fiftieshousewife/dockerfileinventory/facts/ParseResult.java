@@ -7,7 +7,12 @@ public sealed interface ParseResult {
 
     String blobSha();
 
-    record Parsed(String blobSha, Docker.File file) implements ParseResult {
+    /** {@code retried}: the file parsed only with the parser's known bugs worked around. */
+    record Parsed(String blobSha, Docker.File file, boolean retried) implements ParseResult {
+
+        public Parsed(String blobSha, Docker.File file) {
+            this(blobSha, file, false);
+        }
     }
 
     record Failed(String blobSha, String message) implements ParseResult {
