@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.openrewrite.Cursor;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class MissingOciLabels implements Rule {
 

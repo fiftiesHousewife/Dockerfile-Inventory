@@ -5,8 +5,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.openrewrite.docker.DockerIsoVisitor;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.DockerIsoVisitor;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class BuildKitFeatures {
 

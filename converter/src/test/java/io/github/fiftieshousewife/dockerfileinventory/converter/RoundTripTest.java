@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 class RoundTripTest {
 

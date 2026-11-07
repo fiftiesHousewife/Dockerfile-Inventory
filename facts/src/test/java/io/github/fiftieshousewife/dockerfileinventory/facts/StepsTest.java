@@ -14,7 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Timeout;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 

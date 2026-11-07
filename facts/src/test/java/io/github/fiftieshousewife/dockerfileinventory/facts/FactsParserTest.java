@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.ParseExceptionResult;
-import org.openrewrite.docker.DockerParser;
+import io.github.fiftieshousewife.dockerfile.parser.DockerParser;
 import org.openrewrite.marker.Markers;
 import org.openrewrite.text.PlainText;
 

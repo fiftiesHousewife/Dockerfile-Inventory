@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 class BuildKitFeaturesTest {
 

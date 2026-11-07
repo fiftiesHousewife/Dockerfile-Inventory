@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.openrewrite.Cursor;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 

@@ -22,8 +22,16 @@ reading its output: settings, outputs, what the numbers mean. Nothing about the 
 
 ```
 build-logic/        included build: the inventory.java convention plugin (toolchain, -Werror, tests, JaCoCo gate,
-                    SpotBugs) and inventory.dependency-updates (verifyUpToDate); every module applies inventory.java
+                    SpotBugs), inventory.vendored (the same for copied code, without -Werror and SpotBugs, generated
+                    code out of coverage) and inventory.dependency-updates (verifyUpToDate); every module applies
+                    inventory.java, except parser, which applies inventory.vendored
 gradle/             libs.versions.toml, the one version catalogue
+parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docker 8.90.4 (Apache 2.0), packages
+                    io.github.fiftieshousewife.dockerfile.parser (.tree, .internal, .internal.grammar), published
+                    on its own as io.github.fiftieshousewife:dockerfile-parser; DockerParser, Docker (the tree),
+                    DockerVisitor, DockerIsoVisitor, DockerPrinter; the grammar in src/main/antlr, its generated
+                    lexer and parser kept in the repository (./gradlew :parser:generateAntlrSources); LICENSE,
+                    NOTICE, and a note in each changed file's header
 http/               corporate networks, shared by discovery and lineage: HttpSettings (every setting from the
                     environment, with defaults; the HttpClient), ProxySettings (HTTPS_PROXY, HTTP_PROXY, NO_PROXY),
                     TrustBundle (a corporate CA), RetryPolicy (backoff, rate-limit waits, RateLimitWaitTooLong),
@@ -120,9 +128,10 @@ Artifactory REST ───────► lineage ─► images.jsonl, lineage.j
 **Scope comes from the release database, not the default branch.** A repository without a release-index entry
 falls back to its default branch and is flagged, so the report can say how much is not release-scoped.
 
-**OpenRewrite stays behind an adapter.** Only `facts`, `rules` and `converter` import `org.openrewrite`; `dsl`
-never does. The parser is being forked into this repository (`docs/plans/parser-fork.md`): upstream's last open
-release is 8.90.4.
+**The parser is ours.** `parser` is a fork of rewrite-docker 8.90.4, OpenRewrite's last Apache-licensed release
+(`docs/plans/parser-fork.md`), still built on OpenRewrite's `rewrite-core`. Only `facts`, `rules` and `converter`
+use it; `dsl` never does. It is also published as a library, so its public API (the parser, the tree, the visitors)
+changes only with a version that says so.
 
 **One renderer.** Fixes and builders produce text through `dsl`'s renderer, so migrated and new Dockerfiles
 converge on the same lines. Nothing hand-builds a Dockerfile string.
@@ -149,9 +158,11 @@ do this from a run. When a change turns cases, the corpus tests name them: updat
 commit, so the change's effect is in the diff.
 
 **A Dockerfile the parser gets wrong.** Shrink the real lines while the error stays the same; record the minimal
-reproduction in `docs/upstream/rewrite-docker-issues.md` and the trimmed lines as a fixture. Until the fork is in,
-a safe rewrite (it keeps every line number and the meaning) goes in `RetryText` as its own method; after it, the fix
-goes in the parser.
+reproduction in `docs/upstream/rewrite-docker-issues.md` and the real lines in the fixture bank. Fix it in `parser`:
+a test in its `tree` tests from the minimal reproduction, the grammar (`src/main/antlr`, then
+`./gradlew :parser:generateAntlrSources`) or the tree builder (`internal/DockerParserVisitor`) or the printer,
+and a line in the changed file's header saying what changed. Its `RetryText` workaround, if any, goes in the same
+commit, and the corpus tests name the cases the fix turns.
 
 **A new setting.** Read it in the stage's `...Main` from the environment map, give it a default, refuse a bad value
 naming the variable, list it in the README. Network settings belong in `http`'s `HttpSettings`.

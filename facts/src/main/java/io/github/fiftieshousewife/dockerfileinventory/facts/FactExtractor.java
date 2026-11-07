@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 /**
  * Reduces a parsed Dockerfile to {@link ImageFacts}, so the modules that read facts never see rewrite-docker's

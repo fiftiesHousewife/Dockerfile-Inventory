@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
-import org.openrewrite.docker.DockerIsoVisitor;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.DockerIsoVisitor;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 // rewrite-docker issue 3 (docs/upstream/): a line it cannot recognise is appended to the previous instruction's last
 // argument instead of reported. A literal holds a newline only after a continuation, so a bare newline marks one.

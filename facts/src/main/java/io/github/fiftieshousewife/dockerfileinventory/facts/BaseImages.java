@@ -2,7 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class BaseImages {
 

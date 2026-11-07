@@ -5,7 +5,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.List;
 import java.util.Optional;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 

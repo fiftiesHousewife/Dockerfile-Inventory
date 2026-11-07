@@ -4,7 +4,7 @@ import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.openrewrite.Cursor;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class PipeToShell implements Rule {
 

@@ -14,6 +14,8 @@ versions-plugin = "0.67.0"
 foojay-resolver = "1.0.0"
 jacoco = "0.8.16"
 jackson = "3.2.4"
+lombok = "1.18.48"
+antlr = "4.13.2"
 
 [libraries]
 javapoet = { module = "com.palantir.javapoet:javapoet", version.ref = "javapoet" }
@@ -21,7 +23,11 @@ javapoet = { module = "com.palantir.javapoet:javapoet", version.ref = "javapoet"
 # rewrite-docker APIs are marked unstable, and an upgrade is its own change (AGENTS.md).
 rewrite-bom = { module = "org.openrewrite:rewrite-bom", version.ref = "rewrite" }
 rewrite-core = { module = "org.openrewrite:rewrite-core" }
-rewrite-docker = { module = "org.openrewrite:rewrite-docker" }
+rewrite-test = { module = "org.openrewrite:rewrite-test" }
+# The parser module (a fork of rewrite-docker 8.90.4): Lombok generates its tree's methods, ANTLR its grammar.
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+antlr-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr" }
+antlr-tool = { module = "org.antlr:antlr4", version.ref = "antlr" }
 # rewrite's classes carry @Language; without the annotation on the classpath javac warns, and -Werror fails.
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 

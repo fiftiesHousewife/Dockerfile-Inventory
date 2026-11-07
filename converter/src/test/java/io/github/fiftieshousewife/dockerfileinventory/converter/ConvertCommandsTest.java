@@ -9,7 +9,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import tools.jackson.core.JacksonException;
 
 class ConvertCommandsTest {

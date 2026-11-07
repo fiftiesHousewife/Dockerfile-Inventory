@@ -9,8 +9,8 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.ParseExceptionResult;
 import org.openrewrite.Parser;
 import org.openrewrite.SourceFile;
-import org.openrewrite.docker.DockerParser;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.DockerParser;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 /**
  * The one place that calls rewrite-docker's parser, which reports syntax errors to its execution context instead of

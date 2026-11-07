@@ -1,6 +1,7 @@
 # Forking the Dockerfile parser: plan
 
-Status: planned 7 Nov; all questions answered 7 Nov. Building F1.
+Status: planned 7 Nov; all questions answered 7 Nov. F1 built (the fork, unchanged but for its packages); the
+publication setup and the 15 fixes next.
 
 ## Why
 
@@ -78,4 +79,21 @@ Maven Central asks for things only the owner can do, done once before the first 
 The build does the rest: `maven-publish` and `signing` write a signed bundle (jar, sources, Javadoc, POM, checksums)
 to `parser/build/central`, checked in `./gradlew check` without signing; a release task uploads the bundle to the
 Portal's publisher API with the token. Releases are cut from a tag `parser-v<version>`.
+
+## F1 as built (7 Nov)
+
+- `parser/`: the parser core of `openrewrite/rewrite@398a634` `rewrite-docker/` (`DockerParser`, `DockerVisitor`,
+  `DockerIsoVisitor`, `DockerParsingException`, `internal` with the tree builder and printer, `tree`, the grammar),
+  packages renamed to `io.github.fiftieshousewife.dockerfile.parser`; recipes, search, traits, tables and their data
+  left out. Upstream's parser and tree tests come with it (with `Assertions`, now a test helper).
+- The lexer and parser regenerate from `src/main/antlr` with ANTLR 4.13.2 (`./gradlew :parser:generateAntlrSources`)
+  and match upstream's generated code apart from whitespace.
+- `inventory.vendored` (build-logic): inventory.java's toolchain, tests and coverage gate, with Lombok; no `-Werror`
+  or SpotBugs for code in upstream's style; the generated `grammar` package out of coverage (the rest: 88%).
+- Facts, rules and the converter depend on `:parser` instead of `org.openrewrite:rewrite-docker`; their imports
+  renamed.
+- `LICENSE`, `NOTICE` and a README in `parser/`; each copied file's header says the package was renamed.
+- Checked: `./gradlew check` green (with `verifyUpToDate`); the corpus tests unchanged; facts, rules and the
+  converter on openshift and docker-library and lineage on okd give byte-identical outputs before and after (40
+  files).
 

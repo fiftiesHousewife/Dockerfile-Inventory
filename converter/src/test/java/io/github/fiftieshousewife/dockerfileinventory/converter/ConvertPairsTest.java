@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.entry;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 class ConvertPairsTest {
 

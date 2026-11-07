@@ -1,7 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import io.github.fiftieshousewife.dockerfileinventory.facts.ImageFacts;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 record Subject(String blobSha, ImageFacts facts, Docker.File file, String failure) {
 

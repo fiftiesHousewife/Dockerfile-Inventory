@@ -6,7 +6,7 @@ import io.github.fiftieshousewife.dockerfileinventory.facts.FactExtractor;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class ConvertPairs {
 

@@ -20,6 +20,8 @@ Why it is built the way it is: [the overview](docs/overview.md). The full plan, 
 | 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
 | 5. Convert existing Dockerfiles to builders | `converter` | Built; building and comparing images (5b) needs Buildah |
 
+The Dockerfile parser the pipeline uses is also a library of its own: see [parser/README.md](parser/README.md).
+
 ## Example reports
 
 Dashboards from runs on public GitHub organisations, as the report stage writes them (private links; ask the owner

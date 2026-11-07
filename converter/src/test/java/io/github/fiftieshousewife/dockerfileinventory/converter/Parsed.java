@@ -2,7 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsParser;
 import io.github.fiftieshousewife.dockerfileinventory.facts.ParseResult;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class Parsed {
 

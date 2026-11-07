@@ -2,7 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import java.util.List;
 import org.openrewrite.Cursor;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class Printed {
 

@@ -13,7 +13,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 class ConvertTest {
 

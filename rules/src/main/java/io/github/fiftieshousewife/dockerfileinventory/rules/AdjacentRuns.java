@@ -2,7 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import java.util.List;
 import java.util.stream.IntStream;
-import org.openrewrite.docker.tree.Docker;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class AdjacentRuns implements Rule {
 
