@@ -5,6 +5,8 @@ and one line when its gate is met.
 
 ## Active
 
+- Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
+  Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Next (planned 7 Nov, `docs/plans/corporate-readiness.md`): running inside a corporate network: proxies, a
   corporate CA, token files, retries and rate pacing, restricted access, Gradle mirrors, a pod image.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index
