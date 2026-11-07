@@ -290,4 +290,4 @@ DISCOVERY_DIR=$DISCOVERY_DIR LINEAGE_DIR=$OUT/lineage OUT_DIR=$OUT/rules ./gradl
 
 step "done"
 echo "pushed: $(grep -c '^pushed' "$OUT/build.log") images, failed: $(grep -c '^FAILED' "$OUT/build.log" || true)"
-echo "output: $OUT/lineage, $OUT/report/dashboard.html, $OUT/rules"
+echo "output: $OUT/lineage, $OUT/report/index.html, $OUT/rules"

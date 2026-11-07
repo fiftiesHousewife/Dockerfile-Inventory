@@ -58,12 +58,13 @@ lineage/            stage 1b: Artifactory images -> family tree -> links to Dock
                     OwnSteps (an image's own steps; Konflux's and Red Hat release tooling's steps cut)
                     Links (the run), Alignment (scoring), BasePaths, SourceLabels (a label limits the repository)
                     Fold (effective user, env, labels, with who set each), Gaps, Analysis, Dockerfiles, LineageRates
-report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, bases, tables, dashboard
+report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, bases, tables, linked HTML pages
                     Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, BaseCatalogue, EolList,
-                    Summary, Tables, Table, ReportRun
-                    Dashboard (assembly): HeadlineSection, ArchetypeSection, BasesSection, BreakdownSection,
-                    LineageSection, LineageTree; CoverageChart, BasesChart, StackedChart, Svg; ArchetypeCards,
-                    ArchetypeSentence, HiddenSecrets; Health (thresholds), About (info text), Style, Html
+                    Tallies, Figures (per organisation, bundles apart), Tables, Table, Report, ReportRun
+                    Pages (writes them): SummaryPage, SummarySections, StripSection, OrganisationsSection,
+                    AppliesTo (the sentences), ArchetypeTable, ArchetypeRows, ArchetypeName, ArchetypePage,
+                    BasesPage, LineagePage, LineageSummary, CountTable, CoverageChart, Svg, Page, Html, Style;
+                    Health (thresholds), About (info text), HiddenSecrets
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
                     Rule, EffectiveRule, Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
                     one class per rule (S1-S4, R1-R3, H1-H3, I1, I2); RuleSet, RulesRun, DiscoveryFiles,
@@ -121,7 +122,7 @@ GHE organisations + repos ──────┴─► discovery ─► manifest.
                                                    │
                                      facts ◄───────┘ ─► facts.jsonl, parse-failures.jsonl, rates.json
 Artifactory REST ───────► lineage ─► images.jsonl, lineage.jsonl, links.jsonl, effective.jsonl, gaps
-                facts + lineage ─► report ─► archetypes.json, tables/*.csv, dashboard.html ─► Oracle
+                facts + lineage ─► report ─► archetypes.json, tables/*.csv, index.html and pages ─► Oracle
                 facts + lineage ─► rules  ─► findings.jsonl, tables, samples ─► Oracle; fixes later
                 facts           ─► converter ─► roundtrip.jsonl, coverage.json, builder classes
 ```

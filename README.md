@@ -238,18 +238,37 @@ version, package managers and packages, user kind, ports, entrypoint form, stage
 | `passes.json` | Groups and locations after each pass; k80 and k95, the fewest archetypes covering 80% and 95% of locations |
 | `archetypes.json` | Every archetype by size: its files, signature, a representative file and the repositories using it |
 | `tables/*.csv`, `tables/ddl.sql` | `dockerfiles`, `locations`, `archetypes` and `bases` for loading into Oracle, with the `CREATE TABLE` statements |
-| `dashboard.html` | One self-contained page (no external files), described below |
+| `index.html` | The summary page, described below; links to the pages below |
+| `orgs/<org>.html` | The same summary for one organisation (the first part of each repository's name) |
+| `archetypes.html`, `archetypes-<n>.html` | Every archetype, ranked, 250 to a page, each named from what it builds |
+| `archetypes/<rank>.html` | One archetype: its signature, its organisations and repositories, every file and location, and one example Dockerfile with secret values hidden (archetypes with two or more locations) |
+| `bases.html` | Every base, by family |
+| `lineage.html` | With `LINEAGE_DIR`: the family tree, grouped by root, with each image's link and its problems marked |
 
-The dashboard opens with a health strip: six estate-wide shares, each marked good, watch or act in words as well as
-colour (parse failures good at 1% or less, act above 5%; final user root 10% / 30%; bases pinned by digest 80% /
-20%; bases at end of life 0% / 5%; scanned at a released commit 90% / 50%; `RUN`s too complex to read 5% / 15%).
-Then: how many really different Dockerfiles there are, counted four ways; the archetype coverage curve with the 80%
-and 95% points; the ten largest archetypes as cards, each with a sentence saying what it builds, its size, and one
-example Dockerfile with secret values hidden; the top bases as bars coloured by end-of-life status (without
-`EOL_LIST` every status is unknown, and the page says so); stacked bars for parse outcome, package managers and final
-user; and, with `LINEAGE_DIR`, the lineage section: the family tree for a run under 50 images, otherwise the images
-with no Dockerfile, those on an outdated base and the most-used bases. Every number and section has an info marker
-explaining it; the tables behind each chart are folded underneath it.
+Each page stands alone (styles and charts inside it, no scripts, nothing fetched), linked to the others by relative
+links, so the folder can be copied or served as it is.
+
+The summary opens with one line each for scope, the four passes and how many files parsed. Two kinds of file are
+counted apart and left out of the user, base and archetype figures, each with the organisations that hold them:
+templates saved under a Dockerfile's name, and metadata-only bundles (`FROM scratch` with no `RUN`, `CMD` or
+`ENTRYPOINT`, as operator bundles are). Then:
+
+- a health strip: six shares, each good, watch or act in words (parse failures good at 1% or less, act above 5%;
+  final user root 10% / 30%; bases pinned by digest 80% / 20%; bases at end of life 0% / 5%; scanned at a released
+  commit 90% / 50%; `RUN`s too complex to read 5% / 15%), or "no data" where there is no end-of-life list or no
+  release index, with the organisation that contributes most under each;
+- the organisations compared, with bars, and a sentence for each where it stands apart: a share that crosses a
+  threshold or sits 20 points from the estate's, a single repository holding half its locations, base families no
+  other organisation uses;
+- the archetype coverage curve and the ten largest archetypes;
+- the top base families, with how many organisations use each; package managers; final user;
+- with `LINEAGE_DIR`, how confidently images are linked to Dockerfiles (strong, weak, none, each explained), and the
+  images on an outdated base and those with no Dockerfile;
+- links to the data files.
+
+The archetype pages leave templates, bundles, unreadable files and bases set by a variable out of the ranking, so
+their count of archetypes covering 80% of locations differs from k80 in `passes.json`, which counts every location.
+Every number has an info marker explaining it.
 
 ## Check the estate against the rules
 
