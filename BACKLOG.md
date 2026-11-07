@@ -5,6 +5,8 @@ and one line when its gate is met.
 
 ## Active
 
+- Next (planned 7 Nov, `docs/plans/corporate-readiness.md`): running inside a corporate network: proxies, a
+  corporate CA, token files, retries and rate pacing, restricted access, Gradle mirrors, a pod image.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index
   coverage reported; pilot hand check matches.
   - Done: slice 1 (enumeration, release-index scoping, tree listing, blob fetch and dedupe, resume, rate limits).
