@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: tests for whitespace before a comma in a JSON array (issue 8).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,6 +136,23 @@ class VolumeTest implements RewriteTest {
               FROM ubuntu:20.04
               VOLUME  /data
               """
+          )
+        );
+    }
+
+    @Test
+    void jsonFormWithWhitespaceBeforeComma() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              VOLUME ["/a" , "/b"]
+              SHELL ["/bin/sh" ,"-c"]
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var volume = (Docker.Volume) doc.getStages().getFirst().getInstructions().getFirst();
+                assertThat(volume.getValues()).hasSize(2);
+            })
           )
         );
     }

@@ -104,7 +104,7 @@ Expected: an exec form of `a` and `b`. Actual: `IllegalStateException: ... is no
 tabs between a closing quote and the comma trigger it, in any instruction with a JSON array (`CMD`, `ENTRYPOINT`,
 `RUN`, `VOLUME`); spaces after the comma or inside the brackets do not.
 Seen in 11 `openshift` files, e.g. `CMD ["/bin/bash", "-c" ,"exec cp -rp ..."]`.
-Workaround: the retry (`RetryText`) drops whitespace before a comma on lines holding `[`.
+Fixed in the fork (the whitespace is kept on the element before the comma, as a `CommaPrefix` marker, and printed).
 
 ## 9. A flag value `${NAME:-default}` is "not print idempotent"
 

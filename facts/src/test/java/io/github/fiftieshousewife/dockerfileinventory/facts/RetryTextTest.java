@@ -18,12 +18,6 @@ class RetryTextTest {
     }
 
     @Test
-    void dropsWhitespaceBeforeACommaOnlyOnALineHoldingAJsonArray() {
-        assertThat(RetryText.jsonCommas("CMD [\"a\" , \"b\"]")).isEqualTo("CMD [\"a\", \"b\"]");
-        assertThat(RetryText.jsonCommas("RUN echo \"a\" , b")).isEqualTo("RUN echo \"a\" , b");
-    }
-
-    @Test
     void writesAFlagValuesColonDashDefaultAsADash() {
         assertThat(RetryText.flagDefaults("COPY --chown=${UID:-1001} a b")).isEqualTo("COPY --chown=${UID-1001} a b");
         assertThat(RetryText.flagDefaults("RUN echo ${A:-b}")).isEqualTo("RUN echo ${A:-b}");
@@ -67,14 +61,12 @@ class RetryTextTest {
                 ARG A \\
                     B
                 RUN <<EOF
-                python3 -c 'x = ["a" , "b"]'
+                ARG A B
                 EOF
-                CMD ["a" , "b"]
                 """;
 
         assertThat(RetryText.of(dockerfile)).contains(
-                "ARG DESC=\"two words\" OTHER\n", "ARG A=$A \\\n    B=$B\n", "python3 -c 'x = [\"a\" , \"b\"]'\n",
-                "CMD [\"a\", \"b\"]");
+                "ARG DESC=\"two words\" OTHER\n", "ARG A=$A \\\n    B=$B\n", "RUN <<EOF\nARG A B\nEOF\n");
     }
 
     @Test

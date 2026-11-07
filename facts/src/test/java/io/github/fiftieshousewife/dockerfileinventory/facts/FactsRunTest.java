@@ -97,7 +97,7 @@ class FactsRunTest {
 
     @Test
     void aFileThatParsedOnlyOnTheRetryIsMarkedAndCounted() throws IOException {
-        Files.writeString(discovery.resolve("blobs/spaced"), "FROM php:8.5\nCMD [\"php\" , \"-S\"]\n");
+        Files.writeString(discovery.resolve("blobs/spaced"), "FROM php:8.5\nARG HTTP_PROXY=\n");
 
         new FactsRun(discovery, out).run();
 

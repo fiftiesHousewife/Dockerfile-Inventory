@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: whitespace before a comma in a JSON array is kept (issue 8).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +26,7 @@ import org.openrewrite.FileAttributes;
 import io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerLexer;
 import io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerParser;
 import io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerParserBaseVisitor;
+import io.github.fiftieshousewife.dockerfile.parser.tree.CommaPrefix;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Space;
 import org.openrewrite.internal.EncodingDetectingInputStream;
@@ -846,7 +848,6 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             for (int i = 0; i < jsonStrings.size(); i++) {
                 // convertJsonString captures the prefix correctly (space after [ or after ,)
                 Docker.Argument arg = convertJsonString(jsonStrings.get(i));
-                arguments.add(arg);
 
                 // Skip comma after this element if it's not the last one
                 // The grammar is: jsonString ( COMMA jsonString )*
@@ -859,12 +860,13 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                             if (terminal.getSymbol().getType() == DockerLexer.COMMA &&
                                     terminal.getSymbol().getStartIndex() > jsonStrings.get(i).getStop().getStopIndex() &&
                                     terminal.getSymbol().getStartIndex() < jsonStrings.get(i + 1).getStart().getStartIndex()) {
-                                skip(terminal.getSymbol());
+                                arg = withCommaPrefix(arg, terminal.getSymbol());
                                 break;
                             }
                         }
                     }
                 }
+                arguments.add(arg);
             }
         }
 
@@ -933,7 +935,6 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             for (int i = 0; i < jsonStrings.size(); i++) {
                 // convertJsonString captures the prefix correctly (space after [ or after ,)
                 Docker.Argument arg = convertJsonString(jsonStrings.get(i));
-                arguments.add(arg);
 
                 // Skip comma after this element if it's not the last one
                 if (i < jsonStrings.size() - 1) {
@@ -944,12 +945,13 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                             if (terminal.getSymbol().getType() == DockerLexer.COMMA &&
                                     terminal.getSymbol().getStartIndex() > jsonStrings.get(i).getStop().getStopIndex() &&
                                     terminal.getSymbol().getStartIndex() < jsonStrings.get(i + 1).getStart().getStartIndex()) {
-                                skip(terminal.getSymbol());
+                                arg = withCommaPrefix(arg, terminal.getSymbol());
                                 break;
                             }
                         }
                     }
                 }
+                arguments.add(arg);
             }
         }
 
@@ -1378,18 +1380,19 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                 }
                 advanceCursor(jsonStr.DOUBLE_QUOTED_STRING().getSymbol().getStopIndex() + 1);
 
-                args.add(new Docker.Literal(
+                Docker.Literal arg = new Docker.Literal(
                         randomId(),
                         argPrefix,
                         Markers.EMPTY,
                         value,
                         Docker.Literal.QuoteStyle.DOUBLE
-                ));
+                );
 
-                // Skip the comma after this element (if not the last element)
+                // Skip the comma after this element (if not the last element), keeping any whitespace before it
                 if (i < commas.size()) {
-                    skip(commas.get(i).getSymbol());
+                    arg = withCommaPrefix(arg, commas.get(i).getSymbol());
                 }
+                args.add(arg);
             }
         }
 
@@ -1677,6 +1680,15 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
         boolean braced = text.startsWith("${");
         String varName = braced ? text.substring(2, text.length() - 1) : text.substring(1);
         return new Docker.EnvironmentVariable(randomId(), Space.EMPTY, Markers.EMPTY, varName, braced);
+    }
+
+    /**
+     * Skips a JSON array's comma, keeping any whitespace before it on the element it follows.
+     */
+    private <T extends Docker> T withCommaPrefix(T element, Token comma) {
+        Space space = prefix(comma);
+        skip(comma);
+        return space.isEmpty() ? element : element.withMarkers(element.getMarkers().add(new CommaPrefix(randomId(), space)));
     }
 
     // Helper methods for cursor management

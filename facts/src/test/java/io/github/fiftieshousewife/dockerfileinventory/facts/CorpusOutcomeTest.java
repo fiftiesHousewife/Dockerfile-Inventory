@@ -11,7 +11,7 @@ class CorpusOutcomeTest {
         FactsParser parser = new FactsParser();
 
         assertThat(Corpus.outcome(parser.parse("a", "FROM ubi9\n"))).isEqualTo("parsed");
-        assertThat(Corpus.outcome(parser.parse("b", "FROM php:8.5\nCMD [\"php\" , \"-S\"]\n"))).isEqualTo("retried");
+        assertThat(Corpus.outcome(parser.parse("b", "FROM php:8.5\nARG HTTP_PROXY=\n"))).isEqualTo("retried");
         assertThat(Corpus.outcome(parser.parse("c", "FROM {{ spec.base }}\n"))).isEqualTo("template");
         assertThat(Corpus.outcome(parser.parse("d", "not a dockerfile\n"))).isEqualTo("failed");
     }

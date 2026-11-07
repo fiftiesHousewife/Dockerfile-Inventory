@@ -142,17 +142,17 @@ class FactsParserTest {
     void aParseSaysWhetherItNeededTheRetrysWorkarounds() {
         assertThat(new FactsParser().parse("clean", "FROM ubi9\nRUN make\n"))
                 .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isFalse());
-        assertThat(new FactsParser().parse("php", "FROM php:8.5\nCMD [\"php\" , \"-S\"]\n"))
+        assertThat(new FactsParser().parse("proxy", "FROM ubi9\nARG HTTP_PROXY=\n"))
                 .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isTrue());
     }
 
     @Test
-    void anExecFormWithASpaceBeforeACommaParsesAndKeepsItsWords() {
+    void anExecFormWithASpaceBeforeACommaParsesAndKeepsItsWordsAsWritten() {
         String dockerfile = "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n";
 
         assertThat(new FactsParser().parse("php", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
         assertThat(Steps.of(((ParseResult.Parsed) new FactsParser().parse("php", dockerfile)).file()))
-                .contains(new Step("CMD", "[\"php\", \"-S\", \"0.0.0.0:8080\"]"));
+                .contains(new Step("CMD", "[\"php\", \"-S\" , \"0.0.0.0:8080\"]"));
     }
 
     @Test
@@ -184,7 +184,7 @@ class FactsParserTest {
 
     @Test
     void aJinjaTemplateThatOnlyParsesOnTheRetryIsStillATemplate() {
-        assertThat(new FactsParser().parse("tpl", "FROM ubi9\nENV V={{ spec.version }}\nCMD [\"a\" , \"b\"]\n"))
+        assertThat(new FactsParser().parse("tpl", "FROM ubi9\nENV V={{ spec.version }}\nARG A=\n"))
                 .isInstanceOfSatisfying(ParseResult.Failed.class,
                         failed -> assertThat(failed.message()).startsWith(FactsParser.TEMPLATE));
     }
@@ -212,7 +212,7 @@ class FactsParserTest {
 
     @Test
     void anAttemptDoesNotRetryAFileTheGrammarRejects() {
-        assertThat(new FactsParser().attempt("php", "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n"))
+        assertThat(new FactsParser().attempt("proxy", "FROM ubi9\nARG HTTP_PROXY=\n"))
                 .isInstanceOf(ParseResult.Failed.class);
     }
 
