@@ -17,6 +17,8 @@ and one line when its gate is met.
 - Done 7 Nov: running inside a corporate network (`docs/plans/corporate-readiness.md`): the `http` module (proxy,
   CA bundle, token files, retries, rate-limit waits and pacing) in discovery and lineage, SSO and refusals handled,
   `INVENTORY_MIRROR` for the build, a `Containerfile` for the pod (its first build is the owner's).
+- Active (planned 7 Nov, `docs/plans/dsl-completion.md`): the DSL completed: every instruction typed, goldens from
+  the ten largest archetypes, the Java round trip, building and comparing images (Phase 5b).
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Next (planned 7 Nov, `docs/plans/corporate-readiness.md`): running inside a corporate network: proxies, a
