@@ -72,5 +72,5 @@ minideb's `install_packages`; both are now read, and two false positives found o
 R1 on `FROM scratch` and S2 on a path (`bitnami-fixes.md`). Its near-duplicate test at scale was weaker than hoped:
 266 files make 63 archetypes, k80 13.
 
-The lineage of openshift's published OKD images is still to plan (above).
+The lineage of openshift's published OKD images is planned in `okd-lineage.md`: `quay.io/openshift/origin-*` stopped at 4.9, so it uses `quay.io/okd/scos-content` instead.
 
