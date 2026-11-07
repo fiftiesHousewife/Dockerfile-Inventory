@@ -1,0 +1,21 @@
+#!/bin/sh
+# The image's entry point: `inventory <stage>` runs one stage of the pipeline; settings come from the environment.
+set -eu
+
+stages="discovery facts lineage report rules converter"
+usage() {
+    echo "usage: inventory <stage>    stages: $stages"
+    echo "settings come from the environment; see the README of github.com/fiftiesHousewife/Dockerfile-Inventory"
+}
+
+[ $# -ge 1 ] || { usage >&2; exit 2; }
+stage=$1
+shift
+case "$stage" in
+    --help|-h|help) usage ;;
+    *)
+        case " $stages " in
+            *" $stage "*) exec "/opt/inventory/$stage/bin/$stage" "$@" ;;
+            *) echo "unknown stage: $stage" >&2; usage >&2; exit 2 ;;
+        esac ;;
+esac

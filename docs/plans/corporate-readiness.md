@@ -2,7 +2,11 @@
 
 Status: planned 7 Nov; questions answered 7 Nov. Built 7 Nov: the `http` module, wired into discovery and lineage
 (C1-C6, C8, C9 and the waits of C7). C10 built: `INVENTORY_MIRROR` (and `_USER`, `_PASSWORD`) replaces Maven Central and the plugin portal in both settings
-files, checked against a real mirror. Next: rate pacing (the rest of C7), the pod image (C11).
+files, checked against a real mirror. C11 built: `Containerfile` (UBI OpenJDK 25 builder: installDist of the six stages and a JRE jlink'd from their jdeps
+modules; UBI 9 minimal runtime as user 1001 with group-0-writable HOME and /work, `JAVA_OPTS` defaulting to
+`-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`), entry point `scripts/inventory`, `.containerignore`. Not built
+here (no container runtime in the sandbox): the owner's first `buildah build` is its test (test 10). Next: rate pacing
+(the rest of C7).
 Originally: the `http` module is built first; wiring it into the clients follows the code review's branches are merged (`quality-review.md`), as
 the HTTP classes are being split there.
 

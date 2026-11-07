@@ -71,6 +71,22 @@ variable. A GitHub organisation that enforces SAML single sign-on stops discover
 the token; a repository or image Artifactory refuses is recorded as refused (`REFUSED` in lineage's rates) and the
 rest is read.
 
+## Run as a container
+
+The `Containerfile` builds one image holding every stage, for a job in a pod (UBI 9 minimal, a trimmed Java 25
+runtime, a non-root user, a home folder an arbitrary OpenShift user ID can write to, the heap sized from the pod's
+memory limit):
+
+```bash
+buildah build -t dockerfile-inventory -f Containerfile .        # behind a firewall: --build-arg INVENTORY_MIRROR=...
+podman run --rm -e GHE_API_URL -e GHE_TOKEN_FILE=/secrets/ghe-token -v ./out:/work/out:Z \
+    -v ./secrets:/secrets:ro,Z -e OUT_DIR=/work/out/discovery dockerfile-inventory discovery
+```
+
+`inventory <stage>` runs `discovery`, `facts`, `lineage`, `report`, `rules` or `converter`, with the settings below
+from the environment; `JAVA_OPTS` (default `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`) is passed to Java.
+Mount the token as a file and set `GHE_TOKEN_FILE` or `ARTIFACTORY_TOKEN_FILE`, so a rotated secret is picked up.
+
 ## Run discovery
 
 To try one public or enterprise organisation with the GitHub CLI's login (`gh auth login`), so no token is typed:
