@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * {@code key=value} pairs read from an instruction's text, as Docker splits them. rewrite-docker mis-reads pairs in
- * several layouts (upstream issues 4, 5, 6 and 12), so facts, rules and the converter all read them here.
+ * {@code key=value} pairs read from an instruction's text, as Docker splits them, for readers that work on the text
+ * as written: facts' steps, which match Buildah's history, and the converter, which needs each value with its quotes.
  */
 public final class KeyValuePairs {
 
