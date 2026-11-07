@@ -1,7 +1,8 @@
 # Running inside a corporate network: plan
 
 Status: planned 7 Nov; questions answered 7 Nov. Built 7 Nov: the `http` module, wired into discovery and lineage
-(C1-C6, C8, C9 and the waits of C7). Next: rate pacing (the rest of C7), Gradle mirrors (C10), the pod image (C11).
+(C1-C6, C8, C9 and the waits of C7). C10 built: `INVENTORY_MIRROR` (and `_USER`, `_PASSWORD`) replaces Maven Central and the plugin portal in both settings
+files, checked against a real mirror. Next: rate pacing (the rest of C7), the pod image (C11).
 Originally: the `http` module is built first; wiring it into the clients follows the code review's branches are merged (`quality-review.md`), as
 the HTTP classes are being split there.
 
