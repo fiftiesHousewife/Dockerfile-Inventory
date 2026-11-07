@@ -1,10 +1,10 @@
 # rewrite-docker issues to raise upstream
 
 Drafts for https://github.com/openrewrite/rewrite (module `rewrite-docker`), found against 8.90.4 on real public
-Dockerfiles (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`); none is filed yet, as filing is public and the owner's call. Each
-has a minimal reproduction. This repo works around twelve of them (noted under "Workaround"; most in the parser's retry,
-second parse, which runs only after a failure and keeps every line number); delete a workaround and its note when
-upstream fixes the bug. Issues 11, 14 and 15 have no workaround.
+Dockerfiles (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`); none is filed yet, as filing is public and the
+owner's call. Each has a minimal reproduction. The repo's fork of the parser (`parser/`) fixes them one by one; each
+fixed issue says how ("Fixed in the fork"), and the rest say how the pipeline works around them, if it does. The
+retry, a second parse with rewritten text, went when the last bug it worked around was fixed.
 
 ## 1. A comment line inside a continued `RUN` is lexed: an apostrophe starts a string
 
@@ -130,7 +130,8 @@ ARG TARGETOS TARGETARCH
 
 Expected: two build arguments without defaults, as BuildKit accepts. Actual: `extraneous input 'TARGETARCH'
 expecting {<EOF>, 'FROM'}`. `ARG A=1 B=2` parses. Seen in 10 `openshift` files.
-Workaround: the retry (`RetryText`) writes `ARG TARGETOS=$TARGETOS TARGETARCH=$TARGETARCH`, which leaves each unknown.
+Fixed in the fork (`ARG` takes several declarations, told apart by the whitespace between them; each name after the
+first is a `Docker.Arg.ArgPair`).
 
 ## 11. A heredoc after a command in `RUN` is rejected
 
@@ -155,7 +156,8 @@ ARG A=1 B=2
 
 Expected: two build arguments, `A` (1) and `B` (2). Actual: one `Docker.Arg`, name `A`, value `1 B=2`; `B` is lost.
 The same family as issue 4 (`LABEL`). Found through a workaround for issue 10, which writes `ARG A=$A B=$B`.
-Workaround: `FactExtractor` reads an `ARG`'s names and values from its text.
+Fixed in the fork (with issue 10's fix; a value ends at the first whitespace outside quotes). `FactExtractor`, the
+converter and rule S2 read every pair from the tree.
 
 ## 13. `ARG A=` (an empty default) is rejected
 
@@ -166,7 +168,7 @@ ARG HTTP_PROXY=
 
 Expected: a build argument whose default is empty. Actual: a syntax error at the next line or the end of the file.
 `ARG HTTP_PROXY=""` parses. Seen in 4 `konflux-ci` files (proxy settings).
-Workaround: the retry (`RetryText`) writes `ARG HTTP_PROXY=""`.
+Fixed in the fork (an `=` with nothing after it gives a value with no contents; no `=` gives no value).
 
 ## 14. A `COPY` heredoc with a quoted delimiter is rejected
 

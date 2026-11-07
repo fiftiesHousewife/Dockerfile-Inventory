@@ -3,6 +3,7 @@
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: whitespace before a comma in a JSON array is kept (issue 8).
  * Modified by Dockerfile Inventory, 2026: a flag value ${NAME:-default} keeps its default (issue 9).
+ * Modified by Dockerfile Inventory, 2026: ARG declares several names, each with or without a value (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -465,21 +466,16 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
         String argKeyword = ctx.ARG().getText();
         skip(ctx.ARG().getSymbol());
 
-        // ARG name is always a simple identifier
-        Space namePrefix = prefix(ctx.argName().getStart());
-        skip(ctx.argName().getStop());
-        Docker.Literal name = new Docker.Literal(
-                randomId(),
-                namePrefix,
-                Markers.EMPTY,
-                ctx.argName().getText(),
-                null
-        );
-
-        Docker.Argument value = null;
-        if (ctx.EQUALS() != null) {
-            skip(ctx.EQUALS().getSymbol());
-            value = visitArgument(ctx.argValue());
+        // The first declaration's name carries its prefix; each further one is a pair with its own
+        List<DockerParser.ArgDeclarationContext> declarations = ctx.argDeclaration();
+        DockerParser.ArgDeclarationContext first = declarations.getFirst();
+        Docker.Literal name = argName(first, prefix(first.getStart()));
+        Docker.Argument value = argValue(first);
+        List<Docker.Arg.ArgPair> additionalPairs = new ArrayList<>();
+        for (DockerParser.ArgDeclarationContext declaration : declarations.subList(1, declarations.size())) {
+            Space pairPrefix = prefix(declaration.getStart());
+            additionalPairs.add(new Docker.Arg.ArgPair(randomId(), pairPrefix, Markers.EMPTY,
+                    argName(declaration, Space.EMPTY), argValue(declaration)));
         }
 
         // Advance cursor to end of instruction
@@ -487,7 +483,22 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             advanceCursor(ctx.getStop().getStopIndex() + 1);
         }
 
-        return new Docker.Arg(randomId(), prefix, Markers.EMPTY, argKeyword, name, value);
+        return new Docker.Arg(randomId(), prefix, Markers.EMPTY, argKeyword, name, value, additionalPairs);
+    }
+
+    private Docker.Literal argName(DockerParser.ArgDeclarationContext declaration, Space namePrefix) {
+        // ARG name is always a simple identifier
+        skip(declaration.argName().getStop());
+        return new Docker.Literal(randomId(), namePrefix, Markers.EMPTY, declaration.argName().getText(), null);
+    }
+
+    // null without =; an empty argument for NAME= with nothing after it
+    private Docker.@Nullable Argument argValue(DockerParser.ArgDeclarationContext declaration) {
+        if (declaration.EQUALS() == null) {
+            return null;
+        }
+        skip(declaration.EQUALS().getSymbol());
+        return visitArgument(declaration.argValue());
     }
 
     @Override

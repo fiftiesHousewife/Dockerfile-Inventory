@@ -125,6 +125,12 @@ public interface DockerParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArgInstruction(DockerParser.ArgInstructionContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link DockerParser#argDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArgDeclaration(DockerParser.ArgDeclarationContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link DockerParser#onbuildInstruction}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

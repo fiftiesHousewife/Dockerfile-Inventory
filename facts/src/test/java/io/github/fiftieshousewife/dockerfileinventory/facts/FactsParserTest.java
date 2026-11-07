@@ -139,11 +139,9 @@ class FactsParserTest {
     }
 
     @Test
-    void aParseSaysWhetherItNeededTheRetrysWorkarounds() {
-        assertThat(new FactsParser().parse("clean", "FROM ubi9\nRUN make\n"))
-                .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isFalse());
+    void aFileThatOnceNeededTheRetryParsesFirstTimeAndIsNotMarkedRetried() {
         assertThat(new FactsParser().parse("proxy", "FROM ubi9\nARG HTTP_PROXY=\n"))
-                .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isTrue());
+                .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isFalse());
     }
 
     @Test
@@ -183,13 +181,6 @@ class FactsParserTest {
     }
 
     @Test
-    void aJinjaTemplateThatOnlyParsesOnTheRetryIsStillATemplate() {
-        assertThat(new FactsParser().parse("tpl", "FROM ubi9\nENV V={{ spec.version }}\nARG A=\n"))
-                .isInstanceOfSatisfying(ParseResult.Failed.class,
-                        failed -> assertThat(failed.message()).startsWith(FactsParser.TEMPLATE));
-    }
-
-    @Test
     void anArgMixingNamesAndSimpleValuesOrContinuedOverLinesParses() {
         assertThat(new FactsParser().parse("mixed", """
                 FROM golang:1.22
@@ -207,13 +198,7 @@ class FactsParserTest {
                 + "ARG CROSSPLANE_VERSION=\nWORKDIR /workspace\n";
 
         assertThat(new FactsParser().parse("proxy", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
-        assertThat(RetryText.of(dockerfile)).startsWith("ARG HTTP_PROXY=\"\"\nARG HTTPS_PROXY=\"\"\n");
-    }
-
-    @Test
-    void anAttemptDoesNotRetryAFileTheGrammarRejects() {
-        assertThat(new FactsParser().attempt("proxy", "FROM ubi9\nARG HTTP_PROXY=\n"))
-                .isInstanceOf(ParseResult.Failed.class);
+        assertThat(FactExtractor.globalArgs(Parsed.file(dockerfile))).containsEntry("HTTP_PROXY", "");
     }
 
     @Test

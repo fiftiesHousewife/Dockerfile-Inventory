@@ -198,6 +198,16 @@ public interface DockerParserListener extends ParseTreeListener {
 	 */
 	void exitArgInstruction(DockerParser.ArgInstructionContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link DockerParser#argDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterArgDeclaration(DockerParser.ArgDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DockerParser#argDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitArgDeclaration(DockerParser.ArgDeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link DockerParser#onbuildInstruction}.
 	 * @param ctx the parse tree
 	 */

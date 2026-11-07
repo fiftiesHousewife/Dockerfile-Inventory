@@ -61,23 +61,21 @@ public final class FactExtractor {
         return globalArgs;
     }
 
-    /**
-     * An {@code ARG}'s names and their values as written, in order; null for a name without one. Read from the text,
-     * as rewrite-docker folds {@code ARG A=1 B=2} into one name (upstream issue 12).
-     */
+    /** An {@code ARG}'s names and their values as written, unquoted, in order; null for a name without one. */
     public static Map<String, String> argPairs(Docker.Arg arg) {
-        Docker.Argument value = arg.getValue();
-        String written = Continuations.removed(arg.getName().getText()
-                + (value == null ? "" : "=" + ArgumentText.of(value, Map.of())));
         Map<String, String> pairs = new LinkedHashMap<>();
-        KeyValuePairs.of(written).forEach(pair -> {
-            String declared = pair.value() == null ? null : KeyValuePairs.unquoted(pair.value());
-            pairs.put(pair.key(), declared == null || ownName(declared, pair.key()) ? null : declared);
-        });
+        declare(pairs, arg.getName(), arg.getValue());
+        arg.getAdditionalPairs().forEach(pair -> declare(pairs, pair.getName(), pair.getValue()));
         return pairs;
     }
 
-    // The parser's retry writes ARG A B as ARG A=$A B=$B; such a default is no default.
+    static void declare(Map<String, String> pairs, Docker.Literal name, Docker.Argument value) {
+        String declared = value == null ? null
+                : KeyValuePairs.unquoted(Continuations.removed(ArgumentText.of(value, Map.of())));
+        pairs.put(name.getText(), declared == null || ownName(declared, name.getText()) ? null : declared);
+    }
+
+    // ARG A=$A names itself; it is read as no default, as when the parser's retry wrote ARG A B that way.
     static boolean ownName(String value, String name) {
         return value.equals("$" + name) || value.equals("${" + name + "}");
     }

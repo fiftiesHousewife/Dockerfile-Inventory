@@ -25,27 +25,17 @@ public final class FactsParser {
 
     private final DockerParser parser = DockerParser.builder().build();
 
-    /**
-     * The parsed file, or the failure. A rejected file is parsed again with rewrite-docker's known bugs worked around,
-     * every line number kept; a file that parses first time is left exactly as written. A template is a failure
-     * either way.
-     */
+    /** The parsed file, or the failure. A template is a failure either way. */
     public ParseResult parse(String blobSha, String text) {
-        ParseResult first = attempt(blobSha, text);
-        ParseResult parsed = first instanceof ParseResult.Parsed ? first
-                : retried(attempt(blobSha, RetryText.of(text)));
+        ParseResult parsed = attempt(blobSha, text);
         return switch (parsed) {
             case ParseResult.Parsed p -> Templates.jinja(text)
                     .map(line -> template(blobSha, line, PARSES_ANYWAY))
                     .orElse(p);
-            case ParseResult.Failed _ -> Templates.anyMarker(text)
-                    .map(line -> template(blobSha, line, "the parser said: " + ((ParseResult.Failed) first).message()))
-                    .orElse(first);
+            case ParseResult.Failed failed -> Templates.anyMarker(text)
+                    .map(line -> template(blobSha, line, "the parser said: " + failed.message()))
+                    .orElse(failed);
         };
-    }
-
-    static ParseResult retried(ParseResult result) {
-        return result instanceof ParseResult.Parsed p ? new ParseResult.Parsed(p.blobSha(), p.file(), true) : result;
     }
 
     private static ParseResult template(String blobSha, String line, String detail) {

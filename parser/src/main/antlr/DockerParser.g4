@@ -1,10 +1,20 @@
 // $antlr-format alignTrailingComments true, columnLimit 150, minEmptyLines 1, maxEmptyLinesToKeep 1, reflowComments false, useTab false
 // $antlr-format allowShortRulesOnASingleLine false, allowShortBlocksOnASingleLine true, alignSemicolons hanging, alignColons hanging
 
+// Copyright the original author or authors; Apache License 2.0. From openrewrite/rewrite@398a634, rewrite-docker/.
+// Modified by Dockerfile Inventory, 2026: ARG declares several names, each with or without a value (issues 10, 12, 13).
+
 parser grammar DockerParser;
 
 options {
     tokenVocab = DockerLexer;
+}
+
+@members {
+    // Whitespace is hidden, so words are told apart by a gap between one token and the next.
+    private boolean noGapBefore() {
+        return _input.LT(1).getStartIndex() == _input.LT(-1).getStopIndex() + 1;
+    }
 }
 
 // Root rule
@@ -102,7 +112,12 @@ workdirInstruction
     ;
 
 argInstruction
-    : ARG argName ( EQUALS argValue )?
+    : ARG argDeclaration+
+    ;
+
+// NAME, NAME= (an empty default) or NAME=value; the value is the tokens up to the next gap
+argDeclaration
+    : argName ( EQUALS ( {noGapBefore()}? argValue )? )?
     ;
 
 onbuildInstruction
@@ -392,7 +407,7 @@ argName
     ;
 
 argValue
-    : text
+    : textElement ( {noGapBefore()}? textElement )*
     ;
 
 signal

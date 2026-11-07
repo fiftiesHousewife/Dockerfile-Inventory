@@ -2,6 +2,7 @@
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: whitespace before a comma in a JSON array is printed (issue 8).
+ * Modified by Dockerfile Inventory, 2026: ARG's further names are printed (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,6 +152,14 @@ public class DockerPrinter<P> extends DockerVisitor<PrintOutputCapture<P>> {
         if (arg.getValue() != null) {
             p.append("=");
             visit(arg.getValue(), p);
+        }
+        for (Docker.Arg.ArgPair pair : arg.getAdditionalPairs()) {
+            visitSpace(pair.getPrefix(), p);
+            visit(pair.getName(), p);
+            if (pair.getValue() != null) {
+                p.append("=");
+                visit(pair.getValue(), p);
+            }
         }
         afterSyntax(arg, p);
         return arg;

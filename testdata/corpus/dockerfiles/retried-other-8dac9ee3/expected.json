@@ -5,8 +5,8 @@
     "commit": "b59cdaada1be18a39afa8888b55cfb7d16d6fee9",
     "blobSha": "8dac9ee36bacee3ce5b4e1bee415003638d41ae0"
   },
-  "why": "parses only with the parser's other workaround",
-  "parse": "retried",
+  "why": "parsed only with the parser's other workaround until the fork fixed issue 10",
+  "parse": "parsed",
   "unreadableRuns": 0,
   "roundTrip": "passes"
 }

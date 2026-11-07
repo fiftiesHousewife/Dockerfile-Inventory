@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class SecretValue implements Rule {
@@ -41,7 +42,10 @@ final class SecretValue implements Rule {
             case Docker.Env env -> env.getPairs().stream()
                     .flatMap(pair -> check(subject, line, "ENV", pair.getKey().getText(), pair.getValue()).stream())
                     .toList();
-            case Docker.Arg arg -> check(subject, line, "ARG", arg.getName().getText(), arg.getValue()).stream()
+            case Docker.Arg arg -> Stream.concat(
+                            check(subject, line, "ARG", arg.getName().getText(), arg.getValue()).stream(),
+                            arg.getAdditionalPairs().stream().flatMap(pair ->
+                                    check(subject, line, "ARG", pair.getName().getText(), pair.getValue()).stream()))
                     .toList();
             default -> List.of();
         };

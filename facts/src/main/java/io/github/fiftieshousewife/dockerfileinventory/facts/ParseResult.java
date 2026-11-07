@@ -7,7 +7,10 @@ public sealed interface ParseResult {
 
     String blobSha();
 
-    /** {@code retried}: the file parsed only with the parser's known bugs worked around. */
+    /**
+     * {@code retried}: the file parsed only with the parser's known bugs worked around. Always false now the parser's
+     * fork fixes them and the retry is gone; kept so facts.jsonl keeps its shape.
+     */
     record Parsed(String blobSha, Docker.File file, boolean retried) implements ParseResult {
 
         public Parsed(String blobSha, Docker.File file) {
