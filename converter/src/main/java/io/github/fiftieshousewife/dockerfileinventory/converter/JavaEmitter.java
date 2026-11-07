@@ -76,6 +76,9 @@ final class JavaEmitter {
                 case RunBody.Shell shell -> CodeBlock.of(".run($L)", strings(shell.commands()));
             };
             case Instruction.Copy copy -> copy(copy);
+            case Instruction.Add add -> CodeBlock.of(".add($L, $S, $S, $S, $S, $L, $L, $L)", list(add.sources()),
+                    add.destination(), add.chown(), add.chmod(), add.checksum(), add.keepGitDir(), add.link(),
+                    add.jsonForm());
             case Instruction.CopyHeredoc heredoc -> CodeBlock.of(".copyHeredoc($S, $S, $L, $L)", heredoc.destination(),
                     heredoc.delimiter(), heredoc.quoted(), list(heredoc.lines()));
             case Instruction.User user -> CodeBlock.of(".user($S)", user.user());

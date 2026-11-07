@@ -65,10 +65,12 @@ class ConvertCopyTest {
     }
 
     @Test
-    void anUnknownFlagIsTheFirstThatIsNotFromChownChmodOrABareLink() {
-        assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--chmod=7", "--link", "--link=false")))
+    void anUnknownFlagIsTheFirstThatTakesNoKnownValueAndIsNoKnownBareFlag() {
+        List<String> valued = List.of("--from=", "--chown=");
+        assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--link", "--link=false"), valued, List.of("--link")))
                 .contains("--link=false");
-        assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--chown=1", "--chmod=7", "--link"))).isEmpty();
+        assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--chown=1", "--link"), valued, List.of("--link")))
+                .isEmpty();
     }
 
     @Test
@@ -76,6 +78,12 @@ class ConvertCopyTest {
         assertThat(List.of(List.of("a", "/b"), List.of("[\"a", "b\",", "\"/c\"]"), List.of("[\"a\",", "/b]")))
                 .map(ConvertCopy::paths)
                 .containsExactly(Optional.of(List.of("a", "/b")), Optional.of(List.of("a b", "/c")), Optional.empty());
+    }
+
+    @Test
+    void writtenWordsAreInJsonFormWhenTheFirstOpensAnArray() {
+        assertThat(List.of(List.of("[\"a\",", "\"/b\"]"), List.of("a", "/b"), List.<String>of()))
+                .map(ConvertCopy::jsonForm).containsExactly(true, false, false);
     }
 
     @Test

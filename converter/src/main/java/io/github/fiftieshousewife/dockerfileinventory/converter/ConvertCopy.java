@@ -33,7 +33,7 @@ final class ConvertCopy {
         List<String> words = words(text);
         List<String> flags = words.stream().takeWhile(word -> word.startsWith("--")).toList();
         List<String> written = words.subList(flags.size(), words.size());
-        Optional<String> unknown = unknownFlag(flags);
+        Optional<String> unknown = unknownFlag(flags, List.of(FROM, CHOWN, CHMOD), List.of(LINK));
         if (unknown.isPresent()) {
             return new Instruction.Raw(text, "COPY with flag " + unknown.get().split("=", 2)[0]);
         }
@@ -64,10 +64,9 @@ final class ConvertCopy {
         return words.subList(1, words.size());
     }
 
-    static Optional<String> unknownFlag(List<String> flags) {
+    static Optional<String> unknownFlag(List<String> flags, List<String> valued, List<String> bare) {
         return flags.stream()
-                .filter(flag -> !flag.startsWith(FROM) && !flag.startsWith(CHOWN) && !flag.startsWith(CHMOD)
-                        && !flag.equals(LINK))
+                .filter(flag -> valued.stream().noneMatch(flag::startsWith) && !bare.contains(flag))
                 .findFirst();
     }
 
@@ -90,7 +89,7 @@ final class ConvertCopy {
                 .orElse(null);
     }
 
-    private static boolean jsonForm(List<String> written) {
+    static boolean jsonForm(List<String> written) {
         return !written.isEmpty() && written.getFirst().startsWith("[");
     }
 }

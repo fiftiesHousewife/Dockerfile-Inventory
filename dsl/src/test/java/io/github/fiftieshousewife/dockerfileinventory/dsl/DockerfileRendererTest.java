@@ -113,10 +113,22 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void anAddRendersItsFlagsBeforeItsPathsInItsForm() {
+        Dockerfile file = single(
+                new Instruction.Add(List.of("https://example.com/a.tgz"), "/opt/", "1001:0", "644", "sha256:abc", false,
+                        true, false),
+                new Instruction.Add(List.of("https://github.com/o/r.git"), "/src", null, null, null, true, false, true));
+
+        assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("""
+                ADD --chown=1001:0 --chmod=644 --checksum=sha256:abc --link https://example.com/a.tgz /opt/
+                ADD --keep-git-dir ["https://github.com/o/r.git", "/src"]
+                """);
+    }
+
+    @Test
     void aCopysPathsEndWithTheDestinationInItsForm() {
-        assertThat(List.of(new Instruction.Copy(List.of("a", "b"), "/c/", null, null),
-                new Instruction.Copy(List.of("a b"), "/c/", null, null, null, false, true)))
-                .map(DockerfileRenderer::paths).containsExactly("a b /c/", "[\"a b\", \"/c/\"]");
+        assertThat(List.of(DockerfileRenderer.paths(List.of("a", "b"), "/c/", false),
+                DockerfileRenderer.paths(List.of("a b"), "/c/", true))).containsExactly("a b /c/", "[\"a b\", \"/c/\"]");
     }
 
     @Test

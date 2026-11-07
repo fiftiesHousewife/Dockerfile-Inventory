@@ -44,6 +44,16 @@ class InstructionTest {
     }
 
     @Test
+    void anAddNeedsASourceAndADestinationAndCopiesItsSources() {
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Add(List.of(), "/opt/", null, null, null,
+                false, false, false));
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Add(List.of("a.tar"), " ", null, null,
+                null, false, false, false));
+        assertThat(new Instruction.Add(new ArrayList<>(List.of("a.tar")), "/opt/", null, null, null, false, false,
+                false).sources()).isUnmodifiable();
+    }
+
+    @Test
     void aCopyWrittenWithoutOptionsHasNone() {
         assertThat(new Instruction.Copy(List.of("a"), "/b/", null, null))
                 .isEqualTo(new Instruction.Copy(List.of("a"), "/b/", null, null, null, false, false));

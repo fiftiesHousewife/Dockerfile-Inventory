@@ -96,6 +96,7 @@ final class Convert {
                     ConvertCommands.arguments(exec).<Instruction>map(Instruction.Cmd::new)
                             .orElseGet(() -> new Instruction.Raw(printed.text(cmd), NOT_JSON));
             case Docker.Copy copy -> ConvertCopy.copy(printed.text(copy));
+            case Docker.Add add -> ConvertAdd.add(printed.text(add));
             case Docker.Entrypoint entrypoint -> new Instruction.Raw(printed.text(entrypoint), "shell-form ENTRYPOINT");
             case Docker.Cmd cmd -> new Instruction.Raw(printed.text(cmd), "shell-form CMD");
             case Docker.Shell shell -> ConvertMetadata.shell(shell, printed.text(shell));

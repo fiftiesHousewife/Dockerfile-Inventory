@@ -134,7 +134,7 @@ class ConvertTest {
                 new Instruction.Copy(List.of("a", "b"), "/dst/", "1001:0", "build"),
                 new Instruction.Copy(List.of("app"), "/opt/", null, null),
                 new Instruction.Raw("COPY --exclude=*.md . /src/", "COPY with flag --exclude"),
-                new Instruction.Raw("ADD app.tar.gz /opt/", "ADD is not modelled"),
+                new Instruction.Add(List.of("app.tar.gz"), "/opt/", null, null, null, false, false, false),
                 new Instruction.Raw("ENTRYPOINT java -jar app.jar", "shell-form ENTRYPOINT"),
                 new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),
                 new Instruction.Raw("EXPOSE ${PORT:-8080}", "EXPOSE with a port that is not a number, range or variable"),

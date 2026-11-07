@@ -173,6 +173,26 @@ class ImageBuilderTest {
     }
 
     @Test
+    void addTakesAUrlOrAnArchiveAndRefusesALocalFileForCopy() {
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).add("rootfs.tar.gz", "/").model().stages()
+                .getFirst().instructions())
+                .containsExactly(new Instruction.Add(List.of("rootfs.tar.gz"), "/", null, null, null, false, false,
+                        false));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).add("app.jar", "/opt/"))
+                .withMessageContaining("use copy");
+    }
+
+    @Test
+    void anAddCanBeWrittenAsTheDockerfileWroteIt() {
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE)
+                .add(List.of("app.jar"), "/opt/", "1001", "644", null, false, false, true).model().stages()
+                .getFirst().instructions())
+                .containsExactly(new Instruction.Add(List.of("app.jar"), "/opt/", "1001", "644", null, false, false,
+                        true));
+    }
+
+    @Test
     void portsCanBeGivenAsDockerWritesThemAndABadOneIsRefused() {
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090).model()
                 .stages().getFirst().instructions())

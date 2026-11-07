@@ -100,6 +100,7 @@ representatives first.
 | `SHELL`, `VOLUME` (with its form), `STOPSIGNAL`, `MAINTAINER` | 94.0% | 3,559 | 5,149 |
 | `EXPOSE` as `Port` specs (every one typed; a spec that is not a port, such as `${PORT:-80}`, would stay `Raw`) | 94.3% | 3,636 | 5,149 |
 | `COPY --chmod`, `--link`, JSON form; `CopyHeredoc` (one plain heredoc; with flags, several or `<<-` stays `Raw`) | 94.5% | 3,691 | 5,149 |
+| `ADD` with `--chown`, `--chmod`, `--checksum`, `--keep-git-dir`, `--link`, JSON form; the builders' `add` takes only a URL, a Git repository or a tar archive | 97.7% | 4,193 | 5,149 |
 
 A shell-form `VOLUME` keeps each word as written, quotes included (`Values.written`), found when `VOLUME "/test_dir"`
 lost its quotes on the first try.

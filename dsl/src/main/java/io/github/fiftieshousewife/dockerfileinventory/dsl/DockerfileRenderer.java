@@ -71,6 +71,7 @@ public final class DockerfileRenderer {
             case Instruction.Run run -> "RUN " + String.join(CONTINUE + "    && ", RunCommands.of(run.body()));
             case Instruction.Copy copy -> copy(copy);
             case Instruction.CopyHeredoc heredoc -> heredoc(heredoc);
+            case Instruction.Add add -> add(add);
             case Instruction.User user -> "USER " + user.user();
             case Instruction.Workdir workdir -> "WORKDIR " + workdir.path();
             case Instruction.Expose expose -> "EXPOSE "
@@ -91,7 +92,16 @@ public final class DockerfileRenderer {
                 + (copy.chown() == null ? "" : " --chown=" + copy.chown())
                 + (copy.chmod() == null ? "" : " --chmod=" + copy.chmod())
                 + (copy.link() ? " --link" : "")
-                + " " + paths(copy);
+                + " " + paths(copy.sources(), copy.destination(), copy.jsonForm());
+    }
+
+    static String add(Instruction.Add add) {
+        return "ADD" + (add.chown() == null ? "" : " --chown=" + add.chown())
+                + (add.chmod() == null ? "" : " --chmod=" + add.chmod())
+                + (add.checksum() == null ? "" : " --checksum=" + add.checksum())
+                + (add.keepGitDir() ? " --keep-git-dir" : "")
+                + (add.link() ? " --link" : "")
+                + " " + paths(add.sources(), add.destination(), add.jsonForm());
     }
 
     static String heredoc(Instruction.CopyHeredoc heredoc) {
@@ -100,10 +110,10 @@ public final class DockerfileRenderer {
                 + heredoc.lines().stream().map(line -> line + "\n").collect(Collectors.joining()) + delimiter;
     }
 
-    static String paths(Instruction.Copy copy) {
-        List<String> paths = new ArrayList<>(copy.sources());
-        paths.add(copy.destination());
-        return copy.jsonForm() ? DockerQuotes.jsonArray(paths) : String.join(" ", paths);
+    static String paths(List<String> sources, String destination, boolean jsonForm) {
+        List<String> paths = new ArrayList<>(sources);
+        paths.add(destination);
+        return jsonForm ? DockerQuotes.jsonArray(paths) : String.join(" ", paths);
     }
 
     static String pairs(String keyword, Map<String, String> values) {

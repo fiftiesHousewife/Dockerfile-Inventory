@@ -116,6 +116,13 @@ class JavaEmitterTest {
     }
 
     @Test
+    void anAddIsWrittenAsWritten() {
+        assertThat(JavaEmitter.call(new Instruction.Add(List.of("a.tgz"), "/opt/", null, "644", null, false, true,
+                false)).toString())
+                .isEqualTo(".add(java.util.List.of(\"a.tgz\"), \"/opt/\", null, \"644\", null, false, true, false)");
+    }
+
+    @Test
     void severalPortsAreWrittenAsTheirSpecs() {
         assertThat(JavaEmitter.call(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp")))).toString())
                 .isEqualTo(".expose(\"80\", \"53/udp\")");

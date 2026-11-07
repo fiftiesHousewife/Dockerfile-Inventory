@@ -54,6 +54,16 @@ public sealed interface Instruction {
         }
     }
 
+    /** {@code ADD}: a URL, a Git repository or an archive to unpack; {@code COPY} for anything else. */
+    record Add(List<String> sources, String destination, String chown, String chmod, String checksum,
+            boolean keepGitDir, boolean link, boolean jsonForm) implements Instruction {
+
+        public Add {
+            sources = List.copyOf(Checks.notEmpty(sources, "an ADD source"));
+            Checks.notBlank(destination, "an ADD destination");
+        }
+    }
+
     /** {@code COPY <<EOF destination}: the lines become the file; {@code quoted} stops expansion in them. */
     record CopyHeredoc(String destination, String delimiter, boolean quoted, List<String> lines)
             implements Instruction {
