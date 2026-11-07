@@ -34,6 +34,12 @@ class TableTest {
     }
 
     @Test
+    void controlCharactersInAFieldAreReplacedSoTheFileStaysLoadableText() {
+        assertThat(Table.field("input 'Dockerfile\u0000\u0000\u0001'\ttab"))
+                .isEqualTo("input 'Dockerfile\uFFFD\uFFFD\uFFFD'\ttab");
+    }
+
+    @Test
     void theDdlCreatesTheTableWithEachColumnsOracleType() {
         assertThat(TABLE.ddl()).isEqualTo("""
                 CREATE TABLE bases (

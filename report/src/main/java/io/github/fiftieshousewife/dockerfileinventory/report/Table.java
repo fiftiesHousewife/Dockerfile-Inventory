@@ -3,9 +3,12 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 record Table(String name, List<Column> columns, List<List<Object>> rows) {
+    private static final Pattern CONTROL = Pattern.compile("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]");
+
 
     record Column(String name, Type type) {
     }
@@ -41,8 +44,9 @@ record Table(String name, List<Column> columns, List<List<Object>> rows) {
                 .collect(Collectors.joining(",\n", "CREATE TABLE " + name + " (\n", "\n);\n"));
     }
 
+    // A control character (a binary file's bytes quoted in a parser message, say) would make the file unloadable text.
     static String field(Object value) {
-        String text = value == null ? "" : value.toString();
+        String text = value == null ? "" : CONTROL.matcher(value.toString()).replaceAll("\uFFFD");
         return text.matches("(?s).*[,\"\r\n].*") ? "\"" + text.replace("\"", "\"\"") + "\"" : text;
     }
 }
