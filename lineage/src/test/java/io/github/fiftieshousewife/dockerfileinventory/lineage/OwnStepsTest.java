@@ -48,6 +48,37 @@ class OwnStepsTest {
     }
 
     @Test
+    void anOkdImageGivesItsDockerfilesStepsWithoutTheReleaseToolingAroundThem() {
+        Resolved.Node image = new Resolved.Node("sha256:okd",
+                ImageConfig.parse(Fixtures.history("okd-cluster-storage-operator.json")).orElseThrow());
+
+        assertThat(OwnSteps.of(image, null)).containsExactly(
+                new Instruction("COPY", "/usr/bin/"),
+                new Instruction("COPY", "/usr/bin/"),
+                new Instruction("COPY", "/manifests"),
+                new Instruction("ENTRYPOINT", "[\"/usr/bin/cluster-storage-operator\"]"),
+                new Instruction("LABEL", "com.redhat.component description io.k8s.description io.k8s.display-name "
+                        + "io.openshift.build.commit.id io.openshift.build.commit.url "
+                        + "io.openshift.build.source-location io.openshift.maintainer.component "
+                        + "io.openshift.release.operator io.openshift.tags name release summary vendor version"));
+    }
+
+    @Test
+    void theReleaseToolingCutKeepsADockerfilesOwnUserZeroAndWhatFollowsTheWrapper() {
+        NormalStep doozer = new NormalStep("ENV", "OS_GIT_COMMIT __doozer", null, false);
+        NormalStep root = new NormalStep("USER", "0", null, false);
+        NormalStep make = new NormalStep("RUN", "make", null, false);
+        NormalStep swap = new NormalStep("RUN", "rm -f /etc/yum.repos.d/art-* && mv /tmp/art/yum_temp/* x || true",
+                null, false);
+        NormalStep cleanup = new NormalStep("RUN", "rm -rf /tmp/art", null, false);
+        NormalStep user = new NormalStep("USER", "1001", null, false);
+
+        assertThat(OwnSteps.withoutReleaseTooling(List.of(root, doozer, root, make, root, swap, cleanup, user)))
+                .containsExactly(root, make, user);
+        assertThat(OwnSteps.withoutReleaseTooling(List.of(root, make))).containsExactly(root, make);
+    }
+
+    @Test
     void thePublicPython311HistoryGivesTheStepsOfTheDockerfileThatBuiltIt() throws IOException {
         JsonNode contract = new ObjectMapper().readTree(CONTRACT.toFile());
         List<Instruction> expected = new ArrayList<>();
