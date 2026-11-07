@@ -1,28 +1,31 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
- * Runs the report from the environment: {@code FACTS_DIR}, {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally
- * {@code LINEAGE_DIR} (effective users from Phase 1b) and {@code EOL_LIST} (the internal end-of-life CSV).
+ * The report job's entry point. It takes its settings from the environment, as the OpenShift job sets them:
+ * {@code FACTS_DIR}, {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR} and {@code EOL_LIST}.
  */
 public final class ReportMain {
 
     private ReportMain() {
     }
 
+    /** Writes the report under {@code OUT_DIR}; fails before reading anything if a required setting is missing. */
     public static void main(String[] args) {
-        String lineage = System.getenv("LINEAGE_DIR");
-        String eolList = System.getenv("EOL_LIST");
-        Path out = Path.of(required("OUT_DIR"));
-        new ReportRun(Path.of(required("FACTS_DIR")), Path.of(required("DISCOVERY_DIR")),
+        Map<String, String> env = System.getenv();
+        String lineage = env.get("LINEAGE_DIR");
+        String eolList = env.get("EOL_LIST");
+        Path out = Path.of(required(env, "OUT_DIR"));
+        new ReportRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
                 lineage == null ? null : Path.of(lineage),
                 eolList == null ? EolList.empty() : EolList.read(Path.of(eolList)), out).run();
         System.out.println("Report written to " + out.resolve("dashboard.html"));
     }
 
-    private static String required(String name) {
-        String value = System.getenv(name);
+    static String required(Map<String, String> env, String name) {
+        String value = env.get(name);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(name + " is not set");
         }

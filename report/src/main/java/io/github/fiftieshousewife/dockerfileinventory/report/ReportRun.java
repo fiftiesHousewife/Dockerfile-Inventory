@@ -14,12 +14,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Phase 2 end to end: read the estate, run the passes, rank, catalogue, and write every output under the output
- * directory: {@code passes.json}, {@code archetypes.json}, {@code tables/*.csv} with {@code tables/ddl.sql}, and
- * {@code dashboard.html}. Every file is rewritten from its inputs each run.
- */
-public final class ReportRun {
+final class ReportRun {
 
     private final Path factsDir;
     private final Path discoveryDir;
@@ -28,7 +23,7 @@ public final class ReportRun {
     private final Path outDir;
     private final ObjectMapper json = new ObjectMapper();
 
-    public ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, EolList eol, Path outDir) {
+    ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, EolList eol, Path outDir) {
         this.factsDir = factsDir;
         this.discoveryDir = discoveryDir;
         this.lineageDir = lineageDir;
@@ -36,7 +31,7 @@ public final class ReportRun {
         this.outDir = outDir;
     }
 
-    public void run() {
+    void run() {
         Estate estate = Estate.read(factsDir, discoveryDir, lineageDir);
         List<Group> archetypeGroups = NearDuplicates.of(Passes.signatureGroups(estate));
         Ranking ranking = Archetypes.rank(archetypeGroups, estate);
@@ -45,23 +40,26 @@ public final class ReportRun {
         passes.add(new PassCount("near-duplicate", archetypeGroups.size(), ranking.totalLocations()));
         List<Table> tables = Tables.of(estate, archetypeGroups, ranking, bases);
 
-        Map<String, Object> summary = new LinkedHashMap<>();
-        summary.put("totalLocations", ranking.totalLocations());
-        summary.put("k80", ranking.k80());
-        summary.put("k95", ranking.k95());
-        summary.put("passes", passes);
-        write("passes.json", pretty(summary));
+        write("passes.json", pretty(passesSummary(ranking, passes)));
         write("archetypes.json", pretty(ranking));
         tables.forEach(t -> write("tables/" + t.name() + ".csv", t.csv()));
         write("tables/ddl.sql", tables.stream().map(Table::ddl).collect(Collectors.joining("\n")));
         write("dashboard.html", Dashboard.render(
                 Summary.of(estate, passes.subList(0, 3), archetypeGroups.size(), ranking, bases), ranking,
                 ArchetypeCards.of(ranking, estate, discoveryDir), bases,
-                Optional.ofNullable(lineageDir).map(dir -> LineageView.read(dir, locations(estate)))));
+                Optional.ofNullable(lineageDir).map(dir -> LineageFiles.read(dir, locations(estate)))));
     }
 
-    /** Each blob's locations, Dockerfiles and failures alike, for naming the Dockerfiles an image links to. */
-    private static Map<String, List<Location>> locations(Estate estate) {
+    static Map<String, Object> passesSummary(Ranking ranking, List<PassCount> passes) {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("totalLocations", ranking.totalLocations());
+        summary.put("k80", ranking.k80());
+        summary.put("k95", ranking.k95());
+        summary.put("passes", passes);
+        return summary;
+    }
+
+    static Map<String, List<Location>> locations(Estate estate) {
         Map<String, List<Location>> locations = new HashMap<>();
         estate.dockerfiles().forEach(d -> locations.put(d.blobSha(), d.locations()));
         estate.failures().forEach(f -> locations.put(f.blobSha(), f.locations()));

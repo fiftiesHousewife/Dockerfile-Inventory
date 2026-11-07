@@ -49,6 +49,59 @@ class NearDuplicatesTest {
         assertThat(NearDuplicates.of(groups.reversed())).isEqualTo(NearDuplicates.of(groups));
     }
 
+    @Test
+    void aGroupsFeaturesAreItsPackagesAndItsBaseFamily() {
+        assertThat(NearDuplicates.features(group("a", 1, Set.of("git", "tar"))))
+                .containsExactly("base:ubi-minimal", "git", "tar");
+    }
+
+    @Test
+    void groupsWithPackagesFallIntoOneBucketPerBandAndEmptyOnesIntoNone() {
+        List<Group> groups = List.of(group("a", 1, packages(0, 5)), group("b", 1, Set.of()));
+
+        assertThat(NearDuplicates.buckets(groups, groups.stream().map(NearDuplicates::features).toList()))
+                .hasSize(NearDuplicates.BANDS).allSatisfy((key, members) -> assertThat(members).containsExactly(0));
+    }
+
+    @Test
+    void aSignatureHasOneKeyPerBandNamingTheBandAndItsRows() {
+        long[] signature = new long[MinHash.HASHES];
+
+        assertThat(NearDuplicates.bandKeys(signature)).hasSize(NearDuplicates.BANDS)
+                .first().isEqualTo("0:[0, 0, 0, 0]");
+    }
+
+    @Test
+    void onlyPairsInABucketAtTheThresholdOrAboveAreJoined() {
+        List<Set<String>> features = List.of(packages(0, 9), packages(1, 10), packages(5, 14));
+        int[] parent = {0, 1, 2};
+
+        NearDuplicates.mergeSimilar(List.of(0, 1, 2), features, parent);
+
+        assertThat(parent).containsExactly(0, 0, 2);
+    }
+
+    @Test
+    void theMergedGroupTakesTheLargestMembersKeyPackagesAndFamilyAndTiesGoToTheFirstKey() {
+        Group small = new Group("a", List.of("a"), 1, Set.of("x"), "alpine");
+        Group large = new Group("b", List.of("b"), 5, Set.of("y"), "ubi");
+        Group tie = new Group("c", List.of("c"), 5, Set.of("z"), "ubi");
+
+        assertThat(NearDuplicates.merge(List.of(small, large, tie)))
+                .isEqualTo(new Group("b", List.of("a", "b", "c"), 11, Set.of("y"), "ubi"));
+    }
+
+    @Test
+    void findFollowsParentsToTheRootAndUnionJoinsUnderTheSmallerRoot() {
+        int[] parent = {0, 0, 1, 3};
+
+        assertThat(NearDuplicates.find(parent, 2)).isZero();
+        NearDuplicates.union(parent, 3, 2);
+        assertThat(parent[3]).isZero();
+        NearDuplicates.union(parent, 3, 0);
+        assertThat(parent).containsExactly(0, 0, 0, 0);
+    }
+
     private static Set<String> features(Group g) {
         Set<String> features = new TreeSet<>(g.packages());
         features.add("base:" + g.family());

@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-/** Ranks the final groups by the locations they cover, and finds k80 and k95. */
-public final class Archetypes {
+final class Archetypes {
 
     private Archetypes() {
     }
 
-    public static Ranking rank(List<Group> groups, Estate estate) {
+    static Ranking rank(List<Group> groups, Estate estate) {
         Map<String, Dockerfile> dockerfiles = new HashMap<>();
         estate.dockerfiles().forEach(d -> dockerfiles.put(d.blobSha(), d));
         Map<String, List<Location>> locations = new HashMap<>();
@@ -28,13 +27,9 @@ public final class Archetypes {
         return new Ranking(archetypes, total, covering(sorted, total, 80), covering(sorted, total, 95));
     }
 
-    /** The representative is the member at the most locations, the Dockerfile to read to understand the group. */
-    private static Archetype archetype(int rank, Group group, Map<String, Dockerfile> dockerfiles,
-                                       Map<String, List<Location>> locations) {
-        String representative = group.blobShas().stream()
-                .max(Comparator.comparingInt((String sha) -> locations.getOrDefault(sha, List.of()).size())
-                        .thenComparing(Comparator.reverseOrder()))
-                .orElseThrow();
+    static Archetype archetype(int rank, Group group, Map<String, Dockerfile> dockerfiles,
+                               Map<String, List<Location>> locations) {
+        String representative = representative(group, locations);
         Dockerfile dockerfile = dockerfiles.get(representative);
         List<String> repositories = group.blobShas().stream()
                 .flatMap(sha -> locations.getOrDefault(sha, List.of()).stream().map(Location::repository))
@@ -45,7 +40,13 @@ public final class Archetypes {
                 dockerfile == null ? group.key() : dockerfile.signature(), representative, repositories);
     }
 
-    /** The fewest leading groups whose locations reach {@code percent} of the total, in whole numbers. */
+    static String representative(Group group, Map<String, List<Location>> locations) {
+        return group.blobShas().stream()
+                .max(Comparator.comparingInt((String sha) -> locations.getOrDefault(sha, List.of()).size())
+                        .thenComparing(Comparator.reverseOrder()))
+                .orElseThrow();
+    }
+
     static int covering(List<Group> sorted, int total, int percent) {
         long covered = 0;
         for (int i = 0; i < sorted.size(); i++) {
