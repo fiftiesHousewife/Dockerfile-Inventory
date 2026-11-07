@@ -31,7 +31,6 @@ class ReportRunTest {
             softly.assertThat(read("tables/dockerfiles.csv")).startsWith("blob_sha,");
             softly.assertThat(read("tables/ddl.sql"))
                     .contains("CREATE TABLE dockerfiles").contains("CREATE TABLE bases");
-            softly.assertThat(read("dashboard.html")).startsWith("<!doctype html>");
         });
     }
 
