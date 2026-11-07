@@ -1,6 +1,6 @@
 # Code and documentation review: plan
 
-Status: planned 7 Nov; executing.
+Status: built 7 Nov.
 
 The owner asked for a detailed overhaul of the documentation and the code: comments stripped to what is needed
 (Javadoc only on API classes), classes small and neat, methods package-private and tested on their own. The code grew
@@ -84,3 +84,29 @@ Each module's own reading may find a better line; the limit and the unchanged pu
 
 Behaviour, rule semantics, output formats; lineage's history normaliser and facts' parser stay independent readers
 (the contracts compare them).
+
+## As built
+
+Seven modules reviewed on their own branches and merged, each with `./gradlew check` green:
+
+| Module | Largest class before -> after | Tests before -> after | Public types after |
+| --- | --- | --- | --- |
+| discovery | GitHubHttp 222 -> GitHubRequests 112 | 108 -> 179 | DiscoveryMain |
+| facts | FactExtractor 313 -> ShellWords 137 | 166 -> 347 | the API list and the types it exposes |
+| lineage | Links 176 -> ArtifactoryHttp 110 | 103 -> 193 | LineageMain |
+| report | Dashboard 363 -> LineageFiles 106 | 75 -> 190 | ReportMain |
+| rules | RulesRun 237 -> SecretValue 77 | 42 -> 158 | RulesMain |
+| dsl | ImageBuilder 374 -> 127 | 37 -> 92 | the API list, `Policy.Approved`, `PolicyViolation.Breach` |
+| converter | Convert 266 -> 119 | 34 -> 108 | ConverterMain |
+
+Jackson reads and writes every package-private record, so none had to stay public. Javadoc is left on API types
+only; the `//` comments kept name an upstream bug or an external format's quirk.
+
+Outputs compared before and after on openshift and docker-library (facts, rules, converter) and okd (lineage): all
+identical except `effective.jsonl`, whose `env` and `labels` came out in an order `Map.copyOf` salts per JVM run, so
+the file had never been reproducible; it is now written in key order (and tested). The converter's agent also
+compared all 5,250 combined files' round trips and generated classes: identical.
+
+AGENTS.md was rewritten for contributors (the layout with every class, the conventions above); the README stays for
+users and links the new overview, `docs/overview.md`.
+

@@ -5,7 +5,7 @@ unique one, and reports what the estate is built from: base images, package mana
 distinct kinds of Dockerfile there really are. Later stages link the images in Artifactory back to the
 Dockerfiles that built them and check both against house rules.
 
-The full plan, with each phase's gate, is the
+Why it is built the way it is: [the overview](docs/overview.md). The full plan, with each phase's gate, is the
 [delivery plan](https://claude.ai/artifact/N7dHR2cH1nKgAhqkpBJx6R); progress is in [BACKLOG.md](BACKLOG.md).
 
 ## Status
@@ -272,5 +272,4 @@ for a builder that has them. Policy breaches become `// TODO(<rule>)` comments, 
 
 ## Contributing
 
-Notes for contributors and coding agents, including how work is planned and test-driven, are in
-[AGENTS.md](AGENTS.md). Per-phase plans are in [docs/plans/](docs/plans/).
+Changing the pipeline: [AGENTS.md](AGENTS.md).
