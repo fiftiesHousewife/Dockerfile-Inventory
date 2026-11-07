@@ -85,7 +85,8 @@ public record ProxySettings(Optional<InetSocketAddress> https, Optional<InetSock
         try {
             URI uri = new URI(value);
             if (uri.getHost() == null || uri.getScheme() == null) {
-                throw new IllegalArgumentException(name + " is not a URL like http://proxy:8080: " + withoutUser(value));
+                throw new IllegalArgumentException(
+                        name + " is not a URL like http://proxy:8080: " + withoutUser(value));
             }
             return uri;
         } catch (URISyntaxException e) {

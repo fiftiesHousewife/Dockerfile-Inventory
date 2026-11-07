@@ -36,7 +36,8 @@ class RetryPolicyTest {
     void retryAfterIsHonouredOnA429OrA403() {
         assertThat(POLICY.afterResponse(429, headers(Map.of("retry-after", "30")), 1, NOW))
                 .contains(Duration.ofSeconds(30));
-        assertThat(POLICY.afterResponse(403, headers(Map.of("retry-after", "7")), 1, NOW)).contains(Duration.ofSeconds(7));
+        assertThat(POLICY.afterResponse(403, headers(Map.of("retry-after", "7")), 1, NOW))
+                .contains(Duration.ofSeconds(7));
     }
 
     @Test

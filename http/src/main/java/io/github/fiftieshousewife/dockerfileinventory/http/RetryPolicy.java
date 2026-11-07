@@ -22,7 +22,8 @@ public record RetryPolicy(int attempts, Duration maxRateLimitWait) {
         if (attempt >= attempts) {
             return Optional.empty();
         }
-        Optional<Duration> rateLimited = status == 429 || status == 403 ? rateLimitWait(headers, now) : Optional.empty();
+        Optional<Duration> rateLimited =
+                status == 429 || status == 403 ? rateLimitWait(headers, now) : Optional.empty();
         if (rateLimited.isPresent()) {
             return rateLimited;
         }

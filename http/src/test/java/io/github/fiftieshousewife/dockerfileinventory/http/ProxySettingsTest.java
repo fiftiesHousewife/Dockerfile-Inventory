@@ -36,7 +36,8 @@ class ProxySettingsTest {
                 "NO_PROXY", "localhost, .internal.corp,ghe.corp,10.0.0.5"));
 
         assertThat(settings.selector().select(URI.create("https://ghe.corp/"))).containsExactly(Proxy.NO_PROXY);
-        assertThat(settings.selector().select(URI.create("https://jcr.internal.corp/"))).containsExactly(Proxy.NO_PROXY);
+        assertThat(settings.selector().select(URI.create("https://jcr.internal.corp/")))
+                .containsExactly(Proxy.NO_PROXY);
         assertThat(settings.selector().select(URI.create("https://10.0.0.5/"))).containsExactly(Proxy.NO_PROXY);
         assertThat(settings.selector().select(URI.create("https://github.com/")).getFirst().type())
                 .isEqualTo(Proxy.Type.HTTP);
