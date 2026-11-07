@@ -13,7 +13,7 @@ public final class FactsMain {
         System.out.println(new FactsRun(Path.of(required("DISCOVERY_DIR")), Path.of(required("OUT_DIR"))).run());
     }
 
-    private static String required(String name) {
+    static String required(String name) {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(name + " is not set");

@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * {@code key=value} pairs read from an instruction's text, as Docker splits them: words end at whitespace outside
- * quotes, and a backslash outside single quotes escapes the next character. rewrite-docker 8.90.4 mis-reads pairs in
+ * {@code key=value} pairs read from an instruction's text, as Docker splits them. rewrite-docker mis-reads pairs in
  * several layouts (upstream issues 4, 5, 6 and 12), so facts, rules and the converter all read them here.
  */
 public final class KeyValuePairs {
@@ -17,6 +16,7 @@ public final class KeyValuePairs {
     private KeyValuePairs() {
     }
 
+    /** Each word's pair, in order; words end at whitespace outside quotes. */
     public static List<Pair> of(String text) {
         return words(text).stream().map(KeyValuePairs::pair).toList();
     }
@@ -33,7 +33,7 @@ public final class KeyValuePairs {
         return quoted ? value.substring(1, value.length() - 1) : value;
     }
 
-    private static List<String> words(String text) {
+    static List<String> words(String text) {
         List<String> words = new ArrayList<>();
         StringBuilder word = new StringBuilder();
         Scan scan = new Scan();
@@ -49,13 +49,13 @@ public final class KeyValuePairs {
         return words;
     }
 
-    private static Pair pair(String word) {
+    static Pair pair(String word) {
         int equals = firstUnquotedEquals(word);
         return equals < 0 ? new Pair(plain(word), null)
                 : new Pair(plain(word.substring(0, equals)), word.substring(equals + 1));
     }
 
-    private static int firstUnquotedEquals(String word) {
+    static int firstUnquotedEquals(String word) {
         Scan scan = new Scan();
         for (int i = 0; i < word.length(); i++) {
             if (scan.outside() && word.charAt(i) == '=') {
@@ -66,8 +66,7 @@ public final class KeyValuePairs {
         return -1;
     }
 
-    /** A key as Docker reads it: quotes removed, escaped characters themselves. */
-    private static String plain(String raw) {
+    static String plain(String raw) {
         StringBuilder plain = new StringBuilder();
         Scan scan = new Scan();
         for (char c : raw.toCharArray()) {
@@ -79,15 +78,14 @@ public final class KeyValuePairs {
         return plain.toString();
     }
 
-    private static void addIfAny(List<String> words, StringBuilder word) {
+    static void addIfAny(List<String> words, StringBuilder word) {
         if (!word.isEmpty()) {
             words.add(word.toString());
             word.setLength(0);
         }
     }
 
-    /** Where a scan stands: inside which quote, and whether the last character was an escaping backslash. */
-    private static final class Scan {
+    static final class Scan {
 
         private char quote;
         private boolean escaped;
@@ -96,7 +94,6 @@ public final class KeyValuePairs {
             return quote == 0 && !escaped;
         }
 
-        /** Whether {@code c} is text, not a quote that opens or closes or a backslash that escapes. */
         boolean literal(char c) {
             if (escaped) {
                 return true;

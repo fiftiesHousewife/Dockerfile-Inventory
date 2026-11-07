@@ -9,17 +9,15 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * The two normal forms Phase 2 clusters on, each hashed. The text form finds cosmetic duplicates: comments
- * dropped, continuations joined, whitespace collapsed, the first word of each line (the keyword) upper-cased.
- * Lines inside heredoc bodies are treated alike, which can only merge files that differ in a body's comments.
- * The signature finds functional duplicates: base family and major version, package managers and the sorted
- * package set of the final stage, user kind, exposed ports, entrypoint form and stage count.
+ * The two normal forms Phase 2 clusters on, each hashed: the text form finds cosmetic duplicates, the signature
+ * functional ones.
  */
 public final class NormalForms {
 
     private NormalForms() {
     }
 
+    /** Comments dropped, continuations joined, whitespace collapsed, keywords upper-cased, then hashed. */
     public static String textHash(String dockerfile) {
         return sha256(textNormal(dockerfile));
     }
@@ -28,7 +26,10 @@ public final class NormalForms {
         return sha256(signature(facts));
     }
 
-    /** Readable, so a surprising cluster can be explained; hashed for grouping. */
+    /**
+     * Base family and major version, the final stage's managers and sorted packages, user kind, ports, entrypoint
+     * form and stage count; readable, so a surprising cluster can be explained.
+     */
     public static String signature(ImageFacts facts) {
         int last = facts.stageCount() - 1;
         List<PackageCall> installs = facts.packageCalls().stream()
@@ -47,9 +48,9 @@ public final class NormalForms {
     }
 
     /**
-     * The base's image path, without registry host, tag or digest, so it compares with what a build records and with
-     * Artifactory's image names. As in Docker, a first segment is a host only if it holds a dot or a colon, or is
-     * {@code localhost}. Null when the base is unresolved.
+     * The base's image path without registry host, tag or digest, so it compares with Artifactory's image names. As
+     * in Docker, a first segment is a host only if it holds a dot or a colon, or is {@code localhost}. Null when the
+     * base is unresolved.
      */
     public static String fromPath(BaseImage base) {
         if (!base.resolved()) {
@@ -62,7 +63,6 @@ public final class NormalForms {
         return host ? name.substring(slash + 1) : name;
     }
 
-    /** D4: the last path segment of the image name, so registries and mirrors of one image group together. */
     static String family(BaseImage base) {
         if (!base.resolved()) {
             return "unresolved";
@@ -70,7 +70,6 @@ public final class NormalForms {
         return base.name().substring(base.name().lastIndexOf('/') + 1);
     }
 
-    /** D4: the tag's leading digits ({@code 9.4-1227} gives {@code 9}); empty when there are none. */
     static String major(BaseImage base) {
         return base.tag() == null ? "" : base.tag().replaceFirst("^(\\d*).*", "$1");
     }
@@ -84,7 +83,7 @@ public final class NormalForms {
                 .collect(Collectors.joining("\n"));
     }
 
-    private static String upperKeyword(String line) {
+    static String upperKeyword(String line) {
         int space = line.indexOf(' ');
         return space < 0 ? line.toUpperCase(Locale.ROOT)
                 : line.substring(0, space).toUpperCase(Locale.ROOT) + line.substring(space);

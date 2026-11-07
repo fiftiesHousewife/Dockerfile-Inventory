@@ -14,6 +14,11 @@ class ExpansionsTest {
     }
 
     @Test
+    void expandsAllOfABashArraysWordsLikeAVariable() {
+        assertThat(Expansions.expanded("${A[@]} ${A[*]}", Map.of("A", "x y"))).isEqualTo("x y x y");
+    }
+
+    @Test
     void aWordWithADollarParenthesisOrABacktickHoldsACommandSubstitution() {
         assertThat(Expansions.holdsCommandSubstitution("$(uname -m)")).isTrue();
         assertThat(Expansions.holdsCommandSubstitution("`id -u`")).isTrue();

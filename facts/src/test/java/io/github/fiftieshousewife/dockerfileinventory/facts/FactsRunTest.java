@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import org.assertj.core.data.Offset;
 import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,9 +53,7 @@ class FactsRunTest {
 
         FactsRun.Summary again = new FactsRun(discovery, out).run();
 
-        assertThat(again.parsed()).isZero();
-        assertThat(again.failed()).isZero();
-        assertThat(again.alreadyDone()).isEqualTo(2);
+        assertThat(again).isEqualTo(new FactsRun.Summary(0, 0, 2));
         assertThat(Files.readAllLines(out.resolve("facts.jsonl"))).hasSize(1);
     }
 
@@ -83,16 +82,17 @@ class FactsRunTest {
 
         new FactsRun(discovery, out).run();
 
-        Rates rates = JsonMapper.builder().build().readValue(out.resolve("rates.json").toFile(), Rates.class);
-        assertThat(rates.blobs()).isEqualTo(4);
-        assertThat(rates.parseFailures()).isEqualTo(1);
-        assertThat(rates.parseFailureRate()).isEqualTo(0.25);
-        assertThat(rates.runs()).isEqualTo(3);
-        assertThat(rates.opaqueRuns()).isEqualTo(1);
-        assertThat(rates.opaqueRunRate()).isCloseTo(1.0 / 3, org.assertj.core.data.Offset.offset(1e-9));
-        assertThat(rates.unresolvedFromByOrganisation()).isEqualTo(Map.of("platform", 1));
-        assertThat(rates.buildKitFeatures()).isEqualTo(Map.of("run-mount", 1, "syntax-directive", 1));
-        assertThat(rates.otherShellRuns()).isEqualTo(1);
+        assertThat(rates()).satisfies(rates -> {
+            assertThat(rates.blobs()).isEqualTo(4);
+            assertThat(rates.parseFailures()).isEqualTo(1);
+            assertThat(rates.parseFailureRate()).isEqualTo(0.25);
+            assertThat(rates.runs()).isEqualTo(3);
+            assertThat(rates.opaqueRuns()).isEqualTo(1);
+            assertThat(rates.opaqueRunRate()).isCloseTo(1.0 / 3, Offset.offset(1e-9));
+            assertThat(rates.unresolvedFromByOrganisation()).isEqualTo(Map.of("platform", 1));
+            assertThat(rates.buildKitFeatures()).isEqualTo(Map.of("run-mount", 1, "syntax-directive", 1));
+            assertThat(rates.otherShellRuns()).isEqualTo(1);
+        });
     }
 
     @Test
@@ -101,10 +101,55 @@ class FactsRunTest {
 
         new FactsRun(discovery, out).run();
 
-        Rates rates = JsonMapper.builder().build().readValue(out.resolve("rates.json").toFile(), Rates.class);
-        assertThat(rates.blobs()).isEqualTo(3);
-        assertThat(rates.templates()).isEqualTo(1);
-        assertThat(rates.parseFailures()).isEqualTo(1);
-        assertThat(rates.parseFailureRate()).isEqualTo(0.5);
+        assertThat(rates()).satisfies(rates -> {
+            assertThat(rates.blobs()).isEqualTo(3);
+            assertThat(rates.templates()).isEqualTo(1);
+            assertThat(rates.parseFailures()).isEqualTo(1);
+            assertThat(rates.parseFailureRate()).isEqualTo(0.5);
+        });
+    }
+
+    @Test
+    void recordAppendsAParsedBlobToFactsAndAFailedOneToFailures() throws IOException {
+        FactsRun run = new FactsRun(discovery, out);
+
+        assertThat(run.record("x", "FROM ubi9\n")).isTrue();
+        assertThat(run.record("y", "not a dockerfile\n")).isFalse();
+        assertThat(run.recorded()).containsExactlyInAnyOrder("x", "y");
+    }
+
+    @Test
+    void locationsAreEmptyWithoutAManifestAndOtherwiseRepositoryAndBlobPairs() throws IOException {
+        FactsRun run = new FactsRun(discovery, out);
+
+        assertThat(run.locations()).isEmpty();
+        Files.writeString(discovery.resolve("manifest.jsonl"), "{\"repository\":\"a/b\",\"blobSha\":\"good\"}\n\n");
+        assertThat(run.locations()).containsExactly(Map.entry("a/b", "good"));
+    }
+
+    @Test
+    void blobsAreTheFinishedFilesInNameOrder() throws IOException {
+        Files.writeString(discovery.resolve("blobs/abc123.part"), "FROM ubi9\n");
+        Files.createDirectories(discovery.resolve("blobs/dir"));
+
+        assertThat(new FactsRun(discovery, out).blobs()).extracting(blob -> String.valueOf(blob.getFileName()))
+                .containsExactly("bad", "good");
+    }
+
+    @Test
+    void aBlobNamedPartIsStillBeingWritten() {
+        assertThat(FactsRun.stillBeingWritten(Path.of("abc.part"))).isTrue();
+        assertThat(FactsRun.stillBeingWritten(Path.of("abc"))).isFalse();
+    }
+
+    @Test
+    void aFactsRowWithoutStepsReadsBackWithNone() {
+        FactsRun.FactRow row = JsonMapper.builder().build().readValue("{\"blobSha\":\"a\"}", FactsRun.FactRow.class);
+
+        assertThat(row.steps()).isEmpty();
+    }
+
+    private Rates rates() {
+        return JsonMapper.builder().build().readValue(out.resolve("rates.json").toFile(), Rates.class);
     }
 }

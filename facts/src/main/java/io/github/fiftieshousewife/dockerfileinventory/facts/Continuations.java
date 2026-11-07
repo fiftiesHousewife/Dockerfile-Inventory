@@ -6,8 +6,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Docker's line continuations: a backslash ending a line, spaces or tabs after it allowed, joins the next line to it.
- * One place for every module that reads an instruction's text (facts, rules, the converter).
+ * Docker's line continuations, read in one place so facts, rules and the converter join lines the same way Docker
+ * does.
  */
 public final class Continuations {
 
@@ -17,14 +17,14 @@ public final class Continuations {
     private Continuations() {
     }
 
-    /** Each backslash-newline removed, as Docker removes it, nothing put in its place. */
+    /** Each backslash-newline removed with nothing in its place, as Docker removes it. */
     public static String removed(String text) {
         return CONTINUATION.matcher(text).replaceAll("");
     }
 
     /**
-     * The instruction on one line: continued lines joined, comment lines inside dropped (Docker drops them), runs of
-     * whitespace made one space. A backslash ending the last line joins nothing, so it stays ({@code C:\\Windows\\}).
+     * The instruction on one line: continued lines joined, comment lines inside dropped as Docker drops them,
+     * whitespace collapsed. A backslash ending the last line joins nothing, so it stays ({@code C:\\Windows\\}).
      */
     public static String oneLine(String instruction) {
         List<String> lines = instruction.stripTrailing().lines().map(String::stripTrailing).toList();
@@ -35,7 +35,7 @@ public final class Continuations {
         return WHITESPACE.matcher(joined).replaceAll(" ").strip();
     }
 
-    private static String withoutTrailingBackslash(String line) {
+    static String withoutTrailingBackslash(String line) {
         return line.endsWith("\\") ? line.substring(0, line.length() - 1) : line;
     }
 }

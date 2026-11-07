@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 class PackageCallsTest {
 
     private static List<PackageCall> calls(String script) {
-        return PackageCalls.of(ShellTokeniser.parse(script).orElseThrow());
+        return PackageCalls.of(ShellTokeniser.parse(script).orElseThrow(), Map.of());
     }
 
     @Test
@@ -82,5 +82,49 @@ class PackageCallsTest {
         assertThat(calls("install_packages ca-certificates curl && uninstall_packages curl")).containsExactly(
                 new PackageCall("apt-get", "install", List.of(), List.of("ca-certificates", "curl"), true),
                 new PackageCall("apt-get", "remove", List.of(), List.of(), false));
+    }
+
+    @Test
+    void expandedWordSplitsAKnownVariablesUnquotedValueIntoWords() {
+        assertThat(PackageCalls.expandedWord("${PKGS}", Map.of("PKGS", " \"git \\\n  tar\" ")))
+                .containsExactly("git", "tar");
+    }
+
+    @Test
+    void expandedWordKeepsAnUnknownVariableOrAWordThatIsNotOnlyAReference() {
+        assertThat(PackageCalls.expandedWord("$NOPE", Map.of())).containsExactly("$NOPE");
+        assertThat(PackageCalls.expandedWord("a-$PKGS", Map.of("PKGS", "git"))).containsExactly("a-$PKGS");
+    }
+
+    @Test
+    void packagesAreTheWordsAfterAnInstallSubcommandWithoutSubstitutions() {
+        assertThat(PackageCalls.packages("install", List.of("install", "git", "$(cat x)"))).containsExactly("git");
+        assertThat(PackageCalls.packages("update", List.of("update", "git"))).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "dnf clean all              | RPM | true",
+        "apt-get clean              | APT | false",
+        "rm -rf /var/lib/apt/lists  | APT | true",
+        "rm -rf /var/cache/apk      | RPM | false",
+        "yum clean all              | APK | false",
+    })
+    void cleansIsTheFamilysOwnCleanOrRemovingItsCacheDirectory(String command, PackageCalls.Family family,
+            boolean cleans) {
+        assertThat(PackageCalls.cleans(List.of(command.split(" ")), family)).isEqualTo(cleans);
+    }
+
+    @Test
+    void managerCallSeparatesFlagsFromTheSubcommandAndPackages() {
+        assertThat(PackageCalls.managerCall(List.of("apk", "--no-cache", "add", "git"), List.of()))
+                .isEqualTo(new PackageCall("apk", "add", List.of("--no-cache"), List.of("git"), true));
+    }
+
+    @Test
+    void callUnwrapsAWrapperIntoTheManagersCommand() {
+        assertThat(PackageCalls.call(List.of("uninstall_packages", "curl"),
+                List.of(List.of("rm", "-rf", "/var/lib/apt/lists/x"))))
+                .isEqualTo(new PackageCall("apt-get", "remove", List.of(), List.of(), true));
     }
 }
