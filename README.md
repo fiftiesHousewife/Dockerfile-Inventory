@@ -25,6 +25,8 @@ The full plan, with each phase's gate, is the
 Dashboards from runs on public GitHub organisations, as the report stage writes them (private links; ask the owner
 for access):
 
+- [all six organisations combined](https://claude.ai/artifact/Npbva376tdsXBuHsaTko2B): 8,199 Dockerfile locations in
+  1,453 repositories (sclorg, openshift, konflux-ci, redhat-developer, docker-library, bitnami), with OKD lineage
 - [openshift with lineage](https://claude.ai/artifact/6Uy3wKm1Wq9p2gwTdeGBPW): 2,919 Dockerfiles, with 30 of OKD's
   published images linked to the Dockerfiles that built them
 - [bitnami](https://claude.ai/artifact/1wnH7fkxBzUTo2M1eA6SBH): 266 Dockerfiles on one pattern
@@ -83,6 +85,15 @@ symlinks, third-party copies (`vendor/`, `node_modules/`, `third_party/`) and te
 | `blobs/<sha>` | Each distinct Dockerfile's text, stored once however many repositories copy it |
 | `repos.jsonl` | One line per repository per run: outcome (`SCANNED`, `EMPTY`, `TRUNCATED`, `RELEASE_COMMIT_MISSING`, `FAILED`), commit, archived and fork flags, Dockerfile count |
 | `blob-findings.jsonl` | Dockerfiles that could not be stored: binary, too large, or not found |
+
+Several discovery runs (one per organisation, say) are merged into one estate for the stages after it:
+
+```bash
+scripts/combine.sh out/all/discovery out/openshift/discovery out/bitnami/discovery   # any number of sources
+```
+
+Locations and repositories are concatenated and each file is stored once; discover each organisation only once, or
+its repositories are counted twice (the script warns).
 
 ## Parse the Dockerfiles
 

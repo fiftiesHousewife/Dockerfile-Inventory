@@ -85,7 +85,8 @@ testdata/contracts/         normal-form contracts between facts and lineage: pyt
                             Dockerfiles against their real Buildah-built images)
 scripts/                    discover.sh (one organisation, the GitHub CLI's token), lineage-demo.sh (local JCR,
                             Buildah builds or, with MIRROR, published images copied unchanged; lineage),
-                            okd-select.sh (OKD images to mirror and their release index), jcr-diagnose.sh,
+                            okd-select.sh (OKD images to mirror and their release index), combine.sh (several
+                            discovery outputs as one estate), jcr-diagnose.sh,
                             record-jcr-fixtures.sh (lineage fixtures)
 ```
 
