@@ -56,3 +56,4 @@ bin/
 
 ### Claude Code: proxy-aware gradlew (only useful inside the sandbox) ###
 gradlew-claude
+.claude/worktrees/
