@@ -57,7 +57,9 @@ LABEL a=$REV b=$SRC
 ```
 
 Expected: two pairs, `a` and `b`. Actual: one pair `a` whose value is `=$REV b=$SRC` (quoted values parse correctly).
-Workaround: rules and the converter read label keys from the printed instruction.
+Fixed in the fork (a label value is the tokens up to the next whitespace, variables included, split into literals and
+variables; `key=` has an empty value). Rule R3 reads label keys from the tree. The converter still reads `ENV` and
+`LABEL` from the printed instruction, as it needs each value as written, quotes and escapes kept, for the model's form.
 
 ## 5. An empty `ENV KEY=` value is `=`
 
@@ -192,5 +194,6 @@ ENV PERL_LWP_SSL_VERIFY_HOSTNAME = 0
 
 Expected: the legacy form, one variable whose value is `= 0`, as Docker reads it. Actual: `IllegalStateException:
 ... is not print idempotent`. `ENV A "= 0"` parses. Seen in 1 `redhat-developer` file.
-Workaround: none (one file); it is counted as a parse failure.
+Fixed in the fork (the `KEY=value` form is taken only when the `=` is right after the key, tested at the start of the
+pair so the parser's prediction sees it; otherwise the pair is the legacy form). The same holds for `LABEL`.
 

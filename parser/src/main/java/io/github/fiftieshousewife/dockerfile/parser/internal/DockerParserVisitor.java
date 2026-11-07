@@ -4,6 +4,7 @@
  * Modified by Dockerfile Inventory, 2026: whitespace before a comma in a JSON array is kept (issue 8).
  * Modified by Dockerfile Inventory, 2026: a flag value ${NAME:-default} keeps its default (issue 9).
  * Modified by Dockerfile Inventory, 2026: ARG declares several names, each with or without a value (issues 10, 12, 13).
+ * Modified by Dockerfile Inventory, 2026: a LABEL value holds its adjacent tokens, variables split out (issue 4).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -569,7 +570,7 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                 // New format: LABEL key=value
                 key = visitLabelKeyOrValue(pairCtx.labelKey());
                 skip(pairCtx.EQUALS().getSymbol());
-                value = visitLabelKeyOrValue(pairCtx.labelValue());
+                value = labelValue(pairCtx.labelValue());
             } else {
                 // Old format: LABEL key value
                 key = visitLabelKeyOrValue(pairCtx.labelKey());
@@ -617,6 +618,31 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             }
         }
 
+        return new Docker.Argument(randomId(), prefix, Markers.EMPTY, contents);
+    }
+
+    // Each adjacent token after the =: quoted strings, variables and plain text; no contents for key=
+    private Docker.Argument labelValue(DockerParser.@Nullable LabelValueContext ctx) {
+        if (ctx == null) {
+            return new Docker.Argument(randomId(), Space.EMPTY, Markers.EMPTY, emptyList());
+        }
+        Space prefix = prefix(ctx.getStart());
+        List<Docker.ArgumentContent> contents = new ArrayList<>();
+        for (DockerParser.LabelValueElementContext elemCtx : ctx.labelValueElement()) {
+            Token token = elemCtx.getStart();
+            String text = token.getText();
+            Space elementPrefix = prefix(token);
+            skip(token);
+            if (token.getType() == DockerLexer.DOUBLE_QUOTED_STRING) {
+                contents.add(new Docker.Literal(randomId(), elementPrefix, Markers.EMPTY, text.substring(1, text.length() - 1), Docker.Literal.QuoteStyle.DOUBLE));
+            } else if (token.getType() == DockerLexer.SINGLE_QUOTED_STRING) {
+                contents.add(new Docker.Literal(randomId(), elementPrefix, Markers.EMPTY, text.substring(1, text.length() - 1), Docker.Literal.QuoteStyle.SINGLE));
+            } else if (token.getType() == DockerLexer.ENV_VAR) {
+                contents.add(createEnvVar(text).withPrefix(elementPrefix));
+            } else {
+                contents.add(new Docker.Literal(randomId(), elementPrefix, Markers.EMPTY, text, null));
+            }
+        }
         return new Docker.Argument(randomId(), prefix, Markers.EMPTY, contents);
     }
 

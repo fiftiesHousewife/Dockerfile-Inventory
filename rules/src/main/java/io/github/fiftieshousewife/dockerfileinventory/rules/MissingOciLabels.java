@@ -1,11 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
-import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
-import io.github.fiftieshousewife.dockerfileinventory.facts.KeyValuePairs;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.openrewrite.Cursor;
+import java.util.stream.Stream;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class MissingOciLabels implements Rule {
@@ -35,11 +33,15 @@ final class MissingOciLabels implements Rule {
     }
 
     static Set<String> labels(Docker.File file) {
-        Cursor cursor = new Cursor(null, file);
         return FinalImage.instructions(file).stream()
-                .filter(i -> i instanceof Docker.Label)
-                .map(i -> Continuations.removed(Lines.withoutLeadingComments(i.printTrimmed(cursor))).strip())
-                .flatMap(text -> KeyValuePairs.keys(text.substring(text.indexOf(' ') + 1)).stream())
+                .flatMap(i -> i instanceof Docker.Label label ? label.getPairs().stream() : Stream.empty())
+                .map(pair -> key(pair.getKey()))
                 .collect(Collectors.toSet());
+    }
+
+    static String key(Docker.Argument key) {
+        return key.getContents().stream()
+                .map(c -> c instanceof Docker.Literal literal ? literal.getText() : "")
+                .collect(Collectors.joining());
     }
 }
