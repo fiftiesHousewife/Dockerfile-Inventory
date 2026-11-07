@@ -10,7 +10,8 @@ class SourceLabelsTest {
     @Test
     void openShiftsSourceLocationNamesTheRepository() {
         assertThat(SourceLabels.repository(Map.of("io.openshift.build.source-location",
-                "https://github.com/openshift/cluster-storage-operator"))).contains("openshift/cluster-storage-operator");
+                "https://github.com/openshift/cluster-storage-operator")))
+                .contains("openshift/cluster-storage-operator");
     }
 
     @Test

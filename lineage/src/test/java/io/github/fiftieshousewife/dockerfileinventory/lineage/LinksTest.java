@@ -114,7 +114,8 @@ class LinksTest {
         assertThat(Links.alignment(
                 List.of(instruction("LABEL io.k8s.display-name name vendor version"), instruction("USER 0")),
                 List.of(instruction("LABEL io.k8s.display-name"), instruction("USER 0")))).isEqualTo(1.0);
-        assertThat(Links.alignment(List.of(instruction("LABEL name")), List.of(instruction("LABEL io.k8s.display-name"))))
+        assertThat(Links.alignment(List.of(instruction("LABEL name")),
+                List.of(instruction("LABEL io.k8s.display-name"))))
                 .isZero();
     }
 

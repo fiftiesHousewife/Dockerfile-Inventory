@@ -52,8 +52,9 @@ lineage/                    Phase 1b: Artifactory images -> family tree -> Docke
                             ImageNodes: one tag -> manifest (amd64 entry of a list) -> ImageConfig, or Skipped
                             Lineage: every image's Parent (Root, Of, Ambiguous) from layer prefixes and history
                             HistoryNormaliser: Buildah created_by -> NormalStep (keyword, comparable text, FROM)
-                            OwnSteps and Links: an image's own steps (release tooling's wrapper cut) -> its Dockerfile group, tier,
-                            parent missing; SourceLabels: a source label limits the link to that repository
+                            OwnSteps and Links: an image's own steps (release tooling's wrapper cut) -> its
+                            Dockerfile group, tier, parent missing; SourceLabels: a source label limits the link to
+                            that repository
                             Fold: each image's effective user, env, labels, ... with the image that set each one
                             Gaps: unlinked images (gaps, external bases) and images built on an outdated base
                             Inventory: Artifactory -> images.jsonl, configs/; Analysis: everything else, rates

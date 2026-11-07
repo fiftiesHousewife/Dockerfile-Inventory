@@ -142,7 +142,8 @@ class AnalysisTest {
                 .replace("\n", "");
         Files.writeString(facts.resolve("facts.jsonl"),
                 "{\"blobSha\":\"cso-rhel7\",\"fromPath\":\"ocp/4.8\",\"steps\":" + steps + "}\n"
-                + "{\"blobSha\":\"cso-plain\",\"fromPath\":\"ocp/4.8\",\"steps\":[{\"keyword\":\"RUN\",\"text\":\"make\"}]}\n");
+                + "{\"blobSha\":\"cso-plain\",\"fromPath\":\"ocp/4.8\","
+                + "\"steps\":[{\"keyword\":\"RUN\",\"text\":\"make\"}]}\n");
         Files.writeString(discovery.resolve("manifest.jsonl"), """
                 {"repository":"openshift/cluster-storage-operator","scope":"RELEASED","blobSha":"cso-rhel7"}
                 {"repository":"openshift/cluster-storage-operator","scope":"RELEASED","blobSha":"cso-plain"}
