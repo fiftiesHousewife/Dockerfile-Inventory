@@ -8,10 +8,12 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
@@ -63,7 +65,7 @@ class ConvertTest {
                         "summary", "say hi")),
                 new Instruction.Workdir("/opt/app"),
                 new Instruction.User("1001:0"),
-                new Instruction.Expose(8080),
+                new Instruction.Expose(List.of(Port.of(8080))),
                 new Instruction.Entrypoint(List.of("java", "-jar", "app.jar")),
                 new Instruction.Cmd(List.of("serve")));
     }
@@ -124,7 +126,7 @@ class ConvertTest {
                 ADD app.tar.gz /opt/
                 ENTRYPOINT java -jar app.jar
                 CMD ./start.sh
-                EXPOSE 8080/udp
+                EXPOSE ${PORT:-8080}
                 HEALTHCHECK NONE
                 VOLUME /data
                 """)).model().stages().getFirst().instructions();
@@ -137,7 +139,7 @@ class ConvertTest {
                 new Instruction.Raw("ADD app.tar.gz /opt/", "ADD is not modelled"),
                 new Instruction.Raw("ENTRYPOINT java -jar app.jar", "shell-form ENTRYPOINT"),
                 new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),
-                new Instruction.Raw("EXPOSE 8080/udp", "EXPOSE with a protocol, range, variable or several ports"),
+                new Instruction.Raw("EXPOSE ${PORT:-8080}", "EXPOSE with a port that is not a number, range or variable"),
                 new Instruction.Raw("HEALTHCHECK NONE", "HEALTHCHECK is not modelled"),
                 new Instruction.Volume(List.of("/data"), false));
     }
@@ -268,10 +270,13 @@ class ConvertTest {
     }
 
     @Test
-    void anExposeIsSingleOnlyForOnePortWrittenAsDigits() {
-        assertThat(List.of("EXPOSE 8080", "EXPOSE 8080/tcp", "EXPOSE 80 443", "EXPOSE $PORT"))
-                .map(line -> Convert.single((Docker.Expose) first("FROM ubi9\n" + line + "\n")))
-                .containsExactly(true, false, false, false);
+    void anExposeKeepsEachPortAsWrittenOrIsNotTypedWhenOneIsNotAPort() {
+        assertThat(List.of("EXPOSE 8080", "EXPOSE 80 53/udp 8000-8010/tcp $PORT", "EXPOSE 80 ${PORT:-8080}"))
+                .map(line -> Convert.ports((Docker.Expose) first("FROM ubi9\n" + line + "\n")))
+                .containsExactly(Optional.of(List.of(Port.of(8080))),
+                        Optional.of(List.of(Port.of(80), new Port("53/udp"), new Port("8000-8010/tcp"),
+                                new Port("$PORT"))),
+                        Optional.empty());
     }
 
     private static Docker.Instruction first(String dockerfile) {

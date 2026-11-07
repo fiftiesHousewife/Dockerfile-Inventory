@@ -72,7 +72,8 @@ public final class DockerfileRenderer {
             case Instruction.Copy copy -> copy(copy);
             case Instruction.User user -> "USER " + user.user();
             case Instruction.Workdir workdir -> "WORKDIR " + workdir.path();
-            case Instruction.Expose expose -> "EXPOSE " + expose.port();
+            case Instruction.Expose expose -> "EXPOSE "
+                    + expose.ports().stream().map(Port::spec).collect(Collectors.joining(" "));
             case Instruction.Entrypoint entrypoint -> "ENTRYPOINT " + DockerQuotes.jsonArray(entrypoint.command());
             case Instruction.Cmd cmd -> "CMD " + DockerQuotes.jsonArray(cmd.command());
             case Instruction.Shell shell -> "SHELL " + DockerQuotes.jsonArray(shell.command());

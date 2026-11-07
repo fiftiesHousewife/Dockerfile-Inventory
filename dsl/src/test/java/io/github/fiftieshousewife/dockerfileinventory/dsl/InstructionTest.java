@@ -13,14 +13,14 @@ class InstructionTest {
 
     @Test
     void invalidValuesAreRefusedWhenTheInstructionIsBuilt() {
-        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Expose(0)).withMessageContaining("port");
-        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Expose(65536));
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Expose(List.of()))
+                .withMessageContaining("port");
         assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.User(" "));
         assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Workdir(""));
         assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Arg(" ", null));
         assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Copy(List.of("a"), "", null, null));
         assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Raw("RUN x", " "));
-        assertThat(new Instruction.Expose(65535).port()).isEqualTo(65535);
+        assertThat(new Instruction.Expose(new ArrayList<>(List.of(Port.of(80)))).ports()).isUnmodifiable();
     }
 
     @Test

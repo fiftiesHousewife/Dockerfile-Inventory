@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.LinkedHashMap;
@@ -153,6 +154,16 @@ class ImageBuilderTest {
                 LABEL team="payments"
                 COPY --from=deps --chown=app:app a b /srv/
                 """);
+    }
+
+    @Test
+    void portsCanBeGivenAsDockerWritesThemAndABadOneIsRefused() {
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090).model()
+                .stages().getFirst().instructions())
+                .containsExactly(new Instruction.Expose(List.of(Port.of(8080), new Port("53/udp"))),
+                        new Instruction.Expose(List.of(Port.of(9090))));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).expose("80/http"));
     }
 
     @Test

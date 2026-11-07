@@ -63,12 +63,10 @@ public sealed interface Instruction {
         }
     }
 
-    record Expose(int port) implements Instruction {
+    record Expose(List<Port> ports) implements Instruction {
 
         public Expose {
-            if (port < 1 || port > 65535) {
-                throw new IllegalArgumentException("a port is 1 to 65535, not " + port);
-            }
+            ports = List.copyOf(Checks.notEmpty(ports, "an EXPOSE port"));
         }
     }
 

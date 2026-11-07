@@ -6,6 +6,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PolicyViolation;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.io.IOException;
 import java.net.URL;
@@ -91,12 +92,18 @@ class JavaEmitterTest {
     @Test
     void callWritesEachInstructionAsItsBuilderMethod() {
         assertThat(List.of(new Instruction.Arg("A", null), new Instruction.Arg("A", "1"),
-                new Instruction.Env(Map.of("K", "v")), new Instruction.Expose(8080),
+                new Instruction.Env(Map.of("K", "v")), new Instruction.Expose(List.of(Port.of(8080))),
                 new Instruction.Raw("VOLUME /d", "VOLUME is not modelled")))
                 .map(instruction -> JavaEmitter.call(instruction).toString())
                 .containsExactly(".arg(\"A\")", ".arg(\"A\", \"1\")",
-                        ".env(java.util.Map.ofEntries(java.util.Map.entry(\"K\", \"v\")))", ".expose(8080)",
+                        ".env(java.util.Map.ofEntries(java.util.Map.entry(\"K\", \"v\")))", ".expose(\"8080\")",
                         ".raw(\"VOLUME /d\", \"VOLUME is not modelled\")");
+    }
+
+    @Test
+    void severalPortsAreWrittenAsTheirSpecs() {
+        assertThat(JavaEmitter.call(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp")))).toString())
+                .isEqualTo(".expose(\"80\", \"53/udp\")");
     }
 
     @Test

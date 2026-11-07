@@ -3,11 +3,13 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
@@ -83,8 +85,9 @@ final class Convert {
             case Docker.Label label -> ConvertPairs.label(printed.text(label));
             case Docker.Workdir workdir -> new Instruction.Workdir(Values.unquote(Values.text(workdir.getPath())));
             case Docker.User user -> user(user);
-            case Docker.Expose expose when single(expose) ->
-                    new Instruction.Expose(Integer.parseInt(expose.getPorts().getFirst().getText().strip()));
+            case Docker.Expose expose -> ports(expose).<Instruction>map(Instruction.Expose::new)
+                    .orElseGet(() -> new Instruction.Raw(printed.text(expose),
+                            "EXPOSE with a port that is not a number, range or variable"));
             case Docker.Run run -> ConvertCommands.run(run, printed.text(run));
             case Docker.Entrypoint entrypoint when entrypoint.getCommand() instanceof Docker.ExecForm exec ->
                     ConvertCommands.arguments(exec).<Instruction>map(Instruction.Entrypoint::new)
@@ -95,8 +98,6 @@ final class Convert {
             case Docker.Copy copy -> ConvertCopy.copy(printed.text(copy));
             case Docker.Entrypoint entrypoint -> new Instruction.Raw(printed.text(entrypoint), "shell-form ENTRYPOINT");
             case Docker.Cmd cmd -> new Instruction.Raw(printed.text(cmd), "shell-form CMD");
-            case Docker.Expose expose -> new Instruction.Raw(printed.text(expose),
-                    "EXPOSE with a protocol, range, variable or several ports");
             case Docker.Shell shell -> ConvertMetadata.shell(shell, printed.text(shell));
             case Docker.Volume volume -> ConvertMetadata.volume(volume, printed.text(volume));
             case Docker.Stopsignal signal -> new Instruction.StopSignal(Values.text(signal.getSignal()).strip());
@@ -116,8 +117,11 @@ final class Convert {
                 + (group == null ? "" : ":" + Values.braced(Values.unquote(Values.text(group)))));
     }
 
-    static boolean single(Docker.Expose expose) {
-        List<Docker.Port> ports = expose.getPorts();
-        return ports.size() == 1 && ports.getFirst().getText().strip().matches("\\d{1,5}");
+    static Optional<List<Port>> ports(Docker.Expose expose) {
+        try {
+            return Optional.of(expose.getPorts().stream().map(port -> new Port(port.getText().strip())).toList());
+        } catch (IllegalArgumentException notAPort) {
+            return Optional.empty();
+        }
     }
 }

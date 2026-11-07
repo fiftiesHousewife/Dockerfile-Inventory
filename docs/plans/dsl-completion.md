@@ -98,6 +98,7 @@ representatives first.
 | --- | --- | --- | --- |
 | Before (7 Nov) | 92.6% | 3,206 | 5,149 of 5,250 |
 | `SHELL`, `VOLUME` (with its form), `STOPSIGNAL`, `MAINTAINER` | 94.0% | 3,559 | 5,149 |
+| `EXPOSE` as `Port` specs (every one typed; a spec that is not a port, such as `${PORT:-80}`, would stay `Raw`) | 94.3% | 3,636 | 5,149 |
 
 A shell-form `VOLUME` keeps each word as written, quotes included (`Values.written`), found when `VOLUME "/test_dir"`
 lost its quotes on the first try.

@@ -11,6 +11,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.ImageBuilder;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PolicyViolation;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.List;
@@ -78,7 +79,8 @@ final class JavaEmitter {
                     copy.destination(), copy.chown(), copy.fromStage());
             case Instruction.User user -> CodeBlock.of(".user($S)", user.user());
             case Instruction.Workdir workdir -> CodeBlock.of(".workdir($S)", workdir.path());
-            case Instruction.Expose expose -> CodeBlock.of(".expose($L)", expose.port());
+            case Instruction.Expose expose ->
+                    CodeBlock.of(".expose($L)", strings(expose.ports().stream().map(Port::spec).toList()));
             case Instruction.Entrypoint entrypoint -> CodeBlock.of(".entrypoint($L)", strings(entrypoint.command()));
             case Instruction.Cmd cmd -> CodeBlock.of(".cmd($L)", strings(cmd.command()));
             case Instruction.Shell shell -> CodeBlock.of(".shell($L)", strings(shell.command()));

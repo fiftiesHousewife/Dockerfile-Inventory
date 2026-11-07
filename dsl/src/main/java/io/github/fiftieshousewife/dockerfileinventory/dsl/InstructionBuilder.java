@@ -76,7 +76,12 @@ abstract sealed class InstructionBuilder permits ImageBuilder {
     }
 
     public ImageBuilder expose(int port) {
-        return add(new Instruction.Expose(port));
+        return add(new Instruction.Expose(List.of(Port.of(port))));
+    }
+
+    /** Ports as Docker writes them: {@code "8080"}, {@code "53/udp"}, {@code "8000-8010"}, {@code "${PORT}"}. */
+    public ImageBuilder expose(String... specs) {
+        return add(new Instruction.Expose(Arrays.stream(specs).map(Port::new).toList()));
     }
 
     public ImageBuilder user(int uid) {

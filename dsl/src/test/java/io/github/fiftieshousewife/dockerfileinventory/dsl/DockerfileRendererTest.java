@@ -23,7 +23,7 @@ class DockerfileRendererTest {
                     new Instruction.Workdir("/opt/app"),
                     new Instruction.Copy(List.of("/src/out/app"), "/opt/app/", "1001:0", "build"),
                     new Instruction.Run(new RunBody.Shell(List.of("chgrp -R 0 /opt/app", "chmod -R g=u /opt/app"))),
-                    new Instruction.Expose(8080),
+                    new Instruction.Expose(List.of(Port.of(8080))),
                     new Instruction.User("1001"),
                     new Instruction.Entrypoint(List.of("/opt/app/app", "--config", "/etc/app \"main\".yaml")),
                     new Instruction.Cmd(List.of("serve")),
@@ -73,6 +73,13 @@ class DockerfileRendererTest {
                 VOLUME /cache
                 STOPSIGNAL SIGQUIT
                 """);
+    }
+
+    @Test
+    void severalPortsRenderOnOneExposeLineAsWritten() {
+        Dockerfile file = single(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp"), new Port("${PORT}"))));
+
+        assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("EXPOSE 80 53/udp ${PORT}\n");
     }
 
     @Test
