@@ -1,6 +1,6 @@
 # openshift's lineage from published OKD images: plan
 
-Status: planned 7 Nov; questions open.
+Status: planned 7 Nov; questions answered 7 Nov; ready to build.
 
 The JCR demo (`lineage-from-jcr.md`) proved lineage on five images we built ourselves with Buildah, from Dockerfiles
 we chose. The real estate's images are built by other people's tooling, from Dockerfiles that may have moved on since.
@@ -31,8 +31,8 @@ local JCR, and linked to the openshift Dockerfiles discovery found.
 | Parent by layer prefix | Works on any layers | Squashed images have few layers: a parent is found only if its layers are a prefix, which holds when both were squashed onto the same base. Measured, not assumed |
 | Own steps | History after the parent's, steps a build service added dropped (Q13) | O2: doozer's steps recognised as builder-added (`ENV __doozer=`, `ADD ... in /tmp/art`, the `/tmp/art` and `art-*` repo cleanup, buildinfo `COPY`s) |
 | Normal form | Reads `#(nop)` and Buildah's `COPY` | O3: `COPY file:<hash> in <dest>` and `COPY dir:<hash> in <dest>` read as a `COPY` to `<dest>`, which is all facts keeps of a `COPY` |
-| Link to a Dockerfile | Step fingerprint against facts' steps | O4: depends on question 1 |
-| Dockerfiles at the image's commit | Discovery read each repository's default branch | O5: depends on question 2 |
+| Link to a Dockerfile | Step fingerprint against facts' steps | O4: a source label (`io.openshift.build.source-location`, or OCI's `org.opencontainers.image.source`) picks the repository; the steps pick the Dockerfile in it and show whether it still matches. Without a label, steps alone, as today (the owner's choice, 7 Nov) |
+| Dockerfiles at the image's commit | Discovery read each repository's default branch | O5: a script writes a release index (repository -> commit) from the chosen images' labels; discovery reruns on those repositories with `RELEASE_INDEX`, as the real estate uses the release database, then facts (the owner's choice, 7 Nov) |
 
 ## Questions
 
@@ -44,6 +44,9 @@ local JCR, and linked to the openshift Dockerfiles discovery found.
    already has, and report how many drifted?
 3. Scope: how many images from release `5.0.0-okd-scos.5`: about 30 (their bases, and components whose source
    repository discovery scanned), or every component in the release (about 200, several GB)?
+
+Answers (7 Nov): 1, labels pick the repository, steps confirm; 2, rediscover at the images' commits; 3, about 30
+images: the shared bases and components whose source repository discovery scanned.
 
 ## Tests, in order (O2, O3; the rest after the questions)
 
