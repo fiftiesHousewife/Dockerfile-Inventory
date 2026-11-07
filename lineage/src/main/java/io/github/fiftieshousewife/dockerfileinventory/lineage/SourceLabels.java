@@ -9,8 +9,8 @@ import java.util.Optional;
 
 /**
  * The repository an image says it was built from, by label: OpenShift builds'
- * {@code io.openshift.build.source-location}, else OCI's {@code org.opencontainers.image.source}. A label names the repository and lineage's steps say which of its
- * Dockerfiles (the owner's choice, 7 Nov).
+ * {@code io.openshift.build.source-location}, else OCI's {@code org.opencontainers.image.source}. A label names the
+ * repository and lineage's steps say which of its Dockerfiles (the owner's choice, 7 Nov).
  */
 final class SourceLabels {
 
