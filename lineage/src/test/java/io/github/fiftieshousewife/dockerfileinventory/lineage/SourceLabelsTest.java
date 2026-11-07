@@ -29,4 +29,12 @@ class SourceLabelsTest {
         assertThat(SourceLabels.repository(Map.of("vendor", "Red Hat, Inc."))).isEmpty();
         assertThat(SourceLabels.repository(Map.of("org.opencontainers.image.source", "not a url"))).isEmpty();
     }
+
+    @Test
+    void aUrlGivesItsFirstTwoPathSegmentsWithoutDotGit() {
+        assertThat(SourceLabels.fromUrl(" https://ghe.example.com/org/name.git/tree/main ")).contains("org/name");
+        assertThat(SourceLabels.fromUrl("https://ghe.example.com/org")).isEmpty();
+        assertThat(SourceLabels.fromUrl("mailto:someone")).isEmpty();
+        assertThat(SourceLabels.fromUrl("not a url")).isEmpty();
+    }
 }

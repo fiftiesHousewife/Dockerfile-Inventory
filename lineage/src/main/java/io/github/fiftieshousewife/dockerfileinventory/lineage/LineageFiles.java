@@ -11,31 +11,27 @@ import java.util.List;
 import java.util.Optional;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * The lineage stage's files under its output directory: {@code images.jsonl}, appended one row at a time so an
- * interrupted inventory resumes, and {@code configs/}, each image config stored once under its digest.
- */
-public final class LineageFiles {
+final class LineageFiles {
 
     private static final String TAGS = "images.jsonl";
 
     private final Path dir;
     private final ObjectMapper json = new ObjectMapper();
 
-    public LineageFiles(Path dir) {
+    LineageFiles(Path dir) {
         this.dir = dir;
     }
 
-    public synchronized void record(TagRow row) {
+    // Appended one row at a time, so an interrupted inventory resumes.
+    synchronized void record(TagRow row) {
         append(TAGS, json.writeValueAsString(row));
     }
 
-    public List<TagRow> tags() {
-        return lines(TAGS).stream().map(line -> json.readValue(line, TagRow.class)).toList();
+    List<TagRow> tags() {
+        return lines(dir.resolve(TAGS)).stream().map(line -> json.readValue(line, TagRow.class)).toList();
     }
 
-    /** Replaces a whole output file; the analysis rewrites every file from the inventory each run. */
-    public void write(String file, List<String> lines) {
+    void write(String file, List<String> lines) {
         try {
             Files.createDirectories(dir);
             Files.write(dir.resolve(file), lines, StandardCharsets.UTF_8);
@@ -44,11 +40,11 @@ public final class LineageFiles {
         }
     }
 
-    public boolean hasConfig(String digest) {
+    boolean hasConfig(String digest) {
         return Files.exists(configPath(digest));
     }
 
-    public Optional<String> config(String digest) {
+    Optional<String> config(String digest) {
         try {
             return hasConfig(digest) ? Optional.of(Files.readString(configPath(digest))) : Optional.empty();
         } catch (IOException e) {
@@ -56,8 +52,8 @@ public final class LineageFiles {
         }
     }
 
-    /** Written under a temporary name and moved, so a config file on disk is always whole. */
-    public void storeConfig(String digest, String text) {
+    // Written under a temporary name and moved, so a config file on disk is always whole.
+    void storeConfig(String digest, String text) {
         try {
             Path target = configPath(digest);
             Files.createDirectories(dir.resolve("configs"));
@@ -83,9 +79,8 @@ public final class LineageFiles {
         }
     }
 
-    private List<String> lines(String file) {
+    static List<String> lines(Path path) {
         try {
-            Path path = dir.resolve(file);
             return Files.exists(path)
                     ? Files.readAllLines(path).stream().filter(l -> !l.isBlank()).toList()
                     : List.of();

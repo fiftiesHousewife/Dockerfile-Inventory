@@ -3,8 +3,12 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class ImageNodesTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final String DOCKER_MANIFEST = "application/vnd.docker.distribution.manifest.v2+json";
     private static final String OCI_MANIFEST = "application/vnd.oci.image.manifest.v1+json";
@@ -12,6 +16,49 @@ class ImageNodesTest {
     private static final String OCI_INDEX = "application/vnd.oci.image.index.v1+json";
     private static final String CONFIG_C = "sha256:" + "c".repeat(64);
     private static final String CONFIG_D = "sha256:" + "d".repeat(64);
+
+    @Test
+    void theAmd64EntryIsTheLinuxAmd64DigestOfAList() {
+        assertThat(ImageNodes.amd64(JSON.readTree(Fixtures.artifactory("manifest-list.json"))))
+                .contains("sha256:" + "1".repeat(64));
+        assertThat(ImageNodes.amd64(JSON.readTree(Fixtures.artifactory("list-arm-only.json")))).isEmpty();
+    }
+
+    @Test
+    void locatingATagGivesItsConfigDigestWithoutFetchingTheConfig() {
+        FakeArtifactory artifactory = new FakeArtifactory()
+                .manifest("docker-local", "team/app", "1.0", DOCKER_MANIFEST, "manifest-image.json");
+
+        assertThat(ImageNodes.locate(artifactory, "docker-local", "team/app", "1.0"))
+                .isEqualTo(new Location.Found(CONFIG_C));
+        assertThat(artifactory.blobCalls).isEmpty();
+    }
+
+    @Test
+    void throughAListTheAmd64EntrysManifestGivesTheConfigOrIsGone() {
+        FakeArtifactory artifactory = new FakeArtifactory()
+                .manifest("docker-local", "team/app", "sha256:" + "1".repeat(64), DOCKER_MANIFEST,
+                        "manifest-image.json");
+        JsonNode list = JSON.readTree(Fixtures.artifactory("manifest-list.json"));
+
+        assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app", list, "ref"))
+                .isEqualTo(new Location.Found(CONFIG_C));
+        assertThat(ImageNodes.throughList(new FakeArtifactory(), "docker-local", "team/app", list, "ref"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64)));
+        assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app",
+                JSON.readTree(Fixtures.artifactory("list-arm-only.json")), "ref"))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.NO_AMD64, "ref"));
+    }
+
+    @Test
+    void aNodeIsTheParsedConfigOrGoneWhenTheBlobIsMissing() {
+        FakeArtifactory artifactory = new FakeArtifactory().blob(CONFIG_C, "config.json");
+
+        assertThat(ImageNodes.node(artifactory, "docker-local", "team/app", CONFIG_C))
+                .isInstanceOf(Resolved.Node.class);
+        assertThat(ImageNodes.node(artifactory, "docker-local", "team/app", CONFIG_D))
+                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, CONFIG_D));
+    }
 
     @Test
     void aSingleDockerOrOciManifestResolvesThroughItsConfigDigest() {

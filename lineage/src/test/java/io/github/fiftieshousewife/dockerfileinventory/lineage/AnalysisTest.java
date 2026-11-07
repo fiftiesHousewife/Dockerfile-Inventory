@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,6 +9,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,9 +71,11 @@ class AnalysisTest {
             assertThat(links.get("stray").path("tier").asString()).isEqualTo("NONE");
         });
         JsonNode user = byDigest("effective.jsonl").get("app").path("user");
-        assertThat(user.path("value").asString()).isEqualTo("1001");
-        assertThat(user.path("setBy").path("kind").asString()).isEqualTo("Image");
-        assertThat(user.path("setBy").path("configDigest").asString()).isEqualTo("base");
+        assertSoftly(softly -> {
+            softly.assertThat(user.path("value").asString()).isEqualTo("1001");
+            softly.assertThat(user.path("setBy").path("kind").asString()).isEqualTo("Image");
+            softly.assertThat(user.path("setBy").path("configDigest").asString()).isEqualTo("base");
+        });
     }
 
     @Test
@@ -88,19 +92,21 @@ class AnalysisTest {
         new Analysis(out, facts, discovery).run();
 
         JsonNode rates = JSON.readTree(out.resolve("rates.json").toFile());
-        assertThat(rates.path("tags").asInt()).isEqualTo(5);
-        assertThat(rates.path("images").asInt()).isEqualTo(4);
-        assertThat(rates.path("skipped").path("NO_AMD64").asInt()).isEqualTo(1);
-        assertThat(rates.path("lineageCoverage").asDouble()).isEqualTo(1.0);
-        assertThat(rates.path("ambiguousParents").asInt()).isZero();
-        assertThat(rates.path("links").path("STRONG").asInt()).isEqualTo(1);
-        assertThat(rates.path("links").path("PROBABLE").asInt()).isEqualTo(1);
-        assertThat(rates.path("links").path("NONE").asInt()).isEqualTo(2);
-        assertThat(rates.path("parentMissing").asInt()).isZero();
-        assertThat(rates.path("onbuildChildren").asInt()).isZero();
-        assertThat(rates.path("gaps").asInt()).isEqualTo(1);
-        assertThat(rates.path("externalBases").asInt()).isEqualTo(1);
-        assertThat(rates.path("outdatedBases").asInt()).isZero();
+        assertSoftly(softly -> {
+            softly.assertThat(rates.path("tags").asInt()).isEqualTo(5);
+            softly.assertThat(rates.path("images").asInt()).isEqualTo(4);
+            softly.assertThat(rates.path("skipped").path("NO_AMD64").asInt()).isEqualTo(1);
+            softly.assertThat(rates.path("lineageCoverage").asDouble()).isEqualTo(1.0);
+            softly.assertThat(rates.path("ambiguousParents").asInt()).isZero();
+            softly.assertThat(rates.path("links").path("STRONG").asInt()).isEqualTo(1);
+            softly.assertThat(rates.path("links").path("PROBABLE").asInt()).isEqualTo(1);
+            softly.assertThat(rates.path("links").path("NONE").asInt()).isEqualTo(2);
+            softly.assertThat(rates.path("parentMissing").asInt()).isZero();
+            softly.assertThat(rates.path("onbuildChildren").asInt()).isZero();
+            softly.assertThat(rates.path("gaps").asInt()).isEqualTo(1);
+            softly.assertThat(rates.path("externalBases").asInt()).isEqualTo(1);
+            softly.assertThat(rates.path("outdatedBases").asInt()).isZero();
+        });
     }
 
     @Test
@@ -120,8 +126,10 @@ class AnalysisTest {
 
         JsonNode link = Files.readAllLines(real.resolve("links.jsonl")).stream().map(JSON::readTree)
                 .filter(n -> n.path("configDigest").asString().equals("ubi9-python-311")).findFirst().orElseThrow();
-        assertThat(link.path("tier").asString()).isEqualTo("PROBABLE");
-        assertThat(link.path("blobShas").get(0).asString()).isEqualTo("python-df");
+        assertSoftly(softly -> {
+            softly.assertThat(link.path("tier").asString()).isEqualTo("PROBABLE");
+            softly.assertThat(link.path("blobShas").get(0).asString()).isEqualTo("python-df");
+        });
     }
 
     @Test
@@ -152,8 +160,10 @@ class AnalysisTest {
         new Analysis(real, facts, discovery).run();
 
         JsonNode link = JSON.readTree(Files.readAllLines(real.resolve("links.jsonl")).getFirst());
-        assertThat(link.path("tier").asString()).isEqualTo("WEAK");
-        assertThat(link.path("blobShas").get(0).asString()).isEqualTo("cso-rhel7");
+        assertSoftly(softly -> {
+            softly.assertThat(link.path("tier").asString()).isEqualTo("WEAK");
+            softly.assertThat(link.path("blobShas").get(0).asString()).isEqualTo("cso-rhel7");
+        });
     }
 
     private Map<String, JsonNode> byDigest(String file) throws IOException {
@@ -174,5 +184,34 @@ class AnalysisTest {
         return comment == null
                 ? "{\"created_by\": \"/bin/sh -c %s\"}".formatted(createdBy)
                 : "{\"created_by\": \"/bin/sh -c %s\", \"comment\": \"%s\"}".formatted(createdBy, comment);
+    }
+
+    @Test
+    void referencesGroupPlacedTagsByConfigDigestAndLeaveOutSkippedOnes() {
+        Instant pushed = Instant.parse("2026-10-01T00:00:00Z");
+
+        assertThat(Analysis.references(List.of(
+                new TagRow("docker-local", "team/app", "1", pushed, "c1", null, null),
+                new TagRow("docker-prod", "team/app", "1", pushed, "c1", null, null),
+                new TagRow("docker-local", "team/arm", "1", pushed, null, Resolved.Reason.NO_AMD64, "x"))))
+                .isEqualTo(Map.of("c1", List.of(new Reference("docker-local", "team/app", "1", pushed),
+                        new Reference("docker-prod", "team/app", "1", pushed))));
+    }
+
+    @Test
+    void imagesAreTheStoredReadableConfigsOfTheGivenDigests() {
+        LineageFiles files = new LineageFiles(out);
+        files.storeConfig("bad", "not json");
+
+        assertThat(new Analysis(out, facts, discovery).images(new TreeSet<>(List.of("base", "bad", "missing"))))
+                .extracting(Resolved.Node::configDigest).containsExactly("base");
+    }
+
+    @Test
+    void rowsAreSortedByDigestWithTheDigestFirst() {
+        Analysis analysis = new Analysis(out, facts, discovery);
+
+        assertThat(analysis.rows(Map.of("b", 2, "a", 1), n -> JSON.createObjectNode().put("n", n)))
+                .containsExactly("{\"configDigest\":\"a\",\"n\":1}", "{\"configDigest\":\"b\",\"n\":2}");
     }
 }

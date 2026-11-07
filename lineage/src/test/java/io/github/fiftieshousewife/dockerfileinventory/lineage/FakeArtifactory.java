@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Repositories, images, tags, manifests and blobs held in memory, keyed as Artifactory addresses them. */
 final class FakeArtifactory implements Artifactory {
 
     private final Map<String, Manifest> manifests = new ConcurrentHashMap<>();
@@ -30,7 +29,6 @@ final class FakeArtifactory implements Artifactory {
         return this;
     }
 
-    /** A tag listed in the catalogue, pushed at {@code when}, whose manifest is the fixture. */
     FakeArtifactory tag(String repository, String image, String tag, String when, String mediaType, String fixture) {
         images.computeIfAbsent(repository, r -> new ArrayList<>());
         if (!images.get(repository).contains(image)) {

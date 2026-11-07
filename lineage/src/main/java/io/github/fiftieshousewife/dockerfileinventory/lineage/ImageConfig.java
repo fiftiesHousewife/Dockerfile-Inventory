@@ -11,14 +11,13 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/** What lineage reads from an image config: its layers, the user it runs as, and its labels. */
-public record ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels,
-                          Map<String, String> env, String workingDir, List<String> entrypoint, List<String> cmd,
-                          List<String> onBuild) {
+record ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels,
+                   Map<String, String> env, String workingDir, List<String> entrypoint, List<String> cmd,
+                   List<String> onBuild) {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    public ImageConfig {
+    ImageConfig {
         diffIds = List.copyOf(diffIds);
         history = List.copyOf(history);
         labels = Collections.unmodifiableMap(new TreeMap<>(labels));
@@ -28,42 +27,50 @@ public record ImageConfig(List<String> diffIds, List<HistoryStep> history, Strin
         onBuild = List.copyOf(onBuild);
     }
 
-    /** An image with layers, history, user and labels only, as the tree and links need. */
-    public ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels) {
+    ImageConfig(List<String> diffIds, List<HistoryStep> history, String user, Map<String, String> labels) {
         this(diffIds, history, user, labels, Map.of(), null, List.of(), List.of(), List.of());
     }
 
-    /** Empty for text that is not JSON or has no {@code rootfs}: one bad image must not stop the run. */
     static Optional<ImageConfig> parse(String text) {
-        JsonNode root;
+        return json(text).filter(root -> root.path("rootfs").isObject()).map(ImageConfig::of);
+    }
+
+    static Optional<JsonNode> json(String text) {
         try {
-            root = JSON.readTree(text);
+            return Optional.of(JSON.readTree(text));
         } catch (JacksonException e) {
             return Optional.empty();
         }
-        if (!root.path("rootfs").isObject()) {
-            return Optional.empty();
-        }
+    }
+
+    static ImageConfig of(JsonNode root) {
         JsonNode config = root.path("config");
-        List<String> diffIds = new ArrayList<>();
-        root.path("rootfs").path("diff_ids").forEach(d -> diffIds.add(d.asString()));
         Map<String, String> labels = new TreeMap<>();
         config.path("Labels").properties().forEach(e -> labels.put(e.getKey(), e.getValue().asString()));
+        return new ImageConfig(strings(root.path("rootfs").path("diff_ids")), history(root.path("history")),
+                config.path("User").stringValue(null), labels, env(config.path("Env")),
+                config.path("WorkingDir").stringValue(null), strings(config.path("Entrypoint")),
+                strings(config.path("Cmd")), strings(config.path("OnBuild")));
+    }
+
+    static List<HistoryStep> history(JsonNode array) {
         List<HistoryStep> history = new ArrayList<>();
-        root.path("history").forEach(h -> history.add(new HistoryStep(
+        array.forEach(h -> history.add(new HistoryStep(
                 h.path("created_by").stringValue(null),
                 h.path("comment").stringValue(null),
                 h.path("empty_layer").asBoolean(),
                 h.path("created").stringValue(null))));
+        return history;
+    }
+
+    static Map<String, String> env(JsonNode array) {
         Map<String, String> env = new LinkedHashMap<>();
-        config.path("Env").forEach(e -> {
+        array.forEach(e -> {
             String pair = e.asString();
             int equals = pair.indexOf('=');
             env.put(equals < 0 ? pair : pair.substring(0, equals), equals < 0 ? "" : pair.substring(equals + 1));
         });
-        return Optional.of(new ImageConfig(diffIds, history, config.path("User").stringValue(null), labels, env,
-                config.path("WorkingDir").stringValue(null), strings(config.path("Entrypoint")),
-                strings(config.path("Cmd")), strings(config.path("OnBuild"))));
+        return env;
     }
 
     private static List<String> strings(JsonNode array) {
@@ -72,11 +79,9 @@ public record ImageConfig(List<String> diffIds, List<HistoryStep> history, Strin
         return values;
     }
 
-    /**
-     * Whether the history steps that made layers are as many as the layers. A squashed image, or a builder that
-     * writes no history, breaks this, and the history can then not be aligned layer by layer.
-     */
-    public boolean historyMatchesLayers() {
+    // A squashed image, or a builder that writes no history, has fewer layer-making steps than layers, and its
+    // history cannot be aligned layer by layer.
+    boolean historyMatchesLayers() {
         return history.stream().filter(h -> !h.emptyLayer()).count() == diffIds.size();
     }
 }

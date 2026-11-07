@@ -1,16 +1,12 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
-/** Image references reduced to the path that compares across registries, tags and digests. */
 final class ImagePaths {
 
     private ImagePaths() {
     }
 
-    /**
-     * {@code registry.example.com:5000/ubi9/s2i-base:9.8@sha256:...} gives {@code ubi9/s2i-base}. As in Docker, a first
-     * segment is a registry host only if it holds a dot or a colon, or is {@code localhost}; facts' {@code fromPath}
-     * applies the same rule.
-     */
+    // As in Docker, a first segment is a registry host only if it holds a dot or a colon, or is localhost; facts'
+    // fromPath applies the same rule.
     static String path(String reference) {
         int at = reference.indexOf('@');
         String name = at < 0 ? reference : reference.substring(0, at);

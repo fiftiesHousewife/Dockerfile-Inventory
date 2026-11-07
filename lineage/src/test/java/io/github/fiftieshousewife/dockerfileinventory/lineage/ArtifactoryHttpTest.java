@@ -163,6 +163,27 @@ class ArtifactoryHttpTest {
                 .withMessageContaining("/api/repositories");
     }
 
+    @Test
+    void pagingAsksForEntriesAfterTheLastOneListed() {
+        assertThat(ArtifactoryHttp.after(List.of())).isEmpty();
+        assertThat(ArtifactoryHttp.after(List.of("a", "team/b"))).isEqualTo("&last=team%2Fb");
+    }
+
+    @Test
+    void aPagedListingStopsAtTheFirstShortPage() {
+        route("/artifactory/api/docker/docker-local/v2/_catalog", exchange -> respond(exchange, 200,
+                exchange.getRequestURI().getRawQuery().contains("last=")
+                        ? "catalog-page2.json" : "catalog-page1.json"));
+
+        assertThat(artifactory.paged("api/docker/docker-local/v2/_catalog", "repositories")).hasSize(3);
+        assertThat(requests).hasSize(2);
+    }
+
+    @Test
+    void aMissingJsonDocumentReadsAsEmpty() {
+        assertThat(artifactory.getJson("api/repositories").isEmpty()).isTrue();
+    }
+
     private static void slowDown(HttpExchange exchange, int status) throws IOException {
         exchange.getResponseHeaders().add("Retry-After", "0");
         exchange.sendResponseHeaders(status, -1);
