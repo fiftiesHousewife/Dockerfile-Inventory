@@ -78,6 +78,42 @@ Answers (7 Nov): 1, typed with a form; 2, `add` only for a URL or an archive (a 
 file's path, mode, owner and content hash, timestamps and build-time labels ignored; 6, the ten golden archetypes'
 representatives first.
 
+## S2 in detail
+
+**Choosing the ten.** The largest archetypes of the combined estate (`out/all/report/archetypes.json`), setting aside
+what a golden cannot stand for: metadata-only bundles (rank 1), parse failures and templates (ranks 5, 9), a base
+that is only an unresolved build argument (`FROM $BASEIMAGE` with no default: ranks 6, 20) and Windows bases (ranks
+12, 19). That leaves, by size:
+
+| Rank | Locations | What it is | Representative's base |
+| --- | --- | --- | --- |
+| 2 | 129 | bitnami application image: download, unpack, non-root | `bitnami/minideb:bookworm` |
+| 3 | 97 | OLM file-based catalog: `opm serve` | `ose-operator-registry-rhel9` |
+| 4 | 84 | OpenShift Go operator, `make` in a builder stage | `ocp/builder` then `ocp/5.0:base-rhel9` |
+| 7 | 55 | Go manager on UBI minimal, numeric user | `ubi9/go-toolset` then `ubi9/ubi-minimal` |
+| 8 | 54 | docker-library PHP built from source | `debian:bookworm-slim` |
+| 10 | 46 | a minimal root filesystem assembled with `rpm --root`, copied onto `scratch` | `ubi9/ubi` then `scratch` |
+| 11 | 45 | one binary added onto UBI minimal | `ubi9/ubi-minimal` |
+| 13 | 43 | kubebuilder Go operator, cache mounts, distroless | `golang` then `distroless/static` |
+| 14 | 40 | docker-library PHP on Alpine | `alpine:3` |
+| 15 | 36 | Go test image writing its own `/etc/passwd` entry | `golang` then `ubi9/ubi-minimal` |
+
+**Each golden.** The representative converted with `ConverterMain`'s builder class as the starting point, then
+rewritten by hand to the policy (approved base pinned by digest, numeric non-root user, group-0 writable paths,
+installs cleaned in their `RUN`, exec-form start) in `Goldens`; `build(POLICY)` must succeed, its rendering is the
+committed `golden/<name>.Dockerfile`, and the golden folder's README gives one line per golden: the archetype's
+rank and signature, the representative's blob and repository, and what the rewrite changed. The four hand-picked
+goldens go. The acceptance test is unchanged: `rules`' `GoldenAcceptanceTest` runs every rule on every golden and
+expects no finding.
+
+**Tests, in order.** For each golden in the order above: its name in `GoldenTest`, failing for want of the builder
+and the file; the builder; the rendered file committed after reading it against the representative. Then a test that
+every golden has its README line, and the acceptance test run over all ten. The old four are removed last.
+
+**Questions.** 1. The ten above, or another rule for setting archetypes aside? 2. The rewritten base: every golden
+moved onto an approved UBI base (Debian, minideb and Alpine images change package manager and package names), or the
+golden policy's approved list extended with each archetype's own base family, pinned?
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
