@@ -45,7 +45,7 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
                     DockerfilePaths: what counts as a Dockerfile (not source, templates, images, grammars, symlinks,
                     vendor/ or test inputs)
 facts/              stage 1: blobs -> rewrite-docker -> ImageFacts, steps, normal-form hashes, rates
-                    FactsParser (parse, retry, verdict), RetryText (each parser workaround), Templates, MergedLines
+                    FactsParser (parse, verdict), Templates
                     FactExtractor (entry), StageScan, StageEnd, RunTally, RunScripts, BaseImages, BuildKitFeatures,
                     ArgumentText; Steps (the final image's steps, lineage's normal form)
                     ShellTokeniser (entry): ShellWords, ShellScan, ShellQuotes, ShellSubstitutions, ShellToken
@@ -166,8 +166,7 @@ commit, so the change's effect is in the diff.
 reproduction in `docs/upstream/rewrite-docker-issues.md` and the real lines in the fixture bank. Fix it in `parser`:
 a test in its `tree` tests from the minimal reproduction, the grammar (`src/main/antlr`, then
 `./gradlew :parser:generateAntlrSources`) or the tree builder (`internal/DockerParserVisitor`) or the printer,
-and a line in the changed file's header saying what changed. Its `RetryText` workaround, if any, goes in the same
-commit, and the corpus tests name the cases the fix turns.
+and a line in the changed file's header saying what changed. The corpus tests name the cases the fix turns.
 
 **A new setting.** Read it in the stage's `...Main` from the environment map, give it a default, refuse a bad value
 naming the variable, list it in the README. Network settings belong in `http`'s `HttpSettings`.

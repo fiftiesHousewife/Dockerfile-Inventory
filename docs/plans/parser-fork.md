@@ -1,7 +1,7 @@
 # Forking the Dockerfile parser: plan
 
-Status: planned 7 Nov; all questions answered 7 Nov. F1 built (the fork, unchanged but for its packages); the
-publication setup built; the 15 fixes next.
+Status: planned 7 Nov; all questions answered 7 Nov. built 7 Nov: the fork, its publication, and all 15
+fixes. The first release waits on the owner's Central namespace, token and signing key.
 
 ## Why
 
@@ -110,4 +110,31 @@ Portal's publisher API with the token. Releases are cut from a tag `parser-v<ver
   Portal as user-managed (it waits there to be published by hand), tags `parser-v<version>`.
 - Not yet done, and the owner's: the namespace, the Portal token and the GPG key (above). The first release waits on
   the 15 fixes.
+
+## The fixes as built (7 Nov)
+
+All 15 fixed in `parser`, test-first, each changed file's header saying what changed; `RetryText`, `MergedLines` and
+the retry in `FactsParser` deleted (`retried` is always false now). In the parser: `CommaPrefix` keeps whitespace
+before a JSON comma (8); flag values keep `${NAME:-x}` whole (9); a backslash before a newline is always a
+continuation (7, most of 1); parser directives only before the first instruction (2); ARG declarations split, with
+`Docker.Arg.additionalPairs` and empty defaults (10, 12, 13); `ENV KEY=` (5); LABEL and ENV pairs split with variables
+(4, 6); `ENV KEY = value` read as the legacy form (15); `internal/UnrecognisedLines` makes an unrecognised line a
+syntax error (3); a heredoc after a command in `RUN` (11); quoted heredoc words (14). Facts, the converter and rules S2
+and R3 now read pairs from the tree; facts drops whole-line comments from a `RUN`, as Docker does.
+
+On the combined estate:
+
+| | Before | After |
+| --- | --- | --- |
+| Parse failures | 35 | 42 |
+| Templates | 53 | 51 |
+| Parsed only with a workaround | 354 | 0 |
+| Unreadable `RUN`s | 81 of 13,222 | 81 of 13,261 |
+| Round trip | 5,154 of 5,250 | 5,149 of 5,250 |
+
+Failures rose because the old detector of a line glued into an argument missed 22 invalid files (20 Kubernetes
+`CROSS_BUILD_COPY` placeholders, 2 `COPY_SYSTEM_SPEC_FILE`), which now fail as they should; 15 real files that failed
+now parse. Every file that parses before and after keeps its round-trip result; 86 facts rows changed, 84 of them
+gaining package calls once comment lines in `RUN` are dropped. Left: a heredoc `RUN`'s leading command is not read for
+packages; `# escape=` with a backtick is not honoured by the lexer (one file).
 

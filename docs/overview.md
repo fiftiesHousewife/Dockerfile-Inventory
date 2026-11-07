@@ -72,9 +72,9 @@ regenerated, and every fix goes through the same renderer, so migrated and new D
 - **Real Dockerfiles as fixtures.** The parser and the shell reader are tested on trimmed lines from real files, and
   the contracts between facts and lineage on real images built from real Dockerfiles.
 - **The parser is ours to fix.** Fifteen bugs found in `rewrite-docker` on public estates were reduced to minimal
-  reproductions; twelve are worked around by rewriting text before a second parse. OpenRewrite's last open release is
-  8.90.4 (Apache 2.0) and its newer modules are source-available, so the parser is being forked here and the bugs
-  fixed in it (`plans/parser-fork.md`).
+  reproductions. OpenRewrite's last open release is 8.90.4 (Apache 2.0) and its newer modules are source-available,
+  so the parser was forked here, all fifteen fixed in it, and the text-rewriting workarounds deleted
+  (`plans/parser-fork.md`); it is also published as a library of its own.
 - **Corporate networks are the normal case.** Proxies, a corporate CA, rotated tokens, rate limits and refused
   repositories are handled and configured, not assumed away (`plans/corporate-readiness.md`).
 

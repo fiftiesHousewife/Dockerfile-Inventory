@@ -157,8 +157,9 @@ The shell in each `RUN` is read for its commands: command substitutions (`$(unam
 `if` and `case` (every branch counts), loops (read once; `for p in a b` gives `$p` the list) and functions (their
 bodies). A `RUN` is too complex to read only when it pipes a download into a shell or uses rarer forms; its packages
 are then not counted. A `RUN` under `SHELL ["powershell", ...]` (or `pwsh`, `cmd`) is counted apart as another
-shell. A known set of bugs in the Dockerfile parser is worked around by a second, adjusted parse that keeps
-every line number; the rest are listed in `docs/upstream/rewrite-docker-issues.md`.
+shell. The Dockerfile parser is the project's own fork of OpenRewrite's, with the bugs found on real estates fixed
+(`docs/upstream/rewrite-docker-issues.md`); a file it still rejects is listed in `parse-failures.jsonl` with the line
+and the reason.
 
 ## Link images to Dockerfiles
 
