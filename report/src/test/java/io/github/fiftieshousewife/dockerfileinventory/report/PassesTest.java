@@ -36,7 +36,7 @@ class PassesTest {
     @Test
     void templatesFormTheirOwnGroupApartFromParseFailures() {
         Estate estate = new Estate(List.of(), List.of(failure("bad-1", 1),
-                new Failure("tpl-1", Summary.TEMPLATE + " (FROM {{ spec.base }})", locations("tpl-1", 2))),
+                new Failure("tpl-1", Tallies.TEMPLATE + " (FROM {{ spec.base }})", locations("tpl-1", 2))),
                 List.of(), Map.of());
 
         assertThat(Passes.signatureGroups(estate)).containsExactly(
@@ -67,7 +67,7 @@ class PassesTest {
 
     @Test
     void aFailureIsATemplateWhenItsMessageSaysSo() {
-        assertThat(Passes.kind(new Failure("t", Summary.TEMPLATE + " (x)", List.of()))).isEqualTo("templates");
+        assertThat(Passes.kind(new Failure("t", Tallies.TEMPLATE + " (x)", List.of()))).isEqualTo("templates");
         assertThat(Passes.kind(failure("b", 1))).isEqualTo("parse-failures");
     }
 

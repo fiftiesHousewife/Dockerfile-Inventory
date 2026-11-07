@@ -82,6 +82,7 @@ final class Style {
             svg.chart .axis { fill: var(--muted); font-size: 11px; }
             svg.chart .label { fill: var(--fg); font-size: 12px; }
             svg.chart .marker circle { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
+            .pager { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0; font-size: 13px; }
             @media (max-width: 600px) { .meter { width: 60px; } .mix { width: 90px; } }
             """;
 

@@ -33,10 +33,11 @@ class ArchetypeTableTest {
     }
 
     @Test
-    void theTableShowsUpToItsLimitWithHeadings() {
-        assertThat(ArchetypeTable.render(ROWS.rows(), 2, Set.of(), ""))
+    void theTableShowsItsSliceOfTheRowsWithBarsScaledToTheLargestOfAll() {
+        assertThat(ArchetypeTable.render(ROWS.rows(), 1, 3, Set.of(), ""))
                 .startsWith("<div class=\"scroll\"><table><tr><th class=\"num\">Rank</th><th>Archetype</th>")
-                .contains("scratch, no packages, root").doesNotContain("debian 12");
+                .contains("scratch, no packages, root").contains("debian 12")
+                .doesNotContain("ubi-minimal 9").contains(Html.meter(1.0 / 3));
     }
 
     @Test

@@ -25,8 +25,8 @@ class HtmlTest {
 
     @Test
     void infoIsAFocusableMarkerWithTheAboutTextOrNothingForAnUnknownKey() {
-        assertThat(Html.info("Rates")).isEqualTo("<span class=\"info\" tabindex=\"0\" data-tip=\""
-                + About.TEXT.get("Rates") + "\" aria-label=\"" + About.TEXT.get("Rates") + "\">i</span>");
+        assertThat(Html.info("Downloads")).isEqualTo("<span class=\"info\" tabindex=\"0\" data-tip=\""
+                + About.TEXT.get("Downloads") + "\" aria-label=\"" + About.TEXT.get("Downloads") + "\">i</span>");
         assertThat(Html.info("no such key")).isEmpty();
     }
 
@@ -34,7 +34,7 @@ class HtmlTest {
     void aTileAndAHeadingCarryTheirEscapedLabelAndInfoMarker() {
         assertThat(Html.tile("Archetypes", "3")).startsWith("<div class=\"tile\"><div class=\"value\">3</div>"
                 + "<div class=\"label\">Archetypes<span class=\"info\"").endsWith("</div></div>");
-        assertThat(Html.h2("A <b>", "Rates")).startsWith("<h2>A &lt;b&gt;<span class=\"info\"").endsWith("</h2>");
+        assertThat(Html.h2("A <b>", "Downloads")).startsWith("<h2>A &lt;b&gt;<span class=\"info\"").endsWith("</h2>");
     }
 
     @Test

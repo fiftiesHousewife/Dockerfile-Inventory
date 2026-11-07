@@ -52,7 +52,7 @@ final class Passes {
     }
 
     static String kind(Failure failure) {
-        return failure.message().startsWith(Summary.TEMPLATE) ? TEMPLATES : PARSE_FAILURES;
+        return failure.message().startsWith(Tallies.TEMPLATE) ? TEMPLATES : PARSE_FAILURES;
     }
 
     // facts' D4: the last path segment of the base's name.

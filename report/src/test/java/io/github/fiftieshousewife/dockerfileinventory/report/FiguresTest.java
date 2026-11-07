@@ -18,7 +18,7 @@ class FiguresTest {
             file("a2", new Base("scratch", null, null), "ROOT", true,
                     "acme/bundles", "acme/bundles", "acme/bundles", "acme/bundles"),
             file("b1", new Base("debian", "12", null), "ROOT", false, "beta/x")),
-            List.of(new Failure("t1", Summary.TEMPLATE + " (jinja)", List.of(at("beta/y"))),
+            List.of(new Failure("t1", Tallies.TEMPLATE + " (jinja)", List.of(at("beta/y"))),
                     new Failure("f1", "Syntax error", List.of(at("acme/z")))),
             List.of(), Map.of());
 
@@ -74,6 +74,19 @@ class FiguresTest {
             assertThat(f.templates()).isEqualTo(new Figures.Apart(1, 1));
             assertThat(f.counts().get(Health.PARSE_FAILURES)).isEqualTo(new Count(0, 1, true));
             assertThat(f.counts().get(Health.RELEASED)).isEqualTo(new Count(1, 2, true));
+        });
+    }
+
+    @Test
+    void scratchIsLeftOutOfThePinnedShareAsItHasNoDigestAndEndOfLifeCountsBasesTheListMarks() {
+        Estate estate = new Estate(List.of(file("e1", new Base("ubi9/ubi-minimal", "9.2", null), "ROOT", false,
+                "acme/a"), file("s1", new Base("scratch", null, null), "ROOT", false, "acme/b")),
+                List.of(), List.of(), Map.of());
+        EolList eol = EolList.read(Path.of("src/test/resources/fixtures/eol.csv"));
+
+        assertThat(Figures.of("acme", estate, eol, Figures.Sources.of(estate, eol)).counts()).satisfies(c -> {
+            assertThat(c.get(Health.PINNED)).isEqualTo(new Count(0, 1, true));
+            assertThat(c.get(Health.EOL)).isEqualTo(new Count(1, 2, true));
         });
     }
 

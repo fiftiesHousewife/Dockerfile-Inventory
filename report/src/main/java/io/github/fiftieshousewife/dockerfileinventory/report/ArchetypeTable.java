@@ -20,12 +20,13 @@ final class ArchetypeTable {
     private ArchetypeTable() {
     }
 
-    static String render(List<Row> rows, int limit, Set<Integer> pages, String up) {
+    static String render(List<Row> rows, int from, int to, Set<Integer> pages, String up) {
         int largest = rows.stream().mapToInt(Row::locations).max().orElse(1);
         return "<div class=\"scroll\"><table><tr><th class=\"num\">Rank</th><th>Archetype</th>"
                 + "<th class=\"num\">Locations</th><th></th><th class=\"num\">Files</th><th>Organisations</th>"
                 + "<th>Largest repository</th></tr>"
-                + rows.stream().limit(limit).map(r -> row(r, largest, pages, up)).collect(Collectors.joining())
+                + rows.subList(Math.min(from, rows.size()), Math.min(to, rows.size())).stream()
+                .map(r -> row(r, largest, pages, up)).collect(Collectors.joining())
                 + "</table></div>";
     }
 

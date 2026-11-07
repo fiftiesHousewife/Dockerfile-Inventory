@@ -57,4 +57,14 @@ class PagesTest {
                 .startsWith("<!doctype html>").contains("<style>")
                 .doesNotContain("<script", "http://", "https://", " src="));
     }
+
+    @Test
+    void theRankingIsSplitIntoPagesLinkedToEachOther() {
+        assertThat(Pages.rankingPath(1)).isEqualTo("archetypes.html");
+        assertThat(Pages.rankingPath(3)).isEqualTo("archetypes-3.html");
+        assertThat(Pages.pager(2, 700, 250)).isEqualTo("<nav class=\"pager\" aria-label=\"Ranking pages\">"
+                + "<a href=\"archetypes.html\">1 to 250</a><strong>251 to 500</strong>"
+                + "<a href=\"archetypes-3.html\">501 to 700</a></nav>");
+        assertThat(Pages.pager(1, 250, 250)).isEmpty();
+    }
 }

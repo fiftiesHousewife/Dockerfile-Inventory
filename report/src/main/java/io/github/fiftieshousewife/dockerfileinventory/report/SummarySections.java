@@ -27,7 +27,7 @@ final class SummarySections {
                 + "and " + count(rows.k95()) + " cover 95%; the largest " + Math.min(TOP, rows.rows().size())
                 + " cover " + percent(rows.total() == 0 ? 0 : (double) top / rows.total()) + ".</p>"
                 + (chart ? CoverageChart.render(ranking(rows)) : "")
-                + ArchetypeTable.render(rows.rows(), TOP, pages, up) + ArchetypeTable.apart(rows.apart())
+                + ArchetypeTable.render(rows.rows(), 0, TOP, pages, up) + ArchetypeTable.apart(rows.apart())
                 + "<p><a href=\"" + up + "archetypes.html\">Every archetype, ranked</a></p>";
     }
 

@@ -52,7 +52,7 @@ record Figures(String name, int locations, int repositories, int files, Apart bu
                 .orElse(Map.entry("", 0));
         return new Figures(name, all.size(), byRepository.size(),
                 estate.dockerfiles().size() + estate.failures().size(), bundles(estate), templates(estate),
-                Summary.users(images), Summary.managers(images), families(images), largest.getKey(),
+                Tallies.users(images), Tallies.managers(images), families(images), largest.getKey(),
                 largest.getValue(), counts(estate, images, all, BaseCatalogue.of(images, eol), sources));
     }
 
@@ -75,13 +75,13 @@ record Figures(String name, int locations, int repositories, int files, Apart bu
     static Map<String, Count> counts(Estate estate, Estate images, List<Location> all, List<BaseRow> bases,
                                      Sources sources) {
         int templates = templates(estate).files();
-        int users = Summary.users(images).values().stream().mapToInt(Integer::intValue).sum();
+        int users = Tallies.users(images).values().stream().mapToInt(Integer::intValue).sum();
         List<BaseRow> pinnable = bases.stream().filter(b -> !b.path().equals("scratch")).toList();
         int released = (int) all.stream().filter(l -> l.scope().equals("RELEASED")).count();
         Map<String, Count> counts = new LinkedHashMap<>();
         counts.put(Health.PARSE_FAILURES, new Count(estate.failures().size() - templates,
                 estate.dockerfiles().size() + estate.failures().size() - templates, true));
-        counts.put(Health.ROOT, new Count(Summary.users(images).getOrDefault("ROOT", 0), users, true));
+        counts.put(Health.ROOT, new Count(Tallies.users(images).getOrDefault("ROOT", 0), users, true));
         counts.put(Health.PINNED, new Count(sum(pinnable, BaseRow::pinnedLocations),
                 sum(pinnable, BaseRow::locations), true));
         counts.put(Health.EOL, new Count(sum(bases.stream().filter(b -> b.status().equals("eol")).toList(),
