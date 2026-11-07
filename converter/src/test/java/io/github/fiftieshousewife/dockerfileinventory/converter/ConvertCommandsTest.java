@@ -7,7 +7,9 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import tools.jackson.core.JacksonException;
@@ -27,11 +29,32 @@ class ConvertCommandsTest {
     }
 
     @Test
-    void aRunWithFlagsOrInExecFormStaysRawAsPrinted() {
-        assertThat(ConvertCommands.run(run("RUN --network=none make"), "printed"))
-                .isEqualTo(new Instruction.Raw("printed", "RUN with flags"));
+    void aRunWithAFlagTheModelLacksOrInExecFormStaysRawAsPrinted() {
+        assertThat(ConvertCommands.run(run("RUN --device=/dev/fuse make"), "printed"))
+                .isEqualTo(new Instruction.Raw("printed", "RUN with flag --device"));
         assertThat(ConvertCommands.run(run("RUN [\"make\"]"), "printed"))
                 .isEqualTo(new Instruction.Raw("printed", "RUN in exec or heredoc form"));
+    }
+
+    @Test
+    void aRunKeepsItsFlagsInOrderWhetherItIsAnInstallOrShell() {
+        assertThat(List.of(run("RUN --mount=type=cache,target=/root/.m2 --network=none mvn package"),
+                run("RUN --mount=type=secret,id=t --security=insecure apk add --no-cache git")))
+                .map(run -> ConvertCommands.run(run, "printed"))
+                .containsExactly(new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+                                List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2"),
+                                        new RunFlag.Network("none"))),
+                        new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.APK,
+                                List.of("--no-cache"), List.of("git"))),
+                                List.of(RunFlag.Mount.parse("type=secret,id=t"), new RunFlag.Security("insecure"))));
+    }
+
+    @Test
+    void flagsAreTheRunsFlagsOrNothingWhenOneIsNotMountNetworkOrSecurity() {
+        assertThat(List.of(run("RUN make"), run("RUN --network=host make"), run("RUN --network=host --device=x make")))
+                .map(ConvertCommands::flags)
+                .containsExactly(Optional.of(List.of()), Optional.of(List.of(new RunFlag.Network("host"))),
+                        Optional.empty());
     }
 
     @Test

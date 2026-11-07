@@ -29,6 +29,17 @@ abstract sealed class InstructionBuilder extends FileInstructionBuilder permits 
         return add(new Instruction.Run(new RunBody.Shell(Arrays.asList(commands))));
     }
 
+    /** A {@code RUN} with flags such as a cache mount; the target must allow mounts. */
+    public ImageBuilder run(List<RunFlag> flags, String... commands) {
+        return add(new Instruction.Run(new RunBody.Shell(Arrays.asList(commands)), flags));
+    }
+
+    /** An install with its {@code RUN}'s flags and its own, rendered exactly, for the faithful path. */
+    public ImageBuilder install(List<RunFlag> runFlags, PackageManager manager, List<String> flags,
+            List<String> packages) {
+        return add(new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages)), runFlags));
+    }
+
     /** Declared in the current stage, so its instructions can use it. */
     public ImageBuilder arg(String name) {
         return add(new Instruction.Arg(name, null));

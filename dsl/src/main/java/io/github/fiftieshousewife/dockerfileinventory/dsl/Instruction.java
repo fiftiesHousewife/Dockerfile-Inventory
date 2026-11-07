@@ -37,7 +37,15 @@ public sealed interface Instruction {
         }
     }
 
-    record Run(RunBody body) implements Instruction {
+    record Run(RunBody body, List<RunFlag> flags) implements Instruction {
+
+        public Run {
+            flags = List.copyOf(flags);
+        }
+
+        public Run(RunBody body) {
+            this(body, List.of());
+        }
     }
 
     /** {@code COPY}; {@code chown}, {@code fromStage} and {@code chmod} are optional. */

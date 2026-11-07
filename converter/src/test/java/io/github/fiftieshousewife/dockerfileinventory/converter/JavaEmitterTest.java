@@ -6,7 +6,6 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PolicyViolation;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.io.IOException;
 import java.net.URL;
@@ -14,7 +13,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
@@ -26,7 +24,7 @@ class JavaEmitterTest {
             ARG GO_VERSION=1.22
             FROM registry.example.com/ubi9/go-toolset:${GO_VERSION} AS build
             # build the server
-            RUN go build -o /out/server ./cmd/server
+            RUN --mount=type=cache,target=/root/.cache/go-build go build -o /out/server ./cmd/server
             FROM build AS test
             RUN go test ./...
             FROM registry.example.com/ubi9/ubi-minimal:9.4
@@ -35,7 +33,9 @@ class JavaEmitterTest {
             ENV TZ=UTC LANG="en_US.UTF-8"
             LABEL team=payments
             COPY --from=build --chown=1001:0 /out/server /usr/local/bin/server
-            EXPOSE 8080
+            COPY --chmod=644 --link ["config.yaml", "/etc/server/"]
+            ADD https://example.com/tzdata.tar.gz /usr/share/zoneinfo/
+            EXPOSE 8080 9090/udp
             USER 1001
             ENTRYPOINT ["/usr/local/bin/server"]
             CMD ["--port", "8080"]
@@ -68,7 +68,7 @@ class JavaEmitterTest {
         String source = JavaEmitter.emit("com.example.images", "ServiceImage", Convert.of(Parsed.of(MULTISTAGE)),
                 List.of());
 
-        assertThat(source).containsSubsequence("// build the server", ".run(\"go build -o /out/server ./cmd/server\")",
+        assertThat(source).containsSubsequence("// build the server", "\"go build -o /out/server ./cmd/server\")",
                 "// keep the image small", ".install(");
     }
 
@@ -87,55 +87,6 @@ class JavaEmitterTest {
                 List.of(new PolicyViolation.Breach("H1", "install $INSTALL_PKGS without a clean")));
 
         assertThat(source).contains("// TODO(H1): install $INSTALL_PKGS without a clean");
-    }
-
-    @Test
-    void callWritesEachInstructionAsItsBuilderMethod() {
-        assertThat(List.of(new Instruction.Arg("A", null), new Instruction.Arg("A", "1"),
-                new Instruction.Env(Map.of("K", "v")), new Instruction.Expose(List.of(Port.of(8080))),
-                new Instruction.Raw("VOLUME /d", "VOLUME is not modelled")))
-                .map(instruction -> JavaEmitter.call(instruction).toString())
-                .containsExactly(".arg(\"A\")", ".arg(\"A\", \"1\")",
-                        ".env(java.util.Map.ofEntries(java.util.Map.entry(\"K\", \"v\")))", ".expose(\"8080\")",
-                        ".raw(\"VOLUME /d\", \"VOLUME is not modelled\")");
-    }
-
-    @Test
-    void aCopyWithOptionsIsWrittenWithThemAndOneWithoutInShort() {
-        assertThat(List.of(new Instruction.Copy(List.of("a"), "/b/", null, "build"),
-                new Instruction.Copy(List.of("a"), "/b/", "1001", null, "755", true, false)))
-                .map(instruction -> JavaEmitter.call(instruction).toString())
-                .containsExactly(".copy(java.util.List.of(\"a\"), \"/b/\", null, \"build\")",
-                        ".copy(java.util.List.of(\"a\"), \"/b/\", \"1001\", null, \"755\", true, false)");
-    }
-
-    @Test
-    void aCopyHeredocIsWrittenAsWritten() {
-        assertThat(JavaEmitter.call(new Instruction.CopyHeredoc("/etc/a", "EOF", true, List.of("x = 1"))).toString())
-                .isEqualTo(".copyHeredoc(\"/etc/a\", \"EOF\", true, java.util.List.of(\"x = 1\"))");
-    }
-
-    @Test
-    void anAddIsWrittenAsWritten() {
-        assertThat(JavaEmitter.call(new Instruction.Add(List.of("a.tgz"), "/opt/", null, "644", null, false, true,
-                false)).toString())
-                .isEqualTo(".add(java.util.List.of(\"a.tgz\"), \"/opt/\", null, \"644\", null, false, true, false)");
-    }
-
-    @Test
-    void severalPortsAreWrittenAsTheirSpecs() {
-        assertThat(JavaEmitter.call(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp")))).toString())
-                .isEqualTo(".expose(\"80\", \"53/udp\")");
-    }
-
-    @Test
-    void shellVolumeStopSignalAndMaintainerAreWrittenAsTheirBuilderMethods() {
-        assertThat(List.of(new Instruction.Shell(List.of("/bin/bash", "-c")),
-                new Instruction.Volume(List.of("/data"), false), new Instruction.StopSignal("SIGTERM"),
-                new Instruction.Maintainer("payments")))
-                .map(instruction -> JavaEmitter.call(instruction).toString())
-                .containsExactly(".shell(\"/bin/bash\", \"-c\")", ".volume(java.util.List.of(\"/data\"), false)",
-                        ".stopSignal(\"SIGTERM\")", ".maintainer(\"payments\")");
     }
 
     @Test

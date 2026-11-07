@@ -89,7 +89,8 @@ class DockerfileRendererTest {
 
     @Test
     void aCopyHeredocRendersItsLinesAndIsRefusedUnlessTheTargetAllowsHeredocs() {
-        Dockerfile file = single(new Instruction.CopyHeredoc("/etc/app.conf", "EOF", true, List.of("[engine]", "a = 1")),
+        Dockerfile file = single(
+                new Instruction.CopyHeredoc("/etc/app.conf", "EOF", true, List.of("[engine]", "a = 1")),
                 new Instruction.CopyHeredoc("/etc/b.json", "END", false, List.of("{}")));
 
         assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
@@ -117,7 +118,8 @@ class DockerfileRendererTest {
         Dockerfile file = single(
                 new Instruction.Add(List.of("https://example.com/a.tgz"), "/opt/", "1001:0", "644", "sha256:abc", false,
                         true, false),
-                new Instruction.Add(List.of("https://github.com/o/r.git"), "/src", null, null, null, true, false, true));
+                new Instruction.Add(List.of("https://github.com/o/r.git"), "/src", null, null, null, true, false,
+                        true));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("""
                 ADD --chown=1001:0 --chmod=644 --checksum=sha256:abc --link https://example.com/a.tgz /opt/
@@ -128,7 +130,8 @@ class DockerfileRendererTest {
     @Test
     void aCopysPathsEndWithTheDestinationInItsForm() {
         assertThat(List.of(DockerfileRenderer.paths(List.of("a", "b"), "/c/", false),
-                DockerfileRenderer.paths(List.of("a b"), "/c/", true))).containsExactly("a b /c/", "[\"a b\", \"/c/\"]");
+                DockerfileRenderer.paths(List.of("a b"), "/c/", true)))
+                .containsExactly("a b /c/", "[\"a b\", \"/c/\"]");
     }
 
     @Test
@@ -136,6 +139,17 @@ class DockerfileRendererTest {
         Dockerfile file = single(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp"), new Port("${PORT}"))));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("EXPOSE 80 53/udp ${PORT}\n");
+    }
+
+    @Test
+    void aRunsFlagsComeBeforeItsCommandsInTheirOrder() {
+        Dockerfile file = single(new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+                List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2"), new RunFlag.Network("none"))));
+
+        assertThat(DockerfileRenderer.render(file, new Target(false, true)))
+                .endsWith("RUN --mount=type=cache,target=/root/.m2 --network=none mvn package\n");
+        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file, Target.DEFAULT))
+                .withMessageContaining("--mount");
     }
 
     @Test

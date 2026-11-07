@@ -69,6 +69,27 @@ class RunMergeTest {
     }
 
     @Test
+    void aRunWithFlagsIsJoinedToNeitherNeighbour() {
+        Instruction mounted = new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+                List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2")));
+
+        assertThat(RunMerge.merged(List.of(shell("a"), mounted, shell("b"))))
+                .containsExactly(shell("a"), mounted, shell("b"));
+    }
+
+    @Test
+    void joinableOnlyWithoutFlagsOnEitherAndNoShellStateCarried() {
+        Instruction.Run mounted = new Instruction.Run(new RunBody.Shell(List.of("x")),
+                List.of(new RunFlag.Network("none")));
+        Instruction.Run plain = new Instruction.Run(new RunBody.Shell(List.of("x")));
+        Instruction.Run cd = new Instruction.Run(new RunBody.Shell(List.of("cd /src")));
+
+        assertThat(List.of(RunMerge.joinable(plain, plain), RunMerge.joinable(mounted, plain),
+                RunMerge.joinable(plain, mounted), RunMerge.joinable(cd, plain)))
+                .containsExactly(true, false, false, false);
+    }
+
+    @Test
     void joinedRendersAnInstallAsItsCommandsFollowedByTheShellCommands() {
         Instruction.Run install = new Instruction.Run(
                 new RunBody.Install(new PackageInstall(PackageManager.APK, List.of("git"))));

@@ -16,13 +16,17 @@ final class RunMerge {
         List<Instruction> merged = new ArrayList<>();
         instructions.forEach(instruction -> {
             if (!merged.isEmpty() && merged.getLast() instanceof Instruction.Run previous
-                    && instruction instanceof Instruction.Run next && !changesShellState(previous)) {
+                    && instruction instanceof Instruction.Run next && joinable(previous, next)) {
                 merged.set(merged.size() - 1, joined(previous, next));
             } else {
                 merged.add(instruction);
             }
         });
         return merged;
+    }
+
+    static boolean joinable(Instruction.Run previous, Instruction.Run next) {
+        return previous.flags().isEmpty() && next.flags().isEmpty() && !changesShellState(previous);
     }
 
     static Instruction.Run joined(Instruction.Run first, Instruction.Run second) {

@@ -68,7 +68,8 @@ public final class DockerfileRenderer {
                     + (arg.defaultValue() == null ? "" : "=" + DockerQuotes.doubleQuoted(arg.defaultValue()));
             case Instruction.Env env -> pairs("ENV", env.values());
             case Instruction.Label label -> pairs("LABEL", label.values());
-            case Instruction.Run run -> "RUN " + String.join(CONTINUE + "    && ", RunCommands.of(run.body()));
+            case Instruction.Run run -> "RUN " + run.flags().stream().map(flag -> flag.written() + " ")
+                    .collect(Collectors.joining()) + String.join(CONTINUE + "    && ", RunCommands.of(run.body()));
             case Instruction.Copy copy -> copy(copy);
             case Instruction.CopyHeredoc heredoc -> heredoc(heredoc);
             case Instruction.Add add -> add(add);

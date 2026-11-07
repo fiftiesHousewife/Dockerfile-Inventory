@@ -193,6 +193,18 @@ class ImageBuilderTest {
     }
 
     @Test
+    void aRunOrAnInstallCanCarryFlags() {
+        List<RunFlag> cache = List.of(RunFlag.Mount.parse("type=cache,target=/var/cache/apk"));
+
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).run(cache, "make")
+                .install(cache, PackageManager.APK, List.of(), List.of("git")).model().stages().getFirst()
+                .instructions())
+                .containsExactly(new Instruction.Run(new RunBody.Shell(List.of("make")), cache),
+                        new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.APK, List.of(),
+                                List.of("git"))), cache));
+    }
+
+    @Test
     void portsCanBeGivenAsDockerWritesThemAndABadOneIsRefused() {
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090).model()
                 .stages().getFirst().instructions())

@@ -10,6 +10,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.List;
 import java.util.Map;
@@ -112,7 +113,8 @@ class ConvertTest {
                 shell("DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y curl"
                         + " && rm -rf /var/lib/apt/lists/*"),
                 shell("make && make install"),
-                new Instruction.Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "RUN with flags"));
+                new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+                        List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2"))));
     }
 
     @Test
@@ -137,7 +139,8 @@ class ConvertTest {
                 new Instruction.Add(List.of("app.tar.gz"), "/opt/", null, null, null, false, false, false),
                 new Instruction.Raw("ENTRYPOINT java -jar app.jar", "shell-form ENTRYPOINT"),
                 new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),
-                new Instruction.Raw("EXPOSE ${PORT:-8080}", "EXPOSE with a port that is not a number, range or variable"),
+                new Instruction.Raw("EXPOSE ${PORT:-8080}",
+                        "EXPOSE with a port that is not a number, range or variable"),
                 new Instruction.Raw("HEALTHCHECK NONE", "HEALTHCHECK is not modelled"),
                 new Instruction.Volume(List.of("/data"), false));
     }

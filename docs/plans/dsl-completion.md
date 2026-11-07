@@ -15,7 +15,7 @@ estate, by reason:
 | Raw today | Uses | Model added | Renders |
 | --- | --- | --- | --- |
 | `ADD` | 1,080 | `Add(sources, destination, chown, chmod, checksum, keepGitDir)` | `ADD [--chown=..] [--chmod=..] [--checksum=..] [--keep-git-dir] src... dest` |
-| `RUN` with flags | 433 | `Run(body, mounts, network, security)` with `RunMount(type, options)` | `RUN --mount=type=cache,target=/c ...`; refused unless the target allows mounts |
+| `RUN` with flags | 433 | `Run(body, flags)` with `RunFlag`: `Mount(options)`, `Network(mode)`, `Security(mode)`, in written order | `RUN --mount=type=cache,target=/c ...`; refused unless the target allows mounts |
 | `SHELL` | 346 | `Shell(command)` | `SHELL ["/bin/bash", "-c"]` |
 | shell-form `CMD` | 337 | `Cmd(command, form)`, form exec or shell (question 1) | `CMD node server.js` |
 | `VOLUME` | 304 | `Volume(paths)` | `VOLUME ["/data"]` |
@@ -101,6 +101,7 @@ representatives first.
 | `EXPOSE` as `Port` specs (every one typed; a spec that is not a port, such as `${PORT:-80}`, would stay `Raw`) | 94.3% | 3,636 | 5,149 |
 | `COPY --chmod`, `--link`, JSON form; `CopyHeredoc` (one plain heredoc; with flags, several or `<<-` stays `Raw`) | 94.5% | 3,691 | 5,149 |
 | `ADD` with `--chown`, `--chmod`, `--checksum`, `--keep-git-dir`, `--link`, JSON form; the builders' `add` takes only a URL, a Git repository or a tar archive | 97.7% | 4,193 | 5,149 |
+| `RUN` flags as `RunFlag`s (`Mount` with its options as written, `Network`, `Security`) in written order, since a `RUN` step's normal form keeps them; a flagged `RUN` is never merged | 98.2% | 4,538 | 5,149 |
 
 A shell-form `VOLUME` keeps each word as written, quotes included (`Values.written`), found when `VOLUME "/test_dir"`
 lost its quotes on the first try.
