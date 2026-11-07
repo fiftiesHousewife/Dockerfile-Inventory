@@ -9,14 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.IntStream;
 
-/**
- * Pass 4: merges signature groups whose package set plus base family are nearly the same (D2). MinHash
- * signatures are split into {@link #BANDS} bands of {@link #ROWS} rows; groups sharing a band are candidates, and
- * a candidate pair merges only at an exact Jaccard of at least {@link #THRESHOLD}. Merging is transitive. A group
- * with no packages has nothing to compare and never merges here (D3).
- */
-public final class NearDuplicates {
+final class NearDuplicates {
 
     static final double THRESHOLD = 0.8;
     static final int BANDS = 32;
@@ -25,48 +20,50 @@ public final class NearDuplicates {
     private NearDuplicates() {
     }
 
-    public static List<Group> of(List<Group> groups) {
+    static List<Group> of(List<Group> groups) {
         List<Group> sorted = groups.stream().sorted(Comparator.comparing(Group::key)).toList();
         List<Set<String>> features = sorted.stream().map(NearDuplicates::features).toList();
-        int[] parent = new int[sorted.size()];
-        Arrays.setAll(parent, i -> i);
-        Map<String, List<Integer>> buckets = new HashMap<>();
-        for (int i = 0; i < sorted.size(); i++) {
-            if (sorted.get(i).packages().isEmpty()) {
-                continue;
-            }
-            long[] signature = MinHash.signature(features.get(i));
-            for (int band = 0; band < BANDS; band++) {
-                long[] rows = Arrays.copyOfRange(signature, band * ROWS, (band + 1) * ROWS);
-                buckets.computeIfAbsent(band + ":" + Arrays.toString(rows), k -> new ArrayList<>()).add(i);
-            }
-        }
-        for (List<Integer> bucket : buckets.values()) {
-            for (int x = 0; x < bucket.size(); x++) {
-                for (int y = x + 1; y < bucket.size(); y++) {
-                    int i = bucket.get(x);
-                    int j = bucket.get(y);
-                    if (MinHash.jaccard(features.get(i), features.get(j)) >= THRESHOLD) {
-                        union(parent, i, j);
-                    }
-                }
-            }
-        }
+        int[] parent = IntStream.range(0, sorted.size()).toArray();
+        buckets(sorted, features).values().forEach(bucket -> mergeSimilar(bucket, features, parent));
         Map<Integer, List<Group>> merged = new TreeMap<>();
-        for (int i = 0; i < sorted.size(); i++) {
-            merged.computeIfAbsent(find(parent, i), k -> new ArrayList<>()).add(sorted.get(i));
-        }
+        IntStream.range(0, sorted.size())
+                .forEach(i -> merged.computeIfAbsent(find(parent, i), k -> new ArrayList<>()).add(sorted.get(i)));
         return merged.values().stream().map(NearDuplicates::merge).sorted(Comparator.comparing(Group::key)).toList();
     }
 
-    private static Set<String> features(Group group) {
+    static Map<String, List<Integer>> buckets(List<Group> sorted, List<Set<String>> features) {
+        Map<String, List<Integer>> buckets = new HashMap<>();
+        IntStream.range(0, sorted.size())
+                .filter(i -> !sorted.get(i).packages().isEmpty())
+                .forEach(i -> bandKeys(MinHash.signature(features.get(i)))
+                        .forEach(key -> buckets.computeIfAbsent(key, k -> new ArrayList<>()).add(i)));
+        return buckets;
+    }
+
+    static List<String> bandKeys(long[] signature) {
+        return IntStream.range(0, BANDS)
+                .mapToObj(band -> band + ":" + Arrays.toString(
+                        Arrays.copyOfRange(signature, band * ROWS, (band + 1) * ROWS)))
+                .toList();
+    }
+
+    static void mergeSimilar(List<Integer> bucket, List<Set<String>> features, int[] parent) {
+        IntStream.range(0, bucket.size()).forEach(x -> IntStream.range(x + 1, bucket.size()).forEach(y -> {
+            int i = bucket.get(x);
+            int j = bucket.get(y);
+            if (MinHash.jaccard(features.get(i), features.get(j)) >= THRESHOLD) {
+                union(parent, i, j);
+            }
+        }));
+    }
+
+    static Set<String> features(Group group) {
         Set<String> features = new TreeSet<>(group.packages());
         features.add("base:" + group.family());
         return features;
     }
 
-    /** The largest member names the merged group and gives its package set and family. */
-    private static Group merge(List<Group> members) {
+    static Group merge(List<Group> members) {
         Group largest = members.stream()
                 .max(Comparator.comparingInt(Group::locations).thenComparing(Group::key, Comparator.reverseOrder()))
                 .orElseThrow();
@@ -74,15 +71,16 @@ public final class NearDuplicates {
                 members.stream().mapToInt(Group::locations).sum(), largest.packages(), largest.family());
     }
 
-    private static int find(int[] parent, int i) {
-        while (parent[i] != i) {
-            parent[i] = parent[parent[i]];
-            i = parent[i];
+    static int find(int[] parent, int i) {
+        int root = i;
+        while (parent[root] != root) {
+            parent[root] = parent[parent[root]];
+            root = parent[root];
         }
-        return i;
+        return root;
     }
 
-    private static void union(int[] parent, int i, int j) {
+    static void union(int[] parent, int i, int j) {
         int a = find(parent, i);
         int b = find(parent, j);
         if (a != b) {

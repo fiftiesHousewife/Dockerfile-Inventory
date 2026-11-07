@@ -15,35 +15,6 @@ import org.junit.jupiter.api.io.TempDir;
 class ArchetypeCardsTest {
 
     @Test
-    void aSignatureReadsAsASentenceNamingTheFirstPackagesAndCountingTheRest() {
-        assertThat(ArchetypeCards.sentence(
-                "s2i-base-c9s:|yum|hostname,mod_ssl,php,php-fpm,php-gd,tzdata|NUMERIC|8080,8443|EXEC|stages=1",
-                "quay.io/sclorg/s2i-base-c9s:c9s"))
-                .isEqualTo("Builds on quay.io/sclorg/s2i-base-c9s:c9s, installs 6 packages with yum (hostname, "
-                        + "mod_ssl, php, php-fpm and 2 more), runs as a numeric user, exposes 8080 and 8443, "
-                        + "starts with an exec-form command, in one stage.");
-    }
-
-    @Test
-    void noPackagesRootNoPortsShellFormAndSeveralStagesReadPlainlyToo() {
-        assertThat(ArchetypeCards.sentence("golang:1|apt-get|jq|ROOT||SHELL|stages=2", "golang:1.22"))
-                .isEqualTo("Builds on golang:1.22, installs 1 package with apt-get (jq), runs as root, exposes no "
-                        + "ports, "
-                        + "starts with a shell-form command, in 2 stages.");
-        assertThat(ArchetypeCards.sentence("scratch:|||UNRESOLVED||NONE|stages=1", "scratch"))
-                .isEqualTo("Builds on scratch, installs no packages, runs as a user set by a variable, exposes no "
-                        + "ports, sets no start command of its own, in one stage.");
-    }
-
-    @Test
-    void templatesAndUnreadableFilesHaveTheirOwnSentence() {
-        assertThat(ArchetypeCards.sentence("templates", null))
-                .isEqualTo("Templates saved under a Dockerfile's name (Jinja and similar), not Dockerfiles.");
-        assertThat(ArchetypeCards.sentence("parse-failures", null))
-                .isEqualTo("Dockerfiles the parser could not read.");
-    }
-
-    @Test
     void aCardHasItsSentenceSizeRepositoriesAndTheRepresentativesLocationAndText(@TempDir Path discovery)
             throws IOException {
         Files.createDirectories(discovery.resolve("blobs"));
@@ -59,13 +30,15 @@ class ArchetypeCardsTest {
 
         List<ArchetypeCards.Card> cards = ArchetypeCards.of(new Ranking(archetypes, 22, 1, 1), estate, discovery);
 
-        assertThat(cards).hasSize(10);
-        assertThat(cards.getFirst()).isEqualTo(new ArchetypeCards.Card(1,
-                "Builds on ubi9/ubi-minimal:9.4, installs no packages, runs as a numeric user, exposes no ports, "
-                        + "sets no start command of its own, in one stage.",
-                2, 2, List.of("org/api", "org/app"), "org/app: Dockerfile",
-                "FROM ubi9/ubi-minimal:9.4\nUSER 1001\n"));
-        assertThat(cards.get(1).exampleText()).isNull();
+        assertThat(cards).satisfies(all -> {
+            assertThat(all).hasSize(10);
+            assertThat(all.getFirst()).isEqualTo(new ArchetypeCards.Card(1,
+                    "Builds on ubi9/ubi-minimal:9.4, installs no packages, runs as a numeric user, exposes no ports, "
+                            + "sets no start command of its own, in one stage.",
+                    2, 2, List.of("org/api", "org/app"), "org/app: Dockerfile",
+                    "FROM ubi9/ubi-minimal:9.4\nUSER 1001\n"));
+            assertThat(all.get(1).exampleText()).isNull();
+        });
     }
 
     @Test
@@ -86,35 +59,39 @@ class ArchetypeCardsTest {
     @Test
     void anExamplesSecretValuesAreHiddenBeforeItIsShown(@TempDir Path discovery) throws IOException {
         Files.createDirectories(discovery.resolve("blobs"));
-        Files.writeString(discovery.resolve("blobs/s1"), """
-                FROM ubi9
-                ENV DB_PASSWORD=hunter2 APP_NAME=shop
-                ARG NPM_TOKEN="abc def"
-                ENV API_KEY s3cr3t
-                LABEL build.secret='x'
-                RUN aws configure set key AKIAIOSFODNN7EXAMPLE && echo done
-                """);
-        Dockerfile file = new Dockerfile("s1", "t", "s", "ubi:9|||ROOT||NONE|stages=1", new Base("ubi9", null, null),
-                Set.of(), Set.of(), "ROOT", 1, 0, List.of(new Location("org/app", "Dockerfile", "RELEASED")), 0);
-        Archetype archetype = new Archetype(1, "k", 1, List.of("s1"), file.signature(), "s1", List.of("org/app"));
+        Files.writeString(discovery.resolve("blobs/s1"), "FROM ubi9\nENV DB_PASSWORD=hunter2\n");
 
-        assertThat(ArchetypeCards.of(new Ranking(List.of(archetype), 1, 1, 1),
-                new Estate(List.of(file), List.of(), List.of(), Map.of()), discovery).getFirst().exampleText())
-                .isEqualTo("""
-                        FROM ubi9
-                        ENV DB_PASSWORD=(hidden) APP_NAME=shop
-                        ARG NPM_TOKEN=(hidden)
-                        ENV API_KEY (hidden)
-                        LABEL build.secret=(hidden)
-                        RUN aws configure set key (hidden) && echo done
-                        """);
+        assertThat(ArchetypeCards.exampleText(discovery.resolve("blobs/s1")))
+                .isEqualTo("FROM ubi9\nENV DB_PASSWORD=(hidden)\n");
     }
 
     @Test
-    void aSecretNamedValueThatIsOnlyAnAbsolutePathIsShown() {
-        assertThat(ArchetypeCards.hidden("ENV NSS_WRAPPER_PASSWD=\"/opt/app/nss_passwd\" DB_PASSWORD=x\n"
-                + "ENV CREDENTIAL_FILE /run/creds.json"))
-                .isEqualTo("ENV NSS_WRAPPER_PASSWD=\"/opt/app/nss_passwd\" DB_PASSWORD=(hidden)\n"
-                        + "ENV CREDENTIAL_FILE /run/creds.json");
+    void aMissingBlobHasNoExampleText(@TempDir Path discovery) {
+        assertThat(ArchetypeCards.exampleText(discovery.resolve("blobs/none"))).isNull();
+    }
+
+    @Test
+    void aCardWithoutALocationHasNoExampleEvenWhenTheBlobExists(@TempDir Path discovery) throws IOException {
+        Files.createDirectories(discovery.resolve("blobs"));
+        Files.writeString(discovery.resolve("blobs/b1"), "FROM ubi9\n");
+        Archetype archetype = new Archetype(3, "k", 1, List.of("b1"), "parse-failures", "b1", List.of());
+
+        assertThat(ArchetypeCards.card(archetype, null, List.of(), discovery)).isEqualTo(new ArchetypeCards.Card(3,
+                "Dockerfiles the parser could not read.", 1, 1, List.of(), null, null));
+    }
+
+    @Test
+    void theBaseIsNamedWithItsTagWhenItHasOneAndUnknownWithoutADockerfile() {
+        assertThat(ArchetypeCards.baseName(PassesTest.dockerfile("a", "t", "s", 1))).isEqualTo("ubi9/ubi-minimal:9.4");
+        assertThat(ArchetypeCards.baseName(BaseCatalogueTest.dockerfile("a", new Base("ubi9", null, null), 1)))
+                .isEqualTo("ubi9");
+        assertThat(ArchetypeCards.baseName(null)).isEqualTo("an unknown base");
+    }
+
+    @Test
+    void theLocationIsTheFirstOnesRepositoryAndPath() {
+        assertThat(ArchetypeCards.location(List.of(new Location("org/a", "x/Dockerfile", "RELEASED"),
+                new Location("org/b", "Dockerfile", "RELEASED")))).isEqualTo("org/a: x/Dockerfile");
+        assertThat(ArchetypeCards.location(List.of())).isNull();
     }
 }

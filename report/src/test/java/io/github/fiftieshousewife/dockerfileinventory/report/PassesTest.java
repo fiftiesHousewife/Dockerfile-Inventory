@@ -44,6 +44,47 @@ class PassesTest {
                 new Group("templates", List.of("tpl-1"), 2, Set.of(), "templates"));
     }
 
+    @Test
+    void withoutFailuresTogetherEachFailureIsItsOwnGroupAfterTheDockerfileGroups() {
+        assertThat(Passes.groups(ESTATE, Dockerfile::textHash, false)).extracting(Group::key)
+                .containsExactly("text-1", "text-2", "text-3", "bad-1", "bad-2");
+    }
+
+    @Test
+    void dockerfileGroupsKeepFirstSeenOrderAndSumTheirLocations() {
+        assertThat(Passes.dockerfileGroups(ESTATE, Dockerfile::textHash)).first()
+                .isEqualTo(new Group("text-1", List.of("a", "a-cosmetic"), 5, Set.of("git"), "ubi-minimal"));
+    }
+
+    @Test
+    void failureGroupsAreOneGroupPerKindTogetherOrOnePerFileApart() {
+        assertThat(Passes.failureGroups(ESTATE, true))
+                .containsExactly(new Group("parse-failures", List.of("bad-1", "bad-2"), 3, Set.of(), "parse-failures"));
+        assertThat(Passes.failureGroups(ESTATE, false)).containsExactly(
+                new Group("bad-1", List.of("bad-1"), 1, Set.of(), "parse-failures"),
+                new Group("bad-2", List.of("bad-2"), 2, Set.of(), "parse-failures"));
+    }
+
+    @Test
+    void aFailureIsATemplateWhenItsMessageSaysSo() {
+        assertThat(Passes.kind(new Failure("t", Summary.TEMPLATE + " (x)", List.of()))).isEqualTo("templates");
+        assertThat(Passes.kind(failure("b", 1))).isEqualTo("parse-failures");
+    }
+
+    @Test
+    void theFamilyIsTheLastPathSegmentOfTheBaseName() {
+        assertThat(Passes.family(new Base("registry.example.com/ubi9/ubi-minimal", "9", null)))
+                .isEqualTo("ubi-minimal");
+        assertThat(Passes.family(new Base("alpine", null, null))).isEqualTo("alpine");
+        assertThat(Passes.family(new Base(null, null, null))).isEmpty();
+    }
+
+    @Test
+    void aPassCountsGroupsAndTheLocationsTheyCover() {
+        assertThat(Passes.count("p", List.of(new Group("a", List.of("a"), 2, Set.of(), "f"),
+                new Group("b", List.of("b"), 3, Set.of(), "f")))).isEqualTo(new PassCount("p", 2, 5));
+    }
+
     static Dockerfile dockerfile(String sha, String textHash, String signatureHash, int locations) {
         return new Dockerfile(sha, textHash, signatureHash, "ubi-minimal:9|microdnf|git|ROOT||NONE|stages=1",
                 new Base("ubi9/ubi-minimal", "9.4", null), Set.of("git"), Set.of("microdnf"), "ROOT", 1, 0,

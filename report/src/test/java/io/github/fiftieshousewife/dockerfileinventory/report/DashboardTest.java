@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 class DashboardTest {
 
-    private static final Summary SUMMARY = new Summary(1234, 2,
+    static final Summary SUMMARY =new Summary(1234, 2,
             List.of(new PassCount("blob", 900, 1234), new PassCount("text-normal", 700, 1234),
                     new PassCount("signature", 400, 1234)),
             350, 42, 311, 0.02, 0.15, 0.25, 0.1, Map.of("microdnf", 800), Map.of("ROOT", 600, "NUMERIC", 634),
@@ -55,7 +55,7 @@ class DashboardTest {
                 .contains("<h2>Lineage<span class=\"info\"").contains("Lineage has not run");
     }
 
-    private static final LineageView CHAIN = LineageView.read(LineageViewTest.CHAIN, LineageViewTest.LOCATIONS);
+    private static final LineageView CHAIN = LineageFiles.read(LineageFilesTest.CHAIN, LineageFilesTest.LOCATIONS);
 
     @Test
     void lineageTilesCountImagesCoverageLinksAndTheThreeLists() {
@@ -131,16 +131,18 @@ class DashboardTest {
     void theCoverageCurveSitsAboveTheArchetypeTable() {
         String page = Dashboard.render(SUMMARY, RANKING, List.of(), BASES, Optional.empty());
 
-        assertThat(page).contains("<h2>Archetype coverage<span class=\"info\"")
-                .contains(Charts.coverage(RANKING));
-        assertThat(page.indexOf(Charts.coverage(RANKING))).isLessThan(page.indexOf("<h2>Largest archetypes"));
+        assertThat(page).satisfies(p -> {
+            assertThat(p).contains("<h2>Archetype coverage<span class=\"info\"")
+                    .contains(CoverageChart.render(RANKING));
+            assertThat(p.indexOf(CoverageChart.render(RANKING))).isLessThan(p.indexOf("<h2>Largest archetypes"));
+        });
     }
 
     @Test
     void theBasesChartHasALegendInWordsAndKeepsItsTableUnderneath() {
         String page = Dashboard.render(SUMMARY, RANKING, List.of(), BASES, Optional.empty());
 
-        assertThat(page).contains(Charts.bases(BASES))
+        assertThat(page).contains(BasesChart.render(BASES))
                 .contains("<span class=\"key eol\"></span>end of life",
                         "<span class=\"key supported\"></span>supported",
                         "<span class=\"key unknown\"></span>not on the list", "hatched: pinned by digest")
@@ -151,12 +153,12 @@ class DashboardTest {
     void usersManagersAndParseOutcomeAreStackedBarsInAFixedOrder() {
         String page = Dashboard.render(SUMMARY, RANKING, List.of(), BASES, Optional.empty());
 
-        assertThat(page).contains(Charts.stacked("Final user", List.of(new Charts.Segment("root", 600),
-                        new Charts.Segment("numeric", 634), new Charts.Segment("named", 0),
-                        new Charts.Segment("unresolved", 0))))
-                .contains(Charts.stacked("Package managers", List.of(new Charts.Segment("microdnf", 800))))
-                .contains(Charts.stacked("Parse outcome", List.of(new Charts.Segment("parsed", 879),
-                        new Charts.Segment("templates", 3), new Charts.Segment("failed", 18))));
+        assertThat(page).contains(StackedChart.render("Final user", List.of(new StackedChart.Segment("root", 600),
+                        new StackedChart.Segment("numeric", 634), new StackedChart.Segment("named", 0),
+                        new StackedChart.Segment("unresolved", 0))))
+                .contains(StackedChart.render("Package managers", List.of(new StackedChart.Segment("microdnf", 800))))
+                .contains(StackedChart.render("Parse outcome", List.of(new StackedChart.Segment("parsed", 879),
+                        new StackedChart.Segment("templates", 3), new StackedChart.Segment("failed", 18))));
     }
 
     @Test

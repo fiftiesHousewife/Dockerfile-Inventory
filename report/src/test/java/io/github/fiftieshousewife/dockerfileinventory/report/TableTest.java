@@ -25,6 +25,15 @@ class TableTest {
     }
 
     @Test
+    void aFieldIsQuotedOnlyWhenItHoldsACommaQuoteOrLineBreak() {
+        assertThat(Table.field("plain")).isEqualTo("plain");
+        assertThat(Table.field(null)).isEmpty();
+        assertThat(Table.field(4)).isEqualTo("4");
+        assertThat(Table.field("a\rb")).isEqualTo("\"a\rb\"");
+        assertThat(Table.field("say \"hi\"")).isEqualTo("\"say \"\"hi\"\"\"");
+    }
+
+    @Test
     void theDdlCreatesTheTableWithEachColumnsOracleType() {
         assertThat(TABLE.ddl()).isEqualTo("""
                 CREATE TABLE bases (

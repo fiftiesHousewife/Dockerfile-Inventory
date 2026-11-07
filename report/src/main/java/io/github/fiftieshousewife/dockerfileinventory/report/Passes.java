@@ -4,14 +4,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
-/**
- * The exact collapse passes, cheapest first: blob SHA, text-normal hash, signature hash. Parse failures have no
- * hashes: they stay one group each until the signature pass, which puts them all in one group (D5), and templates
- * in another.
- */
-public final class Passes {
+final class Passes {
 
     static final String PARSE_FAILURES = "parse-failures";
     static final String TEMPLATES = "templates";
@@ -19,51 +16,52 @@ public final class Passes {
     private Passes() {
     }
 
-    public static List<PassCount> exact(Estate estate) {
+    static List<PassCount> exact(Estate estate) {
         return List.of(
                 count("blob", groups(estate, Dockerfile::blobSha, false)),
                 count("text-normal", groups(estate, Dockerfile::textHash, false)),
                 count("signature", signatureGroups(estate)));
     }
 
-    /** The groups the near-duplicate pass starts from. */
-    public static List<Group> signatureGroups(Estate estate) {
+    static List<Group> signatureGroups(Estate estate) {
         return groups(estate, Dockerfile::signatureHash, true);
     }
 
-    private static List<Group> groups(Estate estate, Function<Dockerfile, String> key, boolean failuresTogether) {
-        Map<String, List<Dockerfile>> byKey = new LinkedHashMap<>();
-        estate.dockerfiles().forEach(d -> byKey.computeIfAbsent(key.apply(d), k -> new ArrayList<>()).add(d));
-        List<Group> groups = new ArrayList<>();
-        byKey.forEach((k, members) -> groups.add(new Group(k, members.stream().map(Dockerfile::blobSha).toList(),
-                members.stream().mapToInt(d -> d.locations().size()).sum(),
-                members.getFirst().finalPackages(), family(members.getFirst().base()))));
-        Map<String, List<Failure>> failures = new LinkedHashMap<>();
-        estate.failures().forEach(f -> failures.computeIfAbsent(kind(f), k -> new ArrayList<>()).add(f));
-        failures.forEach((kind, members) -> {
-            if (failuresTogether) {
-                groups.add(new Group(kind, members.stream().map(Failure::blobSha).toList(),
-                        members.stream().mapToInt(f -> f.locations().size()).sum(), java.util.Set.of(), kind));
-            } else {
-                members.forEach(f -> groups.add(new Group(f.blobSha(), List.of(f.blobSha()), f.locations().size(),
-                        java.util.Set.of(), kind)));
-            }
-        });
-        return groups;
+    static List<Group> groups(Estate estate, Function<Dockerfile, String> key, boolean failuresTogether) {
+        return Stream.concat(dockerfileGroups(estate, key).stream(),
+                failureGroups(estate, failuresTogether).stream()).toList();
     }
 
-    /** A template saved under a Dockerfile's name is not a parser's failure, so it is grouped apart. */
-    private static String kind(Failure failure) {
+    static List<Group> dockerfileGroups(Estate estate, Function<Dockerfile, String> key) {
+        Map<String, List<Dockerfile>> byKey = new LinkedHashMap<>();
+        estate.dockerfiles().forEach(d -> byKey.computeIfAbsent(key.apply(d), k -> new ArrayList<>()).add(d));
+        return byKey.entrySet().stream().map(e -> new Group(e.getKey(),
+                e.getValue().stream().map(Dockerfile::blobSha).toList(),
+                e.getValue().stream().mapToInt(d -> d.locations().size()).sum(),
+                e.getValue().getFirst().finalPackages(), family(e.getValue().getFirst().base()))).toList();
+    }
+
+    static List<Group> failureGroups(Estate estate, boolean together) {
+        Map<String, List<Failure>> byKind = new LinkedHashMap<>();
+        estate.failures().forEach(f -> byKind.computeIfAbsent(kind(f), k -> new ArrayList<>()).add(f));
+        return byKind.entrySet().stream().flatMap(e -> together
+                ? Stream.of(new Group(e.getKey(), e.getValue().stream().map(Failure::blobSha).toList(),
+                        e.getValue().stream().mapToInt(f -> f.locations().size()).sum(), Set.of(), e.getKey()))
+                : e.getValue().stream().map(f -> new Group(f.blobSha(), List.of(f.blobSha()), f.locations().size(),
+                        Set.of(), e.getKey()))).toList();
+    }
+
+    static String kind(Failure failure) {
         return failure.message().startsWith(Summary.TEMPLATE) ? TEMPLATES : PARSE_FAILURES;
     }
 
-    /** The facts stage's D4: the last path segment of the base's name. */
+    // facts' D4: the last path segment of the base's name.
     static String family(Base base) {
         String name = base.name() == null ? "" : base.name();
         return name.contains("$") ? "unresolved" : name.substring(name.lastIndexOf('/') + 1);
     }
 
-    private static PassCount count(String pass, List<Group> groups) {
+    static PassCount count(String pass, List<Group> groups) {
         return new PassCount(pass, groups.size(), groups.stream().mapToInt(Group::locations).sum());
     }
 }

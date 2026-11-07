@@ -5,18 +5,14 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SplittableRandom;
+import java.util.stream.IntStream;
 
-/**
- * MinHash signatures of string sets, whose agreement estimates Jaccard similarity (D2). Each of the
- * {@link #HASHES} functions is {@code (a * x + b) mod p} over a 64-bit hash of the element, with {@code p} the
- * Mersenne prime 2^61 - 1; the coefficients come from a fixed seed, so signatures are the same on every run.
- */
 final class MinHash {
 
     static final int HASHES = 128;
 
     private static final long PRIME = (1L << 61) - 1;
-    /** 2^64 = 8 * 2^61, which is 8 mod 2^61 - 1; the high half of a product of two values under 2^61 is under 2^58. */
+    // 2^64 = 8 * 2^61, which is 8 mod 2^61 - 1; the high half of a product of two values under 2^61 is under 2^58.
     private static final long TWO_TO_64_MOD_PRIME = 8;
     private static final long[] A = new long[HASHES];
     private static final long[] B = new long[HASHES];
@@ -35,23 +31,15 @@ final class MinHash {
     static long[] signature(Set<String> set) {
         long[] signature = new long[HASHES];
         Arrays.fill(signature, Long.MAX_VALUE);
-        for (String element : set) {
+        set.forEach(element -> {
             long x = Long.remainderUnsigned(fnv1a(element), PRIME);
-            for (int i = 0; i < HASHES; i++) {
-                signature[i] = Math.min(signature[i], mulAddMod(A[i], x, B[i]));
-            }
-        }
+            Arrays.setAll(signature, i -> Math.min(signature[i], mulAddMod(A[i], x, B[i])));
+        });
         return signature;
     }
 
     static double estimate(long[] a, long[] b) {
-        int agree = 0;
-        for (int i = 0; i < HASHES; i++) {
-            if (a[i] == b[i]) {
-                agree++;
-            }
-        }
-        return (double) agree / HASHES;
+        return (double) IntStream.range(0, HASHES).filter(i -> a[i] == b[i]).count() / HASHES;
     }
 
     static double jaccard(Set<String> a, Set<String> b) {
@@ -64,15 +52,14 @@ final class MinHash {
         return (double) shared / union.size();
     }
 
-    /** {@code (a * x + b) mod p} without overflow, by 128-bit multiplication. */
-    private static long mulAddMod(long a, long x, long b) {
+    static long mulAddMod(long a, long x, long b) {
         long high = Math.multiplyHigh(a, x);
         long low = a * x;
         long product = Long.remainderUnsigned(low, PRIME) + high * TWO_TO_64_MOD_PRIME;
         return Long.remainderUnsigned(Long.remainderUnsigned(product, PRIME) + b, PRIME);
     }
 
-    private static long fnv1a(String text) {
+    static long fnv1a(String text) {
         long hash = 0xcbf29ce484222325L;
         for (byte b : text.getBytes(StandardCharsets.UTF_8)) {
             hash ^= b & 0xff;

@@ -51,6 +51,31 @@ class BaseCatalogueTest {
                 .containsExactly(new BaseRow("unresolved", null, "unresolved", 3, 0, "unknown", null));
     }
 
+    @Test
+    void aRowSumsItsDockerfilesLocationsAndThoseWithADigest() {
+        List<Dockerfile> users = List.of(dockerfile("a", new Base("ubi9", "9", DIGEST), 2),
+                dockerfile("b", new Base("ubi9", "9", null), 3));
+
+        assertThat(BaseCatalogue.row("ubi9", "9", users, EolList.empty()))
+                .isEqualTo(new BaseRow("ubi9", "9", "ubi9", 5, 2, "unknown", null));
+    }
+
+    @Test
+    void theKeyIsPathAndTagOrOneUnresolvedKeyForAnyVariable() {
+        assertThat(BaseCatalogue.key(new Base("quay.io/org/img", "1", null))).containsExactly("org/img", "1");
+        assertThat(BaseCatalogue.key(new Base("${BASE}", "1", null))).containsExactly("unresolved", null);
+        assertThat(BaseCatalogue.key(new Base(null, null, null))).containsExactly("", null);
+    }
+
+    @Test
+    void theRegistryHostIsDroppedOnlyWhenTheFirstSegmentLooksLikeAHost() {
+        assertThat(BaseCatalogue.path(new Base("registry.example.com/ubi9", null, null))).isEqualTo("ubi9");
+        assertThat(BaseCatalogue.path(new Base("localhost:5000/app", null, null))).isEqualTo("app");
+        assertThat(BaseCatalogue.path(new Base("localhost/app", null, null))).isEqualTo("app");
+        assertThat(BaseCatalogue.path(new Base("library/alpine", null, null))).isEqualTo("library/alpine");
+        assertThat(BaseCatalogue.path(new Base("alpine", null, null))).isEqualTo("alpine");
+    }
+
     static Estate estate(Dockerfile... dockerfiles) {
         return new Estate(List.of(dockerfiles), List.of(), List.of(), Map.of());
     }
