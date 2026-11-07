@@ -54,10 +54,7 @@ public final class FactsParser {
         if (!(files.getFirst() instanceof Docker.File file)) {
             return new ParseResult.Failed(blobSha, parseError(files.getFirst()));
         }
-        return MergedLines.in(file)
-                .<ParseResult>map(line -> new ParseResult.Failed(blobSha,
-                        "unrecognised line merged into an argument: " + line))
-                .orElseGet(() -> new ParseResult.Parsed(blobSha, file));
+        return new ParseResult.Parsed(blobSha, file);
     }
 
     static String parseError(SourceFile source) {

@@ -45,7 +45,7 @@ class FactsParserTest {
         ParseResult result = new FactsParser().parse("k8s", "FROM BASEIMAGE\n\nCROSS_BUILD_COPY qemu /usr/bin/\n");
 
         assertThat(result).isInstanceOfSatisfying(ParseResult.Failed.class,
-                failed -> assertThat(failed.message()).endsWith(": CROSS_BUILD_COPY qemu /usr/bin/"));
+                failed -> assertThat(failed.message()).contains("line 3:0 unrecognised line: CROSS_BUILD_COPY qemu /usr/bin/"));
     }
 
     @Test

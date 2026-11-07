@@ -2,6 +2,7 @@
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: a test for a line holding only a backslash (issue 7).
+ * Modified by Dockerfile Inventory, 2026: tests for unrecognised lines (issue 3).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +19,12 @@
 package io.github.fiftieshousewife.dockerfile.parser;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.InMemoryExecutionContext;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import org.openrewrite.test.RewriteTest;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static io.github.fiftieshousewife.dockerfile.parser.Assertions.docker;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -142,5 +147,60 @@ class DockerParserTest implements RewriteTest {
             })
           )
         );
+    }
+
+    @Test
+    void unrecognisedLineIsASyntaxError() {
+        List<Throwable> errors = new ArrayList<>();
+
+        DockerParser.builder().build()
+          .parse(new InMemoryExecutionContext(errors::add), "FROM ubi9\nRUNN echo typo\n")
+          .toList();
+
+        assertThat(errors).singleElement().satisfies(error ->
+          assertThat(error.getMessage()).contains("line 2:0").contains("RUNN echo typo"));
+    }
+
+    @Test
+    void continuedLinesBlankLinesAndWholeLineCommentsInsideAnInstructionAreNotUnrecognised() {
+        List<Throwable> errors = new ArrayList<>();
+
+        DockerParser.builder().build()
+          .parse(new InMemoryExecutionContext(errors::add), """
+            FROM ubi9
+            RUN echo a \\
+
+                # a comment
+                && echo b # trailing
+            RUN <<EOF
+            echo c
+            EOF
+            """)
+          .toList();
+
+        assertThat(errors).isEmpty();
+    }
+
+    @Test
+    void lineAfterATrailingCommentIsUnrecognised() {
+        List<Throwable> errors = new ArrayList<>();
+
+        DockerParser.builder().build()
+          .parse(new InMemoryExecutionContext(errors::add), "FROM ubi9\nRUN make # build\nCROSS_BUILD_COPY qemu /usr/bin/\n")
+          .toList();
+
+        assertThat(errors).singleElement().satisfies(error ->
+          assertThat(error.getMessage()).contains("CROSS_BUILD_COPY qemu /usr/bin/"));
+    }
+
+    @Test
+    void lineEndingInTwoBackslashesContinuesAsDockerReadsIt() {
+        List<Throwable> errors = new ArrayList<>();
+
+        DockerParser.builder().build()
+          .parse(new InMemoryExecutionContext(errors::add), "FROM ubi9\nRUN dnf -y module enable nodejs && \\\\\ndnf -y install nodejs\n")
+          .toList();
+
+        assertThat(errors).isEmpty();
     }
 }

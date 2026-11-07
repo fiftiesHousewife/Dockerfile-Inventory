@@ -47,7 +47,8 @@ RUNN echo typo
 ```
 
 Expected: a syntax error. Actual: no error; the `FROM` image name becomes `ubi9\nRUNN echo typo`.
-Workaround: `MergedLines` reports a literal holding a newline not preceded by a backslash as a failure.
+Fixed in the fork (after parsing, a newline inside an instruction that no backslash, blank line or whole-line comment
+continues is reported as a syntax error, `unrecognised line: ...`, at the glued line's first token).
 
 ## 4. `LABEL a=$X b=$Y` is parsed as one pair
 

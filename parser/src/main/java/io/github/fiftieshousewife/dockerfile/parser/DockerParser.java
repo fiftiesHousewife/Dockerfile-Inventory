@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: an unrecognised line is reported as a syntax error (issue 3).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Parser;
 import org.openrewrite.SourceFile;
 import io.github.fiftieshousewife.dockerfile.parser.internal.DockerParserVisitor;
+import io.github.fiftieshousewife.dockerfile.parser.internal.UnrecognisedLines;
 import io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerLexer;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import org.openrewrite.tree.ParseError;
@@ -53,11 +55,14 @@ public class DockerParser implements Parser {
                 parser.removeErrorListeners();
                 parser.addErrorListener(new ForwardingErrorListener(input.getPath(), ctx));
 
+                io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerParser.DockerfileContext dockerfile =
+                        parser.dockerfile();
+                UnrecognisedLines.report(parser, dockerfile);
                 Docker.File file = new DockerParserVisitor(
                         input.getRelativePath(relativeTo),
                         input.getFileAttributes(),
                         input.getSource(ctx)
-                ).visitDockerfile(parser.dockerfile());
+                ).visitDockerfile(dockerfile);
 
                 parsingListener.parsed(input, file);
                 return requirePrintEqualsInput(file, input, relativeTo, ctx);
