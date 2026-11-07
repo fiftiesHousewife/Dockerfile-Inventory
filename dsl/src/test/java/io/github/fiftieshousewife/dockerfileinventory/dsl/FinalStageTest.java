@@ -24,6 +24,14 @@ class FinalStageTest {
     }
 
     @Test
+    void anOwnedCopyKeepsItsOtherOptions() {
+        Instruction copy = new Instruction.Copy(List.of("run.sh"), "/bin/", null, "build", "755", true, true);
+
+        assertThat(FinalStage.finished(copy, "1001", List.of()))
+                .containsExactly(new Instruction.Copy(List.of("run.sh"), "/bin/", "1001:0", "build", "755", true, true));
+    }
+
+    @Test
     void finishedAddsNoGroupZeroStepWithoutWritablePaths() {
         assertThat(FinalStage.finished(USER, "1001", List.of())).containsExactly(USER);
     }

@@ -157,6 +157,22 @@ class ImageBuilderTest {
     }
 
     @Test
+    void aCopyCanBeWrittenWithItsModeLinkAndForm() {
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE)
+                .copy(List.of("run.sh"), "/bin/", null, null, "755", true, true).model().stages().getFirst()
+                .instructions())
+                .containsExactly(new Instruction.Copy(List.of("run.sh"), "/bin/", null, null, "755", true, true));
+    }
+
+    @Test
+    void aFileCanBeWrittenFromLinesUnexpandedOrAsTheDockerfileWroteIt() {
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).copyHeredoc("/etc/a.conf", List.of("a = 1"))
+                .copyHeredoc("/etc/b", "END", false, List.of("$HOME")).model().stages().getFirst().instructions())
+                .containsExactly(new Instruction.CopyHeredoc("/etc/a.conf", "EOF", true, List.of("a = 1")),
+                        new Instruction.CopyHeredoc("/etc/b", "END", false, List.of("$HOME")));
+    }
+
+    @Test
     void portsCanBeGivenAsDockerWritesThemAndABadOneIsRefused() {
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090).model()
                 .stages().getFirst().instructions())

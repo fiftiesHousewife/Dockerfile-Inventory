@@ -34,6 +34,22 @@ class InstructionTest {
     }
 
     @Test
+    void aCopyHeredocNeedsADestinationAndADelimiterAndCopiesItsLines() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new Instruction.CopyHeredoc(" ", "EOF", true, List.of("x")));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new Instruction.CopyHeredoc("/etc/x", "", true, List.of("x")));
+        assertThat(new Instruction.CopyHeredoc("/etc/x", "EOF", true, new ArrayList<>(List.of("x"))).lines())
+                .isUnmodifiable();
+    }
+
+    @Test
+    void aCopyWrittenWithoutOptionsHasNone() {
+        assertThat(new Instruction.Copy(List.of("a"), "/b/", null, null))
+                .isEqualTo(new Instruction.Copy(List.of("a"), "/b/", null, null, null, false, false));
+    }
+
+    @Test
     void listsAreCopiedSoTheInstructionCannotChangeAfterItIsBuilt() {
         assertThat(new Instruction.Entrypoint(new ArrayList<>(List.of("java"))).command()).isUnmodifiable();
         assertThat(new Instruction.Cmd(new ArrayList<>(List.of("serve"))).command()).isUnmodifiable();

@@ -40,12 +40,28 @@ public sealed interface Instruction {
     record Run(RunBody body) implements Instruction {
     }
 
-    /** {@code COPY}; {@code chown} and {@code fromStage} are optional. */
-    record Copy(List<String> sources, String destination, String chown, String fromStage) implements Instruction {
+    /** {@code COPY}; {@code chown}, {@code fromStage} and {@code chmod} are optional. */
+    record Copy(List<String> sources, String destination, String chown, String fromStage, String chmod, boolean link,
+            boolean jsonForm) implements Instruction {
 
         public Copy {
             sources = List.copyOf(sources);
             Checks.notBlank(destination, "a COPY destination");
+        }
+
+        public Copy(List<String> sources, String destination, String chown, String fromStage) {
+            this(sources, destination, chown, fromStage, null, false, false);
+        }
+    }
+
+    /** {@code COPY <<EOF destination}: the lines become the file; {@code quoted} stops expansion in them. */
+    record CopyHeredoc(String destination, String delimiter, boolean quoted, List<String> lines)
+            implements Instruction {
+
+        public CopyHeredoc {
+            Checks.notBlank(destination, "a COPY destination");
+            Checks.notBlank(delimiter, "a heredoc delimiter");
+            lines = List.copyOf(lines);
         }
     }
 

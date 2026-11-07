@@ -40,6 +40,22 @@ abstract sealed class InstructionBuilder permits ImageBuilder {
         return add(new Instruction.Copy(sources, destination, chown, fromStage));
     }
 
+    /** A {@code COPY} as written with its {@code --chmod}, {@code --link} and JSON form, for the faithful path. */
+    public ImageBuilder copy(List<String> sources, String destination, String chown, String fromStage, String chmod,
+            boolean link, boolean jsonForm) {
+        return add(new Instruction.Copy(sources, destination, chown, fromStage, chmod, link, jsonForm));
+    }
+
+    /** A file written from lines, unexpanded; the target must allow heredocs. */
+    public ImageBuilder copyHeredoc(String destination, List<String> lines) {
+        return copyHeredoc(destination, "EOF", true, lines);
+    }
+
+    /** A {@code COPY} heredoc as written, for the faithful path. */
+    public ImageBuilder copyHeredoc(String destination, String delimiter, boolean quoted, List<String> lines) {
+        return add(new Instruction.CopyHeredoc(destination, delimiter, quoted, lines));
+    }
+
     public ImageBuilder copyFrom(String stage, String source, String destination) {
         return add(new Instruction.Copy(List.of(source), destination, null, stage));
     }

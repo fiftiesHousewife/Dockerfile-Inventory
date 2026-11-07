@@ -121,8 +121,7 @@ class ConvertTest {
                 FROM ubi9
                 COPY --from=build --chown=1001:0 a b /dst/
                 COPY app /opt/
-                COPY --chmod=755 run.sh /usr/local/bin/
-                COPY ["with space", "/opt/"]
+                COPY --exclude=*.md . /src/
                 ADD app.tar.gz /opt/
                 ENTRYPOINT java -jar app.jar
                 CMD ./start.sh
@@ -134,8 +133,7 @@ class ConvertTest {
         assertThat(instructions).containsExactly(
                 new Instruction.Copy(List.of("a", "b"), "/dst/", "1001:0", "build"),
                 new Instruction.Copy(List.of("app"), "/opt/", null, null),
-                new Instruction.Raw("COPY --chmod=755 run.sh /usr/local/bin/", "COPY with flag --chmod"),
-                new Instruction.Raw("COPY [\"with space\", \"/opt/\"]", "COPY in JSON form"),
+                new Instruction.Raw("COPY --exclude=*.md . /src/", "COPY with flag --exclude"),
                 new Instruction.Raw("ADD app.tar.gz /opt/", "ADD is not modelled"),
                 new Instruction.Raw("ENTRYPOINT java -jar app.jar", "shell-form ENTRYPOINT"),
                 new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),

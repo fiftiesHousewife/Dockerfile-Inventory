@@ -76,6 +76,50 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void copyOptionsRenderAfterFromAndChownAndAJsonFormCopyKeepsItsForm() {
+        Dockerfile file = single(
+                new Instruction.Copy(List.of("run.sh"), "/usr/local/bin/", "1001:0", "build", "755", true, false),
+                new Instruction.Copy(List.of("with space"), "/opt/", null, null, null, false, true));
+
+        assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("""
+                COPY --from=build --chown=1001:0 --chmod=755 --link run.sh /usr/local/bin/
+                COPY ["with space", "/opt/"]
+                """);
+    }
+
+    @Test
+    void aCopyHeredocRendersItsLinesAndIsRefusedUnlessTheTargetAllowsHeredocs() {
+        Dockerfile file = single(new Instruction.CopyHeredoc("/etc/app.conf", "EOF", true, List.of("[engine]", "a = 1")),
+                new Instruction.CopyHeredoc("/etc/b.json", "END", false, List.of("{}")));
+
+        assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
+                COPY <<'EOF' /etc/app.conf
+                [engine]
+                a = 1
+                EOF
+                COPY <<END /etc/b.json
+                {}
+                END
+                """);
+        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file, Target.DEFAULT))
+                .withMessageContaining("heredoc");
+    }
+
+    @Test
+    void aHeredocsDelimiterIsSingleQuotedWhenQuotedAndAnEmptyBodyHasNoLines() {
+        assertThat(List.of(new Instruction.CopyHeredoc("/a", "EOF", true, List.of()),
+                new Instruction.CopyHeredoc("/a", "EOF", false, List.of("x"))))
+                .map(DockerfileRenderer::heredoc).containsExactly("COPY <<'EOF' /a\nEOF", "COPY <<EOF /a\nx\nEOF");
+    }
+
+    @Test
+    void aCopysPathsEndWithTheDestinationInItsForm() {
+        assertThat(List.of(new Instruction.Copy(List.of("a", "b"), "/c/", null, null),
+                new Instruction.Copy(List.of("a b"), "/c/", null, null, null, false, true)))
+                .map(DockerfileRenderer::paths).containsExactly("a b /c/", "[\"a b\", \"/c/\"]");
+    }
+
+    @Test
     void severalPortsRenderOnOneExposeLineAsWritten() {
         Dockerfile file = single(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp"), new Port("${PORT}"))));
 
@@ -192,9 +236,9 @@ class DockerfileRendererTest {
         assertThat(DockerfileRenderer.stage(stage, new Target(true, false))).isEqualTo("FROM build\nRUN <<EOT\nx\nEOT");
     }
 
-    private static Dockerfile single(Instruction instruction) {
+    private static Dockerfile single(Instruction... instructions) {
         return new Dockerfile(List.of(), List.of(new Stage(null, new BaseImage("ubi9/ubi", "9.4", DIGEST), null,
-                List.of(instruction))));
+                List.of(instructions))));
     }
 
     private static Map<String, String> ordered(String... pairs) {

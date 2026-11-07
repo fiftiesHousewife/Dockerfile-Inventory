@@ -75,8 +75,9 @@ final class JavaEmitter {
                         list(install.install().packages()));
                 case RunBody.Shell shell -> CodeBlock.of(".run($L)", strings(shell.commands()));
             };
-            case Instruction.Copy copy -> CodeBlock.of(".copy($L, $S, $S, $S)", list(copy.sources()),
-                    copy.destination(), copy.chown(), copy.fromStage());
+            case Instruction.Copy copy -> copy(copy);
+            case Instruction.CopyHeredoc heredoc -> CodeBlock.of(".copyHeredoc($S, $S, $L, $L)", heredoc.destination(),
+                    heredoc.delimiter(), heredoc.quoted(), list(heredoc.lines()));
             case Instruction.User user -> CodeBlock.of(".user($S)", user.user());
             case Instruction.Workdir workdir -> CodeBlock.of(".workdir($S)", workdir.path());
             case Instruction.Expose expose ->
@@ -89,6 +90,14 @@ final class JavaEmitter {
             case Instruction.Maintainer maintainer -> CodeBlock.of(".maintainer($S)", maintainer.name());
             case Instruction.Raw raw -> CodeBlock.of(".raw($S, $S)", raw.text(), raw.reason());
         };
+    }
+
+    static CodeBlock copy(Instruction.Copy copy) {
+        return copy.chmod() == null && !copy.link() && !copy.jsonForm()
+                ? CodeBlock.of(".copy($L, $S, $S, $S)", list(copy.sources()), copy.destination(), copy.chown(),
+                        copy.fromStage())
+                : CodeBlock.of(".copy($L, $S, $S, $S, $S, $L, $L)", list(copy.sources()), copy.destination(),
+                        copy.chown(), copy.fromStage(), copy.chmod(), copy.link(), copy.jsonForm());
     }
 
     static String todos(List<PolicyViolation.Breach> breaches) {

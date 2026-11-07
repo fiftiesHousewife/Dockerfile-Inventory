@@ -15,8 +15,8 @@ final class FinalStage {
     static Stream<Instruction> finished(Instruction instruction, String user, List<String> writable) {
         return switch (instruction) {
             case Instruction.User u when !writable.isEmpty() -> Stream.of(groupZero(writable), u);
-            case Instruction.Copy copy when copy.chown() == null -> Stream.of(
-                    new Instruction.Copy(copy.sources(), copy.destination(), user + ":0", copy.fromStage()));
+            case Instruction.Copy copy when copy.chown() == null -> Stream.of(new Instruction.Copy(copy.sources(),
+                    copy.destination(), user + ":0", copy.fromStage(), copy.chmod(), copy.link(), copy.jsonForm()));
             default -> Stream.of(instruction);
         };
     }

@@ -70,6 +70,7 @@ public final class DockerfileRenderer {
             case Instruction.Label label -> pairs("LABEL", label.values());
             case Instruction.Run run -> "RUN " + String.join(CONTINUE + "    && ", RunCommands.of(run.body()));
             case Instruction.Copy copy -> copy(copy);
+            case Instruction.CopyHeredoc heredoc -> heredoc(heredoc);
             case Instruction.User user -> "USER " + user.user();
             case Instruction.Workdir workdir -> "WORKDIR " + workdir.path();
             case Instruction.Expose expose -> "EXPOSE "
@@ -88,7 +89,21 @@ public final class DockerfileRenderer {
     static String copy(Instruction.Copy copy) {
         return "COPY" + (copy.fromStage() == null ? "" : " --from=" + copy.fromStage())
                 + (copy.chown() == null ? "" : " --chown=" + copy.chown())
-                + " " + String.join(" ", copy.sources()) + " " + copy.destination();
+                + (copy.chmod() == null ? "" : " --chmod=" + copy.chmod())
+                + (copy.link() ? " --link" : "")
+                + " " + paths(copy);
+    }
+
+    static String heredoc(Instruction.CopyHeredoc heredoc) {
+        String delimiter = heredoc.delimiter();
+        return "COPY <<" + (heredoc.quoted() ? "'" + delimiter + "'" : delimiter) + " " + heredoc.destination() + "\n"
+                + heredoc.lines().stream().map(line -> line + "\n").collect(Collectors.joining()) + delimiter;
+    }
+
+    static String paths(Instruction.Copy copy) {
+        List<String> paths = new ArrayList<>(copy.sources());
+        paths.add(copy.destination());
+        return copy.jsonForm() ? DockerQuotes.jsonArray(paths) : String.join(" ", paths);
     }
 
     static String pairs(String keyword, Map<String, String> values) {

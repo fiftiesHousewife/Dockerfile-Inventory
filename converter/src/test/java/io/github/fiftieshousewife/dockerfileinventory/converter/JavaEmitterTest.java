@@ -101,6 +101,21 @@ class JavaEmitterTest {
     }
 
     @Test
+    void aCopyWithOptionsIsWrittenWithThemAndOneWithoutInShort() {
+        assertThat(List.of(new Instruction.Copy(List.of("a"), "/b/", null, "build"),
+                new Instruction.Copy(List.of("a"), "/b/", "1001", null, "755", true, false)))
+                .map(instruction -> JavaEmitter.call(instruction).toString())
+                .containsExactly(".copy(java.util.List.of(\"a\"), \"/b/\", null, \"build\")",
+                        ".copy(java.util.List.of(\"a\"), \"/b/\", \"1001\", null, \"755\", true, false)");
+    }
+
+    @Test
+    void aCopyHeredocIsWrittenAsWritten() {
+        assertThat(JavaEmitter.call(new Instruction.CopyHeredoc("/etc/a", "EOF", true, List.of("x = 1"))).toString())
+                .isEqualTo(".copyHeredoc(\"/etc/a\", \"EOF\", true, java.util.List.of(\"x = 1\"))");
+    }
+
+    @Test
     void severalPortsAreWrittenAsTheirSpecs() {
         assertThat(JavaEmitter.call(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp")))).toString())
                 .isEqualTo(".expose(\"80\", \"53/udp\")");
