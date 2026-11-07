@@ -4,6 +4,8 @@
 
 // Copyright the original author or authors; Apache License 2.0. From openrewrite/rewrite@398a634, rewrite-docker/.
 // Modified by Dockerfile Inventory, 2026: a backslash before a newline never joins a word (issue 7).
+// Modified by Dockerfile Inventory, 2026: parser directives only before the first instruction (issue 2).
+// Modified by Dockerfile Inventory, 2026: a comment line inside a string spanning lines is part of it (issue 1).
 
 lexer grammar DockerLexer;
 
@@ -22,6 +24,17 @@ import java.util.Queue;}
     private boolean afterFrom = false;
     // Track if we're after HEALTHCHECK to recognize CMD/NONE as keywords
     private boolean afterHealthcheck = false;
+    // Parser directives are read only before the first instruction; after it, # key=value is a comment
+    private boolean directivesAllowed = true;
+
+    @Override
+    public Token nextToken() {
+        Token token = super.nextToken();
+        if (token.getChannel() == Token.DEFAULT_CHANNEL && token.getType() != PARSER_DIRECTIVE) {
+            directivesAllowed = false;
+        }
+        return token;
+    }
 }
 
 options {
@@ -30,7 +43,7 @@ options {
 
 // Parser directives (must be at the beginning of file)
 // After a parser directive, we're at line start (it consumes the newline)
-PARSER_DIRECTIVE : '#' WS_CHAR* [A-Z_]+ WS_CHAR* '=' WS_CHAR* ~[\r\n]* NEWLINE_CHAR { atLineStart = true; };
+PARSER_DIRECTIVE : '#' WS_CHAR* [A-Z_]+ WS_CHAR* '=' WS_CHAR* ~[\r\n]* NEWLINE_CHAR {directivesAllowed}? { atLineStart = true; };
 
 // Comments (after parser directives) - HIDDEN in main mode
 COMMENT : '#' ~[\r\n]* -> channel(HIDDEN);
@@ -114,14 +127,18 @@ fragment ESCAPED_CHAR : '\\' ~[\r\n];
 // Double-quoted strings support escape sequences, line continuation, and bare newlines
 // Backtick followed by whitespace+newline is continuation; standalone backtick is regular char
 // Bare newlines are allowed (e.g., comment lines inside PowerShell strings don't need trailing backtick)
-DOUBLE_QUOTED_STRING : '"' ( ESCAPE_SEQUENCE | INLINE_CONTINUATION | '`' | [\r\n] | ~["\\\r\n`] )* '"' { if (!afterHealthcheck) atLineStart = false; };
+DOUBLE_QUOTED_STRING : '"' ( ESCAPE_SEQUENCE | INLINE_CONTINUATION | '`' | [\r\n]+ STRING_COMMENT_LINE* | ~["\\\r\n`] )* '"' { if (!afterHealthcheck) atLineStart = false; };
 // Single-quoted strings in shell are literal - no escape processing inside
 // But they DO support line continuation (backslash or backtick followed by newline)
 // Bare newlines are also allowed for multi-line strings
-SINGLE_QUOTED_STRING : '\'' ( INLINE_CONTINUATION | [\r\n] | ~['\r\n] )* '\'' { if (!afterHealthcheck) atLineStart = false; };
+SINGLE_QUOTED_STRING : '\'' ( INLINE_CONTINUATION | [\r\n]+ STRING_COMMENT_LINE* | ~['\r\n] )* '\'' { if (!afterHealthcheck) atLineStart = false; };
 
 // Inline line continuation (inside strings) - backtick or backslash followed by newline
-fragment INLINE_CONTINUATION : ('\\' | '`') [ \t]* [\r\n]+;
+fragment INLINE_CONTINUATION : ('\\' | '`') [ \t]* [\r\n]+ STRING_COMMENT_LINE*;
+
+// A comment line inside a string that spans lines: Docker drops it before the shell reads the string, so a quote in it
+// neither ends nor starts one (issue 1)
+fragment STRING_COMMENT_LINE : [ \t]* '#' ~[\r\n]* [\r\n]+;
 
 fragment ESCAPE_SEQUENCE
     : '\\' ~[\r\n]   // Backslash followed by any char except newline (includes \n, \t, \\, \", Windows paths like \P)

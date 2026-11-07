@@ -33,7 +33,7 @@ final class RetryText {
             rewritten.add(argLine ? argNames(arg) : line);
             inArg = argLine && arg.group(3) != null;
         }
-        return withoutComments(String.join("\n", rewritten) + (text.endsWith("\n") ? "\n" : ""));
+        return String.join("\n", rewritten) + (text.endsWith("\n") ? "\n" : "");
     }
 
     // rewrite-docker issues 10 and 13 (docs/upstream/)
@@ -48,28 +48,6 @@ final class RetryText {
 
     static String argWord(String word) {
         return word.endsWith("=") ? word + "\"\"" : word.contains("=") ? word : word + "=$" + word;
-    }
-
-    // rewrite-docker issues 1 and 2 (docs/upstream/): inside a continued instruction a comment becomes a lone
-    // backslash, which keeps the instruction going as Docker does.
-    static String withoutComments(String text) {
-        List<String> lines = new ArrayList<>(List.of(text.split("\n", -1)));
-        boolean[] body = heredocBodies(lines);
-        boolean leading = true;
-        boolean continued = false;
-        for (int i = 0; i < lines.size(); i++) {
-            String stripped = lines.get(i).strip();
-            if (body[i] || stripped.startsWith("#") && leading) {
-                continue;
-            }
-            if (stripped.startsWith("#")) {
-                lines.set(i, continued ? "\\" : "");
-                continue;
-            }
-            leading = leading && stripped.isEmpty();
-            continued = stripped.endsWith("\\");
-        }
-        return String.join("\n", lines);
     }
 
     static boolean[] heredocBodies(List<String> lines) {

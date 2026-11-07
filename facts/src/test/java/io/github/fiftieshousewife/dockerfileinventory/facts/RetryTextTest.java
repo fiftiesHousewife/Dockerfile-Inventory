@@ -24,7 +24,7 @@ class RetryTextTest {
 
     @Test
     void aCommentHoldingAHeredocMarkerOpensNoHeredoc() {
-        assertThat(RetryText.of("FROM a\n# cat <<EOF\nARG A B\n")).isEqualTo("FROM a\n\nARG A=$A B=$B\n");
+        assertThat(RetryText.of("FROM a\n# cat <<EOF\nARG A B\n")).isEqualTo("FROM a\n# cat <<EOF\nARG A=$A B=$B\n");
     }
 
     @ParameterizedTest
@@ -61,35 +61,6 @@ class RetryTextTest {
 
         assertThat(RetryText.of(dockerfile)).contains(
                 "ARG DESC=\"two words\" OTHER\n", "ARG A=$A \\\n    B=$B\n", "RUN <<EOF\nARG A B\nEOF\n");
-    }
-
-    @Test
-    void blankingCommentsKeepsLineNumbersParserDirectivesAndHeredocComments() {
-        String text = """
-                # syntax=docker/dockerfile:1
-                FROM ubi9
-                # it's here \\
-                RUN make && \\
-                # it's inside a continuation \\
-                    make install
-                RUN <<EOT
-                # kept: part of the script
-                echo hi
-                EOT
-                """;
-
-        assertThat(RetryText.withoutComments(text)).isEqualTo("""
-                # syntax=docker/dockerfile:1
-                FROM ubi9
-
-                RUN make && \\
-                \\
-                    make install
-                RUN <<EOT
-                # kept: part of the script
-                echo hi
-                EOT
-                """);
     }
 
     @Test

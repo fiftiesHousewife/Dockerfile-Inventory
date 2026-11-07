@@ -6,7 +6,7 @@
     "blobSha": "b034ef7fe0a92d9e8ff534140827682529062f6e"
   },
   "why": "a RUN the shell reader cannot follow",
-  "parse": "retried",
+  "parse": "parsed",
   "unreadableRuns": 1,
   "roundTrip": "passes"
 }

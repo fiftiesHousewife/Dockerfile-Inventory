@@ -35,6 +35,11 @@ public final class Continuations {
         return WHITESPACE.matcher(joined).replaceAll(" ").strip();
     }
 
+    /** The text without its whole-line comments, which Docker drops before the shell reads the rest, quotes or not. */
+    public static String withoutCommentLines(String text) {
+        return text.lines().filter(line -> !line.strip().startsWith("#")).collect(Collectors.joining("\n"));
+    }
+
     static String withoutTrailingBackslash(String line) {
         return line.endsWith("\\") ? line.substring(0, line.length() - 1) : line;
     }

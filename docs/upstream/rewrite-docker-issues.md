@@ -19,7 +19,9 @@ RUN echo a && \
 
 Expected: one `RUN` with `echo a && echo b`. Actual: `token recognition error at: ''s tested better ...'`.
 Seen in `sclorg/s2i-python-container`, `3.12/Dockerfile.c10s` and six more.
-Workaround: the retry (`RetryText`) parses again with whole-line comments blanked.
+Fixed in the fork (with issue 7's fix the backslash before the comment line is a line continuation, so the line is
+lexed as a comment; inside a quoted string spanning lines a comment line is part of the string, so a quote in it
+neither ends nor starts one). Facts' RUN reader drops such lines, as Docker does, before the shell reader sees them.
 
 ## 2. A comment of the form `# key=value` after the first instruction is rejected
 
@@ -35,7 +37,7 @@ RUN echo
 Expected: an ordinary comment. Actual: `extraneous input '# a=b' expecting {<EOF>, 'FROM'}`. Any word before the
 `=` triggers it (`# UID=1001 && GID=0`, `# syntax=docker/dockerfile:1`, `# a = b`); `# words then a=b` does not.
 Seen in `sclorg/nginx-container`, `1.20/Dockerfile.c9s` (`# UID=1001 && GID=0`) and 18 more.
-Workaround: the retry (`RetryText`) parses again with whole-line comments blanked.
+Fixed in the fork (the lexer reads parser directives only before the first instruction).
 
 ## 3. An unrecognised line is silently appended to the previous instruction's last argument
 
