@@ -1,5 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
@@ -29,12 +32,13 @@ final class ArtifactoryHttp implements Artifactory {
     private final int pageSize;
     private final ObjectMapper json = new ObjectMapper();
 
-    ArtifactoryHttp(URI base, String token) {
-        this(base, token, PAGE_SIZE);
+    ArtifactoryHttp(URI base, HttpSettings settings, TokenSource token) {
+        this(new ArtifactoryClient(settings.client(), base, token, settings.retries(), settings.requestTimeout(),
+                Sleeper.REAL), PAGE_SIZE);
     }
 
-    ArtifactoryHttp(URI base, String token, int pageSize) {
-        this.client = new ArtifactoryClient(base, token);
+    ArtifactoryHttp(ArtifactoryClient client, int pageSize) {
+        this.client = client;
         this.pageSize = pageSize;
     }
 

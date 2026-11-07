@@ -3,6 +3,8 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.sun.net.httpserver.HttpServer;
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -62,7 +64,9 @@ class RecordedJcrRunTest {
     @Test
     void theRecordedRunGivesEveryImageItsParentAndItsOwnDockerfiles(@TempDir Path out) {
         Artifactory artifactory = new ArtifactoryHttp(
-                URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"), "t0ken");
+                URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"),
+                HttpSettings.from(Map.of()),
+                TokenSource.from(Map.of("ARTIFACTORY_TOKEN", "t0ken"), "ARTIFACTORY_TOKEN"));
 
         new Inventory(artifactory, new LineageFiles(out), 1).run();
         new Analysis(out, RUN.resolve("facts"), RUN.resolve("discovery")).run();

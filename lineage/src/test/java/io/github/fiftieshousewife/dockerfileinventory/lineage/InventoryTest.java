@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 import java.io.IOException;
@@ -33,6 +34,24 @@ class InventoryTest {
         assertThat(files.tags()).containsExactly(new TagRow("docker-local", "team/app", "1.0",
                 Instant.parse("2026-10-02T10:15:00Z"), CONFIG_C, null, null));
         assertThat(files.config(CONFIG_C)).hasValueSatisfying(text -> assertThat(text).contains("diff_ids"));
+    }
+
+    @Test
+    void aRepositoryOrImageTheTokenMayNotReadIsRecordedAsRefusedAndTheRestIsRead() {
+        FakeArtifactory artifactory = new FakeArtifactory()
+                .tag("docker-local", "team/app", "1.0", "2026-10-01T00:00:00Z",
+                        "application/vnd.docker.distribution.manifest.list.v2+json", "list-arm-only.json")
+                .refuse("secret-local")
+                .refuse("docker-local", "team/private");
+        LineageFiles files = new LineageFiles(out);
+
+        new Inventory(artifactory, files, 1).run();
+
+        assertThat(files.tags()).extracting(TagRow::repository, TagRow::image, TagRow::skipped)
+                .containsExactlyInAnyOrder(
+                        tuple("docker-local", "team/app", Resolved.Reason.NO_AMD64),
+                        tuple("docker-local", "team/private", Resolved.Reason.REFUSED),
+                        tuple("secret-local", "*", Resolved.Reason.REFUSED));
     }
 
     @Test

@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -29,7 +31,10 @@ public final class LineageMain {
         Path out = Path.of(required(env, "OUT_DIR"));
         String url = env.get("ARTIFACTORY_URL");
         if (url != null && !url.isBlank()) {
-            Artifactory artifactory = new ArtifactoryHttp(URI.create(url), required(env, "ARTIFACTORY_TOKEN"));
+            HttpSettings settings = HttpSettings.from(env);
+            TokenSource token = TokenSource.from(env, "ARTIFACTORY_TOKEN");
+            System.out.println("lineage: " + url + ", token from " + token + ", " + settings);
+            Artifactory artifactory = new ArtifactoryHttp(URI.create(url), settings, token);
             int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", DEFAULT_CONCURRENCY));
             new Inventory(artifactory, new LineageFiles(out), concurrency).run();
         }

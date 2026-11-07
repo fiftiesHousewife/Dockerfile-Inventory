@@ -5,19 +5,28 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class ArtifactoryHttpTest {
 
@@ -31,8 +40,7 @@ class ArtifactoryHttpTest {
     void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.start();
-        artifactory = new ArtifactoryHttp(
-                URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"), "t0ken", 2);
+        artifactory = artifactory(TokenSource.from(Map.of("ARTIFACTORY_TOKEN", "t0ken"), "ARTIFACTORY_TOKEN"));
     }
 
     @AfterEach
@@ -124,6 +132,58 @@ class ArtifactoryHttpTest {
         assertThat(artifactory.lastPushed("docker-local", "team/app", "1.0"))
                 .contains(Instant.parse("2026-10-02T09:15:00Z"));
         assertThat(artifactory.lastPushed("docker-local", "team/app", "gone")).isEmpty();
+    }
+
+    private ArtifactoryHttp artifactory(TokenSource token) {
+        return new ArtifactoryHttp(new ArtifactoryClient(HttpSettings.from(Map.of()).client(),
+                URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"), token,
+                new RetryPolicy(4, Duration.ofHours(1)), Duration.ofSeconds(10), wait -> { }), 2);
+    }
+
+    @Test
+    void aGatewayErrorIsRetried() {
+        AtomicInteger calls = new AtomicInteger();
+        route("/artifactory/api/repositories", exchange -> {
+            if (calls.incrementAndGet() == 1) {
+                exchange.sendResponseHeaders(502, -1);
+                exchange.close();
+            } else {
+                respond(exchange, 200, "repositories.json");
+            }
+        });
+
+        assertThat(artifactory.dockerRepositories()).containsExactly("docker-local", "base-images");
+    }
+
+    @Test
+    void a401ReadsTheTokenFileAgainAndTriesOnceMore(@TempDir Path dir) throws IOException {
+        Path file = Files.writeString(dir.resolve("token"), "old");
+        TokenSource token = TokenSource.from(Map.of("ARTIFACTORY_TOKEN_FILE", file.toString()), "ARTIFACTORY_TOKEN");
+        token.token();
+        FileTime unchanged = Files.getLastModifiedTime(file);
+        Files.writeString(file, "new");
+        Files.setLastModifiedTime(file, unchanged);
+        route("/artifactory/api/repositories", exchange -> {
+            if ("Bearer new".equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
+                respond(exchange, 200, "repositories.json");
+            } else {
+                exchange.sendResponseHeaders(401, -1);
+                exchange.close();
+            }
+        });
+
+        assertThat(artifactory(token).dockerRepositories()).containsExactly("docker-local", "base-images");
+    }
+
+    @Test
+    void a403IsARefusalNamingWhatWasRefused() {
+        route("/artifactory/api/docker/secret-local/v2/_catalog", exchange -> {
+            exchange.sendResponseHeaders(403, -1);
+            exchange.close();
+        });
+
+        assertThatExceptionOfType(AccessRefused.class).isThrownBy(() -> artifactory.images("secret-local"))
+                .withMessageContaining("secret-local").withMessageContaining("403");
     }
 
     @Test

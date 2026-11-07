@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,6 +16,7 @@ final class FakeArtifactory implements Artifactory {
     private final Map<String, List<String>> images = new ConcurrentHashMap<>();
     private final Map<String, List<String>> tags = new ConcurrentHashMap<>();
     private final Map<String, Instant> pushed = new ConcurrentHashMap<>();
+    private final Set<String> refused = ConcurrentHashMap.newKeySet();
     final AtomicInteger manifestCalls = new AtomicInteger();
     final Map<String, AtomicInteger> blobCalls = new ConcurrentHashMap<>();
 
@@ -39,6 +41,18 @@ final class FakeArtifactory implements Artifactory {
         return manifest(repository, image, tag, mediaType, fixture);
     }
 
+    FakeArtifactory refuse(String repository) {
+        refused.add(repository);
+        images.computeIfAbsent(repository, r -> new ArrayList<>());
+        return this;
+    }
+
+    FakeArtifactory refuse(String repository, String image) {
+        refused.add(repository + "/" + image);
+        images.computeIfAbsent(repository, r -> new ArrayList<>()).add(image);
+        return this;
+    }
+
     @Override
     public List<String> dockerRepositories() {
         return images.keySet().stream().sorted().toList();
@@ -46,11 +60,17 @@ final class FakeArtifactory implements Artifactory {
 
     @Override
     public List<String> images(String repository) {
+        if (refused.contains(repository)) {
+            throw new AccessRefused("GET " + repository + " catalogue returned 403: the token may not read it");
+        }
         return images.getOrDefault(repository, List.of());
     }
 
     @Override
     public List<String> tags(String repository, String image) {
+        if (refused.contains(repository + "/" + image)) {
+            throw new AccessRefused("GET " + repository + "/" + image + " tags returned 403");
+        }
         return tags.getOrDefault(repository + "/" + image, List.of());
     }
 

@@ -33,7 +33,7 @@ final class Inventory {
         Semaphore permits = new Semaphore(concurrency);
         try (ExecutorService threads = Executors.newVirtualThreadPerTaskExecutor()) {
             awaitAll(artifactory.dockerRepositories().stream()
-                    .flatMap(repository -> artifactory.images(repository).stream()
+                    .flatMap(repository -> readable(repository).stream()
                             .map(image -> threads.submit(() -> limited(permits, repository, image, done))))
                     .toList());
         }
@@ -62,10 +62,31 @@ final class Inventory {
         }
     }
 
+    // A repository or image the token may not read is recorded as refused; the rest of the run goes on.
+    List<String> readable(String repository) {
+        try {
+            return artifactory.images(repository);
+        } catch (AccessRefused e) {
+            files.record(refused(repository, "*", e));
+            return List.of();
+        }
+    }
+
     void image(String repository, String image, Set<String> done) {
-        artifactory.tags(repository, image).stream()
+        List<String> tags;
+        try {
+            tags = artifactory.tags(repository, image);
+        } catch (AccessRefused e) {
+            files.record(refused(repository, image, e));
+            return;
+        }
+        tags.stream()
                 .filter(tag -> !done.contains(key(repository, image, tag)))
                 .forEach(tag -> files.record(row(repository, image, tag)));
+    }
+
+    static TagRow refused(String repository, String image, AccessRefused e) {
+        return new TagRow(repository, image, "*", null, null, Resolved.Reason.REFUSED, e.getMessage());
     }
 
     TagRow row(String repository, String image, String tag) {

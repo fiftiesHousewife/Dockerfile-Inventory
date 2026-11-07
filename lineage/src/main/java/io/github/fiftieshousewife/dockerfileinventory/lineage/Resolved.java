@@ -12,6 +12,7 @@ sealed interface Resolved {
         NO_AMD64,
         SCHEMA_1,
         GONE,
-        UNREADABLE_CONFIG
+        UNREADABLE_CONFIG,
+        REFUSED
     }
 }

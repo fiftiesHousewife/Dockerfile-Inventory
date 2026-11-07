@@ -7,6 +7,7 @@ plugins {
 dependencies {
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
+    implementation(project(":http"))
 }
 
 application {

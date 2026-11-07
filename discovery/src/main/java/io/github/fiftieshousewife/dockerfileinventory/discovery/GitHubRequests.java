@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
+import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.URI;
@@ -19,10 +20,6 @@ import tools.jackson.databind.node.ObjectNode;
 final class GitHubRequests {
 
     private static final int MAX_BODY_IN_ERROR = 300;
-
-    interface Sleeper {
-        void sleep(Duration wait) throws InterruptedException;
-    }
 
     private final HttpClient http;
     private final URI apiBase;
