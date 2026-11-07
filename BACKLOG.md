@@ -8,9 +8,11 @@ and one line when its gate is met.
 - Done 7 Nov: a bank of real cases (`docs/plans/fixture-bank.md`): 152 Dockerfiles and 34 images that broke
   something, pinned by corpus tests in facts, the converter and lineage.
 - Queued 7 Nov, in order: the parser fork and its 15 fixes
-  (`docs/plans/parser-fork.md`); the report's usability (`docs/plans/report-usability.md`); the corporate network
-  settings wired into discovery and lineage, Gradle mirrors and the pod image (`docs/plans/corporate-readiness.md`,
-  the `http` module built).
+  (`docs/plans/parser-fork.md`: the fork and its Maven Central publication built, the 15 fixes in progress); the
+  report's usability (`docs/plans/report-usability.md`).
+- Done 7 Nov: running inside a corporate network (`docs/plans/corporate-readiness.md`): the `http` module (proxy,
+  CA bundle, token files, retries, rate-limit waits and pacing) in discovery and lineage, SSO and refusals handled,
+  `INVENTORY_MIRROR` for the build, a `Containerfile` for the pod (its first build is the owner's).
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Next (planned 7 Nov, `docs/plans/corporate-readiness.md`): running inside a corporate network: proxies, a

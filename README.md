@@ -64,7 +64,7 @@ Discovery and lineage read these from the environment as well; every one has a d
 | `GHE_TOKEN_FILE`, `ARTIFACTORY_TOKEN_FILE` | none | Read the token from a file instead of the variable (set one or the other); the file is read again whenever it changes and after a 401, so a token rotated by a mounted secret or a Vault agent is picked up mid-run |
 | `CONNECT_TIMEOUT`, `HTTP_TIMEOUT` | `PT10S`, `PT60S` | ISO-8601 durations |
 | `HTTP_RETRIES` | `5` | Attempts for a call that fails on the network or with a 502, 503 or 504, with growing waits (1 s, 2 s, 4 s ... up to 60 s) |
-| `MAX_RATE_LIMIT_WAIT` | `PT1H` | The longest wait for a rate limit to reset; a longer one stops the run with the reset time, and a rerun resumes |
+| `MAX_RATE_LIMIT_WAIT` | `PT1H` | The longest wait for a rate limit to reset; a longer one stops the run with the reset time, and a rerun resumes. With under a tenth of GitHub's limit left, discovery also slows its calls to last until the reset |
 
 Each stage prints the settings it uses, without secrets, before it starts. A bad value stops it, naming the
 variable. A GitHub organisation that enforces SAML single sign-on stops discovery at once with the link to authorise

@@ -15,6 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -90,6 +93,25 @@ class GitHubRequestsTest {
 
         assertThat(requests(1, token).rest(TREE)).isPresent();
         assertThat(server.authorizations).containsExactly("Bearer old", "Bearer new");
+    }
+
+    @Test
+    void withLittleOfTheRateLimitLeftEachCallPausesToSpreadTheRestOverTheTimeToReset() {
+        List<Duration> pauses = new ArrayList<>();
+        GitHubRequests paced = new GitHubRequests(HttpClient.newHttpClient(), URI.create(server.root() + "api"),
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"), new RetryPolicy(1, Duration.ofHours(1)),
+                Duration.ofSeconds(10), pauses::add);
+        server.route("/api/" + TREE, exchange -> {
+            exchange.getResponseHeaders().add("X-RateLimit-Limit", "5000");
+            exchange.getResponseHeaders().add("X-RateLimit-Remaining", "100");
+            exchange.getResponseHeaders().add("X-RateLimit-Reset",
+                    String.valueOf(Instant.now().plusSeconds(1000).getEpochSecond()));
+            RecordedGitHub.respond(exchange, 200, "tree.json");
+        });
+
+        assertThat(paced.rest(TREE)).isPresent();
+        assertThat(pauses).singleElement().satisfies(pause -> assertThat(pause).isBetween(Duration.ofSeconds(9),
+                Duration.ofSeconds(10)));
     }
 
     @Test

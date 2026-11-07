@@ -1,12 +1,13 @@
 # Running inside a corporate network: plan
 
-Status: planned 7 Nov; questions answered 7 Nov. Built 7 Nov: the `http` module, wired into discovery and lineage
+Status: built 7 Nov (the image awaits its first build by the owner). Built 7 Nov: the `http` module, wired into discovery and lineage
 (C1-C6, C8, C9 and the waits of C7). C10 built: `INVENTORY_MIRROR` (and `_USER`, `_PASSWORD`) replaces Maven Central and the plugin portal in both settings
 files, checked against a real mirror. C11 built: `Containerfile` (UBI OpenJDK 25 builder: installDist of the six stages and a JRE jlink'd from their jdeps
 modules; UBI 9 minimal runtime as user 1001 with group-0-writable HOME and /work, `JAVA_OPTS` defaulting to
 `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`), entry point `scripts/inventory`, `.containerignore`. Not built
-here (no container runtime in the sandbox): the owner's first `buildah build` is its test (test 10). Next: rate pacing
-(the rest of C7).
+here (no container runtime in the sandbox): the owner's first `buildah build` is its test (test 10). C7's pacing built: `RatePacing`, under a tenth of the limit left,
+spreads the calls left over the time to reset; discovery applies it after each answer. `REQUESTS_PER_SECOND` was
+not needed and is not built. All of the plan is built.
 Originally: the `http` module is built first; wiring it into the clients follows the code review's branches are merged (`quality-review.md`), as
 the HTTP classes are being split there.
 

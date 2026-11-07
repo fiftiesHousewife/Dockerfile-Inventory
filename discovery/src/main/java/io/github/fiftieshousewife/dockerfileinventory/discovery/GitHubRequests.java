@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.RatePacing;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
@@ -103,6 +104,7 @@ final class GitHubRequests {
             Optional<Duration> wait = retries.afterResponse(response.statusCode(), response.headers(), attempt,
                     Instant.now());
             if (wait.isEmpty()) {
+                RatePacing.pause(response.headers(), Instant.now()).ifPresent(pause -> pause(pause, built));
                 return response;
             }
             pause(wait.get(), built);
