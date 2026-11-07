@@ -16,7 +16,7 @@ record Dockerfile(String blobSha, String textHash, String signatureHash, String 
     }
 
     Dockerfile at(List<Location> elsewhere) {
-        return new Dockerfile(blobSha, textHash, signatureHash, signature, base, finalPackages, managers, userKind, runs,
-                opaqueRuns, elsewhere, otherShellRuns, bundle);
+        return new Dockerfile(blobSha, textHash, signatureHash, signature, base, finalPackages, managers, userKind,
+                runs, opaqueRuns, elsewhere, otherShellRuns, bundle);
     }
 }
