@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: a test for a line holding only a backslash (issue 7).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +18,11 @@
 package io.github.fiftieshousewife.dockerfile.parser;
 
 import org.junit.jupiter.api.Test;
+import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import org.openrewrite.test.RewriteTest;
 
 import static io.github.fiftieshousewife.dockerfile.parser.Assertions.docker;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * General integration tests for the Docker parser.
@@ -113,6 +116,30 @@ class DockerParserTest implements RewriteTest {
               CMD ["no-spaces"]
               ENTRYPOINT [ "with-spaces" ]
               """
+          )
+        );
+    }
+
+    @Test
+    void lineHoldingOnlyABackslashBeforeAnInstruction() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              COPY a /b
+               \\
+              RUN A="x"
+              EXPOSE 8080
+              \\
+              RUN make
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var instructions = doc.getStages().getFirst().getInstructions();
+                assertThat(instructions).hasExactlyElementsOfTypes(Docker.Copy.class, Docker.Run.class,
+                  Docker.Expose.class, Docker.Run.class);
+                var copy = (Docker.CopyShellForm) ((Docker.Copy) instructions.getFirst()).getForm();
+                assertThat(((Docker.Literal) copy.getDestination().getContents().getFirst()).getText()).isEqualTo("/b");
+            })
           )
         );
     }

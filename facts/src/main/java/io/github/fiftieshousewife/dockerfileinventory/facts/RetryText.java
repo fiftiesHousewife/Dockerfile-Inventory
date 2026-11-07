@@ -50,9 +50,8 @@ final class RetryText {
         return word.endsWith("=") ? word + "\"\"" : word.contains("=") ? word : word + "=$" + word;
     }
 
-    // rewrite-docker issues 1, 2 and 7 (docs/upstream/): inside a continued instruction a comment becomes a lone
-    // backslash, which keeps the instruction going as Docker does. A lone backslash outside one, from which Docker
-    // reads nothing, is blanked, as rewrite-docker glues it onto the instruction before.
+    // rewrite-docker issues 1 and 2 (docs/upstream/): inside a continued instruction a comment becomes a lone
+    // backslash, which keeps the instruction going as Docker does.
     static String withoutComments(String text) {
         List<String> lines = new ArrayList<>(List.of(text.split("\n", -1)));
         boolean[] body = heredocBodies(lines);
@@ -63,8 +62,8 @@ final class RetryText {
             if (body[i] || stripped.startsWith("#") && leading) {
                 continue;
             }
-            if (stripped.startsWith("#") || stripped.equals("\\") && !continued) {
-                lines.set(i, stripped.startsWith("#") && continued ? "\\" : "");
+            if (stripped.startsWith("#")) {
+                lines.set(i, continued ? "\\" : "");
                 continue;
             }
             leading = leading && stripped.isEmpty();

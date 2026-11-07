@@ -91,7 +91,8 @@ RUN A="x"
 
 Expected: a `COPY` and a `RUN`. Actual: `extraneous input '=' expecting ...` at the `RUN` (the same after `EXPOSE`).
 Seen in `sclorg/postgresql-container`, `13/Dockerfile.rhel9`, between comment lines and the `RUN`.
-Workaround: the retry (`RetryText`) blanks such a line.
+Fixed in the fork (the lexer no longer reads a backslash before a newline as an escaped character inside a word, so
+it is a line continuation).
 
 ## 8. Whitespace before a comma in a JSON array is "not print idempotent"
 

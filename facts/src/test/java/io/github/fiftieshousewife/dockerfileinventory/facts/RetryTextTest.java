@@ -93,11 +93,6 @@ class RetryTextTest {
     }
 
     @Test
-    void aLoneBackslashLineOutsideAnInstructionIsBlanked() {
-        assertThat(RetryText.withoutComments("COPY a b\n\\\nRUN x")).isEqualTo("COPY a b\n\nRUN x");
-    }
-
-    @Test
     void heredocBodiesMarksEachBodyLineAndItsClosingWordButACommentOpensNone() {
         assertThat(RetryText.heredocBodies(List.of("RUN <<EOF", "# body", "EOF", "# x <<END", "RUN y")))
                 .containsExactly(false, true, true, false, false);

@@ -5,8 +5,8 @@
     "commit": "de802c6042fd029ac6f5464a454abef98745cefe",
     "blobSha": "0260b6233ca8f1db14f7626fdacdaea2b661e199"
   },
-  "why": "parses only with the parser's lone-backslash workaround",
-  "parse": "retried",
+  "why": "parsed only with the parser's lone-backslash workaround until the fork fixed issue 7",
+  "parse": "parsed",
   "unreadableRuns": 0,
   "roundTrip": "passes"
 }

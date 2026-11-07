@@ -2,6 +2,9 @@
 // $antlr-format allowShortRulesOnASingleLine true, allowShortBlocksOnASingleLine true, minEmptyLines 0, alignSemicolons ownLine
 // $antlr-format alignColons trailing, singleLineOverrulesHangingColon true, alignLexerCommands true, alignLabels true, alignTrailers true
 
+// Copyright the original author or authors; Apache License 2.0. From openrewrite/rewrite@398a634, rewrite-docker/.
+// Modified by Dockerfile Inventory, 2026: a backslash before a newline never joins a word (issue 7).
+
 lexer grammar DockerLexer;
 
 @lexer::header
@@ -104,7 +107,8 @@ DASH_DASH  : '--' { if (!afterHealthcheck) atLineStart = false; };
 // This matches text that doesn't start with -- or <<
 // Note: < is excluded to allow HEREDOC_START (<<) to match
 fragment UNQUOTED_CHAR : ~[ \t\r\n\\"'$[\]=<];
-fragment ESCAPED_CHAR : '\\' .;
+// Not a newline: a backslash before one is a line continuation, which Docker removes, never part of a word (issue 7)
+fragment ESCAPED_CHAR : '\\' ~[\r\n];
 
 // String literals
 // Double-quoted strings support escape sequences, line continuation, and bare newlines
