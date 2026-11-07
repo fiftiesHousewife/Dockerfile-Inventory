@@ -2,6 +2,9 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URI;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -27,8 +30,14 @@ class GitHubApiTest {
                                                                      String organization) {
         GitHubApi api = GitHubApi.from(url);
 
-        assertThat(api.base()).hasToString(base);
-        assertThat(api.restPrefix()).isEqualTo(prefix == null ? "" : prefix);
-        assertThat(api.organization()).isEqualTo(java.util.Optional.ofNullable(organization));
+        assertThat(api).satisfies(
+                a -> assertThat(a.base()).hasToString(base),
+                a -> assertThat(a.restPrefix()).isEqualTo(prefix == null ? "" : prefix),
+                a -> assertThat(a.organization()).isEqualTo(Optional.ofNullable(organization)));
+    }
+
+    @Test
+    void pathSegmentsSkipEmptyOnes() {
+        assertThat(GitHubApi.segments(URI.create("https://ghe.example//api/v3/"))).containsExactly("api", "v3");
     }
 }

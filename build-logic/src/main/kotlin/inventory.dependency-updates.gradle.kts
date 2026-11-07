@@ -1,7 +1,5 @@
-// Fails `check` when anything the build pins is behind its newest stable release: every module's libraries,
-// BOMs and tool versions (JaCoCo, SpotBugs), the Gradle plugins build-logic uses, Gradle itself, and the JDK
-// against the newest long-term-support release. Applied to the root project only; the versions plugin then
-// checks every project. Needs the network: work offline with `-x verifyUpToDate`.
+// Applied to the root project only; the versions plugin then checks every project. Needs the network: work offline
+// with `-x verifyUpToDate`.
 
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import io.github.fiftieshousewife.dockerfileinventory.buildlogic.VerifyUpToDate

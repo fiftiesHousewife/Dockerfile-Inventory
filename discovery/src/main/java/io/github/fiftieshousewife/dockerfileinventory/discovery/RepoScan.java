@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 import java.util.List;
 import java.util.Optional;
 
-/** Walks one repository's tree at its released commit (or default branch head) and picks out the Dockerfiles. */
 final class RepoScan {
 
     record Result(RepoOutcome outcome, List<Located> found) {
@@ -32,19 +31,29 @@ final class RepoScan {
         if (commit == null) {
             return result(repository, RepoOutcome.Status.EMPTY, scope, null, List.of(), "no commits");
         }
-        Optional<Tree> tree = walk.walk(repository.nameWithOwner(), commit);
-        if (tree.isEmpty()) {
-            return released.isPresent()
-                    ? result(repository, RepoOutcome.Status.RELEASE_COMMIT_MISSING, scope, commit, List.of(),
-                            "release database commit not found in GitHub")
-                    : result(repository, RepoOutcome.Status.EMPTY, scope, commit, List.of(), "no tree");
-        }
-        List<Located> found = tree.get().entries().stream()
-                .filter(e -> e.isBlob() && !e.isSymlink() && DockerfilePaths.isDockerfile(e.path()))
+        return walk.walk(repository.nameWithOwner(), commit)
+                .map(tree -> scanned(repository, scope, commit, tree))
+                .orElseGet(() -> noTree(repository, scope, commit));
+    }
+
+    static Result scanned(Repository repository, Scope scope, String commit, Tree tree) {
+        List<Located> found = tree.entries().stream()
+                .filter(RepoScan::isDockerfile)
                 .map(e -> new Located(repository.nameWithOwner(), commit, scope, e.path(), e.sha()))
                 .toList();
-        RepoOutcome.Status status = tree.get().truncated() ? RepoOutcome.Status.TRUNCATED : RepoOutcome.Status.SCANNED;
+        RepoOutcome.Status status = tree.truncated() ? RepoOutcome.Status.TRUNCATED : RepoOutcome.Status.SCANNED;
         return result(repository, status, scope, commit, found, null);
+    }
+
+    static Result noTree(Repository repository, Scope scope, String commit) {
+        return scope == Scope.RELEASED
+                ? result(repository, RepoOutcome.Status.RELEASE_COMMIT_MISSING, scope, commit, List.of(),
+                        "release database commit not found in GitHub")
+                : result(repository, RepoOutcome.Status.EMPTY, scope, commit, List.of(), "no tree");
+    }
+
+    static boolean isDockerfile(Tree.Entry entry) {
+        return entry.isBlob() && !entry.isSymlink() && DockerfilePaths.isDockerfile(entry.path());
     }
 
     static Result failed(Repository repository, RuntimeException e) {

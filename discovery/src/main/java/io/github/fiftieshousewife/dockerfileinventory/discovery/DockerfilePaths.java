@@ -4,16 +4,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * Decides which tree entries are Dockerfiles: {@code Dockerfile}, {@code Containerfile}, and their suffixed and
- * prefixed variants ({@code Dockerfile.rhel9}, {@code app.Dockerfile}), in any directory. Not counted: files
- * named like Dockerfiles but holding source, documents, templates, images or grammars ({@code dockerfile.go},
- * {@code Dockerfile.tpl}, {@code dockerfile.svg}, {@code dockerfile.bnf}),
- * anything in a third-party copy ({@code vendor/}, {@code node_modules/}, {@code third_party/}), which is
- * someone else's image, not the estate's, and test inputs ({@code testdata/}, {@code testfiles/}), which nobody
- * builds.
- */
-public final class DockerfilePaths {
+final class DockerfilePaths {
 
     private static final Pattern DOCKERFILE = Pattern.compile(
             "(^|/)([^/]+\\.)?(Dockerfile|Containerfile)(\\.[^/]+)?$", Pattern.CASE_INSENSITIVE);
@@ -22,19 +13,18 @@ public final class DockerfilePaths {
             "md", "txt", "json", "yaml", "yml", "xml", "tmpreferences",
             "tpl", "template", "j2", "jinja", "erb", "in", "dockerignore",
             "svg", "png", "jpg", "jpeg", "gif", "ico", "flex", "bnf", "g4", "lex");
-    /** Third-party copies, and test inputs (the owner's choice, 6 Nov): files nobody builds an image from. */
-    private static final Pattern THIRD_PARTY =
+    private static final Pattern NOT_BUILT =
             Pattern.compile("(^|/)(vendor|node_modules|third_party|testdata|testfiles|testfiles-negative)/");
 
     private DockerfilePaths() {
     }
 
-    public static boolean isDockerfile(String path) {
-        return DOCKERFILE.matcher(path).find() && !THIRD_PARTY.matcher(path).find()
+    static boolean isDockerfile(String path) {
+        return DOCKERFILE.matcher(path).find() && !NOT_BUILT.matcher(path).find()
                 && !NOT_DOCKERFILES.contains(extension(path));
     }
 
-    private static String extension(String path) {
+    static String extension(String path) {
         String name = path.substring(path.lastIndexOf('/') + 1);
         int dot = name.lastIndexOf('.');
         return dot < 0 ? "" : name.substring(dot + 1).toLowerCase(Locale.ROOT);

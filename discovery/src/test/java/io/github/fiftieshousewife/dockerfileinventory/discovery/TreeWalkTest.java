@@ -86,6 +86,35 @@ class TreeWalkTest {
     }
 
     @Test
+    void keepsACompleteListingAsItIsWithoutAnotherCall() {
+        Tree complete = tree(file("Dockerfile", "d1"));
+
+        assertThat(new TreeWalk(gitHub).complete("pay/api", COMMIT, complete, 0)).isSameAs(complete);
+        assertThat(gitHub.treeCalls).isEmpty();
+    }
+
+    @Test
+    void keepsAFileAsItIsWhenSplitting() {
+        assertThat(new TreeWalk(gitHub).withSubtree("pay/api", file("Dockerfile", "d1"), 0))
+                .isEqualTo(tree(file("Dockerfile", "d1")));
+    }
+
+    @Test
+    void putsADirectoryBeforeItsSubtreeEntries() {
+        gitHub.tree("pay/mono", "t-svc", tree(file("Dockerfile", "d1")));
+
+        assertThat(new TreeWalk(gitHub).withSubtree("pay/mono", dir("svc", "t-svc"), 0))
+                .isEqualTo(tree(dir("svc", "t-svc"), file("svc/Dockerfile", "d1")));
+    }
+
+    @Test
+    void failsAsAGitHubErrorWhenAListedTreeIsMissing() {
+        assertThatExceptionOfType(GitHubException.class)
+                .isThrownBy(() -> new TreeWalk(gitHub).listed("pay/mono", "t-gone", false))
+                .withMessage("tree t-gone in pay/mono disappeared during the scan");
+    }
+
+    @Test
     void failsAsAGitHubErrorWhenAListedSubtreeHasGone() {
         gitHub.tree("pay/mono", COMMIT, truncated())
                 .listing("pay/mono", COMMIT, tree(dir("svc", "t-svc")));

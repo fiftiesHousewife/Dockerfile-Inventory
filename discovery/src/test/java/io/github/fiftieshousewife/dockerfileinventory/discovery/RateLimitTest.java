@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.net.http.HttpHeaders;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,8 @@ class RateLimitTest {
 
     @Test
     void doesNotRetryAPlainRefusal() {
-        assertThat(RateLimit.waitBeforeRetry(403, headers(Map.of("x-ratelimit-remaining", "4999")), NOW)).isEmpty();
+        assertThat(RateLimit.waitBeforeRetry(403, headers(Map.of("x-ratelimit-remaining", "4999")), NOW))
+                .isEmpty();
     }
 
     @Test
@@ -43,8 +45,14 @@ class RateLimitTest {
         assertThat(RateLimit.waitBeforeRetry(500, headers(Map.of("retry-after", "30")), NOW)).isEmpty();
     }
 
+    @Test
+    void waitsUntilTheResetPlusAMarginButNeverLessThanTheMargin() {
+        assertThat(List.of(RateLimit.untilReset(NOW, 1_000_010), RateLimit.untilReset(NOW, 1)))
+                .containsExactly(Duration.ofSeconds(11), Duration.ofSeconds(1));
+    }
+
     private static HttpHeaders headers(Map<String, String> values) {
-        Map<String, List<String>> lists = new java.util.HashMap<>();
+        Map<String, List<String>> lists = new HashMap<>();
         values.forEach((k, v) -> lists.put(k, List.of(v)));
         return HttpHeaders.of(lists, (k, v) -> true);
     }

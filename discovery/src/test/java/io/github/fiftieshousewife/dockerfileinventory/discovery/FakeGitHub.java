@@ -28,7 +28,6 @@ final class FakeGitHub implements GitHub {
         return this;
     }
 
-    /** A non-recursive listing: only the direct children of {@code sha}. */
     FakeGitHub listing(String repository, String sha, Tree tree) {
         listings.put(repository + "@" + sha, tree);
         return this;
