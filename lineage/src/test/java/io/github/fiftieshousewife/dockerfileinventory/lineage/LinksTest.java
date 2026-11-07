@@ -110,6 +110,19 @@ class LinksTest {
     }
 
     @Test
+    void labelsCountAsOneStepWhereverTheyAreMatchedWhenTheImageHoldsEveryKeyTheDockerfileSets() {
+        List<Instruction> image = List.of(instruction("COPY /usr/bin/"), instruction("ENTRYPOINT [\"/usr/bin/x\"]"),
+                instruction("LABEL description name vendor version"));
+
+        assertThat(Links.alignment(image, List.of(instruction("LABEL description"), instruction("COPY /usr/bin/"),
+                instruction("ENTRYPOINT [\"/usr/bin/x\"]")))).isEqualTo(1.0);
+        assertThat(Links.alignment(image, List.of(instruction("COPY /usr/bin/"),
+                instruction("ENTRYPOINT [\"/usr/bin/x\"]")))).isEqualTo(1.0);
+        assertThat(Links.alignment(image, List.of(instruction("LABEL io.openshift.release.operator"),
+                instruction("COPY /usr/bin/"), instruction("ENTRYPOINT [\"/usr/bin/x\"]")))).isEqualTo(2.0 / 3);
+    }
+
+    @Test
     void aLabelStepAlignsWithADockerfileLabelWhoseKeysItHoldsAsBuildToolingAddsKeys() {
         assertThat(Links.alignment(
                 List.of(instruction("LABEL io.k8s.display-name name vendor version"), instruction("USER 0")),

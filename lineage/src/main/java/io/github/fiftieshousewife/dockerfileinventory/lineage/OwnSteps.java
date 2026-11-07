@@ -9,7 +9,8 @@ import java.util.stream.Stream;
  * The steps an image's own Dockerfile made, as opposed to those it inherited. With a parent in the tree, they are
  * the history after the parent's; without one, they start at the last step Buildah marked {@code FROM <base>}; with
  * neither, the whole history is the image's own. Steps a build service added are dropped (Q13), as is the wrapper
- * Red Hat's release tooling puts around a Dockerfile's steps.
+ * Red Hat's release tooling puts around a Dockerfile's steps. {@code ARG} steps are left out, as facts leaves them
+ * out of a Dockerfile's.
  */
 public final class OwnSteps {
 
@@ -24,7 +25,7 @@ public final class OwnSteps {
         List<NormalStep> steps = image.config().history().stream().map(HistoryNormaliser::normalise).toList();
         int start = parent != null ? parent.config().history().size() : lastFrom(steps);
         return withoutReleaseTooling(steps.subList(Math.min(start, steps.size()), steps.size())).stream()
-                .filter(step -> !step.builderAdded())
+                .filter(step -> !step.builderAdded() && !step.keyword().equals("ARG"))
                 .map(step -> new Instruction(step.keyword(), step.text()))
                 .toList();
     }

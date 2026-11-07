@@ -34,6 +34,15 @@ class OwnStepsTest {
     }
 
     @Test
+    void argStepsAreLeftOutAsFactsLeavesThemOutOfADockerfilesSteps() {
+        Resolved.Node image = node(List.of(BASE, APP_FROM, step("/bin/sh -c #(nop) ARG WORK_DIR", null),
+                step("|1 WORK_DIR=/data /bin/sh -c mkdir $WORK_DIR", null)));
+
+        assertThat(OwnSteps.of(image, null))
+                .containsExactly(new Instruction("EXPOSE", "8080"), new Instruction("RUN", "mkdir $WORK_DIR"));
+    }
+
+    @Test
     void withNoParentTheOwnStepsStartAtTheLastFromComment() {
         Resolved.Node image = node(List.of(BASE, APP_FROM, APP_RUN, BUILDINFO));
 

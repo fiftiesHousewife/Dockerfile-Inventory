@@ -81,7 +81,7 @@ class HistoryNormaliserTest {
     void anythingElseIsOtherWithItsCollapsedText() {
         assertThat(normalise("/bin/sh -c #(nop) FROBNICATE   x"))
                 .isEqualTo(new NormalStep("OTHER", "/bin/sh -c #(nop) FROBNICATE x", null, false));
-        assertThat(normalise("|1 VERSION=1   /bin/sh -c make").text()).isEqualTo("|1 VERSION=1 /bin/sh -c make");
+        assertThat(normalise("/usr/bin/make install").text()).isEqualTo("/usr/bin/make install");
         assertThat(normalise(null)).isEqualTo(new NormalStep("OTHER", "", null, false));
     }
 
@@ -94,6 +94,15 @@ class HistoryNormaliserTest {
                 .builderAdded()).isTrue();
         assertThat(normalise("/bin/sh -c #(nop) COPY dir:29d1 in /opt/app/buildinfo-docs").builderAdded()).isFalse();
         assertThat(normalise("/bin/sh -c #(nop) LABEL vcs-ref=6").builderAdded()).isFalse();
+    }
+
+    @Test
+    void theBuildArgumentsRecordedBeforeARunAreDroppedAndArgIsItsOwnKeyword() {
+        assertThat(normalise("|1 WORK_DIR=/data /bin/sh -c mkdir $WORK_DIR && chmod 775 $WORK_DIR"))
+                .isEqualTo(new NormalStep("RUN", "mkdir $WORK_DIR && chmod 775 $WORK_DIR", null, false));
+        assertThat(normalise("|3 A= B=x C=y /bin/sh -c #(nop) COPY file:1 in /usr/bin/ "))
+                .isEqualTo(new NormalStep("COPY", "/usr/bin/", null, false));
+        assertThat(normalise("/bin/sh -c #(nop) ARG KERNEL_VERSION").keyword()).isEqualTo("ARG");
     }
 
     @Test

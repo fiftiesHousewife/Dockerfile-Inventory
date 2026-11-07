@@ -58,7 +58,8 @@ lineage/                    Phase 1b: Artifactory images -> family tree -> Docke
                             Fold: each image's effective user, env, labels, ... with the image that set each one
                             Gaps: unlinked images (gaps, external bases) and images built on an outdated base
                             Inventory: Artifactory -> images.jsonl, configs/; Analysis: everything else, rates
-                            run: ARTIFACTORY_URL, ARTIFACTORY_TOKEN, FACTS_DIR, DISCOVERY_DIR, OUT_DIR, [CONCURRENCY]
+                            run: [ARTIFACTORY_URL, ARTIFACTORY_TOKEN] (without them, analysis only), FACTS_DIR, DISCOVERY_DIR,
+                            OUT_DIR, [CONCURRENCY]
                             ./gradlew :lineage:run
 report/                     Phase 2: facts + manifest (+ lineage) -> passes, archetypes, bases, tables, dashboard
                             Estate: every Dockerfile with its facts and locations, failures, effective users

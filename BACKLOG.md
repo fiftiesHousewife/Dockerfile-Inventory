@@ -38,7 +38,9 @@ and one line when its gate is met.
   - Built 7 Nov, OKD lineage (`docs/plans/okd-lineage.md`): lineage cuts the wrapper Red Hat's release tooling puts
     around a Dockerfile's steps, a source label limits an image's link to that repository, `scripts/okd-select.sh`
     picks 30 images of OKD 5.0.0-okd-scos.5 and their release index, and `lineage-demo.sh` mirrors them unchanged.
-    Next: the owner runs discovery at those commits and the mirror; then the results are recorded.
+    Run 7 Nov: every parent right; links 14 of 26 at first, 26 of 26 after reading build-argument prefixes, leaving
+    `ARG` out and comparing labels as a set (owner's choice). Q12's outdated-base rule misleads where one repository
+    holds different images under different tags (Konflux's `art-okd-images`): noted, not changed.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.

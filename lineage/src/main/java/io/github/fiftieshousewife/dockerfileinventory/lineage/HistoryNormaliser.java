@@ -15,6 +15,11 @@ public final class HistoryNormaliser {
     private static final String NOP = "#(nop) ";
     private static final String FROM = "FROM ";
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+    /**
+     * {@code |2 A=x B=y } before the shell: the build arguments in force when a step after an {@code ARG} ran. The
+     * Dockerfile's instruction does not hold them.
+     */
+    private static final Pattern BUILD_ARGUMENTS = Pattern.compile("^\\|\\d+ .*?(?=/bin/sh -c )");
 
     /** Text a build service puts before every {@code RUN} (Q13): Konflux's hermetic-build environment. */
     private static final List<String> RUN_PREFIXES = List.of(". /cachi2/cachi2.env && ");
@@ -27,7 +32,8 @@ public final class HistoryNormaliser {
     }
 
     public static NormalStep normalise(HistoryStep step) {
-        NormalStep instruction = instruction(collapse(step.createdBy() == null ? "" : step.createdBy()));
+        NormalStep instruction = instruction(BUILD_ARGUMENTS.matcher(collapse(step.createdBy() == null ? ""
+                : step.createdBy())).replaceFirst(""));
         String comment = step.comment();
         return comment != null && comment.startsWith(FROM) ? instruction.withFrom(comment.substring(FROM.length()))
                 : instruction;
@@ -59,7 +65,7 @@ public final class HistoryNormaliser {
                 yield new NormalStep(keyword, keys, null, List.of(keys.split(" ")).containsAll(BUILD_LABELS));
             }
             case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
-            case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD" ->
+            case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD", "ARG" ->
                     new NormalStep(keyword, value, null, false);
             default -> null;
         });

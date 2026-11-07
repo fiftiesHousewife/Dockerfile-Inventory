@@ -1,6 +1,6 @@
 # openshift's lineage from published OKD images: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; O1, O2, O4 and O5 built (O3 needed nothing); the run (test 4) waits on the owner's discovery and mirror.
+Status: planned 7 Nov; questions answered 7 Nov; O1, O2, O4 and O5 built (O3 needed nothing); run 7 Nov; L1 and L2 built; every chosen component now links to its repository's Dockerfile (results below).
 
 The JCR demo (`lineage-from-jcr.md`) proved lineage on five images we built ourselves with Buildah, from Dockerfiles
 we chose. The real estate's images are built by other people's tooling, from Dockerfiles that may have moved on since.
@@ -80,4 +80,53 @@ name). Picking by name alone gave only `agent-installer-*`, `aws-*` and `azure-*
 
 To run, by the owner (the token, Docker and JCR): the three commands in the README's "Trying lineage without an
 Artifactory".
+
+## Results of the first run (7 Nov)
+
+Discovery read all 26 chosen repositories at the commits their images name (`RELEASED`), the other 836 at their
+default branch; facts parsed 2,585 of 2,646 files (32 templates, 29 failures). The mirror copied 30 images, none
+failed; JCR also still held the 5 sclorg images of the first demo (no links here, as their Dockerfiles are not in
+this discovery).
+
+| | Result |
+| --- | --- |
+| Parents | All right: 24 components on the OKD base, `cluster-kube-cluster-api-operator` on the other base, `network-tools` on `tools`; the two bases and `centos:stream10` roots. `tools` and its Konflux name are one image |
+| Links | 14 of 26 components linked (weak), each to a Dockerfile in its labelled repository; 12 not linked |
+| Outdated bases | 3 |
+
+Why the 12 did not link (several have more than one reason):
+
+| # | Cause | Images |
+| --- | --- | --- |
+| L1 | A `RUN` after an `ARG` is recorded as `\|1 WORK_DIR=/data /bin/sh -c ...` (the build arguments in force); lineage reads it as `OTHER`, so it matches nothing and the tooling's closing steps go uncut. And `ARG` steps are compared although facts drops them | agent-installer-api-server, aws-karpenter-provider-aws, configmap-reloader, driver-toolkit |
+| L2 | The tooling moves every `LABEL` into one at the end; a Dockerfile's `LABEL` at the top, or none, costs a step of order, and with two or three steps 2 of 3 (0.67) is under 0.8 | network-interface-bond-cni, azure-service-operator, kube-storage-version-migrator, gcp-machine-controllers, csi-driver-manila, ibm-cloud-controller-manager, csi-external-snapshotter, cluster-kube-cluster-api-operator, configmap-reloader |
+
+## Fixes
+
+| # | Fix | Module |
+| --- | --- | --- |
+| L1, built | `HistoryNormaliser` drops the build-argument prefix (`\|N` and its N pairs) before `/bin/sh -c`; `ARG` steps are left out of an image's own steps, as facts leaves them out of a Dockerfile's | `lineage` |
+| L2, built | Alignment leaves `LABEL`s out of the ordered steps and counts them as one step: matched when every label key the Dockerfile sets is among the image's; a Dockerfile with no `LABEL` puts no label step in the count, as tooling adds labels to any image (the owner's choice, 7 Nov) | `lineage` |
+
+4. L2: compare `LABEL`s apart from the order of the other steps: the Dockerfile's label keys must all be among the
+   image's, and alignment counts the rest?
+
+Answer (7 Nov): 4, yes, labels as a set.
+
+## After L1 and L2 (7 Nov)
+
+Lineage's analysis rerun on the same images (`LineageMain` now runs the analysis alone when `ARTIFACTORY_URL` is
+unset): links 14 -> 26 of 26 components, all weak (the tooling's merged `LABEL` keeps any image's steps from equalling
+its Dockerfile's), each to the Dockerfile its name suggests (`network-tools` -> `network-tools/Dockerfile`, `tools`
+-> `oc/images/tools/Dockerfile`, `agent-installer-api-server` -> `assisted-service/Dockerfile.assisted-service.ocp`);
+where a repository holds Dockerfiles with the same steps (`Dockerfile`, `Dockerfile.rhel7`) the link names both. The 8
+unlinked images are the three bases and `centos:stream10` (no Dockerfile in this discovery) and the 4 sclorg images
+left from the first demo.
+
+Outdated bases (3) follow Q12's rule, a newer push under the same image name whatever the tag, and here that rule
+misleads: Konflux keeps every OKD image (bases, `tools`, ...) in one repository, `art-okd-images`, under different
+tags, so the OKD base looks replaced by `tools`; and the sclorg leftover on `centos:stream9` counts `stream10` as
+newer. The base's own outdated `centos:stream10`, expected above, cannot show: the CentOS image it was built on is not
+in JCR, so the base is a root. Left as it is (Q12 is the owner's), noted for when the estate's Artifactory shows how
+its tags are used.
 

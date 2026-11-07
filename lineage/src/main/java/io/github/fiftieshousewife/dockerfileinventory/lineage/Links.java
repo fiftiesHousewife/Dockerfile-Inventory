@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -97,27 +98,43 @@ public final class Links {
                 .toList(), false);
     }
 
-    /** The longest common subsequence of an image's steps and a Dockerfile's, as a share of the longer. */
-    static double alignment(List<Instruction> a, List<Instruction> b) {
+    /**
+     * How well an image's steps match a Dockerfile's, as a share of the longer. The steps other than {@code LABEL} are
+     * aligned in order (their longest common subsequence); the labels count as one more step, matched when every key
+     * the Dockerfile sets is among the image's, wherever either sets them (the owner's choice, 7 Nov): build tooling
+     * moves, merges and adds labels. A Dockerfile without labels adds no label step, as tooling labels any image.
+     */
+    static double alignment(List<Instruction> image, List<Instruction> dockerfile) {
+        List<Instruction> imageSteps = withoutLabels(image);
+        List<Instruction> dockerfileSteps = withoutLabels(dockerfile);
+        Set<String> dockerfileKeys = labelKeys(dockerfile);
+        int labelStep = dockerfileKeys.isEmpty() ? 0 : 1;
+        int matched = commonSubsequence(imageSteps, dockerfileSteps)
+                + (labelStep == 1 && labelKeys(image).containsAll(dockerfileKeys) ? 1 : 0);
+        int longer = Math.max(imageSteps.size(), dockerfileSteps.size()) + labelStep;
+        return longer == 0 ? 0 : (double) matched / longer;
+    }
+
+    private static int commonSubsequence(List<Instruction> a, List<Instruction> b) {
         int[][] lcs = new int[a.size() + 1][b.size() + 1];
         for (int i = 1; i <= a.size(); i++) {
             for (int j = 1; j <= b.size(); j++) {
-                lcs[i][j] = aligns(a.get(i - 1), b.get(j - 1))
+                lcs[i][j] = a.get(i - 1).equals(b.get(j - 1))
                         ? lcs[i - 1][j - 1] + 1
                         : Math.max(lcs[i - 1][j], lcs[i][j - 1]);
             }
         }
-        int longer = Math.max(a.size(), b.size());
-        return longer == 0 ? 0 : (double) lcs[a.size()][b.size()] / longer;
+        return lcs[a.size()][b.size()];
     }
 
-    /**
-     * The same step, or a {@code LABEL} holding every key of the Dockerfile's: build tooling adds keys to an image's
-     * labels (Red Hat's release tooling merges a Dockerfile's {@code LABEL}s into one and adds its own).
-     */
-    static boolean aligns(Instruction image, Instruction dockerfile) {
-        return image.equals(dockerfile) || image.keyword().equals("LABEL") && dockerfile.keyword().equals("LABEL")
-                && Set.of(image.text().split(" ")).containsAll(List.of(dockerfile.text().split(" ")));
+    private static List<Instruction> withoutLabels(List<Instruction> steps) {
+        return steps.stream().filter(step -> !step.keyword().equals("LABEL")).toList();
+    }
+
+    private static Set<String> labelKeys(List<Instruction> steps) {
+        return steps.stream().filter(step -> step.keyword().equals("LABEL"))
+                .flatMap(step -> Arrays.stream(step.text().split(" "))).filter(key -> !key.isEmpty())
+                .collect(Collectors.toSet());
     }
 
     /** Q2: nothing is deleted, so a base Artifactory holds should have been found as the image's parent. */

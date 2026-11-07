@@ -112,7 +112,9 @@ export CONCURRENCY=16                         # optional: images read at once
 
 Every tag of every image in every local Docker repository is read once (`linux/amd64` only); each image config is
 fetched once however many tags share it. Images are then placed in a family tree by their layers and linked to
-the Dockerfiles whose instructions match their build history.
+the Dockerfiles whose instructions match their build history; an image whose source label
+(`io.openshift.build.source-location` or `org.opencontainers.image.source`) names a repository is linked only to that
+repository's Dockerfiles. Without `ARTIFACTORY_URL` only the linking runs again, on what `OUT_DIR` already holds.
 
 | File | Contents |
 | --- | --- |
