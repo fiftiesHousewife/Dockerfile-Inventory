@@ -2,13 +2,10 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class MergeRunsTest {
-
-    private static String rendered(ImageBuilder builder) {
-        return DockerfileRenderer.render(builder.build(ImageBuilderTest.POLICY).dockerfile(), Target.DEFAULT);
-    }
+class RunMergeTest {
 
     @Test
     void adjacentRunsInAStageIncludingAnInstallAndTheGroupZeroStepRenderAsOneRun() {
@@ -61,5 +58,38 @@ class MergeRunsTest {
         Dockerfile model = ImageBuilder.finalStage(ImageBuilderTest.UBI_MINIMAL).run("a").run("b").model();
 
         assertThat(model.stages().getFirst().instructions()).hasSize(2);
+    }
+
+    @Test
+    void mergedJoinsOnlyRunsThatFollowEachOther() {
+        Instruction user = new Instruction.User("1001");
+
+        assertThat(RunMerge.merged(List.of(shell("a"), shell("b"), user, shell("c"))))
+                .containsExactly(shell("a", "b"), user, shell("c"));
+    }
+
+    @Test
+    void joinedRendersAnInstallAsItsCommandsFollowedByTheShellCommands() {
+        Instruction.Run install = new Instruction.Run(
+                new RunBody.Install(new PackageInstall(PackageManager.APK, List.of("git"))));
+
+        assertThat(RunMerge.joined(install, shell("git --version")))
+                .isEqualTo(shell("apk add --no-cache git", "git --version"));
+    }
+
+    @Test
+    void changesShellStateLooksAtTheFirstWordOfEveryCommandInTheRun() {
+        assertThat(RunMerge.changesShellState(shell("make && cd /src"))).isTrue();
+        assertThat(RunMerge.changesShellState(shell("true; export A=1"))).isTrue();
+        assertThat(RunMerge.changesShellState(shell("false || . ./env"))).isTrue();
+        assertThat(RunMerge.changesShellState(shell("echo cd", "make"))).isFalse();
+    }
+
+    private static Instruction.Run shell(String... commands) {
+        return new Instruction.Run(new RunBody.Shell(List.of(commands)));
+    }
+
+    private static String rendered(ImageBuilder builder) {
+        return DockerfileRenderer.render(builder.build(ImageBuilderTest.POLICY).dockerfile(), Target.DEFAULT);
     }
 }

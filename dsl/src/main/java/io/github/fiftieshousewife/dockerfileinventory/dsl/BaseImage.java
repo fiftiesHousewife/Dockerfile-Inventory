@@ -3,9 +3,8 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 import java.util.regex.Pattern;
 
 /**
- * The image a stage builds on: name (with registry), tag, and digest. A digest, when given, is {@code sha256:} and
- * 64 hex characters, or a build argument ({@code sha256:${BASE_SHA}}) that supplies them; the builders require one
- * (R1), the model does not, so Phase 5 can model what exists.
+ * The image a stage builds on. A digest may be a build argument ({@code sha256:${BASE_SHA}}) and may be absent: the
+ * builder's policy requires a real one, the model does not, so a converter can model the Dockerfiles that exist.
  */
 public record BaseImage(String name, String tag, String digest) {
 
@@ -15,11 +14,12 @@ public record BaseImage(String name, String tag, String digest) {
     public BaseImage {
         Checks.notBlank(name, "base image name");
         if (digest != null && !DIGEST.matcher(digest).matches()) {
-            throw new IllegalArgumentException("a digest is sha256: and 64 hex characters (or a build argument), not " + digest);
+            throw new IllegalArgumentException(
+                    "a digest is sha256: and 64 hex characters (or a build argument), not " + digest);
         }
     }
 
-    /** The last path segment, the base's family as Phase 1 counts it ({@code ubi-minimal}, {@code alpine}). */
+    /** The last path segment, the family the inventory counts bases by ({@code ubi-minimal}, {@code alpine}). */
     public String family() {
         return name.substring(name.lastIndexOf('/') + 1);
     }

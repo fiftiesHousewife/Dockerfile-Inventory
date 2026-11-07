@@ -3,10 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Four hand-picked images (Phase 4, Q3), standing in for the top Phase 2 archetypes until a real run exists. Each
- * meets every invariant, and their rendered Dockerfiles are committed under {@code src/test/resources/golden/}.
- */
 final class Goldens {
 
     static final String REGISTRY = "registry.example.com/";

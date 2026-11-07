@@ -3,24 +3,18 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ImageBuilderTest {
 
     static final String DIGEST = "sha256:" + "b".repeat(64);
     static final BaseImage UBI_MINIMAL = new BaseImage("registry.example.com/ubi9/ubi-minimal", "9.4", DIGEST);
+    static final BaseImage ALPINE = new BaseImage("alpine", "3.20", null);
     static final Policy POLICY = Policy.of(List.of(new Policy.Approved("ubi9/ubi-minimal", "9"),
             new Policy.Approved("ubi9/ubi", "9")));
-
-    private static ImageBuilder valid() {
-        return ImageBuilder.finalStage(UBI_MINIMAL)
-                .install("java-21-openjdk-headless")
-                .copy("app.jar", "/opt/app/")
-                .writablePaths("/opt/app")
-                .user(1001)
-                .entrypoint("java", "-jar", "/opt/app/app.jar");
-    }
 
     @Test
     void aValidImageBuildsAndDeclaredWritablePathsGetTheGroupZeroStepBeforeUser() {
@@ -80,6 +74,13 @@ class ImageBuilderTest {
     }
 
     @Test
+    void aViolationListsEachBreachInItsMessage() {
+        assertThatExceptionOfType(PolicyViolation.class)
+                .isThrownBy(() -> ImageBuilder.finalStage(new BaseImage("alpine", "3.20", DIGEST)).build(POLICY))
+                .withMessageContaining("S1").withMessageContaining("S4");
+    }
+
+    @Test
     void rawUsesAreListedInTheResult() {
         Built built = valid().raw("HEALTHCHECK NONE", "OpenShift probes instead").build(POLICY);
 
@@ -95,20 +96,107 @@ class ImageBuilderTest {
                 "LABEL org.opencontainers.image.revision=\"${REVISION}\"");
     }
 
-    private static List<String> breaches(ImageBuilder builder) {
-        try {
-            builder.build(POLICY);
-            return List.of();
-        } catch (PolicyViolation violation) {
-            return violation.breaches().stream().map(PolicyViolation.Breach::rule).toList();
-        }
+    @Test
+    void installOnAStageBuiltOnAnEarlierStageUsesTheEarlierStagesManager() {
+        Dockerfile model = ImageBuilder.stage("deps", ALPINE).thenStageFrom(null, "deps").install("git").model();
+
+        assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).contains("RUN apk add --no-cache git");
     }
 
     @Test
-    void aViolationListsEachBreachInItsMessage() {
-        assertThatExceptionOfType(PolicyViolation.class)
-                .isThrownBy(() -> ImageBuilder.finalStage(new BaseImage("alpine", "3.20", DIGEST)).build(POLICY))
-                .withMessageContaining("S1").withMessageContaining("S4");
+    void modelReturnsWhatWasWrittenWithNoPolicyAdditionsOrChecks() {
+        Dockerfile model = ImageBuilder.finalStage(ALPINE)
+                .copy("app", "/opt/app/")
+                .writablePaths("/opt/app")
+                .user(1001)
+                .model();
+
+        assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).isEqualTo("""
+                FROM alpine:3.20
+                COPY app /opt/app/
+                USER 1001
+                """);
+    }
+
+    @Test
+    void checkListsTheBreachesBuildWouldThrow() {
+        Policy policy = Policy.of(List.of(new Policy.Approved("ubi9/ubi-minimal", "9")));
+
+        assertThat(ImageBuilder.finalStage(ALPINE).raw("ENTRYPOINT ./run.sh", "legacy").check(policy))
+                .extracting(PolicyViolation.Breach::rule).containsExactlyInAnyOrder("S4", "S1", "R1", "H2");
+    }
+
+    @Test
+    void theFaithfulMethodsRenderAsTheirInstructions() {
+        Map<String, String> env = new LinkedHashMap<>();
+        env.put("A", "1");
+        env.put("B", "two words");
+        Dockerfile model = ImageBuilder.create()
+                .globalArg("BASE", "alpine:3.20")
+                .thenStage("deps", ALPINE)
+                .install(PackageManager.APK, List.of("--no-cache"), List.of("git"))
+                .thenStageFrom("app", "deps")
+                .env(env)
+                .label(Map.of("team", "payments"))
+                .copy(List.of("a", "b"), "/srv/", "app:app", "deps")
+                .model();
+
+        assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).isEqualTo("""
+                ARG BASE="alpine:3.20"
+
+                FROM alpine:3.20 AS deps
+                RUN apk add --no-cache git
+
+                FROM deps AS app
+                ENV A="1" \\
+                    B="two words"
+                LABEL team="payments"
+                COPY --from=deps --chown=app:app a b /srv/
+                """);
+    }
+
+    @Test
+    void aBuilderCanStartFromAModelAndAnArgCanHaveADefault() {
+        Dockerfile model = ImageBuilder.create().globalArg("BASE", "alpine")
+                .thenStage(null, ALPINE).arg("MODE", "prod").user(0).model();
+
+        ImageBuilder again = ImageBuilder.of(model);
+
+        assertThat(again.model()).isEqualTo(model);
+        assertThat(again.check(Policy.of(List.of()))).extracting(PolicyViolation.Breach::rule).contains("S4", "S1");
+        assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).contains("ARG MODE=\"prod\"");
+    }
+
+    @Test
+    void finishedMergesRunsButAddsNoPolicyStepsToAStageThatIsNotFinal() {
+        ImageBuilder builder = ImageBuilder.stage("build", UBI_MINIMAL).run("a").run("b").copy("x", "/x")
+                .writablePaths("/x").thenFrom(UBI_MINIMAL).user(1001);
+        Stage build = builder.model().stages().getFirst();
+
+        assertThat(builder.finished(Draft.of(build)).instructions()).containsExactly(
+                new Instruction.Run(new RunBody.Shell(List.of("a", "b"))),
+                new Instruction.Copy(List.of("x"), "/x", null, null));
+    }
+
+    @Test
+    void rawListsOnlyTheRawInstructionsOfEveryStage() {
+        ImageBuilder builder = ImageBuilder.stage("build", UBI_MINIMAL).raw("ONBUILD RUN x", "one")
+                .thenFrom(UBI_MINIMAL).run("y").raw("HEALTHCHECK NONE", "two");
+
+        assertThat(builder.raw()).extracting(Instruction.Raw::reason).containsExactly("one", "two");
+    }
+
+    private static ImageBuilder valid() {
+        return ImageBuilder.finalStage(UBI_MINIMAL)
+                .install("java-21-openjdk-headless")
+                .copy("app.jar", "/opt/app/")
+                .writablePaths("/opt/app")
+                .user(1001)
+                .entrypoint("java", "-jar", "/opt/app/app.jar");
+    }
+
+    private static List<String> breaches(ImageBuilder builder) {
+        return breachMessages(builder).stream().map(message -> message.split(":", 2)[0]).toList();
     }
 
     private static List<String> breachMessages(ImageBuilder builder) {
