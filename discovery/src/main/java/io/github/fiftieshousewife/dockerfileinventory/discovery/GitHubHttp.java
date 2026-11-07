@@ -1,13 +1,13 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ObjectNode;
-import java.net.URI;
-import java.net.http.HttpClient;
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 // REST for organisations and trees, GraphQL for repositories and blob text, all through java.net.http so the
 // scanner image needs no git binary.
@@ -18,13 +18,13 @@ final class GitHubHttp implements GitHub {
     private final GitHubRequests requests;
     private final String restPrefix;
 
-    GitHubHttp(GitHubApi api, String token) {
-        this(HttpClient.newBuilder().connectTimeout(GitHubRequests.TIMEOUT).build(), api.base(), token,
-                api.restPrefix());
+    GitHubHttp(GitHubApi api, HttpSettings settings, TokenSource token) {
+        this(new GitHubRequests(settings.client(), api.base(), token, settings.retries(), settings.requestTimeout(),
+                wait -> Thread.sleep(wait)), api.restPrefix());
     }
 
-    GitHubHttp(HttpClient http, URI apiBase, String token, String restPrefix) {
-        this.requests = new GitHubRequests(http, apiBase, token);
+    GitHubHttp(GitHubRequests requests, String restPrefix) {
+        this.requests = requests;
         this.restPrefix = restPrefix;
     }
 

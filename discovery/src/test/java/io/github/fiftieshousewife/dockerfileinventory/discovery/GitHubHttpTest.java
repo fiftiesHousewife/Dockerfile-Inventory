@@ -3,9 +3,14 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +26,8 @@ class GitHubHttpTest {
     @BeforeEach
     void start() throws IOException {
         server = new RecordedGitHub();
-        gitHub = new GitHubHttp(GitHubApi.from(server.root() + "api/"), "t0ken");
+        gitHub = new GitHubHttp(GitHubApi.from(server.root() + "api/"), HttpSettings.from(Map.of()),
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"));
     }
 
     @AfterEach
@@ -58,7 +64,9 @@ class GitHubHttpTest {
 
     @Test
     void githubDotComHasRestAtTheRootAndGraphqlBesideIt() {
-        GitHubHttp dotCom = new GitHubHttp(HttpClient.newHttpClient(), server.root(), "t0ken", "");
+        GitHubHttp dotCom = new GitHubHttp(new GitHubRequests(HttpClient.newHttpClient(), server.root(),
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"), new RetryPolicy(1, Duration.ofHours(1)),
+                Duration.ofSeconds(10), wait -> { }), "");
         server.routeFixture("/repos/payments/ledger-api/git/trees/abc", "tree.json");
 
         assertThat(dotCom.tree("payments/ledger-api", "abc", true)).isPresent();

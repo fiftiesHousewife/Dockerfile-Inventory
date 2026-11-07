@@ -3,12 +3,18 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,6 +22,7 @@ import javax.net.ssl.SSLSession;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.ObjectMapper;
 
 class GitHubRequestsTest {
@@ -28,12 +35,72 @@ class GitHubRequestsTest {
     @BeforeEach
     void start() throws IOException {
         server = new RecordedGitHub();
-        requests = new GitHubRequests(HttpClient.newHttpClient(), URI.create(server.root() + "api"), "t0ken");
+        requests = requests(1, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"));
     }
 
     @AfterEach
     void stop() {
         server.close();
+    }
+
+    private GitHubRequests requests(int attempts, TokenSource token) {
+        return new GitHubRequests(HttpClient.newHttpClient(), URI.create(server.root() + "api"), token,
+                new RetryPolicy(attempts, Duration.ofHours(1)), Duration.ofSeconds(10), wait -> { });
+    }
+
+    @Test
+    void aGatewayErrorIsRetriedAndThenSucceeds() {
+        AtomicInteger calls = new AtomicInteger();
+        server.route("/api/" + TREE, exchange -> {
+            if (calls.incrementAndGet() == 1) {
+                RecordedGitHub.respondText(exchange, 502, "Bad Gateway");
+            } else {
+                RecordedGitHub.respond(exchange, 200, "tree.json");
+            }
+        });
+
+        assertThat(requests(3, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN")).rest(TREE)).isPresent();
+        assertThat(calls).hasValue(2);
+    }
+
+    @Test
+    void anUnreachableServerIsTriedAgainUntilTheAttemptsRunOut() {
+        server.close();
+
+        assertThatExceptionOfType(GitHubException.class)
+                .isThrownBy(() -> requests(3, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN")).rest(TREE))
+                .withMessageContaining("failed");
+    }
+
+    @Test
+    void a401ReadsTheTokenFileAgainAndTriesOnceMore(@TempDir Path dir) throws IOException {
+        Path file = Files.writeString(dir.resolve("token"), "old");
+        TokenSource token = TokenSource.from(Map.of("GHE_TOKEN_FILE", file.toString()), "GHE_TOKEN");
+        token.token();
+        FileTime unchanged = Files.getLastModifiedTime(file);
+        Files.writeString(file, "new");
+        Files.setLastModifiedTime(file, unchanged);
+        server.route("/api/" + TREE, exchange -> {
+            if ("Bearer new".equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
+                RecordedGitHub.respond(exchange, 200, "tree.json");
+            } else {
+                RecordedGitHub.respondText(exchange, 401, "{\"message\":\"Bad credentials\"}");
+            }
+        });
+
+        assertThat(requests(1, token).rest(TREE)).isPresent();
+        assertThat(server.authorizations).containsExactly("Bearer old", "Bearer new");
+    }
+
+    @Test
+    void anSsoRefusalStopsTheRunNamingWhatToAuthorise() {
+        server.route("/api/" + TREE, exchange -> {
+            exchange.getResponseHeaders().add("X-GitHub-SSO", "required; url=https://github.com/orgs/payments/sso");
+            RecordedGitHub.respondText(exchange, 403, "{\"message\":\"Resource protected by organization SAML\"}");
+        });
+
+        assertThatExceptionOfType(SsoRequired.class).isThrownBy(() -> requests.rest(TREE))
+                .withMessageContaining("https://github.com/orgs/payments/sso");
     }
 
     @Test
@@ -84,7 +151,7 @@ class GitHubRequestsTest {
             }
         });
 
-        assertThat(requests.rest(TREE)).isPresent();
+        assertThat(requests(2, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN")).rest(TREE)).isPresent();
         assertThat(calls).hasValue(2);
     }
 

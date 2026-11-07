@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -21,8 +23,11 @@ public final class DiscoveryMain {
         Map<String, String> env = System.getenv();
         ReleaseIndex releases = releases(env.get("RELEASE_INDEX"));
         GitHubApi api = GitHubApi.from(required(env, "GHE_API_URL"));
-        GitHub gitHub = new GitHubHttp(api, required(env, "GHE_TOKEN"));
-        int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", "16"));
+        HttpSettings settings = HttpSettings.from(env);
+        TokenSource token = TokenSource.from(env, "GHE_TOKEN");
+        System.out.println("discovery: " + api.base() + ", token from " + token + ", " + settings);
+        GitHub gitHub = new GitHubHttp(api, settings, token);
+        int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", "8"));
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
         var discovery = new Discovery(gitHub, releases, output, concurrency,
                 organizations(env.getOrDefault("ORGANIZATIONS", ""), api));

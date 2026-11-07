@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.RateLimitWaitTooLong;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -57,6 +58,9 @@ final class Scans {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while scanning", e);
         } catch (ExecutionException e) {
+            if (e.getCause() instanceof SsoRequired || e.getCause() instanceof RateLimitWaitTooLong) {
+                throw (RuntimeException) e.getCause();
+            }
             throw new IllegalStateException("scan task failed", e.getCause());
         }
     }

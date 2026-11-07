@@ -5,6 +5,7 @@ import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHu
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.tree;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -48,6 +49,13 @@ class ScansTest {
         assertThat(result.outcome()).satisfies(
                 o -> assertThat(o.status()).isEqualTo(RepoOutcome.Status.FAILED),
                 o -> assertThat(o.detail()).contains("502"));
+    }
+
+    @Test
+    void aReasonToStopTheWholeRunComesOutAsItself() {
+        SsoRequired sso = new SsoRequired("required; url=https://github.com/orgs/pay/sso");
+
+        assertThatThrownBy(() -> Scans.result(CompletableFuture.failedFuture(sso))).isSameAs(sso);
     }
 
     @Test
