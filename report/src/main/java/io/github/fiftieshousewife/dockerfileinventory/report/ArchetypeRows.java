@@ -20,17 +20,27 @@ record ArchetypeRows(List<Row> rows, Map<String, Apart> apart, int total, int k8
     private static final List<String> KINDS_APART = List.of(ArchetypeName.BUNDLE,
             ArchetypeName.of(Passes.TEMPLATES), ArchetypeName.of(Passes.PARSE_FAILURES), UNRESOLVED);
 
-    record Row(int rank, Archetype archetype, String name, List<String> blobShas, int locations,
-               Map<String, Integer> organisations, Map<String, Integer> repositories) {
+    record Row(int rank, Archetype archetype, String name, List<String> blobShas, List<Location> where) {
 
         Row {
             blobShas = List.copyOf(blobShas);
-            organisations = Collections.unmodifiableMap(new LinkedHashMap<>(organisations));
-            repositories = Collections.unmodifiableMap(new LinkedHashMap<>(repositories));
+            where = List.copyOf(where);
         }
 
         int files() {
             return blobShas.size();
+        }
+
+        int locations() {
+            return where.size();
+        }
+
+        Map<String, Integer> organisations() {
+            return counted(where, Location::organisation);
+        }
+
+        Map<String, Integer> repositories() {
+            return counted(where, Location::repository);
         }
     }
 
@@ -73,8 +83,7 @@ record ArchetypeRows(List<Row> rows, Map<String, Apart> apart, int total, int k8
 
     static Row row(int rank, Archetype archetype, List<String> blobs, Map<String, List<Location>> locations) {
         List<Location> where = blobs.stream().flatMap(b -> locations.getOrDefault(b, List.of()).stream()).toList();
-        return new Row(rank, archetype, ArchetypeName.of(archetype.signature()), blobs, where.size(),
-                counted(where, Location::organisation), counted(where, Location::repository));
+        return new Row(rank, archetype, ArchetypeName.of(archetype.signature()), blobs, where);
     }
 
     static Map<String, Integer> counted(List<Location> where, Function<Location, String> key) {
@@ -101,8 +110,7 @@ record ArchetypeRows(List<Row> rows, Map<String, Apart> apart, int total, int k8
     }
 
     private static Row renumbered(Row row, int rank) {
-        return new Row(rank, row.archetype(), row.name(), row.blobShas(), row.locations(), row.organisations(),
-                row.repositories());
+        return new Row(rank, row.archetype(), row.name(), row.blobShas(), row.where());
     }
 
     static int covering(List<Row> rows, int total, int percent) {

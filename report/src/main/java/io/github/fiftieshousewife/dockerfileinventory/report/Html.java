@@ -42,6 +42,16 @@ final class Html {
         return "<h2>" + escape(title) + info(key) + "</h2>";
     }
 
+    // An inline bar in one neutral hue: the number beside it carries the value.
+    static String meter(double fraction) {
+        return "<span class=\"meter\" aria-hidden=\"true\"><span style=\"width:" + percent(fraction)
+                + "\"></span></span>";
+    }
+
+    static String plural(int n, String one, String many) {
+        return count(n) + " " + (n == 1 ? one : many);
+    }
+
     static String folded(String table) {
         return "<details><summary>Table</summary>" + table + "</details>";
     }
