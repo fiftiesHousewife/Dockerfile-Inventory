@@ -151,7 +151,9 @@ EOF
 Expected: a `RUN` whose command reads the heredoc, as BuildKit runs it. Actual: `extraneous input '<<EOF'
 expecting {<EOF>, 'FROM'}`; the body's lines are then read as instructions. Only `RUN <<EOF` (the heredoc as the
 script) and `COPY <<EOF` parse. Seen in at least 4 `openshift` files (bootc kernel arguments, systemd units).
-Workaround: none safe; the file is counted as a parse failure.
+Fixed in the fork (a heredoc's preamble may start with a command; `HeredocForm.preamble` holds it, as in
+`cat > /etc/x.toml <<EOF`). Facts still reads a heredoc `RUN`'s bodies as its script, so such a `RUN`'s command, before
+the marker, is not read for package calls.
 
 ## 12. `ARG A=1 B=2` is one argument whose value is `1 B=2`
 

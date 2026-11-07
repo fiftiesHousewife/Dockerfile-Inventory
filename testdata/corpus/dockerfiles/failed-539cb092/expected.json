@@ -5,8 +5,8 @@
     "commit": "97de88712a673f73664051d3a46879531d96d910",
     "blobSha": "539cb092903642cb68615715ca475dd6dc4dc0a5"
   },
-  "why": "rewrite-docker rejects it",
-  "parse": "failed",
+  "why": "rewrite-docker rejected it (a heredoc after a command in RUN, issue 11) until the fork fixed it",
+  "parse": "parsed",
   "unreadableRuns": 0,
-  "roundTrip": "not-parsed"
+  "roundTrip": "passes"
 }

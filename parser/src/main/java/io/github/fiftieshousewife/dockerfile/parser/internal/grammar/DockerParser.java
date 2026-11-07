@@ -1120,7 +1120,6 @@ public class DockerParser extends Parser {
 	public final AddInstructionContext addInstruction() throws RecognitionException {
 		AddInstructionContext _localctx = new AddInstructionContext(_ctx, getState());
 		enterRule(_localctx, 24, RULE_addInstruction);
-		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
@@ -1128,36 +1127,30 @@ public class DockerParser extends Parser {
 			match(ADD);
 			setState(232);
 			_errHandler.sync(this);
-			_la = _input.LA(1);
-			if (_la==FLAG) {
+			switch ( getInterpreter().adaptivePredict(_input,11,_ctx) ) {
+			case 1:
 				{
 				setState(231);
 				flags();
 				}
+				break;
 			}
-
 			setState(239);
 			_errHandler.sync(this);
-			switch (_input.LA(1)) {
-			case HEREDOC_START:
+			switch ( getInterpreter().adaptivePredict(_input,12,_ctx) ) {
+			case 1:
 				{
 				setState(234);
 				heredoc();
 				}
 				break;
-			case LBRACKET:
+			case 2:
 				{
 				setState(235);
 				jsonArray();
 				}
 				break;
-			case DOUBLE_QUOTED_STRING:
-			case SINGLE_QUOTED_STRING:
-			case ENV_VAR:
-			case SPECIAL_VAR:
-			case COMMAND_SUBST:
-			case BACKTICK_SUBST:
-			case UNQUOTED_TEXT:
+			case 3:
 				{
 				setState(236);
 				sourceList();
@@ -1165,8 +1158,6 @@ public class DockerParser extends Parser {
 				destination();
 				}
 				break;
-			default:
-				throw new NoViableAltException(this);
 			}
 			}
 		}
@@ -1221,7 +1212,6 @@ public class DockerParser extends Parser {
 	public final CopyInstructionContext copyInstruction() throws RecognitionException {
 		CopyInstructionContext _localctx = new CopyInstructionContext(_ctx, getState());
 		enterRule(_localctx, 26, RULE_copyInstruction);
-		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
@@ -1229,36 +1219,30 @@ public class DockerParser extends Parser {
 			match(COPY);
 			setState(243);
 			_errHandler.sync(this);
-			_la = _input.LA(1);
-			if (_la==FLAG) {
+			switch ( getInterpreter().adaptivePredict(_input,13,_ctx) ) {
+			case 1:
 				{
 				setState(242);
 				flags();
 				}
+				break;
 			}
-
 			setState(250);
 			_errHandler.sync(this);
-			switch (_input.LA(1)) {
-			case HEREDOC_START:
+			switch ( getInterpreter().adaptivePredict(_input,14,_ctx) ) {
+			case 1:
 				{
 				setState(245);
 				heredoc();
 				}
 				break;
-			case LBRACKET:
+			case 2:
 				{
 				setState(246);
 				jsonArray();
 				}
 				break;
-			case DOUBLE_QUOTED_STRING:
-			case SINGLE_QUOTED_STRING:
-			case ENV_VAR:
-			case SPECIAL_VAR:
-			case COMMAND_SUBST:
-			case BACKTICK_SUBST:
-			case UNQUOTED_TEXT:
+			case 3:
 				{
 				setState(247);
 				sourceList();
@@ -1266,8 +1250,6 @@ public class DockerParser extends Parser {
 				destination();
 				}
 				break;
-			default:
-				throw new NoViableAltException(this);
 			}
 			}
 		}
@@ -2479,47 +2461,61 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(339);
-			match(HEREDOC_START);
-			setState(343);
+			setState(342);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 549722259456L) != 0)) {
 				{
 				{
-				setState(340);
+				setState(339);
 				preambleElement();
 				}
 				}
-				setState(345);
+				setState(344);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(355);
+			setState(345);
+			match(HEREDOC_START);
+			setState(349);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 549722259456L) != 0)) {
+				{
+				{
+				setState(346);
+				preambleElement();
+				}
+				}
+				setState(351);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			}
+			setState(361);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while (_la==HEREDOC_START) {
 				{
 				{
-				setState(346);
+				setState(352);
 				match(HEREDOC_START);
-				setState(350);
+				setState(356);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 549722259456L) != 0)) {
 					{
 					{
-					setState(347);
+					setState(353);
 					preambleElement();
 					}
 					}
-					setState(352);
+					setState(358);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
 				}
 				}
-				setState(357);
+				setState(363);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -2578,7 +2574,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(358);
+			setState(364);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 549722259456L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -2634,9 +2630,9 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(360);
+			setState(366);
 			heredocContent();
-			setState(361);
+			setState(367);
 			heredocEnd();
 			}
 		}
@@ -2687,13 +2683,13 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(366);
+			setState(372);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while (_la==NEWLINE || _la==HEREDOC_CONTENT) {
 				{
 				{
-				setState(363);
+				setState(369);
 				_la = _input.LA(1);
 				if ( !(_la==NEWLINE || _la==HEREDOC_CONTENT) ) {
 				_errHandler.recoverInline(this);
@@ -2705,7 +2701,7 @@ public class DockerParser extends Parser {
 				}
 				}
 				}
-				setState(368);
+				setState(374);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -2750,7 +2746,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(369);
+			setState(375);
 			match(UNQUOTED_TEXT);
 			}
 		}
@@ -2798,19 +2794,19 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(371);
+			setState(377);
 			match(LBRACKET);
-			setState(373);
+			setState(379);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==DOUBLE_QUOTED_STRING) {
 				{
-				setState(372);
+				setState(378);
 				jsonArrayElements();
 				}
 			}
 
-			setState(375);
+			setState(381);
 			match(RBRACKET);
 			}
 		}
@@ -2863,21 +2859,21 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(377);
+			setState(383);
 			jsonString();
-			setState(382);
+			setState(388);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while (_la==COMMA) {
 				{
 				{
-				setState(378);
+				setState(384);
 				match(COMMA);
-				setState(379);
+				setState(385);
 				jsonString();
 				}
 				}
-				setState(384);
+				setState(390);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -2922,7 +2918,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(385);
+			setState(391);
 			match(DOUBLE_QUOTED_STRING);
 			}
 		}
@@ -2967,7 +2963,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(387);
+			setState(393);
 			text();
 			}
 		}
@@ -3010,7 +3006,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(389);
+			setState(395);
 			match(UNQUOTED_TEXT);
 			}
 		}
@@ -3059,7 +3055,7 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(392); 
+			setState(398); 
 			_errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -3067,7 +3063,7 @@ public class DockerParser extends Parser {
 				case 1:
 					{
 					{
-					setState(391);
+					setState(397);
 					labelPair();
 					}
 					}
@@ -3075,9 +3071,9 @@ public class DockerParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				setState(394); 
+				setState(400); 
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,33,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,34,_ctx);
 			} while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER );
 			}
 		}
@@ -3127,26 +3123,26 @@ public class DockerParser extends Parser {
 		LabelPairContext _localctx = new LabelPairContext(_ctx, getState());
 		enterRule(_localctx, 90, RULE_labelPair);
 		try {
-			setState(406);
+			setState(412);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,35,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,36,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(396);
+				setState(402);
 				if (!(equalsRightAfterKey())) throw new FailedPredicateException(this, "equalsRightAfterKey()");
-				setState(397);
+				setState(403);
 				labelKey();
-				setState(398);
+				setState(404);
 				match(EQUALS);
-				setState(401);
+				setState(407);
 				_errHandler.sync(this);
-				switch ( getInterpreter().adaptivePredict(_input,34,_ctx) ) {
+				switch ( getInterpreter().adaptivePredict(_input,35,_ctx) ) {
 				case 1:
 					{
-					setState(399);
+					setState(405);
 					if (!(noGapBefore())) throw new FailedPredicateException(this, "noGapBefore()");
-					setState(400);
+					setState(406);
 					labelValue();
 					}
 					break;
@@ -3156,9 +3152,9 @@ public class DockerParser extends Parser {
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(403);
+				setState(409);
 				labelKey();
-				setState(404);
+				setState(410);
 				labelOldValue();
 				}
 				break;
@@ -3206,7 +3202,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(408);
+			setState(414);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 281320357888L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -3263,25 +3259,25 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(410);
+			setState(416);
 			labelValueElement();
-			setState(415);
+			setState(421);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,36,_ctx);
+			_alt = getInterpreter().adaptivePredict(_input,37,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
-					setState(411);
+					setState(417);
 					if (!(noGapBefore())) throw new FailedPredicateException(this, "noGapBefore()");
-					setState(412);
+					setState(418);
 					labelValueElement();
 					}
 					} 
 				}
-				setState(417);
+				setState(423);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,36,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,37,_ctx);
 			}
 			}
 		}
@@ -3333,7 +3329,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(418);
+			setState(424);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 547876765696L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -3390,7 +3386,7 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(421); 
+			setState(427); 
 			_errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -3398,7 +3394,7 @@ public class DockerParser extends Parser {
 				case 1:
 					{
 					{
-					setState(420);
+					setState(426);
 					labelOldValueElement();
 					}
 					}
@@ -3406,9 +3402,9 @@ public class DockerParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				setState(423); 
+				setState(429); 
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,37,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,38,_ctx);
 			} while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER );
 			}
 		}
@@ -3465,7 +3461,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(425);
+			setState(431);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 549722259456L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -3522,17 +3518,17 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(428); 
+			setState(434); 
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			do {
 				{
 				{
-				setState(427);
+				setState(433);
 				port();
 				}
 				}
-				setState(430); 
+				setState(436); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 403726925824L) != 0) );
@@ -3582,7 +3578,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(432);
+			setState(438);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 403726925824L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -3639,7 +3635,7 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(435); 
+			setState(441); 
 			_errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -3647,7 +3643,7 @@ public class DockerParser extends Parser {
 				case 1:
 					{
 					{
-					setState(434);
+					setState(440);
 					envPair();
 					}
 					}
@@ -3655,9 +3651,9 @@ public class DockerParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				setState(437); 
+				setState(443); 
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,39,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,40,_ctx);
 			} while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER );
 			}
 		}
@@ -3707,26 +3703,26 @@ public class DockerParser extends Parser {
 		EnvPairContext _localctx = new EnvPairContext(_ctx, getState());
 		enterRule(_localctx, 108, RULE_envPair);
 		try {
-			setState(449);
+			setState(455);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,41,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,42,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(439);
+				setState(445);
 				if (!(equalsRightAfterKey())) throw new FailedPredicateException(this, "equalsRightAfterKey()");
-				setState(440);
+				setState(446);
 				envKey();
-				setState(441);
+				setState(447);
 				match(EQUALS);
-				setState(444);
+				setState(450);
 				_errHandler.sync(this);
-				switch ( getInterpreter().adaptivePredict(_input,40,_ctx) ) {
+				switch ( getInterpreter().adaptivePredict(_input,41,_ctx) ) {
 				case 1:
 					{
-					setState(442);
+					setState(448);
 					if (!(noGapBefore())) throw new FailedPredicateException(this, "noGapBefore()");
-					setState(443);
+					setState(449);
 					envValueEquals();
 					}
 					break;
@@ -3736,9 +3732,9 @@ public class DockerParser extends Parser {
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(446);
+				setState(452);
 				envKey();
-				setState(447);
+				setState(453);
 				envValueSpace();
 				}
 				break;
@@ -3783,7 +3779,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(451);
+			setState(457);
 			match(UNQUOTED_TEXT);
 			}
 		}
@@ -3828,7 +3824,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(453);
+			setState(459);
 			envTextEquals();
 			}
 		}
@@ -3873,7 +3869,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(455);
+			setState(461);
 			text();
 			}
 		}
@@ -3922,7 +3918,7 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(458); 
+			setState(464); 
 			_errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -3930,7 +3926,7 @@ public class DockerParser extends Parser {
 				case 1:
 					{
 					{
-					setState(457);
+					setState(463);
 					envTextElementEquals();
 					}
 					}
@@ -3938,9 +3934,9 @@ public class DockerParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				setState(460); 
+				setState(466); 
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,42,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,43,_ctx);
 			} while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER );
 			}
 		}
@@ -3991,7 +3987,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(462);
+			setState(468);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 547608330240L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -4048,7 +4044,7 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(465); 
+			setState(471); 
 			_errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -4056,7 +4052,7 @@ public class DockerParser extends Parser {
 				case 1:
 					{
 					{
-					setState(464);
+					setState(470);
 					sourcePath();
 					}
 					}
@@ -4064,9 +4060,9 @@ public class DockerParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				setState(467); 
+				setState(473); 
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,43,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,44,_ctx);
 			} while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER );
 			}
 		}
@@ -4116,7 +4112,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(469);
+			setState(475);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 410169376768L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -4169,7 +4165,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(471);
+			setState(477);
 			destinationPath();
 			}
 		}
@@ -4219,7 +4215,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(473);
+			setState(479);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 410169376768L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -4272,7 +4268,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(475);
+			setState(481);
 			text();
 			}
 		}
@@ -4321,17 +4317,17 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(478); 
+			setState(484); 
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			do {
 				{
 				{
-				setState(477);
+				setState(483);
 				volumePath();
 				}
 				}
-				setState(480); 
+				setState(486); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 410169376768L) != 0) );
@@ -4383,7 +4379,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(482);
+			setState(488);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 410169376768L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -4436,7 +4432,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(484);
+			setState(490);
 			text();
 			}
 		}
@@ -4479,7 +4475,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(486);
+			setState(492);
 			match(UNQUOTED_TEXT);
 			}
 		}
@@ -4528,25 +4524,25 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(488);
+			setState(494);
 			textElement();
-			setState(493);
+			setState(499);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,45,_ctx);
+			_alt = getInterpreter().adaptivePredict(_input,46,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
-					setState(489);
+					setState(495);
 					if (!(noGapBefore())) throw new FailedPredicateException(this, "noGapBefore()");
-					setState(490);
+					setState(496);
 					textElement();
 					}
 					} 
 				}
-				setState(495);
+				setState(501);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,45,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,46,_ctx);
 			}
 			}
 		}
@@ -4589,7 +4585,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(496);
+			setState(502);
 			match(UNQUOTED_TEXT);
 			}
 		}
@@ -4638,7 +4634,7 @@ public class DockerParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(499); 
+			setState(505); 
 			_errHandler.sync(this);
 			_alt = 1;
 			do {
@@ -4646,7 +4642,7 @@ public class DockerParser extends Parser {
 				case 1:
 					{
 					{
-					setState(498);
+					setState(504);
 					textElement();
 					}
 					}
@@ -4654,9 +4650,9 @@ public class DockerParser extends Parser {
 				default:
 					throw new NoViableAltException(this);
 				}
-				setState(501); 
+				setState(507); 
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,46,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,47,_ctx);
 			} while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER );
 			}
 		}
@@ -4713,7 +4709,7 @@ public class DockerParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(503);
+			setState(509);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 549722259456L) != 0)) ) {
 			_errHandler.recoverInline(this);
@@ -4792,7 +4788,7 @@ public class DockerParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001.\u01fa\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001.\u0200\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0002"+
 		"\u0005\u0007\u0005\u0002\u0006\u0007\u0006\u0002\u0007\u0007\u0007\u0002"+
 		"\b\u0007\b\u0002\t\u0007\t\u0002\n\u0007\n\u0002\u000b\u0007\u000b\u0002"+
@@ -4841,28 +4837,29 @@ public class DockerParser extends Parser {
 		"\u0001\u001c\u0001\u001c\u0001\u001d\u0001\u001d\u0001\u001e\u0001\u001e"+
 		"\u0001\u001f\u0004\u001f\u0147\b\u001f\u000b\u001f\f\u001f\u0148\u0001"+
 		" \u0001 \u0001!\u0001!\u0001!\u0004!\u0150\b!\u000b!\f!\u0151\u0001\""+
-		"\u0001\"\u0005\"\u0156\b\"\n\"\f\"\u0159\t\"\u0001\"\u0001\"\u0005\"\u015d"+
-		"\b\"\n\"\f\"\u0160\t\"\u0005\"\u0162\b\"\n\"\f\"\u0165\t\"\u0001#\u0001"+
-		"#\u0001$\u0001$\u0001$\u0001%\u0005%\u016d\b%\n%\f%\u0170\t%\u0001&\u0001"+
-		"&\u0001\'\u0001\'\u0003\'\u0176\b\'\u0001\'\u0001\'\u0001(\u0001(\u0001"+
-		"(\u0005(\u017d\b(\n(\f(\u0180\t(\u0001)\u0001)\u0001*\u0001*\u0001+\u0001"+
-		"+\u0001,\u0004,\u0189\b,\u000b,\f,\u018a\u0001-\u0001-\u0001-\u0001-\u0001"+
-		"-\u0003-\u0192\b-\u0001-\u0001-\u0001-\u0003-\u0197\b-\u0001.\u0001.\u0001"+
-		"/\u0001/\u0001/\u0005/\u019e\b/\n/\f/\u01a1\t/\u00010\u00010\u00011\u0004"+
-		"1\u01a6\b1\u000b1\f1\u01a7\u00012\u00012\u00013\u00043\u01ad\b3\u000b"+
-		"3\f3\u01ae\u00014\u00014\u00015\u00045\u01b4\b5\u000b5\f5\u01b5\u0001"+
-		"6\u00016\u00016\u00016\u00016\u00036\u01bd\b6\u00016\u00016\u00016\u0003"+
-		"6\u01c2\b6\u00017\u00017\u00018\u00018\u00019\u00019\u0001:\u0004:\u01cb"+
-		"\b:\u000b:\f:\u01cc\u0001;\u0001;\u0001<\u0004<\u01d2\b<\u000b<\f<\u01d3"+
-		"\u0001=\u0001=\u0001>\u0001>\u0001?\u0001?\u0001@\u0001@\u0001A\u0004"+
-		"A\u01df\bA\u000bA\fA\u01e0\u0001B\u0001B\u0001C\u0001C\u0001D\u0001D\u0001"+
-		"E\u0001E\u0001E\u0005E\u01ec\bE\nE\fE\u01ef\tE\u0001F\u0001F\u0001G\u0004"+
-		"G\u01f4\bG\u000bG\fG\u01f5\u0001H\u0001H\u0001H\u0000\u0000I\u0000\u0002"+
-		"\u0004\u0006\b\n\f\u000e\u0010\u0012\u0014\u0016\u0018\u001a\u001c\u001e"+
-		" \"$&(*,.02468:<>@BDFHJLNPRTVXZ\\^`bdfhjlnprtvxz|~\u0080\u0082\u0084\u0086"+
-		"\u0088\u008a\u008c\u008e\u0090\u0000\u0007\u0001\u0000\u0019&\u0002\u0000"+
-		"((--\u0002\u0000\u001f &&\u0002\u0000\u001c\u001c\u001f&\u0002\u0000!"+
-		"$&&\u0001\u0000\u001f&\u0002\u0000\u001f$&&\u01f1\u0000\u0095\u0001\u0000"+
+		"\u0005\"\u0155\b\"\n\"\f\"\u0158\t\"\u0001\"\u0001\"\u0005\"\u015c\b\""+
+		"\n\"\f\"\u015f\t\"\u0001\"\u0001\"\u0005\"\u0163\b\"\n\"\f\"\u0166\t\""+
+		"\u0005\"\u0168\b\"\n\"\f\"\u016b\t\"\u0001#\u0001#\u0001$\u0001$\u0001"+
+		"$\u0001%\u0005%\u0173\b%\n%\f%\u0176\t%\u0001&\u0001&\u0001\'\u0001\'"+
+		"\u0003\'\u017c\b\'\u0001\'\u0001\'\u0001(\u0001(\u0001(\u0005(\u0183\b"+
+		"(\n(\f(\u0186\t(\u0001)\u0001)\u0001*\u0001*\u0001+\u0001+\u0001,\u0004"+
+		",\u018f\b,\u000b,\f,\u0190\u0001-\u0001-\u0001-\u0001-\u0001-\u0003-\u0198"+
+		"\b-\u0001-\u0001-\u0001-\u0003-\u019d\b-\u0001.\u0001.\u0001/\u0001/\u0001"+
+		"/\u0005/\u01a4\b/\n/\f/\u01a7\t/\u00010\u00010\u00011\u00041\u01ac\b1"+
+		"\u000b1\f1\u01ad\u00012\u00012\u00013\u00043\u01b3\b3\u000b3\f3\u01b4"+
+		"\u00014\u00014\u00015\u00045\u01ba\b5\u000b5\f5\u01bb\u00016\u00016\u0001"+
+		"6\u00016\u00016\u00036\u01c3\b6\u00016\u00016\u00016\u00036\u01c8\b6\u0001"+
+		"7\u00017\u00018\u00018\u00019\u00019\u0001:\u0004:\u01d1\b:\u000b:\f:"+
+		"\u01d2\u0001;\u0001;\u0001<\u0004<\u01d8\b<\u000b<\f<\u01d9\u0001=\u0001"+
+		"=\u0001>\u0001>\u0001?\u0001?\u0001@\u0001@\u0001A\u0004A\u01e5\bA\u000b"+
+		"A\fA\u01e6\u0001B\u0001B\u0001C\u0001C\u0001D\u0001D\u0001E\u0001E\u0001"+
+		"E\u0005E\u01f2\bE\nE\fE\u01f5\tE\u0001F\u0001F\u0001G\u0004G\u01fa\bG"+
+		"\u000bG\fG\u01fb\u0001H\u0001H\u0001H\u0000\u0000I\u0000\u0002\u0004\u0006"+
+		"\b\n\f\u000e\u0010\u0012\u0014\u0016\u0018\u001a\u001c\u001e \"$&(*,."+
+		"02468:<>@BDFHJLNPRTVXZ\\^`bdfhjlnprtvxz|~\u0080\u0082\u0084\u0086\u0088"+
+		"\u008a\u008c\u008e\u0090\u0000\u0007\u0001\u0000\u0019&\u0002\u0000(("+
+		"--\u0002\u0000\u001f &&\u0002\u0000\u001c\u001c\u001f&\u0002\u0000!$&"+
+		"&\u0001\u0000\u001f&\u0002\u0000\u001f$&&\u01f8\u0000\u0095\u0001\u0000"+
 		"\u0000\u0000\u0002\u00a0\u0001\u0000\u0000\u0000\u0004\u00a5\u0001\u0000"+
 		"\u0000\u0000\u0006\u00a8\u0001\u0000\u0000\u0000\b\u00c0\u0001\u0000\u0000"+
 		"\u0000\n\u00c4\u0001\u0000\u0000\u0000\f\u00c6\u0001\u0000\u0000\u0000"+
@@ -4878,24 +4875,24 @@ public class DockerParser extends Parser {
 		"\u0000\u0000\u00006\u013b\u0001\u0000\u0000\u00008\u013f\u0001\u0000\u0000"+
 		"\u0000:\u0141\u0001\u0000\u0000\u0000<\u0143\u0001\u0000\u0000\u0000>"+
 		"\u0146\u0001\u0000\u0000\u0000@\u014a\u0001\u0000\u0000\u0000B\u014c\u0001"+
-		"\u0000\u0000\u0000D\u0153\u0001\u0000\u0000\u0000F\u0166\u0001\u0000\u0000"+
-		"\u0000H\u0168\u0001\u0000\u0000\u0000J\u016e\u0001\u0000\u0000\u0000L"+
-		"\u0171\u0001\u0000\u0000\u0000N\u0173\u0001\u0000\u0000\u0000P\u0179\u0001"+
-		"\u0000\u0000\u0000R\u0181\u0001\u0000\u0000\u0000T\u0183\u0001\u0000\u0000"+
-		"\u0000V\u0185\u0001\u0000\u0000\u0000X\u0188\u0001\u0000\u0000\u0000Z"+
-		"\u0196\u0001\u0000\u0000\u0000\\\u0198\u0001\u0000\u0000\u0000^\u019a"+
-		"\u0001\u0000\u0000\u0000`\u01a2\u0001\u0000\u0000\u0000b\u01a5\u0001\u0000"+
-		"\u0000\u0000d\u01a9\u0001\u0000\u0000\u0000f\u01ac\u0001\u0000\u0000\u0000"+
-		"h\u01b0\u0001\u0000\u0000\u0000j\u01b3\u0001\u0000\u0000\u0000l\u01c1"+
-		"\u0001\u0000\u0000\u0000n\u01c3\u0001\u0000\u0000\u0000p\u01c5\u0001\u0000"+
-		"\u0000\u0000r\u01c7\u0001\u0000\u0000\u0000t\u01ca\u0001\u0000\u0000\u0000"+
-		"v\u01ce\u0001\u0000\u0000\u0000x\u01d1\u0001\u0000\u0000\u0000z\u01d5"+
-		"\u0001\u0000\u0000\u0000|\u01d7\u0001\u0000\u0000\u0000~\u01d9\u0001\u0000"+
-		"\u0000\u0000\u0080\u01db\u0001\u0000\u0000\u0000\u0082\u01de\u0001\u0000"+
-		"\u0000\u0000\u0084\u01e2\u0001\u0000\u0000\u0000\u0086\u01e4\u0001\u0000"+
-		"\u0000\u0000\u0088\u01e6\u0001\u0000\u0000\u0000\u008a\u01e8\u0001\u0000"+
-		"\u0000\u0000\u008c\u01f0\u0001\u0000\u0000\u0000\u008e\u01f3\u0001\u0000"+
-		"\u0000\u0000\u0090\u01f7\u0001\u0000\u0000\u0000\u0092\u0094\u0003\u0002"+
+		"\u0000\u0000\u0000D\u0156\u0001\u0000\u0000\u0000F\u016c\u0001\u0000\u0000"+
+		"\u0000H\u016e\u0001\u0000\u0000\u0000J\u0174\u0001\u0000\u0000\u0000L"+
+		"\u0177\u0001\u0000\u0000\u0000N\u0179\u0001\u0000\u0000\u0000P\u017f\u0001"+
+		"\u0000\u0000\u0000R\u0187\u0001\u0000\u0000\u0000T\u0189\u0001\u0000\u0000"+
+		"\u0000V\u018b\u0001\u0000\u0000\u0000X\u018e\u0001\u0000\u0000\u0000Z"+
+		"\u019c\u0001\u0000\u0000\u0000\\\u019e\u0001\u0000\u0000\u0000^\u01a0"+
+		"\u0001\u0000\u0000\u0000`\u01a8\u0001\u0000\u0000\u0000b\u01ab\u0001\u0000"+
+		"\u0000\u0000d\u01af\u0001\u0000\u0000\u0000f\u01b2\u0001\u0000\u0000\u0000"+
+		"h\u01b6\u0001\u0000\u0000\u0000j\u01b9\u0001\u0000\u0000\u0000l\u01c7"+
+		"\u0001\u0000\u0000\u0000n\u01c9\u0001\u0000\u0000\u0000p\u01cb\u0001\u0000"+
+		"\u0000\u0000r\u01cd\u0001\u0000\u0000\u0000t\u01d0\u0001\u0000\u0000\u0000"+
+		"v\u01d4\u0001\u0000\u0000\u0000x\u01d7\u0001\u0000\u0000\u0000z\u01db"+
+		"\u0001\u0000\u0000\u0000|\u01dd\u0001\u0000\u0000\u0000~\u01df\u0001\u0000"+
+		"\u0000\u0000\u0080\u01e1\u0001\u0000\u0000\u0000\u0082\u01e4\u0001\u0000"+
+		"\u0000\u0000\u0084\u01e8\u0001\u0000\u0000\u0000\u0086\u01ea\u0001\u0000"+
+		"\u0000\u0000\u0088\u01ec\u0001\u0000\u0000\u0000\u008a\u01ee\u0001\u0000"+
+		"\u0000\u0000\u008c\u01f6\u0001\u0000\u0000\u0000\u008e\u01f9\u0001\u0000"+
+		"\u0000\u0000\u0090\u01fd\u0001\u0000\u0000\u0000\u0092\u0094\u0003\u0002"+
 		"\u0001\u0000\u0093\u0092\u0001\u0000\u0000\u0000\u0094\u0097\u0001\u0000"+
 		"\u0000\u0000\u0095\u0093\u0001\u0000\u0000\u0000\u0095\u0096\u0001\u0000"+
 		"\u0000\u0000\u0096\u0098\u0001\u0000\u0000\u0000\u0097\u0095\u0001\u0000"+
@@ -5007,96 +5004,100 @@ public class DockerParser extends Parser {
 		"\u0005(\u0000\u0000\u014e\u0150\u0003H$\u0000\u014f\u014e\u0001\u0000"+
 		"\u0000\u0000\u0150\u0151\u0001\u0000\u0000\u0000\u0151\u014f\u0001\u0000"+
 		"\u0000\u0000\u0151\u0152\u0001\u0000\u0000\u0000\u0152C\u0001\u0000\u0000"+
-		"\u0000\u0153\u0157\u0005\u0017\u0000\u0000\u0154\u0156\u0003F#\u0000\u0155"+
-		"\u0154\u0001\u0000\u0000\u0000\u0156\u0159\u0001\u0000\u0000\u0000\u0157"+
-		"\u0155\u0001\u0000\u0000\u0000\u0157\u0158\u0001\u0000\u0000\u0000\u0158"+
-		"\u0163\u0001\u0000\u0000\u0000\u0159\u0157\u0001\u0000\u0000\u0000\u015a"+
-		"\u015e\u0005\u0017\u0000\u0000\u015b\u015d\u0003F#\u0000\u015c\u015b\u0001"+
-		"\u0000\u0000\u0000\u015d\u0160\u0001\u0000\u0000\u0000\u015e\u015c\u0001"+
-		"\u0000\u0000\u0000\u015e\u015f\u0001\u0000\u0000\u0000\u015f\u0162\u0001"+
-		"\u0000\u0000\u0000\u0160\u015e\u0001\u0000\u0000\u0000\u0161\u015a\u0001"+
-		"\u0000\u0000\u0000\u0162\u0165\u0001\u0000\u0000\u0000\u0163\u0161\u0001"+
-		"\u0000\u0000\u0000\u0163\u0164\u0001\u0000\u0000\u0000\u0164E\u0001\u0000"+
-		"\u0000\u0000\u0165\u0163\u0001\u0000\u0000\u0000\u0166\u0167\u0007\u0000"+
-		"\u0000\u0000\u0167G\u0001\u0000\u0000\u0000\u0168\u0169\u0003J%\u0000"+
-		"\u0169\u016a\u0003L&\u0000\u016aI\u0001\u0000\u0000\u0000\u016b\u016d"+
-		"\u0007\u0001\u0000\u0000\u016c\u016b\u0001\u0000\u0000\u0000\u016d\u0170"+
-		"\u0001\u0000\u0000\u0000\u016e\u016c\u0001\u0000\u0000\u0000\u016e\u016f"+
-		"\u0001\u0000\u0000\u0000\u016fK\u0001\u0000\u0000\u0000\u0170\u016e\u0001"+
-		"\u0000\u0000\u0000\u0171\u0172\u0005&\u0000\u0000\u0172M\u0001\u0000\u0000"+
-		"\u0000\u0173\u0175\u0005\u0019\u0000\u0000\u0174\u0176\u0003P(\u0000\u0175"+
-		"\u0174\u0001\u0000\u0000\u0000\u0175\u0176\u0001\u0000\u0000\u0000\u0176"+
-		"\u0177\u0001\u0000\u0000\u0000\u0177\u0178\u0005\u001a\u0000\u0000\u0178"+
-		"O\u0001\u0000\u0000\u0000\u0179\u017e\u0003R)\u0000\u017a\u017b\u0005"+
-		"\u001b\u0000\u0000\u017b\u017d\u0003R)\u0000\u017c\u017a\u0001\u0000\u0000"+
-		"\u0000\u017d\u0180\u0001\u0000\u0000\u0000\u017e\u017c\u0001\u0000\u0000"+
-		"\u0000\u017e\u017f\u0001\u0000\u0000\u0000\u017fQ\u0001\u0000\u0000\u0000"+
-		"\u0180\u017e\u0001\u0000\u0000\u0000\u0181\u0182\u0005\u001f\u0000\u0000"+
-		"\u0182S\u0001\u0000\u0000\u0000\u0183\u0184\u0003\u008eG\u0000\u0184U"+
-		"\u0001\u0000\u0000\u0000\u0185\u0186\u0005&\u0000\u0000\u0186W\u0001\u0000"+
-		"\u0000\u0000\u0187\u0189\u0003Z-\u0000\u0188\u0187\u0001\u0000\u0000\u0000"+
-		"\u0189\u018a\u0001\u0000\u0000\u0000\u018a\u0188\u0001\u0000\u0000\u0000"+
-		"\u018a\u018b\u0001\u0000\u0000\u0000\u018bY\u0001\u0000\u0000\u0000\u018c"+
-		"\u018d\u0004-\u0001\u0000\u018d\u018e\u0003\\.\u0000\u018e\u0191\u0005"+
-		"\u001c\u0000\u0000\u018f\u0190\u0004-\u0002\u0000\u0190\u0192\u0003^/"+
-		"\u0000\u0191\u018f\u0001\u0000\u0000\u0000\u0191\u0192\u0001\u0000\u0000"+
-		"\u0000\u0192\u0197\u0001\u0000\u0000\u0000\u0193\u0194\u0003\\.\u0000"+
-		"\u0194\u0195\u0003b1\u0000\u0195\u0197\u0001\u0000\u0000\u0000\u0196\u018c"+
-		"\u0001\u0000\u0000\u0000\u0196\u0193\u0001\u0000\u0000\u0000\u0197[\u0001"+
-		"\u0000\u0000\u0000\u0198\u0199\u0007\u0002\u0000\u0000\u0199]\u0001\u0000"+
-		"\u0000\u0000\u019a\u019f\u0003`0\u0000\u019b\u019c\u0004/\u0003\u0000"+
-		"\u019c\u019e\u0003`0\u0000\u019d\u019b\u0001\u0000\u0000\u0000\u019e\u01a1"+
-		"\u0001\u0000\u0000\u0000\u019f\u019d\u0001\u0000\u0000\u0000\u019f\u01a0"+
-		"\u0001\u0000\u0000\u0000\u01a0_\u0001\u0000\u0000\u0000\u01a1\u019f\u0001"+
-		"\u0000\u0000\u0000\u01a2\u01a3\u0007\u0003\u0000\u0000\u01a3a\u0001\u0000"+
-		"\u0000\u0000\u01a4\u01a6\u0003d2\u0000\u01a5\u01a4\u0001\u0000\u0000\u0000"+
-		"\u01a6\u01a7\u0001\u0000\u0000\u0000\u01a7\u01a5\u0001\u0000\u0000\u0000"+
-		"\u01a7\u01a8\u0001\u0000\u0000\u0000\u01a8c\u0001\u0000\u0000\u0000\u01a9"+
-		"\u01aa\u0007\u0000\u0000\u0000\u01aae\u0001\u0000\u0000\u0000\u01ab\u01ad"+
-		"\u0003h4\u0000\u01ac\u01ab\u0001\u0000\u0000\u0000\u01ad\u01ae\u0001\u0000"+
-		"\u0000\u0000\u01ae\u01ac\u0001\u0000\u0000\u0000\u01ae\u01af\u0001\u0000"+
-		"\u0000\u0000\u01afg\u0001\u0000\u0000\u0000\u01b0\u01b1\u0007\u0004\u0000"+
-		"\u0000\u01b1i\u0001\u0000\u0000\u0000\u01b2\u01b4\u0003l6\u0000\u01b3"+
-		"\u01b2\u0001\u0000\u0000\u0000\u01b4\u01b5\u0001\u0000\u0000\u0000\u01b5"+
-		"\u01b3\u0001\u0000\u0000\u0000\u01b5\u01b6\u0001\u0000\u0000\u0000\u01b6"+
-		"k\u0001\u0000\u0000\u0000\u01b7\u01b8\u00046\u0004\u0000\u01b8\u01b9\u0003"+
-		"n7\u0000\u01b9\u01bc\u0005\u001c\u0000\u0000\u01ba\u01bb\u00046\u0005"+
-		"\u0000\u01bb\u01bd\u0003p8\u0000\u01bc\u01ba\u0001\u0000\u0000\u0000\u01bc"+
-		"\u01bd\u0001\u0000\u0000\u0000\u01bd\u01c2\u0001\u0000\u0000\u0000\u01be"+
-		"\u01bf\u0003n7\u0000\u01bf\u01c0\u0003r9\u0000\u01c0\u01c2\u0001\u0000"+
-		"\u0000\u0000\u01c1\u01b7\u0001\u0000\u0000\u0000\u01c1\u01be\u0001\u0000"+
-		"\u0000\u0000\u01c2m\u0001\u0000\u0000\u0000\u01c3\u01c4\u0005&\u0000\u0000"+
-		"\u01c4o\u0001\u0000\u0000\u0000\u01c5\u01c6\u0003t:\u0000\u01c6q\u0001"+
-		"\u0000\u0000\u0000\u01c7\u01c8\u0003\u008eG\u0000\u01c8s\u0001\u0000\u0000"+
-		"\u0000\u01c9\u01cb\u0003v;\u0000\u01ca\u01c9\u0001\u0000\u0000\u0000\u01cb"+
-		"\u01cc\u0001\u0000\u0000\u0000\u01cc\u01ca\u0001\u0000\u0000\u0000\u01cc"+
-		"\u01cd\u0001\u0000\u0000\u0000\u01cdu\u0001\u0000\u0000\u0000\u01ce\u01cf"+
-		"\u0007\u0005\u0000\u0000\u01cfw\u0001\u0000\u0000\u0000\u01d0\u01d2\u0003"+
-		"z=\u0000\u01d1\u01d0\u0001\u0000\u0000\u0000\u01d2\u01d3\u0001\u0000\u0000"+
-		"\u0000\u01d3\u01d1\u0001\u0000\u0000\u0000\u01d3\u01d4\u0001\u0000\u0000"+
-		"\u0000\u01d4y\u0001\u0000\u0000\u0000\u01d5\u01d6\u0007\u0006\u0000\u0000"+
-		"\u01d6{\u0001\u0000\u0000\u0000\u01d7\u01d8\u0003~?\u0000\u01d8}\u0001"+
-		"\u0000\u0000\u0000\u01d9\u01da\u0007\u0006\u0000\u0000\u01da\u007f\u0001"+
-		"\u0000\u0000\u0000\u01db\u01dc\u0003\u008eG\u0000\u01dc\u0081\u0001\u0000"+
-		"\u0000\u0000\u01dd\u01df\u0003\u0084B\u0000\u01de\u01dd\u0001\u0000\u0000"+
-		"\u0000\u01df\u01e0\u0001\u0000\u0000\u0000\u01e0\u01de\u0001\u0000\u0000"+
-		"\u0000\u01e0\u01e1\u0001\u0000\u0000\u0000\u01e1\u0083\u0001\u0000\u0000"+
-		"\u0000\u01e2\u01e3\u0007\u0006\u0000\u0000\u01e3\u0085\u0001\u0000\u0000"+
-		"\u0000\u01e4\u01e5\u0003\u008eG\u0000\u01e5\u0087\u0001\u0000\u0000\u0000"+
-		"\u01e6\u01e7\u0005&\u0000\u0000\u01e7\u0089\u0001\u0000\u0000\u0000\u01e8"+
-		"\u01ed\u0003\u0090H\u0000\u01e9\u01ea\u0004E\u0006\u0000\u01ea\u01ec\u0003"+
-		"\u0090H\u0000\u01eb\u01e9\u0001\u0000\u0000\u0000\u01ec\u01ef\u0001\u0000"+
-		"\u0000\u0000\u01ed\u01eb\u0001\u0000\u0000\u0000\u01ed\u01ee\u0001\u0000"+
-		"\u0000\u0000\u01ee\u008b\u0001\u0000\u0000\u0000\u01ef\u01ed\u0001\u0000"+
-		"\u0000\u0000\u01f0\u01f1\u0005&\u0000\u0000\u01f1\u008d\u0001\u0000\u0000"+
-		"\u0000\u01f2\u01f4\u0003\u0090H\u0000\u01f3\u01f2\u0001\u0000\u0000\u0000"+
-		"\u01f4\u01f5\u0001\u0000\u0000\u0000\u01f5\u01f3\u0001\u0000\u0000\u0000"+
-		"\u01f5\u01f6\u0001\u0000\u0000\u0000\u01f6\u008f\u0001\u0000\u0000\u0000"+
-		"\u01f7\u01f8\u0007\u0000\u0000\u0000\u01f8\u0091\u0001\u0000\u0000\u0000"+
-		"/\u0095\u009c\u00a5\u00ac\u00c0\u00c4\u00c8\u00cd\u00d1\u00d6\u00db\u00e8"+
-		"\u00ef\u00f3\u00fa\u00ff\u0104\u0110\u0116\u0118\u0124\u0129\u012b\u0130"+
-		"\u013d\u0148\u0151\u0157\u015e\u0163\u016e\u0175\u017e\u018a\u0191\u0196"+
-		"\u019f\u01a7\u01ae\u01b5\u01bc\u01c1\u01cc\u01d3\u01e0\u01ed\u01f5";
+		"\u0000\u0153\u0155\u0003F#\u0000\u0154\u0153\u0001\u0000\u0000\u0000\u0155"+
+		"\u0158\u0001\u0000\u0000\u0000\u0156\u0154\u0001\u0000\u0000\u0000\u0156"+
+		"\u0157\u0001\u0000\u0000\u0000\u0157\u0159\u0001\u0000\u0000\u0000\u0158"+
+		"\u0156\u0001\u0000\u0000\u0000\u0159\u015d\u0005\u0017\u0000\u0000\u015a"+
+		"\u015c\u0003F#\u0000\u015b\u015a\u0001\u0000\u0000\u0000\u015c\u015f\u0001"+
+		"\u0000\u0000\u0000\u015d\u015b\u0001\u0000\u0000\u0000\u015d\u015e\u0001"+
+		"\u0000\u0000\u0000\u015e\u0169\u0001\u0000\u0000\u0000\u015f\u015d\u0001"+
+		"\u0000\u0000\u0000\u0160\u0164\u0005\u0017\u0000\u0000\u0161\u0163\u0003"+
+		"F#\u0000\u0162\u0161\u0001\u0000\u0000\u0000\u0163\u0166\u0001\u0000\u0000"+
+		"\u0000\u0164\u0162\u0001\u0000\u0000\u0000\u0164\u0165\u0001\u0000\u0000"+
+		"\u0000\u0165\u0168\u0001\u0000\u0000\u0000\u0166\u0164\u0001\u0000\u0000"+
+		"\u0000\u0167\u0160\u0001\u0000\u0000\u0000\u0168\u016b\u0001\u0000\u0000"+
+		"\u0000\u0169\u0167\u0001\u0000\u0000\u0000\u0169\u016a\u0001\u0000\u0000"+
+		"\u0000\u016aE\u0001\u0000\u0000\u0000\u016b\u0169\u0001\u0000\u0000\u0000"+
+		"\u016c\u016d\u0007\u0000\u0000\u0000\u016dG\u0001\u0000\u0000\u0000\u016e"+
+		"\u016f\u0003J%\u0000\u016f\u0170\u0003L&\u0000\u0170I\u0001\u0000\u0000"+
+		"\u0000\u0171\u0173\u0007\u0001\u0000\u0000\u0172\u0171\u0001\u0000\u0000"+
+		"\u0000\u0173\u0176\u0001\u0000\u0000\u0000\u0174\u0172\u0001\u0000\u0000"+
+		"\u0000\u0174\u0175\u0001\u0000\u0000\u0000\u0175K\u0001\u0000\u0000\u0000"+
+		"\u0176\u0174\u0001\u0000\u0000\u0000\u0177\u0178\u0005&\u0000\u0000\u0178"+
+		"M\u0001\u0000\u0000\u0000\u0179\u017b\u0005\u0019\u0000\u0000\u017a\u017c"+
+		"\u0003P(\u0000\u017b\u017a\u0001\u0000\u0000\u0000\u017b\u017c\u0001\u0000"+
+		"\u0000\u0000\u017c\u017d\u0001\u0000\u0000\u0000\u017d\u017e\u0005\u001a"+
+		"\u0000\u0000\u017eO\u0001\u0000\u0000\u0000\u017f\u0184\u0003R)\u0000"+
+		"\u0180\u0181\u0005\u001b\u0000\u0000\u0181\u0183\u0003R)\u0000\u0182\u0180"+
+		"\u0001\u0000\u0000\u0000\u0183\u0186\u0001\u0000\u0000\u0000\u0184\u0182"+
+		"\u0001\u0000\u0000\u0000\u0184\u0185\u0001\u0000\u0000\u0000\u0185Q\u0001"+
+		"\u0000\u0000\u0000\u0186\u0184\u0001\u0000\u0000\u0000\u0187\u0188\u0005"+
+		"\u001f\u0000\u0000\u0188S\u0001\u0000\u0000\u0000\u0189\u018a\u0003\u008e"+
+		"G\u0000\u018aU\u0001\u0000\u0000\u0000\u018b\u018c\u0005&\u0000\u0000"+
+		"\u018cW\u0001\u0000\u0000\u0000\u018d\u018f\u0003Z-\u0000\u018e\u018d"+
+		"\u0001\u0000\u0000\u0000\u018f\u0190\u0001\u0000\u0000\u0000\u0190\u018e"+
+		"\u0001\u0000\u0000\u0000\u0190\u0191\u0001\u0000\u0000\u0000\u0191Y\u0001"+
+		"\u0000\u0000\u0000\u0192\u0193\u0004-\u0001\u0000\u0193\u0194\u0003\\"+
+		".\u0000\u0194\u0197\u0005\u001c\u0000\u0000\u0195\u0196\u0004-\u0002\u0000"+
+		"\u0196\u0198\u0003^/\u0000\u0197\u0195\u0001\u0000\u0000\u0000\u0197\u0198"+
+		"\u0001\u0000\u0000\u0000\u0198\u019d\u0001\u0000\u0000\u0000\u0199\u019a"+
+		"\u0003\\.\u0000\u019a\u019b\u0003b1\u0000\u019b\u019d\u0001\u0000\u0000"+
+		"\u0000\u019c\u0192\u0001\u0000\u0000\u0000\u019c\u0199\u0001\u0000\u0000"+
+		"\u0000\u019d[\u0001\u0000\u0000\u0000\u019e\u019f\u0007\u0002\u0000\u0000"+
+		"\u019f]\u0001\u0000\u0000\u0000\u01a0\u01a5\u0003`0\u0000\u01a1\u01a2"+
+		"\u0004/\u0003\u0000\u01a2\u01a4\u0003`0\u0000\u01a3\u01a1\u0001\u0000"+
+		"\u0000\u0000\u01a4\u01a7\u0001\u0000\u0000\u0000\u01a5\u01a3\u0001\u0000"+
+		"\u0000\u0000\u01a5\u01a6\u0001\u0000\u0000\u0000\u01a6_\u0001\u0000\u0000"+
+		"\u0000\u01a7\u01a5\u0001\u0000\u0000\u0000\u01a8\u01a9\u0007\u0003\u0000"+
+		"\u0000\u01a9a\u0001\u0000\u0000\u0000\u01aa\u01ac\u0003d2\u0000\u01ab"+
+		"\u01aa\u0001\u0000\u0000\u0000\u01ac\u01ad\u0001\u0000\u0000\u0000\u01ad"+
+		"\u01ab\u0001\u0000\u0000\u0000\u01ad\u01ae\u0001\u0000\u0000\u0000\u01ae"+
+		"c\u0001\u0000\u0000\u0000\u01af\u01b0\u0007\u0000\u0000\u0000\u01b0e\u0001"+
+		"\u0000\u0000\u0000\u01b1\u01b3\u0003h4\u0000\u01b2\u01b1\u0001\u0000\u0000"+
+		"\u0000\u01b3\u01b4\u0001\u0000\u0000\u0000\u01b4\u01b2\u0001\u0000\u0000"+
+		"\u0000\u01b4\u01b5\u0001\u0000\u0000\u0000\u01b5g\u0001\u0000\u0000\u0000"+
+		"\u01b6\u01b7\u0007\u0004\u0000\u0000\u01b7i\u0001\u0000\u0000\u0000\u01b8"+
+		"\u01ba\u0003l6\u0000\u01b9\u01b8\u0001\u0000\u0000\u0000\u01ba\u01bb\u0001"+
+		"\u0000\u0000\u0000\u01bb\u01b9\u0001\u0000\u0000\u0000\u01bb\u01bc\u0001"+
+		"\u0000\u0000\u0000\u01bck\u0001\u0000\u0000\u0000\u01bd\u01be\u00046\u0004"+
+		"\u0000\u01be\u01bf\u0003n7\u0000\u01bf\u01c2\u0005\u001c\u0000\u0000\u01c0"+
+		"\u01c1\u00046\u0005\u0000\u01c1\u01c3\u0003p8\u0000\u01c2\u01c0\u0001"+
+		"\u0000\u0000\u0000\u01c2\u01c3\u0001\u0000\u0000\u0000\u01c3\u01c8\u0001"+
+		"\u0000\u0000\u0000\u01c4\u01c5\u0003n7\u0000\u01c5\u01c6\u0003r9\u0000"+
+		"\u01c6\u01c8\u0001\u0000\u0000\u0000\u01c7\u01bd\u0001\u0000\u0000\u0000"+
+		"\u01c7\u01c4\u0001\u0000\u0000\u0000\u01c8m\u0001\u0000\u0000\u0000\u01c9"+
+		"\u01ca\u0005&\u0000\u0000\u01cao\u0001\u0000\u0000\u0000\u01cb\u01cc\u0003"+
+		"t:\u0000\u01ccq\u0001\u0000\u0000\u0000\u01cd\u01ce\u0003\u008eG\u0000"+
+		"\u01ces\u0001\u0000\u0000\u0000\u01cf\u01d1\u0003v;\u0000\u01d0\u01cf"+
+		"\u0001\u0000\u0000\u0000\u01d1\u01d2\u0001\u0000\u0000\u0000\u01d2\u01d0"+
+		"\u0001\u0000\u0000\u0000\u01d2\u01d3\u0001\u0000\u0000\u0000\u01d3u\u0001"+
+		"\u0000\u0000\u0000\u01d4\u01d5\u0007\u0005\u0000\u0000\u01d5w\u0001\u0000"+
+		"\u0000\u0000\u01d6\u01d8\u0003z=\u0000\u01d7\u01d6\u0001\u0000\u0000\u0000"+
+		"\u01d8\u01d9\u0001\u0000\u0000\u0000\u01d9\u01d7\u0001\u0000\u0000\u0000"+
+		"\u01d9\u01da\u0001\u0000\u0000\u0000\u01day\u0001\u0000\u0000\u0000\u01db"+
+		"\u01dc\u0007\u0006\u0000\u0000\u01dc{\u0001\u0000\u0000\u0000\u01dd\u01de"+
+		"\u0003~?\u0000\u01de}\u0001\u0000\u0000\u0000\u01df\u01e0\u0007\u0006"+
+		"\u0000\u0000\u01e0\u007f\u0001\u0000\u0000\u0000\u01e1\u01e2\u0003\u008e"+
+		"G\u0000\u01e2\u0081\u0001\u0000\u0000\u0000\u01e3\u01e5\u0003\u0084B\u0000"+
+		"\u01e4\u01e3\u0001\u0000\u0000\u0000\u01e5\u01e6\u0001\u0000\u0000\u0000"+
+		"\u01e6\u01e4\u0001\u0000\u0000\u0000\u01e6\u01e7\u0001\u0000\u0000\u0000"+
+		"\u01e7\u0083\u0001\u0000\u0000\u0000\u01e8\u01e9\u0007\u0006\u0000\u0000"+
+		"\u01e9\u0085\u0001\u0000\u0000\u0000\u01ea\u01eb\u0003\u008eG\u0000\u01eb"+
+		"\u0087\u0001\u0000\u0000\u0000\u01ec\u01ed\u0005&\u0000\u0000\u01ed\u0089"+
+		"\u0001\u0000\u0000\u0000\u01ee\u01f3\u0003\u0090H\u0000\u01ef\u01f0\u0004"+
+		"E\u0006\u0000\u01f0\u01f2\u0003\u0090H\u0000\u01f1\u01ef\u0001\u0000\u0000"+
+		"\u0000\u01f2\u01f5\u0001\u0000\u0000\u0000\u01f3\u01f1\u0001\u0000\u0000"+
+		"\u0000\u01f3\u01f4\u0001\u0000\u0000\u0000\u01f4\u008b\u0001\u0000\u0000"+
+		"\u0000\u01f5\u01f3\u0001\u0000\u0000\u0000\u01f6\u01f7\u0005&\u0000\u0000"+
+		"\u01f7\u008d\u0001\u0000\u0000\u0000\u01f8\u01fa\u0003\u0090H\u0000\u01f9"+
+		"\u01f8\u0001\u0000\u0000\u0000\u01fa\u01fb\u0001\u0000\u0000\u0000\u01fb"+
+		"\u01f9\u0001\u0000\u0000\u0000\u01fb\u01fc\u0001\u0000\u0000\u0000\u01fc"+
+		"\u008f\u0001\u0000\u0000\u0000\u01fd\u01fe\u0007\u0000\u0000\u0000\u01fe"+
+		"\u0091\u0001\u0000\u0000\u00000\u0095\u009c\u00a5\u00ac\u00c0\u00c4\u00c8"+
+		"\u00cd\u00d1\u00d6\u00db\u00e8\u00ef\u00f3\u00fa\u00ff\u0104\u0110\u0116"+
+		"\u0118\u0124\u0129\u012b\u0130\u013d\u0148\u0151\u0156\u015d\u0164\u0169"+
+		"\u0174\u017b\u0184\u0190\u0197\u019c\u01a5\u01ad\u01b4\u01bb\u01c2\u01c7"+
+		"\u01d2\u01d9\u01e6\u01f3\u01fb";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
