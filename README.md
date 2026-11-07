@@ -12,13 +12,22 @@ The full plan, with each phase's gate, is the
 
 | Stage | Module | State |
 | --- | --- | --- |
-| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; run on public organisations (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`, `docker-library`); the enterprise pilot waits on a GHE token |
-| 1. Parse each Dockerfile into facts | `facts` | Built; on the public runs parse failures 0-2.3% and unreadable `RUN`s 0-1.2% |
-| 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; tried end to end against a local JFrog Container Registry; a real run waits on an Artifactory token |
+| 0. Discovery: find Dockerfiles, fetch each unique one once | `discovery` | Built; run on six public organisations (`sclorg`, `openshift`, `konflux-ci`, `redhat-developer`, `docker-library`, `bitnami`); the enterprise pilot waits on a GHE token |
+| 1. Parse each Dockerfile into facts | `facts` | Built; on the public runs parse failures 0-2.2% and unreadable `RUN`s 0-1.2% |
+| 1b. Link Artifactory images to their Dockerfiles; gap list | `lineage` | Built; tried end to end against a local JFrog Container Registry, on images built with Buildah and on 30 published OKD images (every parent right, all 26 components linked); a real run waits on an Artifactory token |
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need the enterprise discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
 | 5. Convert existing Dockerfiles to builders | `converter` | Built; building and comparing images (5b) needs Buildah |
+
+## Example reports
+
+Dashboards from runs on public GitHub organisations, as the report stage writes them (private links; ask the owner
+for access):
+
+- [openshift with lineage](https://claude.ai/artifact/6Uy3wKm1Wq9p2gwTdeGBPW): 2,919 Dockerfiles, with 30 of OKD's
+  published images linked to the Dockerfiles that built them
+- [bitnami](https://claude.ai/artifact/1wnH7fkxBzUTo2M1eA6SBH): 266 Dockerfiles on one pattern
 
 ## Requirements
 

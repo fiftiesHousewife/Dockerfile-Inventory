@@ -1,6 +1,7 @@
 # Phase 0 — Discovery: plan
 
-Status: slices 1 and 2 done. Slices 3 and 4 wait on the GHE token.
+Status: slices 1, 2 and 5 done (slice 5, github.com and named organisations, ran on six public organisations, 6-7
+Nov). Slices 3 and 4 (fixtures recorded from the enterprise GHE, the enterprise pilot) wait on the GHE token.
 
 ## Scope (settled 5 Nov)
 
