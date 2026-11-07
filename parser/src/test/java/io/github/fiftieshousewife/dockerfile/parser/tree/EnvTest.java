@@ -3,6 +3,7 @@
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: a test for an empty ENV value (issue 5).
  * Modified by Dockerfile Inventory, 2026: a test for the legacy ENV KEY = value (issue 15).
+ * Modified by Dockerfile Inventory, 2026: a test for variables in an ENV value (issue 6).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,6 +139,30 @@ class EnvTest implements RewriteTest {
                     assertThat(pair.isHasEquals()).isFalse();
                     assertThat(((Docker.Literal) pair.getValue().getContents().getFirst()).getText()).isEqualTo("= 0");
                 });
+            })
+          )
+        );
+    }
+
+    @Test
+    void variablesInAValueAreSplitOut() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              ENV PASSWORD_FILE=$SECRETS/db HOME="/home/$USER" PATH=${HOME}/bin:$PATH
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var env = (Docker.Env) doc.getStages().getFirst().getInstructions().getFirst();
+                var passwordFile = env.getPairs().getFirst().getValue().getContents();
+                assertThat(passwordFile).hasSize(2);
+                assertThat(passwordFile.getFirst()).isInstanceOfSatisfying(Docker.EnvironmentVariable.class,
+                  variable -> assertThat(variable.getName()).isEqualTo("SECRETS"));
+                assertThat(((Docker.Literal) passwordFile.getLast()).getText()).isEqualTo("/db");
+                assertThat(env.getPairs().get(1).getValue().getContents()).singleElement()
+                  .isInstanceOfSatisfying(Docker.Literal.class, literal -> assertThat(literal.getText()).isEqualTo("\"/home/$USER\""));
+                assertThat(env.getPairs().get(2).getValue().getContents()).extracting(c -> c.getClass().getSimpleName())
+                  .containsExactly("EnvironmentVariable", "Literal", "EnvironmentVariable");
             })
           )
         );

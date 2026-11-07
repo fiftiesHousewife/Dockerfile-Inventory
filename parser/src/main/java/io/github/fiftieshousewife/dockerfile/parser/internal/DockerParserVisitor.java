@@ -5,6 +5,7 @@
  * Modified by Dockerfile Inventory, 2026: a flag value ${NAME:-default} keeps its default (issue 9).
  * Modified by Dockerfile Inventory, 2026: ARG declares several names, each with or without a value (issues 10, 12, 13).
  * Modified by Dockerfile Inventory, 2026: a LABEL value holds its adjacent tokens, variables split out (issue 4).
+ * Modified by Dockerfile Inventory, 2026: variables in an ENV KEY=value value are split out (issue 6).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -534,7 +535,7 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             // Handle both forms: KEY=value (envValueEquals) or KEY value (envValueSpace)
             Docker.Argument value;
             if (pairCtx.envValueEquals() != null) {
-                value = visitArgument(pairCtx.envValueEquals().envTextEquals());
+                value = envValue(pairCtx.envValueEquals().envTextEquals());
             } else {
                 value = visitArgument(pairCtx.envValueSpace());
             }
@@ -586,6 +587,40 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
         }
 
         return new Docker.Label(randomId(), prefix, Markers.EMPTY, labelKeyword, pairs);
+    }
+
+    // Each unquoted variable is an EnvironmentVariable; the text between them, quoted strings as written, is a Literal
+    private Docker.Argument envValue(DockerParser.EnvTextEqualsContext ctx) {
+        Space prefix = prefix(ctx.getStart());
+        List<Docker.ArgumentContent> contents = new ArrayList<>();
+        Space literalPrefix = Space.EMPTY;
+        int literalStart = -1;
+        for (DockerParser.EnvTextElementEqualsContext elemCtx : ctx.envTextElementEquals()) {
+            Token token = elemCtx.getStart();
+            if (token.getType() == DockerLexer.ENV_VAR) {
+                addLiteral(contents, literalPrefix, literalStart);
+                literalStart = -1;
+                Space variablePrefix = prefix(token);
+                skip(token);
+                contents.add(createEnvVar(token.getText()).withPrefix(variablePrefix));
+            } else {
+                if (literalStart < 0) {
+                    literalPrefix = prefix(token);
+                    literalStart = token.getStartIndex();
+                }
+                skip(token);
+            }
+        }
+        addLiteral(contents, literalPrefix, literalStart);
+        return new Docker.Argument(randomId(), prefix, Markers.EMPTY, contents);
+    }
+
+    // The source from a code point index to the cursor, if a literal was started
+    private void addLiteral(List<Docker.ArgumentContent> contents, Space literalPrefix, int literalStart) {
+        if (literalStart >= 0) {
+            String text = source.substring(source.offsetByCodePoints(0, literalStart), cursor);
+            contents.add(new Docker.Literal(randomId(), literalPrefix, Markers.EMPTY, text, null));
+        }
     }
 
     private Docker.Argument visitLabelKeyOrValue(ParserRuleContext ctx) {

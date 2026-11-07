@@ -79,7 +79,10 @@ ENV PASSWORD_FILE=$SECRETS/db
 ```
 
 Expected: an `EnvironmentVariable` for `$SECRETS`, as in `FROM`. Actual: one `Literal`, `$SECRETS/db`.
-Workaround: rules count a `$` outside single quotes as a variable.
+Fixed in the fork (in `KEY=value` each unquoted variable is an `EnvironmentVariable` and the text between, quoted strings
+as written, a `Literal`). Rule S2 still counts a `$` outside single quotes as a variable, as one inside double quotes
+stays in the quoted text. Facts now expands such a variable in an `ENV` value, and writes one it cannot resolve as
+`${NAME}`.
 
 ## 7. A line holding only a backslash is glued onto the instruction before it
 

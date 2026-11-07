@@ -69,7 +69,8 @@ final class SecretValue implements Rule {
                 .collect(Collectors.joining())
                 .strip();
         boolean singleQuoted = text.length() >= 2 && text.startsWith("'") && text.endsWith("'");
-        // rewrite-docker issue 6 (docs/upstream/): $NAME stays plain text
+        // The tree splits out unquoted variables (rewrite-docker issue 6, fixed in the fork), but a variable inside
+        // double quotes stays in the quoted string's text, so a $ outside single quotes still counts as one.
         if (!singleQuoted && text.contains("$")) {
             return Optional.empty();
         }
