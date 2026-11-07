@@ -3,6 +3,7 @@
 
 // Copyright the original author or authors; Apache License 2.0. From openrewrite/rewrite@398a634, rewrite-docker/.
 // Modified by Dockerfile Inventory, 2026: ARG declares several names, each with or without a value (issues 10, 12, 13).
+// Modified by Dockerfile Inventory, 2026: ENV KEY= has an empty value (issue 5).
 
 parser grammar DockerParser;
 
@@ -316,7 +317,7 @@ envPairs
     ;
 
 envPair
-    : envKey EQUALS envValueEquals  // New form: KEY=value (no = in value)
+    : envKey EQUALS ( {noGapBefore()}? envValueEquals )?  // New form: KEY=value (no = in value), or KEY= (empty)
     | envKey envValueSpace           // Old form: KEY value (rest of line, can have =)
     ;
 

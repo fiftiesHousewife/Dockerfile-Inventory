@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: a test for an empty ENV value (issue 5).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +96,27 @@ class EnvTest implements RewriteTest {
               FROM alpine:latest
               ENV SHELL /usr/bin/zsh
               """
+          )
+        );
+    }
+
+    @Test
+    void emptyValue() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              ENV SECRET_KEY= OTHER=1
+              ENV LAST=
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var env = (Docker.Env) doc.getStages().getFirst().getInstructions().getFirst();
+                assertThat(env.getPairs()).extracting(pair -> pair.getKey().getText()).containsExactly("SECRET_KEY", "OTHER");
+                assertThat(env.getPairs().getFirst().isHasEquals()).isTrue();
+                assertThat(env.getPairs().getFirst().getValue().getContents()).isEmpty();
+                var last = (Docker.Env) doc.getStages().getFirst().getInstructions().getLast();
+                assertThat(last.getPairs().getFirst().getValue().getContents()).isEmpty();
+            })
           )
         );
     }

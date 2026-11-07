@@ -66,8 +66,8 @@ FROM ubi9
 ENV SECRET_KEY=
 ```
 
-Expected: an empty value. Actual: the value's literal text is `=`. Workaround: rules and the converter treat `=` as
-empty.
+Expected: an empty value. Actual: the value's literal text is `=`.
+Fixed in the fork (an `=` with nothing after it gives a value with no contents, as for `ARG`).
 
 ## 6. Variables in `ENV` values are not split out
 

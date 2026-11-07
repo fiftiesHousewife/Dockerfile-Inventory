@@ -69,8 +69,8 @@ final class SecretValue implements Rule {
                 .collect(Collectors.joining())
                 .strip();
         boolean singleQuoted = text.length() >= 2 && text.startsWith("'") && text.endsWith("'");
-        // rewrite-docker issues 5 and 6 (docs/upstream/): an empty KEY= is "=", and $NAME stays plain text
-        if (!singleQuoted && text.contains("$") || text.equals("=")) {
+        // rewrite-docker issue 6 (docs/upstream/): $NAME stays plain text
+        if (!singleQuoted && text.contains("$")) {
             return Optional.empty();
         }
         if (singleQuoted || text.length() >= 2 && text.startsWith("\"") && text.endsWith("\"")) {
