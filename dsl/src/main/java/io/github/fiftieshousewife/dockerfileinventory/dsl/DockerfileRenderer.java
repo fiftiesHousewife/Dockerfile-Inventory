@@ -79,8 +79,9 @@ public final class DockerfileRenderer {
             case Instruction.Workdir workdir -> "WORKDIR " + workdir.path();
             case Instruction.Expose expose -> "EXPOSE "
                     + expose.ports().stream().map(Port::spec).collect(Collectors.joining(" "));
-            case Instruction.Entrypoint entrypoint -> "ENTRYPOINT " + DockerQuotes.jsonArray(entrypoint.command());
-            case Instruction.Cmd cmd -> "CMD " + DockerQuotes.jsonArray(cmd.command());
+            case Instruction.Entrypoint entrypoint ->
+                    "ENTRYPOINT " + InstructionParts.command(entrypoint.command(), entrypoint.form());
+            case Instruction.Cmd cmd -> "CMD " + InstructionParts.command(cmd.command(), cmd.form());
             case Instruction.Shell shell -> "SHELL " + DockerQuotes.jsonArray(shell.command());
             case Instruction.Volume volume -> "VOLUME " + (volume.jsonForm() ? DockerQuotes.jsonArray(volume.paths())
                     : String.join(" ", volume.paths()));

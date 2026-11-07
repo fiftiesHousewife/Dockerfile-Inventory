@@ -75,6 +75,16 @@ class InstructionTest {
     }
 
     @Test
+    void aShellFormCommandIsOneStringAndACommandWrittenWithoutAFormIsExec() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new Instruction.Cmd(List.of("node", "server.js"), CommandForm.SHELL));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new Instruction.Entrypoint(List.of(), CommandForm.SHELL));
+        assertThat(List.of(new Instruction.Cmd(List.of("serve")).form(),
+                new Instruction.Entrypoint(List.of("app")).form())).containsOnly(CommandForm.EXEC);
+    }
+
+    @Test
     void aCopyWrittenWithoutOptionsHasNone() {
         assertThat(new Instruction.Copy(List.of("a"), "/b/", null, null))
                 .isEqualTo(new Instruction.Copy(List.of("a"), "/b/", null, null, null, false, false));

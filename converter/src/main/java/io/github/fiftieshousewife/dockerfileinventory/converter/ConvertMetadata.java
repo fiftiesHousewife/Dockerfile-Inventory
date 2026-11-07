@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
-import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,7 @@ final class ConvertMetadata {
                         .<Instruction>map(words -> new Instruction.Healthcheck(options, words, CommandForm.EXEC))
                         .orElseGet(() -> new Instruction.Raw(printed, "HEALTHCHECK in exec form that is not JSON"));
                 case Docker.ShellForm shell -> new Instruction.Healthcheck(options,
-                        List.of(Continuations.oneLine(shell.getArgument().getText())), CommandForm.SHELL);
+                        List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
                 default -> Convert.notModelled(printed);
             };
         } catch (IllegalArgumentException notDockers) {

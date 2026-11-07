@@ -129,18 +129,28 @@ public sealed interface Instruction {
         }
     }
 
-    /** Exec form only; a shell-form entrypoint exists only as {@link Raw} (H2). */
-    record Entrypoint(List<String> command) implements Instruction {
+    /** Shell form only for a converted Dockerfile: the builders offer exec form, and H2 finds shell form. */
+    record Entrypoint(List<String> command, CommandForm form) implements Instruction {
 
         public Entrypoint {
             command = List.copyOf(command);
+            Checks.oneStringInShellForm(command, form);
+        }
+
+        public Entrypoint(List<String> command) {
+            this(command, CommandForm.EXEC);
         }
     }
 
-    record Cmd(List<String> command) implements Instruction {
+    record Cmd(List<String> command, CommandForm form) implements Instruction {
 
         public Cmd {
             command = List.copyOf(command);
+            Checks.oneStringInShellForm(command, form);
+        }
+
+        public Cmd(List<String> command) {
+            this(command, CommandForm.EXEC);
         }
     }
 

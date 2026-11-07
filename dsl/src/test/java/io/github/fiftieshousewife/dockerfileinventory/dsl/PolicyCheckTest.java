@@ -72,4 +72,13 @@ class PolicyCheckTest {
         assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Raw("CMD ./run.sh", "legacy"))).isEmpty();
         assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Entrypoint(List.of("./run.sh")))).isEmpty();
     }
+
+    @Test
+    void aTypedShellFormEntrypointIsOneTooWrittenAsDockerfileText() {
+        assertThat(PolicyCheck.shellFormEntrypoint(
+                new Instruction.Entrypoint(List.of("exec java -jar app.jar"), CommandForm.SHELL)))
+                .contains("ENTRYPOINT exec java -jar app.jar");
+        assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Cmd(List.of("./run.sh"), CommandForm.SHELL)))
+                .isEmpty();
+    }
 }

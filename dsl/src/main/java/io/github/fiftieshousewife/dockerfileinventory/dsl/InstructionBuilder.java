@@ -102,6 +102,16 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
         return add(new Instruction.Cmd(Arrays.asList(command)));
     }
 
+    /** An {@code ENTRYPOINT} as written, for the faithful path; shell form is an H2 breach. */
+    public ImageBuilder entrypoint(List<String> command, CommandForm form) {
+        return add(new Instruction.Entrypoint(command, form));
+    }
+
+    /** A {@code CMD} as written, for the faithful path. */
+    public ImageBuilder cmd(List<String> command, CommandForm form) {
+        return add(new Instruction.Cmd(command, form));
+    }
+
     /** Text the model cannot type; allowed, but every use is listed in {@link Built#raw}. */
     public ImageBuilder raw(String text, String reason) {
         return add(new Instruction.Raw(text, reason));

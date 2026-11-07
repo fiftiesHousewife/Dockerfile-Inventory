@@ -26,4 +26,12 @@ class ChecksTest {
                 .isThrownBy(() -> Checks.notEmpty(List.of(), "a VOLUME path"))
                 .withMessage("a VOLUME path is needed");
     }
+
+    @Test
+    void onlyAShellFormCommandMustBeOneString() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> Checks.oneStringInShellForm(List.of("a", "b"), CommandForm.SHELL));
+        Checks.oneStringInShellForm(List.of("a", "b"), CommandForm.EXEC);
+        Checks.oneStringInShellForm(List.of("a b"), CommandForm.SHELL);
+    }
 }

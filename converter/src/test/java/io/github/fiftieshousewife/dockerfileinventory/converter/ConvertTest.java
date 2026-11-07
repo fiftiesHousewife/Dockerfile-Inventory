@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
@@ -137,8 +138,8 @@ class ConvertTest {
                 new Instruction.Copy(List.of("app"), "/opt/", null, null),
                 new Instruction.Raw("COPY --exclude=*.md . /src/", "COPY with flag --exclude"),
                 new Instruction.Add(List.of("app.tar.gz"), "/opt/", null, null, null, false, false, false),
-                new Instruction.Raw("ENTRYPOINT java -jar app.jar", "shell-form ENTRYPOINT"),
-                new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),
+                new Instruction.Entrypoint(List.of("java -jar app.jar"), CommandForm.SHELL),
+                new Instruction.Cmd(List.of("./start.sh"), CommandForm.SHELL),
                 new Instruction.Raw("EXPOSE ${PORT:-8080}",
                         "EXPOSE with a port that is not a number, range or variable"),
                 new Instruction.Raw("RUN --device=/dev/fuse make", "RUN with flag --device"),

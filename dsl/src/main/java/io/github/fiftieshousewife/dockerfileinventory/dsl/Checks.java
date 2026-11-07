@@ -27,6 +27,10 @@ final class Checks {
         if (command.isEmpty() && !options.isEmpty()) {
             throw new IllegalArgumentException("HEALTHCHECK NONE takes no options");
         }
+        oneStringInShellForm(command, form);
+    }
+
+    static void oneStringInShellForm(List<String> command, CommandForm form) {
         if (form == CommandForm.SHELL && command.size() != 1) {
             throw new IllegalArgumentException("a shell-form command is one string, not " + command);
         }

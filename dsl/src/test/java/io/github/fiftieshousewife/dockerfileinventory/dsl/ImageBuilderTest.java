@@ -55,9 +55,12 @@ class ImageBuilderTest {
     }
 
     @Test
-    void h2AShellFormEntrypointIsOnlyPossibleThroughRawAndIsABreach() {
+    void h2AShellFormEntrypointRawOrWrittenAsTheDockerfileWroteItIsABreach() {
         assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(1001)
                 .raw("ENTRYPOINT java -jar app.jar", "legacy start script"))).containsExactly("H2");
+        assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(1001)
+                .entrypoint(List.of("java -jar app.jar"), CommandForm.SHELL)
+                .cmd(List.of("--serve"), CommandForm.SHELL))).containsExactly("H2");
     }
 
     @Test

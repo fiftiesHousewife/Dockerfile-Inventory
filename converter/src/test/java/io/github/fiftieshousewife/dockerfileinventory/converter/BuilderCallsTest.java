@@ -83,6 +83,19 @@ class BuilderCallsTest {
     }
 
     @Test
+    void aShellFormCmdOrEntrypointIsWrittenWithItsForm() {
+        assertThat(List.of(new Instruction.Entrypoint(List.of("exec app"), CommandForm.SHELL),
+                new Instruction.Cmd(List.of("serve"), CommandForm.SHELL), new Instruction.Cmd(List.of("serve"))))
+                .map(instruction -> BuilderCalls.call(instruction).toString())
+                .containsExactly(
+                        ".entrypoint(java.util.List.of(\"exec app\"), "
+                                + "io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm.SHELL)",
+                        ".cmd(java.util.List.of(\"serve\"), "
+                                + "io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm.SHELL)",
+                        ".cmd(\"serve\")");
+    }
+
+    @Test
     void aMapIsWrittenInItsOrder() {
         assertThat(BuilderCalls.map(OrderedMap.of("B", "2", "A", "1")).toString())
                 .isEqualTo("io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"

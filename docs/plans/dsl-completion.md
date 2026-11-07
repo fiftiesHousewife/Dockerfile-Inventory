@@ -1,6 +1,6 @@
 # Completing the DSL: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; building S1.
+Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 next.
 
 The owner asked for the DSL to be made completely ready. It works: an immutable model, one renderer, policy-enforcing
 builders, four goldens passing every rule, and a converter that round-trips 5,149 of the combined estate's 5,250 files
@@ -107,4 +107,22 @@ representatives first.
 
 A shell-form `VOLUME` keeps each word as written, quotes included (`Values.written`), found when `VOLUME "/test_dir"`
 lost its quotes on the first try.
+| `Cmd` and `Entrypoint` with a `CommandForm` (`EXEC`, `SHELL`); the builders' `cmd` and `entrypoint` stay exec, the faithful ones take a form, and H2 finds a typed shell-form entrypoint as it found a raw one | 100% | 5,150 of 5,150 | 5,149 |
+
+### S1 as built
+
+Every instruction of the 5,150 converted Dockerfiles is typed; `coverage.json` lists no raw reason. What would still
+be `Raw`, and is not on the combined estate: flags the model lacks (`COPY --exclude`, `--parents`, `RUN --device`,
+`--link=false`), several heredocs in one instruction or `<<-`, a heredoc marker followed by more of the command,
+`ADD` heredocs, exec forms that are not valid JSON (Docker reads those as shell form), and `ONBUILD` around any of
+these.
+
+The round trip is unchanged at 5,149 of 5,250; none of the 101 failures is the model's: 93 Dockerfiles do not parse
+(the parse failures and templates), 7 have a malformed digest, and one has a `RUN --mount` with no command, which
+Docker refuses as well.
+
+Along the way: a `RUN` step's normal form keeps its flags as written, so `RunFlag`s keep their order and spelling
+rather than a canonical one; `Map.ofEntries` in generated classes lost the order of `HEALTHCHECK` options (and of
+`ENV` and `LABEL` pairs), so maps are emitted as `OrderedMap.of`; `FileInstructionBuilder`,
+`MetadataInstructionBuilder`, `InstructionParts` and `BuilderCalls` split classes that grew past 150 lines.
 

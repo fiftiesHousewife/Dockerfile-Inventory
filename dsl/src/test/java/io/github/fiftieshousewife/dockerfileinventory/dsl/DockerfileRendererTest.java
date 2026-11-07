@@ -141,6 +141,15 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void aShellFormCmdOrEntrypointIsWrittenAsItsOneString() {
+        Dockerfile file = single(new Instruction.Entrypoint(List.of("exec app --serve"), CommandForm.SHELL),
+                new Instruction.Cmd(List.of("node server.js"), CommandForm.SHELL));
+
+        assertThat(DockerfileRenderer.render(file, Target.DEFAULT))
+                .endsWith("ENTRYPOINT exec app --serve\nCMD node server.js\n");
+    }
+
+    @Test
     void severalPortsRenderOnOneExposeLineAsWritten() {
         Dockerfile file = single(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp"), new Port("${PORT}"))));
 

@@ -35,11 +35,15 @@ final class ConvertCommands {
 
     static Optional<RunBody> body(Docker.CommandForm command) {
         return switch (command) {
-            case Docker.ShellForm shell -> Optional.of(shell(Continuations.oneLine(shell.getArgument().getText())));
+            case Docker.ShellForm shell -> Optional.of(shell(shellText(shell)));
             case Docker.ExecForm exec -> arguments(exec).map(RunBody.Exec::new);
             case Docker.HeredocForm heredoc -> heredoc(heredoc);
             default -> Optional.empty();
         };
+    }
+
+    static String shellText(Docker.ShellForm shell) {
+        return Continuations.oneLine(shell.getArgument().getText());
     }
 
     static RunBody shell(String command) {

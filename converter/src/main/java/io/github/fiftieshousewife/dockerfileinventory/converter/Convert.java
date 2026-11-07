@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
@@ -97,8 +98,10 @@ final class Convert {
                             .orElseGet(() -> new Instruction.Raw(printed.text(cmd), NOT_JSON));
             case Docker.Copy copy -> ConvertCopy.copy(printed.text(copy));
             case Docker.Add add -> ConvertAdd.add(printed.text(add));
-            case Docker.Entrypoint entrypoint -> new Instruction.Raw(printed.text(entrypoint), "shell-form ENTRYPOINT");
-            case Docker.Cmd cmd -> new Instruction.Raw(printed.text(cmd), "shell-form CMD");
+            case Docker.Entrypoint entrypoint when entrypoint.getCommand() instanceof Docker.ShellForm shell ->
+                    new Instruction.Entrypoint(List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
+            case Docker.Cmd cmd when cmd.getCommand() instanceof Docker.ShellForm shell ->
+                    new Instruction.Cmd(List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
             case Docker.Shell shell -> ConvertMetadata.shell(shell, printed.text(shell));
             case Docker.Healthcheck healthcheck -> ConvertMetadata.healthcheck(healthcheck, printed.text(healthcheck));
             case Docker.Onbuild onbuild -> onbuild(onbuild);

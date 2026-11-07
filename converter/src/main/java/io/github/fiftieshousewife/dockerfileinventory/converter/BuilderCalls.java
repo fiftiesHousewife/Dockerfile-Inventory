@@ -37,8 +37,8 @@ final class BuilderCalls {
             case Instruction.Workdir workdir -> CodeBlock.of(".workdir($S)", workdir.path());
             case Instruction.Expose expose ->
                     CodeBlock.of(".expose($L)", strings(expose.ports().stream().map(Port::spec).toList()));
-            case Instruction.Entrypoint entrypoint -> CodeBlock.of(".entrypoint($L)", strings(entrypoint.command()));
-            case Instruction.Cmd cmd -> CodeBlock.of(".cmd($L)", strings(cmd.command()));
+            case Instruction.Entrypoint entrypoint -> command("entrypoint", entrypoint.command(), entrypoint.form());
+            case Instruction.Cmd cmd -> command("cmd", cmd.command(), cmd.form());
             case Instruction.Shell shell -> CodeBlock.of(".shell($L)", strings(shell.command()));
             case Instruction.Volume volume -> CodeBlock.of(".volume($L, $L)", list(volume.paths()), volume.jsonForm());
             case Instruction.StopSignal stopSignal -> CodeBlock.of(".stopSignal($S)", stopSignal.signal());
@@ -50,6 +50,11 @@ final class BuilderCalls {
             case Instruction.Onbuild onbuild -> CodeBlock.of("$L.asOnbuild()", call(onbuild.instruction()));
             case Instruction.Raw raw -> CodeBlock.of(".raw($S, $S)", raw.text(), raw.reason());
         };
+    }
+
+    static CodeBlock command(String method, List<String> command, CommandForm form) {
+        return form == CommandForm.EXEC ? CodeBlock.of(".$L($L)", method, strings(command))
+                : CodeBlock.of(".$L($L, $T.$L)", method, list(command), CommandForm.class, form.name());
     }
 
     static CodeBlock run(Instruction.Run run) {
