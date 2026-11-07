@@ -2,14 +2,17 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Target;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.docker.tree.Docker;
 
 class RoundTripTest {
 
@@ -20,8 +23,7 @@ class RoundTripTest {
 
         RoundTrip result = RoundTrip.check(original, Convert.of(Parsed.of(original)).model());
 
-        assertThat(result.difference()).isNull();
-        assertThat(result.passed()).isTrue();
+        assertThat(result).satisfies(r -> assertThat(r.difference()).isNull(), r -> assertThat(r.passed()).isTrue());
     }
 
     @Test
@@ -72,9 +74,12 @@ class RoundTripTest {
     void aBackslashFollowedByTrailingSpacesContinuesTheLineAsDockerReadsIt() {
         String original = "FROM ubi9\nLABEL Version=\"1.4\" \\ \n      Release=\"8\"\n";
 
-        assertThat(Convert.of(Parsed.of(original)).model().stages().getFirst().instructions())
-                .containsExactly(new Instruction.Label(java.util.Map.of("Version", "1.4", "Release", "8")));
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        Dockerfile model = Convert.of(Parsed.of(original)).model();
+
+        assertThat(model).satisfies(
+                m -> assertThat(m.stages().getFirst().instructions())
+                        .containsExactly(new Instruction.Label(Map.of("Version", "1.4", "Release", "8"))),
+                m -> assertThat(RoundTrip.check(original, m).difference()).isNull());
     }
 
     @Test
@@ -160,5 +165,59 @@ class RoundTripTest {
                 """;
 
         assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+    }
+
+    @Test
+    void aConversionTheOriginalsBuilderCouldNotBuildFailsSayingItDoesNotRender() {
+        Dockerfile mounts = Convert.of(Parsed.of("FROM ubi9\nRUN --mount=type=cache,target=/c make\n")).model();
+
+        assertThat(RoundTrip.check("FROM ubi9\n", mounts).difference()).startsWith("the conversion does not render");
+    }
+
+    @Test
+    void anOriginalThatDoesNotParseFails() {
+        Dockerfile model = Convert.of(Parsed.of("FROM ubi9\n")).model();
+
+        assertThat(RoundTrip.check("not a dockerfile\n", model).difference()).isEqualTo("the original does not parse");
+    }
+
+    @Test
+    void compareFailsWhenTheRenderedFileConvertsBackToAnotherModel() {
+        Docker.File before = Parsed.of("FROM ubi9\nUSER 1001\n");
+        Docker.File after = Parsed.of("FROM ubi9\nUSER 1002\n");
+
+        assertThat(RoundTrip.compare(before, after, Convert.of(before).model()).difference())
+                .isEqualTo("the rendered conversion converts back to a different model");
+    }
+
+    @Test
+    void compareFailsNamingTheStagesWhenTheyDiffer() {
+        Docker.File before = Parsed.of("FROM ubi9:9.4\n");
+        Docker.File after = Parsed.of("FROM ubi9:9.5\n");
+
+        assertThat(RoundTrip.compare(before, after, Convert.of(after).model()).difference())
+                .isEqualTo("stages differ: [ubi9:9.4] became [ubi9:9.5]");
+    }
+
+    @Test
+    void stepDifferenceNamesTheFirstStepThatDiffersOrIsMissing() {
+        assertThat(RoundTrip.stepDifference(List.of("A", "B"), List.of("A", "C")))
+                .contains("step 2 differs: B became C");
+        assertThat(RoundTrip.stepDifference(List.of("A"), List.of("A", "B")))
+                .contains("step 2 differs: (none) became B");
+        assertThat(RoundTrip.stepDifference(List.of("A"), List.of("A"))).isEmpty();
+    }
+
+    @Test
+    void theTargetHasTheBuildKitFeaturesTheOriginalUses() {
+        assertThat(RoundTrip.targetFor(Parsed.of("FROM ubi9\nRUN --mount=type=cache,target=/c make\n")))
+                .isEqualTo(new Target(false, true));
+    }
+
+    @Test
+    void fromWritesTheImageTagDigestAndStageName() {
+        Docker.Stage stage = Parsed.of("FROM $REG/ubi9:9.4@sha256:abc AS build\n").getStages().getFirst();
+
+        assertThat(RoundTrip.from(stage)).isEqualTo("${REG}/ubi9:9.4@sha256:abc AS build");
     }
 }
