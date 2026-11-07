@@ -91,3 +91,14 @@ representatives first.
 7. `Healthcheck` (options, `NONE`) and `Onbuild` (nested instruction).
 8. Shell-form `CMD`/`ENTRYPOINT`: `form` in the model and the converter; the builders still exec only; H2 unchanged.
 9. The combined estate converted again: typed share, round trip, the corpus.
+
+## Progress
+
+| Step | Typed share | Fully typed files | Round trip |
+| --- | --- | --- | --- |
+| Before (7 Nov) | 92.6% | 3,206 | 5,149 of 5,250 |
+| `SHELL`, `VOLUME` (with its form), `STOPSIGNAL`, `MAINTAINER` | 94.0% | 3,559 | 5,149 |
+
+A shell-form `VOLUME` keeps each word as written, quotes included (`Values.written`), found when `VOLUME "/test_dir"`
+lost its quotes on the first try.
+

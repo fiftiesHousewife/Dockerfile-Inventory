@@ -11,13 +11,14 @@ class ConversionTest {
     void rawIsEveryUntypedInstructionInEveryStageInOrder() {
         Conversion conversion = Convert.of(Parsed.of("""
                 FROM ubi9 AS build
-                VOLUME /data
+                HEALTHCHECK NONE
                 USER 1001
                 FROM ubi9
-                STOPSIGNAL SIGTERM
+                ONBUILD RUN make
                 """));
 
-        assertThat(conversion.raw()).containsExactly(new Instruction.Raw("VOLUME /data", "VOLUME is not modelled"),
-                new Instruction.Raw("STOPSIGNAL SIGTERM", "STOPSIGNAL is not modelled"));
+        assertThat(conversion.raw()).containsExactly(
+                new Instruction.Raw("HEALTHCHECK NONE", "HEALTHCHECK is not modelled"),
+                new Instruction.Raw("ONBUILD RUN make", "ONBUILD is not modelled"));
     }
 }

@@ -2,8 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
+import org.junit.jupiter.api.Test;
 
 class ValuesTest {
 
@@ -34,5 +34,13 @@ class ValuesTest {
         Docker.From from = Parsed.of("FROM $REG/ubi9:${TAG}\n").getStages().getFirst().getFrom();
 
         assertThat(Values.text(from.getImageName()) + ":" + Values.text(from.getTag())).isEqualTo("${REG}/ubi9:${TAG}");
+    }
+
+    @Test
+    void writtenPutsBackTheQuotesALiteralWasWrittenWith() {
+        var volume = (Docker.Volume) Parsed.of(
+                "FROM ubi9\nVOLUME \"/a b\" '/c' /d\n").getStages().getFirst().getInstructions().getFirst();
+
+        assertThat(volume.getValues()).map(Values::written).containsExactly("\"/a b\"", "'/c'", "/d");
     }
 }

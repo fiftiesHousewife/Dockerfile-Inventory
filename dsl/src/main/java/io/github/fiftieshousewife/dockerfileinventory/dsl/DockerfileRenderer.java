@@ -75,6 +75,11 @@ public final class DockerfileRenderer {
             case Instruction.Expose expose -> "EXPOSE " + expose.port();
             case Instruction.Entrypoint entrypoint -> "ENTRYPOINT " + DockerQuotes.jsonArray(entrypoint.command());
             case Instruction.Cmd cmd -> "CMD " + DockerQuotes.jsonArray(cmd.command());
+            case Instruction.Shell shell -> "SHELL " + DockerQuotes.jsonArray(shell.command());
+            case Instruction.Volume volume -> "VOLUME " + (volume.jsonForm() ? DockerQuotes.jsonArray(volume.paths())
+                    : String.join(" ", volume.paths()));
+            case Instruction.StopSignal stopSignal -> "STOPSIGNAL " + stopSignal.signal();
+            case Instruction.Maintainer maintainer -> "MAINTAINER " + maintainer.name();
             case Instruction.Raw raw -> raw.text();
         };
     }

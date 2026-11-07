@@ -39,6 +39,11 @@ class JavaEmitterTest {
             ENTRYPOINT ["/usr/local/bin/server"]
             CMD ["--port", "8080"]
             HEALTHCHECK NONE
+            MAINTAINER payments team
+            SHELL ["/bin/bash", "-c"]
+            VOLUME /data
+            VOLUME ["/cache"]
+            STOPSIGNAL SIGTERM
             """;
 
     @TempDir
@@ -92,6 +97,16 @@ class JavaEmitterTest {
                 .containsExactly(".arg(\"A\")", ".arg(\"A\", \"1\")",
                         ".env(java.util.Map.ofEntries(java.util.Map.entry(\"K\", \"v\")))", ".expose(8080)",
                         ".raw(\"VOLUME /d\", \"VOLUME is not modelled\")");
+    }
+
+    @Test
+    void shellVolumeStopSignalAndMaintainerAreWrittenAsTheirBuilderMethods() {
+        assertThat(List.of(new Instruction.Shell(List.of("/bin/bash", "-c")),
+                new Instruction.Volume(List.of("/data"), false), new Instruction.StopSignal("SIGTERM"),
+                new Instruction.Maintainer("payments")))
+                .map(instruction -> JavaEmitter.call(instruction).toString())
+                .containsExactly(".shell(\"/bin/bash\", \"-c\")", ".volume(java.util.List.of(\"/data\"), false)",
+                        ".stopSignal(\"SIGTERM\")", ".maintainer(\"payments\")");
     }
 
     @Test

@@ -97,6 +97,10 @@ final class Convert {
             case Docker.Cmd cmd -> new Instruction.Raw(printed.text(cmd), "shell-form CMD");
             case Docker.Expose expose -> new Instruction.Raw(printed.text(expose),
                     "EXPOSE with a protocol, range, variable or several ports");
+            case Docker.Shell shell -> ConvertMetadata.shell(shell, printed.text(shell));
+            case Docker.Volume volume -> ConvertMetadata.volume(volume, printed.text(volume));
+            case Docker.Stopsignal signal -> new Instruction.StopSignal(Values.text(signal.getSignal()).strip());
+            case Docker.Maintainer maintainer -> new Instruction.Maintainer(Values.text(maintainer.getText()).strip());
             default -> notModelled(printed.text(instruction));
         };
     }

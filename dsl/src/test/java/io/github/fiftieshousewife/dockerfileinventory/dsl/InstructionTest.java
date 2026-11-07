@@ -24,6 +24,16 @@ class InstructionTest {
     }
 
     @Test
+    void shellVolumeStopSignalAndMaintainerRefuseEmptyValuesAndCopyTheirLists() {
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Shell(List.of()));
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Volume(List.of(), true));
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.StopSignal(" "));
+        assertThatIllegalArgumentException().isThrownBy(() -> new Instruction.Maintainer(""));
+        assertThat(new Instruction.Shell(new ArrayList<>(List.of("/bin/bash", "-c"))).command()).isUnmodifiable();
+        assertThat(new Instruction.Volume(new ArrayList<>(List.of("/data")), false).paths()).isUnmodifiable();
+    }
+
+    @Test
     void listsAreCopiedSoTheInstructionCannotChangeAfterItIsBuilt() {
         assertThat(new Instruction.Entrypoint(new ArrayList<>(List.of("java"))).command()).isUnmodifiable();
         assertThat(new Instruction.Cmd(new ArrayList<>(List.of("serve"))).command()).isUnmodifiable();

@@ -81,6 +81,10 @@ final class JavaEmitter {
             case Instruction.Expose expose -> CodeBlock.of(".expose($L)", expose.port());
             case Instruction.Entrypoint entrypoint -> CodeBlock.of(".entrypoint($L)", strings(entrypoint.command()));
             case Instruction.Cmd cmd -> CodeBlock.of(".cmd($L)", strings(cmd.command()));
+            case Instruction.Shell shell -> CodeBlock.of(".shell($L)", strings(shell.command()));
+            case Instruction.Volume volume -> CodeBlock.of(".volume($L, $L)", list(volume.paths()), volume.jsonForm());
+            case Instruction.StopSignal stopSignal -> CodeBlock.of(".stopSignal($S)", stopSignal.signal());
+            case Instruction.Maintainer maintainer -> CodeBlock.of(".maintainer($S)", maintainer.name());
             case Instruction.Raw raw -> CodeBlock.of(".raw($S, $S)", raw.text(), raw.reason());
         };
     }

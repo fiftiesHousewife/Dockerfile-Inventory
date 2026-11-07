@@ -16,7 +16,8 @@ class CorpusRoundTripTest {
 
     static Stream<String> cases() throws IOException {
         try (Stream<Path> dirs = Files.list(CORPUS)) {
-            return dirs.filter(Files::isDirectory).map(dir -> String.valueOf(dir.getFileName())).sorted().toList().stream();
+            return dirs.filter(Files::isDirectory).map(dir -> String.valueOf(dir.getFileName())).sorted().toList()
+                    .stream();
         }
     }
 
@@ -24,7 +25,8 @@ class CorpusRoundTripTest {
     @MethodSource("cases")
     void eachRealCaseRoundTripsAsItsExpectationSays(String name) throws IOException {
         Path dir = CORPUS.resolve(name);
-        String expected = new ObjectMapper().readTree(dir.resolve("expected.json").toFile()).path("roundTrip").asString();
+        String expected = new ObjectMapper().readTree(dir.resolve("expected.json").toFile()).path("roundTrip")
+                .asString();
 
         assertThat(CorpusOutcome.roundTrip(Files.readString(dir.resolve("Dockerfile"))))
                 .as("corpus case " + name + ": roundTrip is not what expected.json says; if a change meant this,"

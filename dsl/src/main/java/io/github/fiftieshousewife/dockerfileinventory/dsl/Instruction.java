@@ -87,6 +87,37 @@ public sealed interface Instruction {
         }
     }
 
+    /** Exec form, as Docker requires for {@code SHELL}. */
+    record Shell(List<String> command) implements Instruction {
+
+        public Shell {
+            command = List.copyOf(Checks.notEmpty(command, "a SHELL command"));
+        }
+    }
+
+    /** {@code jsonForm}: written {@code VOLUME ["/data"]} rather than {@code VOLUME /data}, as the original was. */
+    record Volume(List<String> paths, boolean jsonForm) implements Instruction {
+
+        public Volume {
+            paths = List.copyOf(Checks.notEmpty(paths, "a VOLUME path"));
+        }
+    }
+
+    record StopSignal(String signal) implements Instruction {
+
+        public StopSignal {
+            Checks.notBlank(signal, "a stop signal");
+        }
+    }
+
+    /** Deprecated by Docker in favour of a label; kept so a converted Dockerfile reads as it did. */
+    record Maintainer(String name) implements Instruction {
+
+        public Maintainer {
+            Checks.notBlank(name, "a maintainer");
+        }
+    }
+
     /** Text the model cannot type, rendered as written; the reason is kept because every use is reviewed. */
     record Raw(String text, String reason) implements Instruction {
 

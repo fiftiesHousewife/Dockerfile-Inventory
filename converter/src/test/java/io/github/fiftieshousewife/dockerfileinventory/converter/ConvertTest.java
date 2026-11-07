@@ -69,6 +69,25 @@ class ConvertTest {
     }
 
     @Test
+    void shellVolumeStopSignalAndMaintainerBecomeTypedKeepingTheVolumesForm() {
+        List<Instruction> instructions = Convert.of(Parsed.of("""
+                FROM ubi9
+                MAINTAINER Jane Doe <jane@example.com>
+                SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+                VOLUME ["/data", "/var/log"]
+                VOLUME /cache /tmp/x
+                STOPSIGNAL SIGQUIT
+                """)).model().stages().getFirst().instructions();
+
+        assertThat(instructions).containsExactly(
+                new Instruction.Maintainer("Jane Doe <jane@example.com>"),
+                new Instruction.Shell(List.of("/bin/bash", "-o", "pipefail", "-c")),
+                new Instruction.Volume(List.of("/data", "/var/log"), true),
+                new Instruction.Volume(List.of("/cache", "/tmp/x"), false),
+                new Instruction.StopSignal("SIGQUIT"));
+    }
+
+    @Test
     void aRunThatIsOnlyAnInstallAndItsCleanBecomesAnInstallWithItsFlagsAndAnyOtherRunAShell() {
         List<Instruction> instructions = Convert.of(Parsed.of("""
                 FROM ubi9
@@ -120,7 +139,7 @@ class ConvertTest {
                 new Instruction.Raw("CMD ./start.sh", "shell-form CMD"),
                 new Instruction.Raw("EXPOSE 8080/udp", "EXPOSE with a protocol, range, variable or several ports"),
                 new Instruction.Raw("HEALTHCHECK NONE", "HEALTHCHECK is not modelled"),
-                new Instruction.Raw("VOLUME /data", "VOLUME is not modelled"));
+                new Instruction.Volume(List.of("/data"), false));
     }
 
     @Test

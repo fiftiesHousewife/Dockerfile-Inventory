@@ -56,6 +56,26 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void shellVolumeStopSignalAndMaintainerRenderAsDockerWritesThem() {
+        Dockerfile file = new Dockerfile(List.of(), List.of(new Stage(null, new BaseImage("ubi9", "9.4", null), null,
+                List.of(
+                new Instruction.Maintainer("Jane Doe <jane@example.com>"),
+                new Instruction.Shell(List.of("/bin/bash", "-o", "pipefail", "-c")),
+                new Instruction.Volume(List.of("/data", "/var/log"), true),
+                new Instruction.Volume(List.of("/cache"), false),
+                new Instruction.StopSignal("SIGQUIT")))));
+
+        assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).isEqualTo("""
+                FROM ubi9:9.4
+                MAINTAINER Jane Doe <jane@example.com>
+                SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+                VOLUME ["/data", "/var/log"]
+                VOLUME /cache
+                STOPSIGNAL SIGQUIT
+                """);
+    }
+
+    @Test
     void aHeredocOrRunMountIsRefusedUnlessTheTargetAllowsIt() {
         Dockerfile mount = single(new Instruction.Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "cache"));
         Dockerfile heredoc = single(new Instruction.Raw("RUN <<EOT\nmake\nEOT", "script"));

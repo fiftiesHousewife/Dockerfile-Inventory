@@ -57,7 +57,8 @@ class ConverterRunTest {
         List<JsonNode> rows = Files.readAllLines(out.resolve("roundtrip.jsonl")).stream().map(JSON::readTree).toList();
         String generated = Files.readString(out.resolve("generated/images/payments/PaymentsApiImage.java"));
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(generated).contains("package images.payments;").contains(".install(PackageManager.MICRODNF");
+            softly.assertThat(generated).contains("package images.payments;")
+                    .contains(".install(PackageManager.MICRODNF");
             softly.assertThat(out.resolve("generated/images/platform")).doesNotExist();
             softly.assertThat(rows).extracting(r -> r.path("blobSha").asString() + "=" + r.path("passed").asBoolean())
                     .containsExactlyInAnyOrder("good=true", "elsewhere=true", "odd-digest=false", "bad=false");

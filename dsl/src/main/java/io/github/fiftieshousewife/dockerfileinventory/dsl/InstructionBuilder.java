@@ -97,6 +97,28 @@ abstract sealed class InstructionBuilder permits ImageBuilder {
     }
 
     /** Text the model cannot type; allowed, but every use is listed in {@link Built#raw}. */
+    public ImageBuilder shell(String... command) {
+        return add(new Instruction.Shell(List.of(command)));
+    }
+
+    /** {@code VOLUME ["/data"]}. */
+    public ImageBuilder volume(String... paths) {
+        return volume(List.of(paths), true);
+    }
+
+    public ImageBuilder volume(List<String> paths, boolean jsonForm) {
+        return add(new Instruction.Volume(paths, jsonForm));
+    }
+
+    public ImageBuilder stopSignal(String signal) {
+        return add(new Instruction.StopSignal(signal));
+    }
+
+    /** For converted Dockerfiles only: Docker deprecates {@code MAINTAINER}; a new image says it with a label. */
+    public ImageBuilder maintainer(String name) {
+        return add(new Instruction.Maintainer(name));
+    }
+
     public ImageBuilder raw(String text, String reason) {
         return add(new Instruction.Raw(text, reason));
     }
