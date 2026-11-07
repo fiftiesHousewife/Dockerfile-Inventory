@@ -35,7 +35,10 @@ and one line when its gate is met.
     Bash arrays are read (its 257 unreadable RUNs, 15.5%, now 0) and minideb's `install_packages` counts as an apt
     install (package calls 648 -> 1,110). R1 no longer reports `FROM scratch` (524 false positives in konflux-ci, 174
     in openshift) and S2 leaves a secret-named value that is only a path alone (`docs/plans/bitnami-fixes.md`).
-    Next: openshift's lineage from published OKD images, planned in `docs/plans/okd-lineage.md` (questions answered; ready to build).
+  - Built 7 Nov, OKD lineage (`docs/plans/okd-lineage.md`): lineage cuts the wrapper Red Hat's release tooling puts
+    around a Dockerfile's steps, a source label limits an image's link to that repository, `scripts/okd-select.sh`
+    picks 30 images of OKD 5.0.0-okd-scos.5 and their release index, and `lineage-demo.sh` mirrors them unchanged.
+    Next: the owner runs discovery at those commits and the mirror; then the results are recorded.
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.
