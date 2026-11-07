@@ -1,7 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 record EffectiveImage(List<ChainEntry> chain, Property<String> user, Property<String> workingDir,
                       Property<List<String>> entrypoint, Property<List<String>> cmd,
@@ -10,7 +12,7 @@ record EffectiveImage(List<ChainEntry> chain, Property<String> user, Property<St
 
     EffectiveImage {
         chain = List.copyOf(chain);
-        env = Map.copyOf(env);
-        labels = Map.copyOf(labels);
+        env = Collections.unmodifiableMap(new TreeMap<>(env));
+        labels = Collections.unmodifiableMap(new TreeMap<>(labels));
     }
 }
