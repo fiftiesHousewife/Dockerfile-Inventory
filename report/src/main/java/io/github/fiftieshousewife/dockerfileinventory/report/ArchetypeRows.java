@@ -57,10 +57,10 @@ record ArchetypeRows(List<Row> rows, Map<String, Apart> apart, int total, int k8
         List<Row> kept = new ArrayList<>();
         ranking.archetypes().forEach(a -> {
             String kind = kind(a.signature());
-            List<String> blobs = kind == null ? a.blobShas().stream().filter(b -> !bundles.contains(b)).toList()
-                    : List.of();
+            List<String> here = a.blobShas().stream().filter(locations::containsKey).toList();
+            List<String> blobs = kind == null ? here.stream().filter(b -> !bundles.contains(b)).toList() : List.of();
             add(apartBlobs, kind == null ? ArchetypeName.BUNDLE : kind,
-                    kind == null ? a.blobShas().stream().filter(bundles::contains).toList() : a.blobShas());
+                    kind == null ? here.stream().filter(bundles::contains).toList() : here);
             if (!blobs.isEmpty()) {
                 kept.add(row(0, a, blobs, locations));
             }

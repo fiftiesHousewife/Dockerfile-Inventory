@@ -57,6 +57,16 @@ class ArchetypeRowsTest {
     }
 
     @Test
+    void withinAnOrganisationOnlyItsFilesCountAndArchetypesWithoutThemAreLeftOut() {
+        ArchetypeRows beta = ArchetypeRows.of(RANKING, ESTATE.within("beta"));
+
+        assertThat(beta.rows()).extracting(ArchetypeRows.Row::name, ArchetypeRows.Row::files)
+                .containsExactly(tuple("scratch, no packages, root", 1), tuple("debian 12, no packages, root", 1));
+        assertThat(beta.apart()).doesNotContainKey(ArchetypeName.BUNDLE)
+                .containsEntry("template, not a Dockerfile", new Figures.Apart(1, 1));
+    }
+
+    @Test
     void coverageCountsTheFewestRowsCoveringEightyAndNinetyFivePercent() {
         assertThat(ArchetypeRows.of(RANKING, ESTATE)).satisfies(r -> {
             assertThat(r.total()).isEqualTo(5);
