@@ -28,8 +28,9 @@ Dashboards from runs on public GitHub organisations, as the report stage writes 
 for access):
 
 - [all six organisations combined](https://claude.ai/artifact/Npbva376tdsXBuHsaTko2B): 8,199 Dockerfile locations in
-  1,453 repositories (sclorg, openshift, konflux-ci, redhat-developer, docker-library, bitnami), with OKD lineage
-- [openshift with lineage](https://claude.ai/artifact/6Uy3wKm1Wq9p2gwTdeGBPW): 2,919 Dockerfiles, with 30 of OKD's
+  961 repositories (sclorg, openshift, konflux-ci, redhat-developer, docker-library, bitnami), with OKD lineage, as the
+  current linked pages (the smallest archetypes' detail pages are left out of this published copy for size)
+- the earlier one-page dashboard: [openshift with lineage](https://claude.ai/artifact/6Uy3wKm1Wq9p2gwTdeGBPW): 2,919 Dockerfiles, with 30 of OKD's
   published images linked to the Dockerfiles that built them
 - [bitnami](https://claude.ai/artifact/1wnH7fkxBzUTo2M1eA6SBH): 266 Dockerfiles on one pattern
 
