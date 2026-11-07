@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
@@ -12,6 +13,7 @@ import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.docker.tree.Docker;
 
 class ConvertTest {
 
@@ -26,12 +28,14 @@ class ConvertTest {
                 FROM ${BASE}:9.4
                 """.replace("DIGEST", DIGEST)));
 
-        assertThat(conversion.model().globalArgs()).containsExactly(new Instruction.Arg("BASE", "ubi9/ubi-minimal"));
-        assertThat(conversion.model().stages()).extracting(Stage::name, Stage::base, Stage::fromStage).containsExactly(
-                org.assertj.core.groups.Tuple.tuple("build",
-                        new BaseImage("registry.example.com/ubi9/ubi", "9.4", DIGEST), null),
-                org.assertj.core.groups.Tuple.tuple("test", null, "build"),
-                org.assertj.core.groups.Tuple.tuple(null, new BaseImage("${BASE}", "9.4", null), null));
+        assertThat(conversion.model()).satisfies(
+                model -> assertThat(model.globalArgs())
+                        .containsExactly(new Instruction.Arg("BASE", "ubi9/ubi-minimal")),
+                model -> assertThat(model.stages()).extracting(Stage::name, Stage::base, Stage::fromStage)
+                        .containsExactly(tuple("build", new BaseImage("registry.example.com/ubi9/ubi", "9.4", DIGEST),
+                                        null),
+                                tuple("test", null, "build"),
+                                tuple(null, new BaseImage("${BASE}", "9.4", null), null)));
     }
 
     @Test
@@ -53,9 +57,9 @@ class ConvertTest {
         assertThat(instructions).containsExactly(
                 new Instruction.Arg("VERSION", "1.0"),
                 new Instruction.Arg("REVISION", null),
-                new Instruction.Env(java.util.Map.of("APP_HOME", "/opt/app", "MODE", "prod")),
-                new Instruction.Env(java.util.Map.of("LEGACY", "value with spaces")),
-                new Instruction.Label(java.util.Map.of("org.opencontainers.image.revision", "$REVISION",
+                new Instruction.Env(Map.of("APP_HOME", "/opt/app", "MODE", "prod")),
+                new Instruction.Env(Map.of("LEGACY", "value with spaces")),
+                new Instruction.Label(Map.of("org.opencontainers.image.revision", "$REVISION",
                         "summary", "say hi")),
                 new Instruction.Workdir("/opt/app"),
                 new Instruction.User("1001:0"),
@@ -130,8 +134,8 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Env(java.util.Map.of("DESCRIPTION", "one two")),
-                new Instruction.Label(java.util.Map.of("summary", "three four", "team", "x")));
+                new Instruction.Env(Map.of("DESCRIPTION", "one two")),
+                new Instruction.Label(Map.of("summary", "three four", "team", "x")));
     }
 
     @Test
@@ -147,18 +151,10 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Label(java.util.Map.of("openshift.io/tags", "database,mariadb",
+                new Instruction.Label(Map.of("openshift.io/tags", "database,mariadb",
                         "k8s.io/display-name", "MariaDB 5.5")),
-                new Instruction.Label(java.util.Map.of("io.k8s.description", "desc", "io.openshift.tags", "builder")),
-                new Instruction.Label(java.util.Map.of("maintainer", "Shyam JVS <shyamjvs@google.com>")));
-    }
-
-    private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {
-        return new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages)));
-    }
-
-    private static Instruction shell(String command) {
-        return new Instruction.Run(new RunBody.Shell(List.of(command)));
+                new Instruction.Label(Map.of("io.k8s.description", "desc", "io.openshift.tags", "builder")),
+                new Instruction.Label(Map.of("maintainer", "Shyam JVS <shyamjvs@google.com>")));
     }
 
     @Test
@@ -194,10 +190,11 @@ class ConvertTest {
                 USER $UID
                 """)).model();
 
-        assertThat(model.globalArgs()).containsExactly(new Instruction.Arg("REG", "quay.io"),
-                new Instruction.Arg("TAG", "9"));
-        assertThat(model.stages().getFirst().instructions()).startsWith(new Instruction.Arg("UID", "1001"),
-                new Instruction.Arg("GROUP", null));
+        assertThat(model).satisfies(
+                m -> assertThat(m.globalArgs()).containsExactly(new Instruction.Arg("REG", "quay.io"),
+                        new Instruction.Arg("TAG", "9")),
+                m -> assertThat(m.stages().getFirst().instructions()).startsWith(new Instruction.Arg("UID", "1001"),
+                        new Instruction.Arg("GROUP", null)));
     }
 
     @Test
@@ -225,5 +222,48 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions.getFirst()).isEqualTo(new Instruction.Env(Map.of("DOTNET_VERSION", "$DOTNET_VERSION")));
+    }
+
+    @Test
+    void aBaseKeepsItsTagAndDigestAndLeavesOutWhatIsNotWritten() {
+        Docker.From tagged = Parsed.of("FROM ubi9:9.4@" + DIGEST + "\n").getStages().getFirst().getFrom();
+        Docker.From bare = Parsed.of("FROM ubi9\n").getStages().getFirst().getFrom();
+
+        assertThat(List.of(Convert.base(tagged, "ubi9"), Convert.base(bare, "ubi9")))
+                .containsExactly(new BaseImage("ubi9", "9.4", DIGEST), new BaseImage("ubi9", null, null));
+    }
+
+    @Test
+    void anInstructionTheModelDoesNotHaveIsRawNamingItsKeywordInCapitals() {
+        assertThat(Convert.notModelled("stopsignal SIGTERM"))
+                .isEqualTo(new Instruction.Raw("stopsignal SIGTERM", "STOPSIGNAL is not modelled"));
+    }
+
+    @Test
+    void aUserAndGroupAreUnquotedWithTheirVariablesBraced() {
+        Docker.User withGroup = (Docker.User) first("FROM ubi9\nUSER \"$UID\":'0'\n");
+        Docker.User alone = (Docker.User) first("FROM ubi9\nUSER 1001\n");
+
+        assertThat(List.of(Convert.user(withGroup), Convert.user(alone)))
+                .containsExactly(new Instruction.User("${UID}:0"), new Instruction.User("1001"));
+    }
+
+    @Test
+    void anExposeIsSingleOnlyForOnePortWrittenAsDigits() {
+        assertThat(List.of("EXPOSE 8080", "EXPOSE 8080/tcp", "EXPOSE 80 443", "EXPOSE $PORT"))
+                .map(line -> Convert.single((Docker.Expose) first("FROM ubi9\n" + line + "\n")))
+                .containsExactly(true, false, false, false);
+    }
+
+    private static Docker.Instruction first(String dockerfile) {
+        return Parsed.of(dockerfile).getStages().getFirst().getInstructions().getFirst();
+    }
+
+    private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {
+        return new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages)));
+    }
+
+    private static Instruction shell(String command) {
+        return new Instruction.Run(new RunBody.Shell(List.of(command)));
     }
 }

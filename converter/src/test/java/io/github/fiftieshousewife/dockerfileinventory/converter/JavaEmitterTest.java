@@ -2,14 +2,18 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.PolicyViolation;
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
@@ -48,8 +52,8 @@ class JavaEmitterTest {
 
             Dockerfile emitted = run(JavaEmitter.emit("com.example.images", "ServiceImage", conversion, List.of()));
 
-            assertThat(emitted).isEqualTo(conversion.model());
-            assertThat(RoundTrip.check(original, emitted).passed()).isTrue();
+            assertThat(emitted).satisfies(e -> assertThat(e).isEqualTo(conversion.model()),
+                    e -> assertThat(RoundTrip.check(original, e).passed()).isTrue());
         }
     }
 
@@ -77,6 +81,42 @@ class JavaEmitterTest {
                 List.of(new PolicyViolation.Breach("H1", "install $INSTALL_PKGS without a clean")));
 
         assertThat(source).contains("// TODO(H1): install $INSTALL_PKGS without a clean");
+    }
+
+    @Test
+    void callWritesEachInstructionAsItsBuilderMethod() {
+        assertThat(List.of(new Instruction.Arg("A", null), new Instruction.Arg("A", "1"),
+                new Instruction.Env(Map.of("K", "v")), new Instruction.Expose(8080),
+                new Instruction.Raw("VOLUME /d", "VOLUME is not modelled")))
+                .map(instruction -> JavaEmitter.call(instruction).toString())
+                .containsExactly(".arg(\"A\")", ".arg(\"A\", \"1\")",
+                        ".env(java.util.Map.ofEntries(java.util.Map.entry(\"K\", \"v\")))", ".expose(8080)",
+                        ".raw(\"VOLUME /d\", \"VOLUME is not modelled\")");
+    }
+
+    @Test
+    void fromWritesABaseImageOrAnEarlierStage() {
+        Stage onBase = new Stage("build", new BaseImage("ubi9", "9.4", null), null, List.of());
+        Stage onStage = new Stage(null, null, "build", List.of());
+
+        assertThat(List.of(onBase, onStage)).map(stage -> JavaEmitter.from(stage).toString()).containsExactly(
+                "\n.thenStage(\"build\", new io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage(\"ubi9\", "
+                        + "\"9.4\", null))",
+                "\n.thenStageFrom(null, \"build\")");
+    }
+
+    @Test
+    void stagePutsEachInstructionsCommentsBeforeIt() {
+        Stage stage = new Stage(null, null, "build", List.of(new Instruction.User("1001")));
+
+        assertThat(JavaEmitter.stage(stage, List.of(List.of("run as", "non-root"))).toString())
+                .isEqualTo("\n.thenStageFrom(null, \"build\")\n// run as\n// non-root\n.user(\"1001\")");
+    }
+
+    @Test
+    void todosAreOneLinePerBreachNamingItsRule() {
+        assertThat(JavaEmitter.todos(List.of(new PolicyViolation.Breach("R1", "a"),
+                new PolicyViolation.Breach("H1", "b")))).isEqualTo("TODO(R1): a\nTODO(H1): b");
     }
 
     private Dockerfile run(String source) throws Exception {
