@@ -23,8 +23,9 @@ reading its output: settings, outputs, what the numbers mean. Nothing about the 
 ```
 build-logic/        included build: the inventory.java convention plugin (toolchain, -Werror, tests, JaCoCo gate,
                     SpotBugs), inventory.vendored (the same for copied code, without -Werror and SpotBugs, generated
-                    code out of coverage) and inventory.dependency-updates (verifyUpToDate); every module applies
-                    inventory.java, except parser, which applies inventory.vendored
+                    code out of coverage), inventory.published (a Maven Central bundle, built and verified in check)
+                    and inventory.dependency-updates (verifyUpToDate); every module applies inventory.java, except
+                    parser, which applies inventory.vendored and inventory.published
 gradle/             libs.versions.toml, the one version catalogue
 parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docker 8.90.4 (Apache 2.0), packages
                     io.github.fiftieshousewife.dockerfile.parser (.tree, .internal, .internal.grammar), published
@@ -83,7 +84,8 @@ testdata/corpus/    the fixture bank: real Dockerfiles and images that broke som
 scripts/            discover.sh (one organisation with the GitHub CLI's token), combine.sh (several discovery
                     outputs as one estate), lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published
                     images), okd-select.sh (OKD images and their release index), corpus-collect.sh and
-                    corpus-collect-images.sh (the fixture bank from a run), jcr-diagnose.sh, record-jcr-fixtures.sh
+                    corpus-collect-images.sh (the fixture bank from a run), release-parser.sh (the parser to Maven
+                    Central), jcr-diagnose.sh, record-jcr-fixtures.sh
 docs/               overview.md (the problem and the approach), plans/ (one per phase or slice), upstream/
                     (rewrite-docker issues)
 ```
@@ -166,6 +168,12 @@ commit, and the corpus tests name the cases the fix turns.
 
 **A new setting.** Read it in the stage's `...Main` from the environment map, give it a default, refuse a bad value
 naming the variable, list it in the README. Network settings belong in `http`'s `HttpSettings`.
+
+**Release the parser.** Set `inventory.parserVersion` in `gradle.properties` (semantic: a change to the public API
+is a major version), commit, then run `scripts/release-parser.sh` with the signing key and the Central Portal token
+in the environment. It uploads a signed bundle that waits in the Portal until it is published there by hand, and
+tags `parser-v<version>`. `./gradlew check` already builds and verifies the same bundle, unsigned, in
+`parser/build/central`.
 
 **Files shared between modules** (`testdata/contracts/`, dsl's goldens) are declared as test inputs in each reading
 module's `build.gradle.kts`, so a change reruns the tests that read them.

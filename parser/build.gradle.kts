@@ -2,6 +2,31 @@
 plugins {
     `java-library`
     id("inventory.vendored")
+    id("inventory.published")
+}
+
+group = "io.github.fiftieshousewife"
+version = providers.gradleProperty("inventory.parserVersion").get()
+base.archivesName.set("dockerfile-parser")
+
+publishing.publications.named<MavenPublication>("library") {
+    artifactId = "dockerfile-parser"
+    pom {
+        name.set("Dockerfile Parser")
+        description.set("A lossless Dockerfile parser and tree: a fork of OpenRewrite's rewrite-docker 8.90.4 " +
+            "with its parser bugs fixed.")
+    }
+}
+
+tasks.jar {
+    from(files("LICENSE", "NOTICE")) { into("META-INF") }
+    manifest {
+        attributes(
+            "Implementation-Title" to "Dockerfile Parser",
+            "Implementation-Version" to version,
+            "Based-On" to "org.openrewrite:rewrite-docker:8.90.4@398a6349648ca802aa050bdb6fe45a99395dce47",
+        )
+    }
 }
 
 val antlrGeneration by configurations.creating

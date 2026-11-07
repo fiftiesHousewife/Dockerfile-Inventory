@@ -1,7 +1,7 @@
 # Forking the Dockerfile parser: plan
 
 Status: planned 7 Nov; all questions answered 7 Nov. F1 built (the fork, unchanged but for its packages); the
-publication setup and the 15 fixes next.
+publication setup built; the 15 fixes next.
 
 ## Why
 
@@ -96,4 +96,18 @@ Portal's publisher API with the token. Releases are cut from a tag `parser-v<ver
 - Checked: `./gradlew check` green (with `verifyUpToDate`); the corpus tests unchanged; facts, rules and the
   converter on openshift and docker-library and lineage on okd give byte-identical outputs before and after (40
   files).
+
+## Publication as built (7 Nov)
+
+- `inventory.published` (build-logic): `maven-publish` with sources and Javadoc jars, a POM with name, description,
+  URL, the Apache License 2.0, the developer and the SCM, resolved dependency versions (`rewrite-core` 8.90.4, ANTLR
+  runtime 4.13.2); signing only when `SIGNING_KEY` is in the environment. `check` writes the bundle to
+  `parser/build/central` and `verifyBundle` checks every file and POM element Central requires.
+- The jar carries `META-INF/LICENSE`, `META-INF/NOTICE` and `Based-On: org.openrewrite:rewrite-docker:8.90.4@398a634`
+  in its manifest; version from `inventory.parserVersion` (1.0.0).
+- `scripts/release-parser.sh`: refuses without the signing key and the Portal token, or on a changed working tree or
+  an already-tagged version; builds and signs, zips the bundle (no `maven-metadata.xml`), uploads it to the Central
+  Portal as user-managed (it waits there to be published by hand), tags `parser-v<version>`.
+- Not yet done, and the owner's: the namespace, the Portal token and the GPG key (above). The first release waits on
+  the 15 fixes.
 
