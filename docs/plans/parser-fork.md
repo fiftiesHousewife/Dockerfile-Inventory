@@ -1,7 +1,6 @@
 # Forking the Dockerfile parser: plan
 
-Status: planned 7 Nov; questions 1-2 answered 7 Nov (a `parser` module here; all 15 bugs fixed now); publication
-questions open.
+Status: planned 7 Nov; all questions answered 7 Nov. Building F1.
 
 ## Why
 
@@ -64,4 +63,19 @@ Questions:
 4. Group ID: `io.github.fiftieshousewife` (a namespace GitHub's account gives for Maven Central), or the company's own
    (for example `com.<company>.platform`), or another?
 5. Repository: the company's Artifactory, GitHub Packages, or Maven Central?
+
+Answers (7 Nov): 3, our own packages, `io.github.fiftieshousewife.dockerfile.parser` (`.tree`, `.internal`,
+`.internal.grammar`); 4, group `io.github.fiftieshousewife`, artifact `dockerfile-parser`; 5, Maven Central.
+
+Maven Central asks for things only the owner can do, done once before the first release:
+
+1. Sign in to the Sonatype Central Portal (central.sonatype.com) with the GitHub account `fiftiesHousewife`, which
+   verifies the `io.github.fiftieshousewife` namespace.
+2. Make a Portal user token, kept in the release environment as `CENTRAL_TOKEN_USER` and `CENTRAL_TOKEN_PASSWORD`.
+3. Make a GPG key for signing, publish its public half to a key server, and keep the private key and passphrase in
+   the release environment (`SIGNING_KEY`, `SIGNING_PASSWORD`), never in the repository.
+
+The build does the rest: `maven-publish` and `signing` write a signed bundle (jar, sources, Javadoc, POM, checksums)
+to `parser/build/central`, checked in `./gradlew check` without signing; a release task uploads the bundle to the
+Portal's publisher API with the token. Releases are cut from a tag `parser-v<version>`.
 
