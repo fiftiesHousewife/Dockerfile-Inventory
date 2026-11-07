@@ -2,6 +2,7 @@
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: whitespace before a comma in a JSON array is kept (issue 8).
+ * Modified by Dockerfile Inventory, 2026: a flag value ${NAME:-default} keeps its default (issue 9).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1258,13 +1259,8 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                     // Braced form: ${VAR}
                     int endBrace = text.indexOf('}', i + 2);
                     if (endBrace > i + 2) {
-                        String varContent = text.substring(i + 2, endBrace);
-                        // Handle ${VAR:-default} and similar forms
-                        String varName = varContent;
-                        int colonIdx = varContent.indexOf(':');
-                        if (colonIdx >= 0) {
-                            varName = varContent.substring(0, colonIdx);
-                        }
+                        // ${VAR:-default} and similar forms keep their modifier in the name, as ENV_VAR tokens do
+                        String varName = text.substring(i + 2, endBrace);
                         contents.add(new Docker.EnvironmentVariable(randomId(), Space.EMPTY, Markers.EMPTY, varName, true));
                         i = endBrace + 1;
                         continue;

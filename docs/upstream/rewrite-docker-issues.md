@@ -116,7 +116,7 @@ Expected: a `FROM` whose platform flag holds the variable. Actual: `IllegalState
 idempotent`. Any flag (`--platform`, `--chown`) with `:-` inside `${...}`; `${NAME-default}`, `${NAME}` and `$NAME`
 parse, as does `${NAME:-default}` outside a flag.
 Seen in 12 `openshift` files.
-Workaround: the retry (`RetryText`) writes `${NAME-default}` inside flag values.
+Fixed in the fork (the flag value's variable keeps its whole `${...}` text, as variables elsewhere do).
 
 ## 10. `ARG` with several names and no values is rejected
 

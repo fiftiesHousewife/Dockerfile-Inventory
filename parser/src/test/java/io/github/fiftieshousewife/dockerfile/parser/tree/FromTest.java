@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: tests for a flag value ${NAME:-default} (issue 9).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,6 +292,24 @@ class FromTest implements RewriteTest {
 
                 assertThat(from.getDigest()).isNotNull();
                 assertThat(((Docker.Literal) from.getDigest().getContents().getFirst()).getText()).isEqualTo("sha256:abc123");
+            })
+          )
+        );
+    }
+
+    @Test
+    void flagWithVariableAndDefault() {
+        rewriteRun(
+          docker(
+            """
+              FROM --platform=${BUILDPLATFORM:-linux/amd64} rust:latest
+              COPY --chown=${UID:-1001} a /b
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                Docker.From from = doc.getStages().getFirst().getFrom();
+                var envVar = (Docker.EnvironmentVariable) from.getFlags().getFirst().getValue().getContents().getFirst();
+                assertThat(envVar.getName()).isEqualTo("BUILDPLATFORM:-linux/amd64");
+                assertThat(envVar.isBraced()).isTrue();
             })
           )
         );

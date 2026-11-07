@@ -18,12 +18,6 @@ class RetryTextTest {
     }
 
     @Test
-    void writesAFlagValuesColonDashDefaultAsADash() {
-        assertThat(RetryText.flagDefaults("COPY --chown=${UID:-1001} a b")).isEqualTo("COPY --chown=${UID-1001} a b");
-        assertThat(RetryText.flagDefaults("RUN echo ${A:-b}")).isEqualTo("RUN echo ${A:-b}");
-    }
-
-    @Test
     void givesEachPlainArgNameItsOwnValueAndAnEmptyDefaultQuotes() {
         assertThat(RetryText.of("ARG A B=1 C=\n")).isEqualTo("ARG A=$A B=1 C=\"\"\n");
     }

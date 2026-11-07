@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 final class RetryText {
 
     private static final Pattern HEREDOC = Pattern.compile("<<-?['\"]?(\\w+)");
-    private static final Pattern FLAG_DEFAULT = Pattern.compile("(--[A-Za-z-]+=\\S*?\\$\\{[A-Za-z_][A-Za-z0-9_]*):-");
     private static final Pattern ARG_LINE = Pattern.compile("(?i)(\\s*ARG\\s+)?\\s*(\\S.*?)(\\s*\\\\)?\\s*");
     private static final Pattern SIMPLE_ARG_WORD = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*(=[^\"'\\\\\\s]*)?");
 
@@ -28,18 +27,13 @@ final class RetryText {
                 rewritten.add(lines.get(i));
                 continue;
             }
-            String line = flagDefaults(lines.get(i));
+            String line = lines.get(i);
             Matcher arg = ARG_LINE.matcher(line);
             boolean argLine = arg.matches() && (inArg || arg.group(1) != null);
             rewritten.add(argLine ? argNames(arg) : line);
             inArg = argLine && arg.group(3) != null;
         }
         return withoutComments(String.join("\n", rewritten) + (text.endsWith("\n") ? "\n" : ""));
-    }
-
-    // rewrite-docker issue 9 (docs/upstream/); ${NAME:-x} and ${NAME-x} differ only for a set but empty variable.
-    static String flagDefaults(String line) {
-        return FLAG_DEFAULT.matcher(line).replaceAll("$1-");
     }
 
     // rewrite-docker issues 10 and 13 (docs/upstream/)
