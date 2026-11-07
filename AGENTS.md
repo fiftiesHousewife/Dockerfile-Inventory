@@ -83,7 +83,9 @@ converter/                  Phase 5: Convert (LST -> model, faithful), Installs,
 testdata/contracts/         normal-form contracts between facts and lineage: python-311 and sclorg-c9s-* (real
                             Dockerfiles against their real Buildah-built images)
 scripts/                    discover.sh (one organisation, the GitHub CLI's token), lineage-demo.sh (local JCR,
-                            Buildah builds, lineage), jcr-diagnose.sh, record-jcr-fixtures.sh (lineage fixtures)
+                            Buildah builds or, with MIRROR, published images copied unchanged; lineage),
+                            okd-select.sh (OKD images to mirror and their release index), jcr-diagnose.sh,
+                            record-jcr-fixtures.sh (lineage fixtures)
 ```
 
 Modules still to come, one per phase, each added when its phase starts (BACKLOG.md):

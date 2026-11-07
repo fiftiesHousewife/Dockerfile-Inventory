@@ -139,6 +139,20 @@ On a first run JCR's Docker API stays off until JFrog's JCR licence agreement is
 `scripts/jcr-diagnose.sh` shows why JCR is not answering: memory, its logs, which ports answer, and what its Docker
 API replies.
 
+To try lineage on images someone else built, OKD's published images can be copied in unchanged instead:
+
+```bash
+scripts/okd-select.sh                       # one OKD release on quay.io -> out/okd/mirror.txt, releases.csv
+RELEASE_INDEX=out/okd/releases.csv scripts/discover.sh https://github.com/openshift out/okd/discovery
+DISCOVERY_DIR=out/okd/discovery OUT_DIR=out/okd/facts ./gradlew :facts:run
+MIRROR=out/okd/mirror.txt DISCOVERY_DIR=out/okd/discovery FACTS_DIR=out/okd/facts OUT=out/okd \
+    scripts/lineage-demo.sh
+```
+
+`okd-select.sh` picks about 30 images (the bases, `tools` and `network-tools`, and components whose repository
+discovery found, one per repository) and writes each chosen component's repository and the commit its source label
+names, so discovery reads the Dockerfiles that built them. The mirror copies with skopeo, keeping digests.
+
 ## Report on the estate
 
 ```bash

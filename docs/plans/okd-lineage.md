@@ -1,6 +1,6 @@
 # openshift's lineage from published OKD images: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; O2 and O4 built (O3 needed nothing), O1 and O5 next.
+Status: planned 7 Nov; questions answered 7 Nov; O1, O2, O4 and O5 built (O3 needed nothing); the run (test 4) waits on the owner's discovery and mirror.
 
 The JCR demo (`lineage-from-jcr.md`) proved lineage on five images we built ourselves with Buildah, from Dockerfiles
 we chose. The real estate's images are built by other people's tooling, from Dockerfiles that may have moved on since.
@@ -39,12 +39,12 @@ local JCR, and linked to the openshift Dockerfiles discovery found.
 
 | Need | Today | Change |
 | --- | --- | --- |
-| Copy images unchanged, digests kept | `lineage-demo.sh` mirrors with `buildah pull/push`, which may recompress | O1: a mirror mode, `MIRROR=<file of references>`, with `skopeo copy --preserve-digests` from a container; the list is the CentOS root, the OKD base (by digest, tagged in JCR), `tools` and `network-tools`, and components whose source repository discovery scanned, about 30 |
+| Copy images unchanged, digests kept | `lineage-demo.sh` mirrors with `buildah pull/push`, which may recompress | O1, built 7 Nov: a mirror mode, `MIRROR=<file of references>`, with `skopeo copy --preserve-digests` from a container; the list is the CentOS root, the OKD base (by digest, tagged in JCR), `tools` and `network-tools`, and components whose source repository discovery scanned, about 30 |
 | Parent by layer prefix | Works on any layers | Squashed images have few layers: a parent is found only if its layers are a prefix, which holds when both were squashed onto the same base. Measured, not assumed |
 | Own steps | History after the parent's, steps a build service added dropped (Q13) | O2, built 7 Nov: `OwnSteps.withoutReleaseTooling` cuts the wrapper by position (after the last `ENV __doozer=`, before the `USER 0` that precedes the repository swap, through `rm -rf /tmp/art`); the buildinfo `COPY`s and the final OCI `LABEL` were already dropped |
 | Normal form | Reads `#(nop)` and `COPY file:<hash> in <dest>` | O3: nothing to do; it already reads them, as Konflux writes the same |
 | Link to a Dockerfile | Step fingerprint against facts' steps | O4, built 7 Nov: a source label (`io.openshift.build.source-location`, or OCI's `org.opencontainers.image.source`) picks the repository; the steps pick the Dockerfile in it and show whether it still matches. Without a label, or when the estate holds none of that repository's Dockerfiles, steps alone, as today (the owner's choice, 7 Nov). In alignment a `LABEL` matches a Dockerfile's whose keys it all holds, as the tooling merges `LABEL`s and adds keys; the real image aligns 5 of 6 with its `Dockerfile.rhel7` |
-| Dockerfiles at the image's commit | Discovery read each repository's default branch | O5: a script writes a release index (repository -> commit) from the chosen images' labels; discovery reruns on those repositories with `RELEASE_INDEX`, as the real estate uses the release database, then facts (the owner's choice, 7 Nov) |
+| Dockerfiles at the image's commit | Discovery read each repository's default branch | O5, built 7 Nov: `scripts/okd-select.sh` writes a release index (repository -> commit) from the chosen images' labels; discovery reruns on those repositories with `RELEASE_INDEX`, as the real estate uses the release database, then facts (the owner's choice, 7 Nov) |
 
 ## Questions
 
@@ -70,3 +70,14 @@ images: the shared bases and components whose source repository discovery scanne
    parent and own steps.
 4. The demo on the chosen images: parents, links and gaps reported, with a table of what linked and why the rest did
    not.
+
+## Chosen (7 Nov)
+
+`scripts/okd-select.sh` on `5.0.0-okd-scos.5`: 198 components, 196 from `openshift` repositories, 164 distinct; 26
+chosen (`tools`, `network-tools`, and one per repository spread across the release) and 4 bases (`centos:stream10`,
+the OKD base `art-okd-images@sha256:5637...`, `oc-mirror`'s base `@sha256:2372...`, and `tools` under its Konflux
+name). Picking by name alone gave only `agent-installer-*`, `aws-*` and `azure-*`, hence the spread.
+
+To run, by the owner (the token, Docker and JCR): the three commands in the README's "Trying lineage without an
+Artifactory".
+

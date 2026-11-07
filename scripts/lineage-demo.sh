@@ -11,6 +11,8 @@
 # Usage, from the repository root:
 #   scripts/lineage-demo.sh                 # the chain: centos stream9 -> s2i-core -> s2i-base -> python 3.12, nginx
 #   SCOPE=all scripts/lineage-demo.sh       # every Dockerfile.c9s discovery found (45 on sclorg; hours, emulated)
+#   MIRROR=out/okd/mirror.txt DISCOVERY_DIR=out/okd/discovery FACTS_DIR=out/okd/facts OUT=out/okd \
+#       scripts/lineage-demo.sh             # copy published images unchanged (scripts/okd-select.sh), no builds
 #
 # Settings (environment): DISCOVERY_DIR (out/demo4/discovery), FACTS_DIR (out/demo5/facts), OUT (out/lineage-demo),
 # ACCEPT_JCR_EULA=yes (accepts JFrog's JCR licence agreement for you; read it first), JCR_PORT (the Mac's port, 8082), ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, POSTGRES_IMAGE, BUILDAH_IMAGE,
@@ -29,6 +31,8 @@ ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
 # failed. Every version from 7.77 on publishes arm64.
 JCR_IMAGE=${JCR_IMAGE:-releases-docker.jfrog.io/jfrog/artifactory-jcr:7.77.17}
 BUILDAH_IMAGE=${BUILDAH_IMAGE:-quay.io/buildah/stable:v1.37.0}
+SKOPEO_IMAGE=${SKOPEO_IMAGE:-quay.io/skopeo/stable:v1.16.1}
+MIRROR=${MIRROR:-}
 POSTGRES_IMAGE=${POSTGRES_IMAGE:-postgres:16.4}
 NETWORK=inventory-demo
 JCR=inventory-jcr
@@ -44,6 +48,7 @@ die() { printf 'stopped: %s\n' "$*" >&2; exit 1; }
 [[ -f gradlew ]] || die "run from the repository root"
 [[ -f $DISCOVERY_DIR/manifest.jsonl ]] || die "no $DISCOVERY_DIR/manifest.jsonl; run discovery first"
 [[ -f $FACTS_DIR/facts.jsonl ]] || die "no $FACTS_DIR/facts.jsonl; run facts on $DISCOVERY_DIR first"
+[[ -z $MIRROR || -f $MIRROR ]] || die "no $MIRROR; scripts/okd-select.sh writes it"
 for tool in docker git jq curl; do command -v $tool >/dev/null || die "$tool is not installed"; done
 docker info >/dev/null 2>&1 || die "Docker is not running"
 memory_gb=$(docker info --format '{{.MemTotal}}' | awk '{printf "%d", $1 / 1024 / 1024 / 1024 + 0.5}')
@@ -182,6 +187,26 @@ can_read "$ARTIFACTORY_TOKEN" || die "ARTIFACTORY_TOKEN cannot list JCR's reposi
 export ARTIFACTORY_TOKEN
 echo "access token ready (held in this shell only)"
 
+# Published images copied as they are, digests kept, so lineage reads another build system's history: one line per
+# image, its reference and its name in JCR. skopeo picks the amd64 image of a manifest list.
+mirror_images() {
+    step "2-3. Copy published images into JCR unchanged ($MIRROR)"
+    : > "$OUT/build.log"
+    while read -r source name; do
+        [[ -n $source ]] || continue
+        if docker run --rm --network $NETWORK "$SKOPEO_IMAGE" copy -q --preserve-digests \
+                --override-os linux --override-arch amd64 --dest-tls-verify=false \
+                --dest-creds "admin:$ADMIN_PASSWORD" "docker://$source" "docker://$REGISTRY/$name" </dev/null; then
+            echo "pushed $REGISTRY/$name" | tee -a "$OUT/build.log"
+        else
+            echo "FAILED $source" | tee -a "$OUT/build.log"
+        fi
+    done < "$MIRROR"
+}
+
+if [[ -n $MIRROR ]]; then
+    mirror_images
+else
 step "2. Dockerfiles to build, and their repositories at the scanned commit"
 # One line per Dockerfile: image name, repository, commit, path, the base it is built FROM (as written).
 plan=$OUT/plan.txt
@@ -255,6 +280,7 @@ docker run --rm --privileged --platform "$native" --network $NETWORK \
     -e REGISTRY="$REGISTRY" -e ADMIN_PASSWORD="$ADMIN_PASSWORD" -e STORAGE_DRIVER=vfs \
     -v "$OUT/src:/src:ro" -v "$OUT:/work" -v inventory-demo-buildah:/var/lib/containers \
     "$BUILDAH_IMAGE" bash /work/build.sh | tee "$OUT/build.log"
+fi
 
 step "4. Lineage, then report and rules with it"
 ARTIFACTORY_URL=$API FACTS_DIR=$FACTS_DIR DISCOVERY_DIR=$DISCOVERY_DIR OUT_DIR=$OUT/lineage CONCURRENCY=4 \
@@ -263,5 +289,5 @@ FACTS_DIR=$FACTS_DIR DISCOVERY_DIR=$DISCOVERY_DIR LINEAGE_DIR=$OUT/lineage OUT_D
 DISCOVERY_DIR=$DISCOVERY_DIR LINEAGE_DIR=$OUT/lineage OUT_DIR=$OUT/rules ./gradlew -q :rules:run
 
 step "done"
-echo "built:  $(grep -c '^pushed' "$OUT/build.log") images, failed: $(grep -c '^FAILED' "$OUT/build.log" || true)"
+echo "pushed: $(grep -c '^pushed' "$OUT/build.log") images, failed: $(grep -c '^FAILED' "$OUT/build.log" || true)"
 echo "output: $OUT/lineage, $OUT/report/dashboard.html, $OUT/rules"
