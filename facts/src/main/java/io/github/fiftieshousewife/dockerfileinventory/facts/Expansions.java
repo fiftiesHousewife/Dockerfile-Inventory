@@ -8,8 +8,9 @@ import java.util.regex.Pattern;
 /** Variable references in Dockerfile and shell text, which facts reads the same way wherever they appear. */
 final class Expansions {
 
+    /** {@code ${NAME}}, {@code $NAME}, or all of a bash array's words, {@code ${NAME[@]}} or {@code ${NAME[*]}}. */
     private static final Pattern REFERENCE =
-            Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}|\\$([A-Za-z_][A-Za-z0-9_]*)");
+            Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)(?:\\[[@*]])?}|\\$([A-Za-z_][A-Za-z0-9_]*)");
 
     private Expansions() {
     }

@@ -44,7 +44,7 @@ public final class SecretValue implements Rule {
 
     private Optional<Finding> check(Subject subject, int line, String keyword, String name, Docker.Argument value) {
         Optional<String> literal = literal(value);
-        if (literal.isEmpty() || !secretName(name) && !secretShape(literal.get())) {
+        if (literal.isEmpty() || !Secrets.secret(name, literal.get())) {
             return Optional.empty();
         }
         return Optional.of(new Finding(id(), severity(), subject.blobSha(), line,

@@ -2,6 +2,9 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -262,5 +265,23 @@ class FactExtractorTest {
             assertThat(f.opaqueRuns()).isZero();
             assertThat(f.otherShellRuns()).isEqualTo(1);
         });
+    }
+
+    @Test
+    void bitnamisSharedDownloadRunWithABashArrayReads() throws IOException {
+        String dockerfile = Files.readString(
+                Path.of("src/test/resources/fixtures/dockerfiles/bitnami-acmesolver-1.21-debian-12.Dockerfile"));
+
+        assertThat(facts(dockerfile).opaqueRuns()).isZero();
+    }
+
+    @Test
+    void bitnamisInstallPackagesCountsItsPackages() throws IOException {
+        String dockerfile = Files.readString(
+                Path.of("src/test/resources/fixtures/dockerfiles/bitnami-acmesolver-1.21-debian-12.Dockerfile"));
+
+        assertThat(facts(dockerfile).packageCalls()).extracting(StagedCall::call)
+                .filteredOn(c -> c.subcommand().equals("install"))
+                .flatExtracting(PackageCall::packages).containsExactly("ca-certificates", "curl", "procps");
     }
 }

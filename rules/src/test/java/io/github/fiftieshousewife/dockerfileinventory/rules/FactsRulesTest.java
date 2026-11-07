@@ -17,6 +17,11 @@ class FactsRulesTest {
     }
 
     @Test
+    void r1LeavesScratchAloneAsItIsNoImageAndHasNoDigest() {
+        assertThat(new UnpinnedBase().check(Subjects.of("FROM golang:1.25 AS build\nFROM scratch\n"))).isEmpty();
+    }
+
+    @Test
     void h1ReportsAnRpmInstallNotCleanedInTheSameRun() {
         Rule h1 = new UncleanedInstall();
 

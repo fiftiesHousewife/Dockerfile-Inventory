@@ -76,4 +76,11 @@ class PackageCallsTest {
                 Map.of("PKGS", "$(cat /tmp/pkgs.txt)")))
                 .containsExactly(new PackageCall("dnf", "install", List.of("-y"), List.of("$PKGS"), false));
     }
+
+    @Test
+    void minidebsInstallPackagesIsAnAptGetInstallThatCleansItsCache() {
+        assertThat(calls("install_packages ca-certificates curl && uninstall_packages curl")).containsExactly(
+                new PackageCall("apt-get", "install", List.of(), List.of("ca-certificates", "curl"), true),
+                new PackageCall("apt-get", "remove", List.of(), List.of(), false));
+    }
 }

@@ -77,10 +77,10 @@ final class ArchetypeCards {
     private static String hidePairs(String line, boolean starts) {
         var legacy = LEGACY_PAIR.matcher(line);
         if (starts && legacy.matches()) {
-            return Secrets.secretName(legacy.group(2)) ? legacy.group(1) + "(hidden)" : line;
+            return Secrets.secret(legacy.group(2), line.substring(legacy.end(1))) ? legacy.group(1) + "(hidden)" : line;
         }
         return PAIR.matcher(line).replaceAll(m -> java.util.regex.Matcher.quoteReplacement(
-                Secrets.secretName(m.group(1)) ? m.group(1) + "=(hidden)" : m.group()));
+                Secrets.secret(m.group(1), m.group(2)) ? m.group(1) + "=(hidden)" : m.group()));
     }
 
     private static String text(Path blob) {

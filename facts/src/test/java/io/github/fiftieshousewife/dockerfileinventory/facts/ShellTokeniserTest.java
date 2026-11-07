@@ -202,4 +202,12 @@ class ShellTokeniserTest {
     void aStrayClosingParenthesisLeavesTheScriptUnreadableWhateverFollows() {
         assertThat(ShellTokeniser.parse("echo a ) b")).isEmpty();
     }
+
+    @Test
+    void aBashArrayHoldsItsWordsAndALoopOverItTakesThem() {
+        String script = "A=( x \\\n  \"y z\" ) ; for c in \"${A[@]}\"; do echo $c; done";
+
+        assertThat(ShellTokeniser.parse(script)).contains(List.of(List.of("echo", "$c")));
+        assertThat(ShellTokeniser.assignments(script)).containsEntry("A", "x y z").containsEntry("c", "x y z");
+    }
 }

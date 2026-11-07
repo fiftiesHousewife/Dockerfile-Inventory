@@ -3,7 +3,10 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 import io.github.fiftieshousewife.dockerfileinventory.facts.BaseImage;
 import java.util.List;
 
-/** R1: the final base is not pinned by digest, so a rebuild can silently pick up a different image. */
+/**
+ * R1: the final base is not pinned by digest, so a rebuild can silently pick up a different image. {@code scratch} is
+ * Docker's empty base, not an image, so it has no digest to pin.
+ */
 public final class UnpinnedBase implements Rule {
 
     @Override
@@ -22,7 +25,7 @@ public final class UnpinnedBase implements Rule {
             return List.of();
         }
         BaseImage base = subject.facts().base();
-        if (!base.resolved() || base.digestPinned()) {
+        if (!base.resolved() || base.digestPinned() || base.name().equals("scratch")) {
             return List.of();
         }
         return List.of(finding(subject, null, "base " + Bases.reference(base) + " is not pinned by digest"));

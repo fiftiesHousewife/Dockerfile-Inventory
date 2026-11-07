@@ -109,4 +109,12 @@ class ArchetypeCardsTest {
                         RUN aws configure set key (hidden) && echo done
                         """);
     }
+
+    @Test
+    void aSecretNamedValueThatIsOnlyAnAbsolutePathIsShown() {
+        assertThat(ArchetypeCards.hidden("ENV NSS_WRAPPER_PASSWD=\"/opt/app/nss_passwd\" DB_PASSWORD=x\n"
+                + "ENV CREDENTIAL_FILE /run/creds.json"))
+                .isEqualTo("ENV NSS_WRAPPER_PASSWD=\"/opt/app/nss_passwd\" DB_PASSWORD=(hidden)\n"
+                        + "ENV CREDENTIAL_FILE /run/creds.json");
+    }
 }

@@ -1,6 +1,6 @@
 # More public estates, and openshift's lineage: plan
 
-Status: openshift, konflux-ci, redhat-developer and docker-library done 6 Nov; bitnami next.
+Status: openshift, konflux-ci, redhat-developer and docker-library done 6 Nov; bitnami done 7 Nov; openshift's lineage next.
 
 sclorg (585 locations) found eighteen problems across discovery, facts, rules and the converter. More estates with
 different habits should find more, before the real estate does.
@@ -38,14 +38,14 @@ beside the existing one. Planned as its own slice.
 
 ## Results so far
 
-| | sclorg | openshift | konflux-ci | redhat-developer | docker-library |
-| --- | --- | --- | --- | --- | --- |
-| Repositories | 75 | 862 | 158 | 288 | 48 |
-| Dockerfile locations | 585 | 3,180 | 3,231 | 604 | 594 |
-| Unique files | 579 | 2,833 | 722 | 518 | 581 |
-| Parse failures, templates left out | 0% | 2.2% (61) | 0.1% (1) | 1.4% (7; 3 not Dockerfiles) | 0% |
-| Unreadable `RUN`s (after S4) | 0% | 0.7% | 1.2% | 1.0% | 0.75% (96 more in PowerShell) |
-| Round trip passed | 568 of 568 | 2,730 of 2,833 | 720 of 722 | 502 of 518 (every file that parses) | 580 of 581 (every file that parses) |
+| | sclorg | openshift | konflux-ci | redhat-developer | docker-library | bitnami |
+| --- | --- | --- | --- | --- | --- | --- |
+| Repositories | 75 | 862 | 158 | 288 | 48 | 22 |
+| Dockerfile locations | 585 | 3,180 | 3,231 | 604 | 594 | 266 |
+| Unique files | 579 | 2,833 | 722 | 518 | 581 | 266 |
+| Parse failures, templates left out | 0% | 2.2% (61) | 0.1% (1) | 1.4% (7; 3 not Dockerfiles) | 0% | 0% |
+| Unreadable `RUN`s (after S4) | 0% | 0.7% | 1.2% | 1.0% | 0.75% (96 more in PowerShell) | 0% (after B1; was 15.5%) |
+| Round trip passed | 568 of 568 | 2,730 of 2,833 | 720 of 722 | 502 of 518 (every file that parses) | 580 of 581 (every file that parses) | 266 of 266 |
 
 openshift's fixes are in `openshift-fixes.md`. konflux-ci (3,231 locations, only 722 distinct files: much copying)
 needed two: `ARG A=` (an empty default) fails to parse, upstream issue 13, written `ARG A=""` in the retry; and a
@@ -65,6 +65,12 @@ to S4 (`shell-reading.md`). Four mongo Windows images (`nanoserver`) failed the 
 in a backslash (`C:\\Windows\\System32\\`) lost it in the converter, and once rendered the backslash read as joining the
 next line. The converter now keeps a backslash ending an instruction's last line, and the renderer follows such an
 instruction with a blank line, as the original does.
+
+bitnami (only 257 images left in `containers` after its 2025 cut-back, every one built on minideb) parsed
+completely and passed the round trip, but its shared download `RUN` uses a bash array, and its installs go through
+minideb's `install_packages`; both are now read, and two false positives found on the way are fixed in every estate:
+R1 on `FROM scratch` and S2 on a path (`bitnami-fixes.md`). Its near-duplicate test at scale was weaker than hoped:
+266 files make 63 archetypes, k80 13.
 
 The lineage of openshift's published OKD images is still to plan (above).
 

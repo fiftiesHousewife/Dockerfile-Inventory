@@ -191,10 +191,10 @@ its line.
 | Rule | Finds | Severity |
 | --- | --- | --- |
 | S1 | A base, or the base at the root of an image's chain, not on the approved list | High |
-| S2 | A secret-shaped `ENV` or `ARG` value | Critical |
+| S2 | A secret-shaped `ENV` or `ARG` value (a value that is only an absolute path is not one) | Critical |
 | S3 | `curl` or `wget` piped to a shell | High |
 | S4 | An image that cannot run as an arbitrary non-root UID (OpenShift's default) | High |
-| R1 | A base not pinned by digest | Medium |
+| R1 | A base not pinned by digest (`scratch` has none) | Medium |
 | R2 | An end-of-life base | Medium |
 | R3 | No OCI revision or source label | Low |
 | H1 | An RPM install with no clean in the same `RUN` | Low |

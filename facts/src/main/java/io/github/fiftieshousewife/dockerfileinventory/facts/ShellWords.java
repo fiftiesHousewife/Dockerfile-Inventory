@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * The first half of reading a shell-form {@code RUN}: characters to words and operators. Quotes, backslash escapes
@@ -17,6 +18,9 @@ final class ShellWords {
      * only the shell's own references; it is a private-use character, so no script holds it.
      */
     static final char LITERAL_DOLLAR = '';
+
+    /** {@code NAME=}, a word that a {@code (} turns into a bash array assignment. */
+    private static final Pattern ARRAY_NAME = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*=");
 
     /** Inside double quotes a backslash escapes only these, as in the shell; before anything else it is kept. */
     private static final String ESCAPED_IN_DOUBLE_QUOTES = "\"\\$`";
@@ -46,6 +50,9 @@ final class ShellWords {
     private boolean quoted;
     private boolean unreadable;
     private int at;
+    /** The array being read, {@code NAME=} and its words so far; null outside one. */
+    private String arrayName;
+    private final List<String> arrayWords = new ArrayList<>();
 
     private ShellWords(String script) {
         this.script = script;
@@ -60,7 +67,7 @@ final class ShellWords {
             step(script.charAt(at));
         }
         endWord();
-        return unreadable ? Optional.empty() : Optional.of(List.copyOf(tokens));
+        return unreadable || arrayName != null ? Optional.empty() : Optional.of(List.copyOf(tokens));
     }
 
     private void step(char c) {
@@ -71,8 +78,8 @@ final class ShellWords {
             case '`' -> backticks();
             case '$' -> dollar();
             case '(' -> openParenthesis();
-            case ')' -> operator(Operator.CLOSE);
-            case '\n' -> operator(Operator.NEWLINE);
+            case ')' -> closeParenthesis();
+            case '\n' -> newline();
             case ';' -> operator(doubled(';') ? Operator.CASE_BREAK : Operator.SEMICOLON);
             case '|' -> operator(doubled('|') ? Operator.AND_OR : Operator.PIPE);
             case '&' -> ampersand();
@@ -177,9 +184,16 @@ final class ShellWords {
         return -1;
     }
 
-    /** {@code name()} opens a function, a bare {@code (} a subshell; glued to a word it is something unread. */
+    /**
+     * {@code NAME=(} opens a bash array, {@code name()} a function, a bare {@code (} a subshell; glued to any other
+     * word it is something unread.
+     */
     private void openParenthesis() {
-        if (next() == ')') {
+        if (arrayName == null && ARRAY_NAME.matcher(word).matches()) {
+            arrayName = word.toString();
+            word.setLength(0);
+            quoted = false;
+        } else if (next() == ')') {
             tokens.add(new FunctionParens(word.toString()));
             word.setLength(0);
             quoted = false;
@@ -188,6 +202,30 @@ final class ShellWords {
             operator(Operator.OPEN);
         } else {
             unreadable = true;
+        }
+    }
+
+    /**
+     * The end of a bash array: one assignment word holding the array's words joined by spaces (the owner's choice,
+     * 7 Nov), so {@code ${NAME[@]}} expands to them like any variable. Otherwise an operator.
+     */
+    private void closeParenthesis() {
+        if (arrayName == null) {
+            operator(Operator.CLOSE);
+            return;
+        }
+        endWord();
+        tokens.add(new Word(arrayName + String.join(" ", arrayWords), true));
+        arrayName = null;
+        arrayWords.clear();
+    }
+
+    /** Inside an array a newline only separates words. */
+    private void newline() {
+        if (arrayName == null) {
+            operator(Operator.NEWLINE);
+        } else {
+            endWord();
         }
     }
 
@@ -239,7 +277,10 @@ final class ShellWords {
     }
 
     private void endWord() {
-        if (!word.isEmpty()) {
+        if (!word.isEmpty() && arrayName != null) {
+            arrayWords.add(word.toString());
+            word.setLength(0);
+        } else if (!word.isEmpty()) {
             tokens.add(new Word(word.toString(), quoted));
             word.setLength(0);
         }

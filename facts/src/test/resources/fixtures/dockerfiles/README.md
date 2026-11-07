@@ -13,3 +13,6 @@ a line holding only a backslash after a `COPY`, which rewrite-docker 8.90.4 glue
 `sclorg-c9s-*.Dockerfile`: sclorg's CentOS Stream 9 Dockerfiles at the commits discovery scanned on 6 Nov
 (`s2i-base-container` core and base, `s2i-python-container` 3.12, `nginx-container` 1.24), unedited: the
 Dockerfile side of the `testdata/contracts/sclorg-c9s-*` contracts.
+`bitnami-acmesolver-1.21-debian-12.Dockerfile` is bitnami's `containers` (`bitnami/acmesolver/1.21/debian-12/Dockerfile`)
+at the commit discovery scanned on 6 Nov, unedited: minideb's `install_packages` and `uninstall_packages`, and the
+download `RUN` with a bash array that every bitnami image shares.

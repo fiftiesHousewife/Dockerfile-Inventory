@@ -24,6 +24,15 @@ class TextRulesTest {
     }
 
     @Test
+    void s2LeavesASecretNamedValueThatIsOnlyAnAbsolutePathAlone() {
+        assertThat(new SecretValue().check(Subjects.of("""
+                FROM ubi9
+                ENV NSS_WRAPPER_PASSWD="/opt/app/nss_passwd" CREDENTIAL_FILE=/run/creds.json
+                ENV DB_PASSWORD="/not a path"
+                """))).singleElement().satisfies(f -> assertThat(f.message()).contains("DB_PASSWORD"));
+    }
+
+    @Test
     void s2ReportsAKnownSecretShapeUnderAnyNameAndNeverKeepsTheValue() {
         String awsKey = "AKIA" + "ABCDEFGHIJKLMNOP";
         String jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl";

@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Finds package-manager calls among a {@code RUN}'s commands, and whether each one's cache is cleaned later in the
@@ -36,6 +37,18 @@ public final class PackageCalls {
             "apt-get", Family.APT, "apt", Family.APT,
             "apk", Family.APK);
 
+    /**
+     * Base images' wrappers around a manager, as the command they run. minideb's {@code install_packages} runs
+     * {@code apt-get install} and removes the lists after, so it is an apt install whose cache is cleaned (the
+     * owner's choice, 7 Nov); {@code uninstall_packages} runs {@code apt-get remove}.
+     */
+    private record Wrapper(String manager, String subcommand, boolean cleans) {
+    }
+
+    private static final Map<String, Wrapper> WRAPPERS = Map.of(
+            "install_packages", new Wrapper("apt-get", "install", true),
+            "uninstall_packages", new Wrapper("apt-get", "remove", false));
+
     private static final Pattern VARIABLE = Pattern.compile("\\$\\{?([A-Za-z_][A-Za-z0-9_]*)}?");
 
     private PackageCalls() {
@@ -53,7 +66,8 @@ public final class PackageCalls {
     public static List<PackageCall> of(List<List<String>> unexpanded, Map<String, String> variables) {
         List<List<String>> commands = unexpanded.stream().map(c -> expand(c, variables)).toList();
         return IntStream.range(0, commands.size())
-                .filter(i -> MANAGERS.containsKey(commands.get(i).getFirst()))
+                .filter(i -> MANAGERS.containsKey(commands.get(i).getFirst())
+                        || WRAPPERS.containsKey(commands.get(i).getFirst()))
                 .mapToObj(i -> call(commands.get(i), commands.subList(i + 1, commands.size())))
                 .toList();
     }
@@ -81,6 +95,22 @@ public final class PackageCalls {
     }
 
     private static PackageCall call(List<String> command, List<List<String>> later) {
+        Wrapper wrapper = WRAPPERS.get(command.getFirst());
+        if (wrapper == null) {
+            return managerCall(command, later);
+        }
+        PackageCall unwrapped = managerCall(unwrapped(wrapper, command), later);
+        return new PackageCall(unwrapped.manager(), unwrapped.subcommand(), unwrapped.flags(), unwrapped.packages(),
+                wrapper.cleans() || unwrapped.cleanedInSameRun());
+    }
+
+    /** A wrapper's command written as the manager's: {@code install_packages a} as {@code apt-get install a}. */
+    private static List<String> unwrapped(Wrapper wrapper, List<String> command) {
+        return Stream.concat(Stream.of(wrapper.manager(), wrapper.subcommand()),
+                command.subList(1, command.size()).stream()).toList();
+    }
+
+    private static PackageCall managerCall(List<String> command, List<List<String>> later) {
         String manager = command.getFirst();
         Family family = MANAGERS.get(manager);
         Map<Boolean, List<String>> byFlag = command.subList(1, command.size()).stream()

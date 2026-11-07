@@ -31,7 +31,11 @@ and one line when its gate is met.
     `KeyValuePairs` and `Expansions`; `FactsParser` split into `RetryText`, `Templates` and `MergedLines`;
     `ShellTokeniser` into `ShellWords` and `ShellCommands`. openshift's and docker-library's facts, rules and round
     trips are unchanged, apart from four Windows images whose `COPY` destination now keeps both trailing backslashes.
-    Next: bitnami.
+  - Done 7 Nov: `bitnami` (22 repositories, 266 locations, 266 files): no parse failures, round trip 266 of 266.
+    Bash arrays are read (its 257 unreadable RUNs, 15.5%, now 0) and minideb's `install_packages` counts as an apt
+    install (package calls 648 -> 1,110). R1 no longer reports `FROM scratch` (524 false positives in konflux-ci, 174
+    in openshift) and S2 leaves a secret-named value that is only a path alone (`docs/plans/bitnami-fixes.md`).
+    Next: openshift's lineage from published OKD images (to plan).
 
 - Phase 1 — Parse and normalise. Plan: `docs/plans/phase-1.md`. Gate: parse-failure and opaque-`RUN` rates
   published. Code complete; the gate waits on a discovery run.

@@ -16,8 +16,18 @@ public final class Secrets {
             Pattern.compile("-----BEGIN [A-Z ]*PRIVATE KEY-----"),
             Pattern.compile("\\bAKIA[0-9A-Z]{16}\\b"),
             Pattern.compile("\\beyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+"));
+    /** An absolute path and nothing else, quoted or not. */
+    private static final Pattern ONLY_A_PATH = Pattern.compile("([\"']?)/\\S*\\1");
 
     private Secrets() {
+    }
+
+    /**
+     * A value that is a secret: one shaped like a secret under any name, or any value under a secret's name, except
+     * one that is only an absolute path, which says where a secret lives, not what it is (the owner's choice, 7 Nov).
+     */
+    public static boolean secret(String name, String value) {
+        return secretShape(value) || secretName(name) && !ONLY_A_PATH.matcher(value.strip()).matches();
     }
 
     /**
