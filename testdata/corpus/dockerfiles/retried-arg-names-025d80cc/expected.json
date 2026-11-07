@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/faas-console-plugin",
+    "path": "Dockerfile",
+    "commit": "0ccddb06eb4221487d28c0753f65d37d4264cea2",
+    "blobSha": "025d80cc29f0a85e415e67fafcdfe2baceda60ee"
+  },
+  "why": "parses only with the parser's arg-names workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

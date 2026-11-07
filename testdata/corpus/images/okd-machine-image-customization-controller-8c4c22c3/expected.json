@@ -1,0 +1,8 @@
+{
+  "image": "okd-machine-image-customization-controller",
+  "sourceRepository": "openshift/image-customization-controller",
+  "tier": "WEAK",
+  "blobShas": [
+    "364f3d65ab46114e66323385504096961d4fef01"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "image": "sclorg-s2i-base-c9s",
+  "sourceRepository": "",
+  "tier": "NONE",
+  "blobShas": []
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/assisted-service",
+    "path": "ci-images/Dockerfile.lint",
+    "commit": "25f92c67e44fd08c5f282664cdd569bb8a0f63aa",
+    "blobSha": "475bd63ab4133974222f0c50a58ecde72641508b"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

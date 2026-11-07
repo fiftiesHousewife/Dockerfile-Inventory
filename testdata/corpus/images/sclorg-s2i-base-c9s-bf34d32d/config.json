@@ -1,0 +1,108 @@
+{
+  "config": {
+    "Labels": {
+      "com.redhat.component": "s2i-base-container",
+      "description": "The s2i-base image, being built upon s2i-core, provides any images layered on top of it with all the tools needed to use source-to-image functionality. Additionally, s2i-base also contains various libraries needed for it to serve as a base for other builder images, like s2i-python or s2i-ruby.",
+      "io.buildah.version": "1.37.0",
+      "io.k8s.description": "The s2i-base image, being built upon s2i-core, provides any images layered on top of it with all the tools needed to use source-to-image functionality. Additionally, s2i-base also contains various libraries needed for it to serve as a base for other builder images, like s2i-python or s2i-ruby.",
+      "io.k8s.display-name": "s2i base",
+      "io.openshift.s2i.scripts-url": "image:///usr/libexec/s2i",
+      "io.s2i.scripts-url": "image:///usr/libexec/s2i",
+      "maintainer": "SoftwareCollections.org <sclorg@redhat.com>",
+      "name": "sclorg/s2i-base-c9s",
+      "org.label-schema.build-date": "20261103",
+      "org.label-schema.license": "GPLv2",
+      "org.label-schema.name": "CentOS Stream 9 Base Image",
+      "org.label-schema.schema-version": "1.0",
+      "org.label-schema.vendor": "CentOS",
+      "summary": "Base image with essential libraries and tools used as a base for builder images like perl, python, ruby, etc.",
+      "version": "9"
+    },
+    "User": null
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:13fa0a638bad49930cda79267301b47ac1da2c731d0dd94e40b7a86685b2da8c",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:1a6d8ed49506428af330e5332c91e71e34de84750f957763f19bcb8ce8c8810f",
+      "sha256:acfdc9322e12b4e592722a203b4c47ccb1ab2f94f468608bca55ce4afb367be5"
+    ]
+  },
+  "history": [
+    {
+      "created": "2026-11-03T04:10:10Z",
+      "created_by": "/bin/sh -c #(nop) osbuild input 'base'"
+    },
+    {
+      "created": "2026-11-04T00:12:49.548095688Z",
+      "created_by": "/bin/sh -c #(nop) LABEL org.label-schema.schema-version=\"1.0\"     org.label-schema.name=\"CentOS Stream 9 Base Image\"     org.label-schema.vendor=\"CentOS\"     org.label-schema.license=\"GPLv2\"     org.label-schema.build-date=\"20261103\"",
+      "comment": "FROM oci-archive",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T00:12:49.550058868Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]"
+    },
+    {
+      "created": "2026-11-06T18:11:28.541779804Z",
+      "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Base image which allows using of source-to-image.\"\t    DESCRIPTION=\"The s2i-core image provides any images layered on top of it with all the tools needed to use source-to-image functionality while keeping the image size as small as possible.\"     NAME=s2i-core     VERSION=9",
+      "comment": "FROM inventory-jcr:8082/docker-local/centos/centos:stream9",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:11:28.541815054Z",
+      "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"s2i core\"       io.openshift.s2i.scripts-url=image:///usr/libexec/s2i       io.s2i.scripts-url=image:///usr/libexec/s2i       com.redhat.component=\"$NAME-container\"       name=\"sclorg/$NAME-c9s\"       version=\"$VERSION\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:11:28.541851971Z",
+      "created_by": "/bin/sh -c #(nop) ENV     STI_SCRIPTS_URL=image:///usr/libexec/s2i     STI_SCRIPTS_PATH=/usr/libexec/s2i     APP_ROOT=/opt/app-root     HOME=/opt/app-root/src     PATH=/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin     PLATFORM=\"el9\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.482652385Z",
+      "created_by": "/bin/sh -c INSTALL_PKGS=\"bsdtar   findutils   gettext   glibc-langpack-en   groff-base   glibc-locale-source   rsync   scl-utils   tar   unzip   xz   yum\" &&   mkdir -p ${HOME}/.pki/nssdb &&   chown -R 1001:0 ${HOME}/.pki &&   dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&   rpm -V $INSTALL_PKGS &&   dnf -y clean all --enablerepo='*'",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.53448876Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:7c2972cc2e4f90cf0d7644aac472086c081dea1e2f64e0f7a9bde1ea291623ec in / ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.543957427Z",
+      "created_by": "/bin/sh -c #(nop) WORKDIR ${HOME}",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.55341351Z",
+      "created_by": "/bin/sh -c #(nop) ENTRYPOINT [\"container-entrypoint\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.562878468Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"base-usage\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:26.000460761Z",
+      "created_by": "/bin/sh -c rpm-file-permissions &&   useradd -u 1001 -r -g 0 -d ${HOME} -c \"Default Application User\" default &&   chown -R 1001:0 ${APP_ROOT}"
+    },
+    {
+      "created": "2026-11-06T18:13:49.819184675Z",
+      "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Base image with essential libraries and tools used as a base for builder images like perl, python, ruby, etc.\"     DESCRIPTION=\"The s2i-base image, being built upon s2i-core, provides any images layered on top of it with all the tools needed to use source-to-image functionality. Additionally, s2i-base also contains various libraries needed for it to serve as a base for other builder images, like s2i-python or s2i-ruby.\"     NODEJS_VER=22     NAME=s2i-base",
+      "comment": "FROM inventory-jcr:8082/docker-local/sclorg/s2i-core-c9s:c9s",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:49.829193591Z",
+      "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"s2i base\"       com.redhat.component=\"$NAME-container\"       name=\"sclorg/$NAME-c9s\"       version=\"$VERSION\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:16:19.856482175Z",
+      "created_by": "/bin/sh -c yum -y module enable nodejs:$NODEJS_VER &&   INSTALL_PKGS=\"nodejs autoconf   automake   bzip2   gcc-c++   gd-devel   gdb   git   libcurl-devel   libpq-devel   libxml2-devel   libxslt-devel   lsof   make   mariadb-connector-c-devel   openssl-devel   patch   procps-ng   npm   redhat-rpm-config   sqlite-devel   unzip   wget   which   zlib-devel\" &&   yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&   rpm -V $INSTALL_PKGS &&   node -v | grep -qe \"^v$NODEJS_VER\\.\" && echo \"Found VERSION $NODEJS_VER\" &&   yum -y clean all --enablerepo='*'"
+    }
+  ]
+}

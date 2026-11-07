@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/appliance",
+    "path": "Dockerfile.openshift-appliance-build",
+    "commit": "708f956eb6ac4a50f93f77dceaeda18701601474",
+    "blobSha": "d4ee8e4f0712bf080fc80e972d759f7bb9f1d9f1"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

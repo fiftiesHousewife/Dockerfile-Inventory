@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/assisted-installer-agent",
+    "path": "Dockerfile.assisted_installer_agent-build",
+    "commit": "c9c45088c300b0a2aee2b03d294ed4c885587461",
+    "blobSha": "b428acc5efc06da3ac54067d2fd79226c989f707"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

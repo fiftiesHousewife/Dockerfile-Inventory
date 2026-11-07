@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/odo",
+    "path": ".ibm/images/Dockerfile",
+    "commit": "5645314ac512b08df3781372763fb8d43ef392d4",
+    "blobSha": "7a30909629f11a60941aaa5d07cbebc6fdcab9a8"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

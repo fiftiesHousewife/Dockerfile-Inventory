@@ -1,0 +1,2 @@
+{"blobSha":"660d2cccede523bd24ae702847bbb3cc7f071839","steps":[{"keyword":"COPY","text":"/"},{"keyword":"COPY","text":"/"},{"keyword":"LABEL","text":"io.openshift.release.operator"}],"fromPath":"openshift/origin-v4.0","repository":"openshift/machine-api-provider-gcp"}
+{"blobSha":"d16ac6e6995ca560dcc84d342ad1c04bd3ab5298","steps":[{"keyword":"COPY","text":"/"},{"keyword":"COPY","text":"/"}],"fromPath":"ocp/5.0","repository":"openshift/machine-api-provider-gcp"}

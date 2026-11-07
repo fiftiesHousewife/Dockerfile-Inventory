@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "sclorg/postgresql-container",
+    "path": "13/Dockerfile.rhel9",
+    "commit": "9264dbf56c67cb97beeda8704e9882e69305d75f",
+    "blobSha": "013c1f8c87c8bda8669c8ad9242ce2ea5cfd6413"
+  },
+  "why": "parses only with the parser's lone-backslash workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

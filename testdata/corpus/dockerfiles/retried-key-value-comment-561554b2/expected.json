@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/cac-content-fork",
+    "path": "Dockerfiles/compliance-operator-content-konflux.Containerfile",
+    "commit": "51755c3254e6a12430041e1f2d483d8d109829ef",
+    "blobSha": "561554b2366f701e904e80cf7c2b6bacdce2908a"
+  },
+  "why": "parses only with the parser's key-value-comment workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

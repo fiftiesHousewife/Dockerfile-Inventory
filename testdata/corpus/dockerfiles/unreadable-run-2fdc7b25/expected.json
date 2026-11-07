@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "docker-library/busybox",
+    "path": "latest/glibc/Dockerfile.builder",
+    "commit": "5741ecc8d7d64c02eb40fecc9f3c3b1bc5cb07fc",
+    "blobSha": "2fdc7b25a1ac01e173344328749465c538ea6d39"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "retried",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

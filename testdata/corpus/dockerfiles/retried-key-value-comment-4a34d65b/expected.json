@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "sclorg/nginx-container",
+    "path": "1.24/Dockerfile.fedora",
+    "commit": "ab2e6dab8db0f2372d94e1be0eb5c02f9bbd77b2",
+    "blobSha": "4a34d65bece0dd5d41cdb3274acf117c8db60219"
+  },
+  "why": "parses only with the parser's key-value-comment workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

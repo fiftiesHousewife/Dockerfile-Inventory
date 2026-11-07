@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/assisted-service",
+    "path": "Dockerfile.assisted-service-build",
+    "commit": "25f92c67e44fd08c5f282664cdd569bb8a0f63aa",
+    "blobSha": "cae61f0393eba7708776bec8dbdceb8d907e0ab3"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

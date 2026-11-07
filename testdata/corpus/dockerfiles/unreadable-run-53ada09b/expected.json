@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/sippy",
+    "path": "Dockerfile.buildroot",
+    "commit": "dd6353ba6377fd608a668ba5c53c674a2b9e5b97",
+    "blobSha": "53ada09bb55df62bb5f39935d5d25342015605f7"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

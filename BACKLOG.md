@@ -5,7 +5,9 @@ and one line when its gate is met.
 
 ## Active
 
-- Queued 7 Nov, in order: a bank of real cases (`docs/plans/fixture-bank.md`); the parser fork and its 15 fixes
+- Done 7 Nov: a bank of real cases (`docs/plans/fixture-bank.md`): 152 Dockerfiles and 34 images that broke
+  something, pinned by corpus tests in facts, the converter and lineage.
+- Queued 7 Nov, in order: the parser fork and its 15 fixes
   (`docs/plans/parser-fork.md`); the report's usability (`docs/plans/report-usability.md`); the corporate network
   settings wired into discovery and lineage, Gradle mirrors and the pod image (`docs/plans/corporate-readiness.md`,
   the `http` module built).

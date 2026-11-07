@@ -1,0 +1,1 @@
+{"blobSha":"2c97abe959a0a7051e9546bbb6d772a936d7ff25","steps":[{"keyword":"COPY","text":"/usr/bin/"},{"keyword":"LABEL","text":"io.k8s.description io.k8s.display-name io.openshift.tags"}],"fromPath":"ocp/5.0","repository":"openshift/cluster-policy-controller"}

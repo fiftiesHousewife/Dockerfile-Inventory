@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/cp-patterns",
+    "path": "docker/Dockerfile",
+    "commit": "2d0ffa2d7eaeb4175ff2045ec9c2218e5dedec1e",
+    "blobSha": "ba5f85b86bd1ef7d85ad370702db5d82234aa874"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

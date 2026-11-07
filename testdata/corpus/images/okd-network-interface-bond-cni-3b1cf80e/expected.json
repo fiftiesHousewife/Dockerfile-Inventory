@@ -1,0 +1,8 @@
+{
+  "image": "okd-network-interface-bond-cni",
+  "sourceRepository": "openshift/bond-cni",
+  "tier": "WEAK",
+  "blobShas": [
+    "a6fac8042ebb7d743a71cc430498964af711add6"
+  ]
+}

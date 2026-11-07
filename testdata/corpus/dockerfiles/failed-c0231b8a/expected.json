@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/intellij-dependency-analytics",
+    "path": "src/main/java/org/jboss/tools/intellij/image/build/dockerfile.bnf",
+    "commit": "08e8e42141eaa47de8c143c1cd14025da58b56ac",
+    "blobSha": "c0231b8a6a910ece6854898a4bc0f5134e567dce"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

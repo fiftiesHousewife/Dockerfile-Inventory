@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "konflux-ci/task-runner",
+    "path": "Containerfile",
+    "commit": "5ea249f896b2d67c513d8d95f2dd7bce3c30a464",
+    "blobSha": "01b4b9caf57baa044aa897372d8e2b7b567450f0"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

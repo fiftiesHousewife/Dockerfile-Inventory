@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kubernetes-kubectl",
+    "path": "docs/book/Dockerfile",
+    "commit": "0c5d119ce86414ebbd725f56967987c9cf72e496",
+    "blobSha": "62d7586dc8c95fca7104f70f44b8543becc956de"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

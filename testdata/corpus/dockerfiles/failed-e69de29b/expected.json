@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kube-rbac-proxy",
+    "path": "examples/example-client-http2/Dockerfile",
+    "commit": "75554a0355eb0c9b25904102437a529703af89b8",
+    "blobSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

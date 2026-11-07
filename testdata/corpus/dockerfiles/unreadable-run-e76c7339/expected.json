@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "konflux-ci/tekton-integration-catalog",
+    "path": "konflux/tekton-integration-catalog-utils/tekton-integration-catalog-utils/Dockerfile",
+    "commit": "af63e976717a238fb98c973f27a660b2652b0f09",
+    "blobSha": "e76c7339b27651c4b6b5ed808d07486f536844db"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 2,
+  "roundTrip": "passes"
+}

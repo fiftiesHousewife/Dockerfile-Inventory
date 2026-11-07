@@ -1,0 +1,8 @@
+{
+  "image": "okd-csi-external-snapshotter",
+  "sourceRepository": "openshift/csi-external-snapshotter",
+  "tier": "WEAK",
+  "blobShas": [
+    "a80a007e39a1673b060d45058d4d31e7c5b172fe"
+  ]
+}

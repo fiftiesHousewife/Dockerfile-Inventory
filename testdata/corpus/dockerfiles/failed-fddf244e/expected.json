@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/microshift",
+    "path": "test/image-blueprints-bootc/el9/layer3-periodic/group1/rhel98-bootc-source-tuned.containerfile",
+    "commit": "6d9435a3ce448ef6d35b332b5261781a84f794ad",
+    "blobSha": "fddf244ef2c2d0bf2e15266a0461a5344c10b0de"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

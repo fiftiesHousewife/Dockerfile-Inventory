@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/backplane-cli",
+    "path": "make.Dockerfile",
+    "commit": "6b8b770af7d8b07d6aee2f6371aeefb13765452c",
+    "blobSha": "1b0fff3f7e6f4bfd18bd1e01cb7d16ea3a804845"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

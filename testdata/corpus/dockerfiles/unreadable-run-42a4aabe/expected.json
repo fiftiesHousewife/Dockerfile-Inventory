@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/rhdh",
+    "path": ".ci/images/Dockerfile",
+    "commit": "0ebef90ac80c7dad44d2416e3118d5657b8d2138",
+    "blobSha": "42a4aabe8d818a75e4f0b3cdb9fe69e04a8ed590"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 2,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/jenkins",
+    "path": "2/Dockerfile.rhel9",
+    "commit": "b59cdaada1be18a39afa8888b55cfb7d16d6fee9",
+    "blobSha": "8dac9ee36bacee3ce5b4e1bee415003638d41ae0"
+  },
+  "why": "parses only with the parser's other workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/microshift",
+    "path": "docs/config/Containerfile.bootc-rhel9",
+    "commit": "6d9435a3ce448ef6d35b332b5261781a84f794ad",
+    "blobSha": "91d40e0f886b3507c2431a7f862e19e2c3bd7029"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

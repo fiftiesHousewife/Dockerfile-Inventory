@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/moby-moby",
+    "path": "contrib/syntax/nano/Dockerfile.nanorc",
+    "commit": "8cf8fe9cf80a07d4e68829f619ea2c71fbb5af0c",
+    "blobSha": "8b63dae945c6554b1cff5eaa3b3c8bade2d75e01"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

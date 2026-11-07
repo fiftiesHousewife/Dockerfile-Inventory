@@ -1,0 +1,36 @@
+{
+  "config": {
+    "Labels": {
+      "io.buildah.version": "1.43.2",
+      "org.label-schema.build-date": "20261103",
+      "org.label-schema.license": "GPLv2",
+      "org.label-schema.name": "CentOS Stream 10 Base Image",
+      "org.label-schema.schema-version": "1.0",
+      "org.label-schema.vendor": "CentOS"
+    },
+    "User": null
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:f98ad74a89dabaaddf52974fcb10d0a88a35fcd5a643ff337828595b5d7f8815",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+    ]
+  },
+  "history": [
+    {
+      "created": "2026-11-03T04:28:24Z",
+      "created_by": "/bin/sh -c #(nop) osbuild input 'base'"
+    },
+    {
+      "created": "2026-11-04T01:05:48.395068882Z",
+      "created_by": "/bin/sh -c #(nop) LABEL org.label-schema.schema-version=\"1.0\"     org.label-schema.name=\"CentOS Stream 10 Base Image\"     org.label-schema.vendor=\"CentOS\"     org.label-schema.license=\"GPLv2\"     org.label-schema.build-date=\"20261103\"",
+      "comment": "FROM oci-archive",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T01:05:48.396139522Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]"
+    }
+  ]
+}

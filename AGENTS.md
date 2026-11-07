@@ -70,10 +70,12 @@ converter/          stage 5: Dockerfile -> model -> Dockerfile, and Java builder
                     RunFiles
 testdata/contracts/ the normal-form contracts between facts and lineage: real Dockerfiles against the history of
                     the real images they built (python-311, sclorg-c9s-*)
+testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
+                    outcome; facts', the converter's and lineage's corpus tests ratchet on it (its README)
 scripts/            discover.sh (one organisation with the GitHub CLI's token), combine.sh (several discovery
                     outputs as one estate), lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published
-                    images), okd-select.sh (OKD images and their release index), jcr-diagnose.sh,
-                    record-jcr-fixtures.sh
+                    images), okd-select.sh (OKD images and their release index), corpus-collect.sh and
+                    corpus-collect-images.sh (the fixture bank from a run), jcr-diagnose.sh, record-jcr-fixtures.sh
 docs/               overview.md (the problem and the approach), plans/ (one per phase or slice), upstream/
                     (rewrite-docker issues)
 ```
@@ -141,6 +143,10 @@ a row in the layout above, an entry in BACKLOG.md.
 
 **Add a rule.** An ID, tier (detect or fix) and severity; a class implementing `Rule` or `EffectiveRule`; tests with
 a passing and a failing fixture; a measured false-positive rate on 50 sampled findings before any fix is enabled.
+
+**A case that breaks something.** Add it to the fixture bank (`testdata/corpus/`) with its outcome; the collectors
+do this from a run. When a change turns cases, the corpus tests name them: update their `expected.json` in the same
+commit, so the change's effect is in the diff.
 
 **A Dockerfile the parser gets wrong.** Shrink the real lines while the error stays the same; record the minimal
 reproduction in `docs/upstream/rewrite-docker-issues.md` and the trimmed lines as a fixture. Until the fork is in,

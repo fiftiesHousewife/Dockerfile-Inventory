@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/origin-server",
+    "path": "Dockerfile",
+    "commit": "7fd191093ac5a07133108e5583fe30270494306d",
+    "blobSha": "f008e427446711a7fe65f49b51dc842695f1a8fd"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/microshift",
+    "path": "packaging/imagemode/Containerfile.repourl",
+    "commit": "6d9435a3ce448ef6d35b332b5261781a84f794ad",
+    "blobSha": "d8b307e17769369ba9b0e88511a392ac903be8e1"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

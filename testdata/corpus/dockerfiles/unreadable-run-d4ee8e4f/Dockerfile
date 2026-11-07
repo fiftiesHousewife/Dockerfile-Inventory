@@ -1,0 +1,26 @@
+FROM registry.access.redhat.com/ubi9/go-toolset:1.26 AS golang
+
+ENV GOFLAGS=""
+
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.7.2 && \
+        go install golang.org/x/tools/cmd/goimports@v0.1.0 && \
+        go install github.com/onsi/ginkgo/ginkgo@v1.16.1 && \
+        go install github.com/golang/mock/mockgen@v1.6.0 && \
+        go install github.com/vektra/mockery/v2@v2.39.1 && \
+        go install gotest.tools/gotestsum@v1.6.3 && \
+        go install github.com/axw/gocov/gocov@v1.1.0 && \
+        go install github.com/AlekSi/gocov-xml@v1.1.0
+
+FROM quay.io/centos/centos:stream9
+
+RUN dnf install -y make git diffutils && dnf clean all
+
+ENV GOROOT=/usr/lib/golang
+ENV GOPATH=/opt/app-root/src/go
+ENV PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+ENV LANG=en_US.UTF-8
+
+COPY --from=golang $GOPATH $GOPATH
+COPY --from=golang $GOROOT $GOROOT
+
+RUN chmod 775 -R $GOPATH && chmod 775 -R $GOROOT

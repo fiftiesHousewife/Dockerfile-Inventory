@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/bpfman",
+    "path": "Containerfile.bpfman.local",
+    "commit": "ee87f812acc0e111cd146e33a61c74225b36369c",
+    "blobSha": "9a33e20c4bf27b4cb515e23a3a7661328acc746f"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/traefik",
+    "path": "build.Dockerfile",
+    "commit": "0ee377bc9f036124b063e7abc3f0958d51ace5fb",
+    "blobSha": "ce037bbfddc1d3e6c55a2cf68ef9ad3396dafbfb"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 3,
+  "roundTrip": "passes"
+}

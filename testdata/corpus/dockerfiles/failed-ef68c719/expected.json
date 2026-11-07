@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/moby-moby",
+    "path": "Dockerfile.windows",
+    "commit": "8cf8fe9cf80a07d4e68829f619ea2c71fbb5af0c",
+    "blobSha": "ef68c7190a21f39e4efdcaf65d252cd52b92ea2b"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

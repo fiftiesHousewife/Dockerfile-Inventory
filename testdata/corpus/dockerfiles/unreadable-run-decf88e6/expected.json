@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/rhdh-plugin-certification",
+    "path": ".automation/images/Dockerfile",
+    "commit": "23ecc363883572ce2886fa1066e540c15459fae2",
+    "blobSha": "decf88e66866febbf79937549e3a6cb91b701b63"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

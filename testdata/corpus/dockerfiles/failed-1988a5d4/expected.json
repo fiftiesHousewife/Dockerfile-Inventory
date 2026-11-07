@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kubernetes-1",
+    "path": "test/images/node-perf/npb-ep/Dockerfile",
+    "commit": "8c7c96729e60fc7f031154e127901cc46e110ff8",
+    "blobSha": "1988a5d4f9cdd1f2887b35a4984a29c2a98826c5"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

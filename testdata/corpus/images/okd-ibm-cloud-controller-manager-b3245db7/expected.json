@@ -1,0 +1,8 @@
+{
+  "image": "okd-ibm-cloud-controller-manager",
+  "sourceRepository": "openshift/cloud-provider-ibm",
+  "tier": "WEAK",
+  "blobShas": [
+    "c37a9c2a379c5ce816bfca028699813478e6215a"
+  ]
+}

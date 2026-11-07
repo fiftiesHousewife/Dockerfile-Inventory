@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/installer-aro",
+    "path": "images/installer/Dockerfile.upi.ci",
+    "commit": "0f04debb89bd1417d99d8ce42da685f15dc5549b",
+    "blobSha": "61a3eac5574adc46e1bb28e5756c46298cd88e28"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

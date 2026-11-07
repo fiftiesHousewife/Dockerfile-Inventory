@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/assisted-image-service",
+    "path": "Dockerfile.image-service-build",
+    "commit": "14d0363c13e5221b6203868f5b32252da127e9b2",
+    "blobSha": "bc7202cf3ad10d39f8e07fd9a8011002b9079c46"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

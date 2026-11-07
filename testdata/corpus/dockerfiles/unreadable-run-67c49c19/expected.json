@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "konflux-ci/mintmaker-renovate-image",
+    "path": "Dockerfile",
+    "commit": "9f9559cb6756ca4cf02aac67abef7bd89bdd7dd6",
+    "blobSha": "67c49c19da429cc5f65f3b7047a035983e9a4c7e"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 2,
+  "roundTrip": "passes"
+}

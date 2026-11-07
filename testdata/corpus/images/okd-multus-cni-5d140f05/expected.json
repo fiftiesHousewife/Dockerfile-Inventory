@@ -1,0 +1,8 @@
+{
+  "image": "okd-multus-cni",
+  "sourceRepository": "openshift/multus-cni",
+  "tier": "WEAK",
+  "blobShas": [
+    "4bcf75cca28577a95caf7552072fa78f72c8543b"
+  ]
+}

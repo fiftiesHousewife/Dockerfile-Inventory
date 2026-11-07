@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "sclorg/s2i-python-container",
+    "path": "3.12/Dockerfile.c10s",
+    "commit": "cc6d266cb1e9641c1f547da1d0c6094352b4e47c",
+    "blobSha": "0ff5e7787085a69ea2f49640f359466bbfa289c2"
+  },
+  "why": "parses only with the parser's comment-in-continuation workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

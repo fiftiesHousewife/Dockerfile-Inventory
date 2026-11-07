@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kubernetes-autoscaler",
+    "path": "vertical-pod-autoscaler/pkg/updater/Dockerfile",
+    "commit": "f393f54229e6c3ae74c35ae72012af92d31c03d3",
+    "blobSha": "32d684cb3626c784b38526604e3ffce417021e5e"
+  },
+  "why": "parses only with the parser's arg-names workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

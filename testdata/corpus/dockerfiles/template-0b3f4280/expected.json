@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/red-hat-developer-hub-software-templates",
+    "path": "templates/github/quarkus-backend/skeleton/src/main/docker/Dockerfile.native",
+    "commit": "48056c57dbfcdcf2a7075819745b0203d1a8a42e",
+    "blobSha": "0b3f4280a2801579a8a57b0423706701f37809d9"
+  },
+  "why": "a template saved under a Dockerfile's name",
+  "parse": "template",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

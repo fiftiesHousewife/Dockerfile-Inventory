@@ -1,0 +1,70 @@
+ARG BUILDSCRIPT=
+ARG LDFLAGS=
+FROM docker.io/library/node:24-alpine AS web-builder
+
+USER node
+
+ARG BUILDSCRIPT
+WORKDIR /opt/app-root
+
+COPY --chown=node web/package.json web/package.json
+COPY --chown=node web/package-lock.json web/package-lock.json
+WORKDIR /opt/app-root/web
+# Skip the Cypress binary download here: this alpine (musl) stage only builds the
+# app, and Cypress has no musl build. The binary is installed in the final stage.
+ENV CYPRESS_INSTALL_BINARY=0
+RUN npm --legacy-peer-deps ci
+
+WORKDIR /opt/app-root
+COPY --chown=node web web
+COPY mocks mocks
+
+WORKDIR /opt/app-root/web
+RUN TRANSPILE_ONLY=true npm run build$BUILDSCRIPT
+RUN TRANSPILE_ONLY=true npm run build:static
+
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.26 AS go-builder
+
+ARG LDFLAGS
+WORKDIR /opt/app-root
+
+COPY go.mod go.mod
+COPY go.sum go.sum
+COPY vendor/ vendor/
+COPY .mk/ .mk/
+COPY cmd/ cmd/
+COPY pkg/ pkg/
+
+RUN CGO_ENABLED=0 go build -ldflags "$LDFLAGS" -mod vendor -o plugin-backend cmd/plugin-backend.go
+
+FROM registry.access.redhat.com/ubi9/ubi-minimal:1790074409
+
+COPY --from=web-builder /opt/app-root/web/dist ./web/dist
+COPY --from=go-builder /opt/app-root/plugin-backend ./
+
+# cypress/base ships Node + OS deps, without the Cypress binary or browsers.
+FROM cypress/base:24.21.0
+WORKDIR /opt/app-root
+
+ENV HOME=/home/user
+ENV CYPRESS_CACHE_FOLDER=/home/user/.cache/Cypress
+
+COPY --from=web-builder /opt/app-root/web/ ./web
+COPY --from=go-builder /opt/app-root/plugin-backend ./
+
+COPY mocks mocks
+COPY config/sample-config.yaml ./config/config.yaml
+RUN sed -i -e 's/consoleMode: .*/consoleMode: Mock/g' ./config/config.yaml
+COPY scripts/cypress.sh .
+
+# Install the Cypress binary matching the version pinned in web/package.json.
+# Verify fails the build early if the binary/deps are wrong.
+RUN cd web && npx cypress install && npx cypress verify
+
+RUN mkdir -p /.config && chmod 775 -R /.config && \
+    mkdir -p /home/user && chmod -R 775 ./cypress.sh && \
+    chmod 775 plugin-backend && \
+    chgrp -R 0 /opt/app-root /home/user && \
+    chmod -R g+rwX /opt/app-root web /home/user
+
+ENTRYPOINT ["./plugin-backend", "--loglevel", "info", "--config", "./config/config.yaml"]

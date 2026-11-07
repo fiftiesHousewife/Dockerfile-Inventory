@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/aws-encryption-provider",
+    "path": "Dockerfile",
+    "commit": "f4d8aaa238a39279f90263de662eca89a52236d6",
+    "blobSha": "220a993d3f74729a3be0fb991c694a69169a61ee"
+  },
+  "why": "parses only with the parser's arg-names workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

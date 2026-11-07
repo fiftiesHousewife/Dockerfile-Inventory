@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/aws-efs-csi-driver",
+    "path": "Dockerfile",
+    "commit": "969b8da9de9897d51ec9a7a39134343187264b88",
+    "blobSha": "e0b5536e19f0e38e0a32972b8432408f6ed5b597"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/svt",
+    "path": "dockerfiles/grafana-ocp/Dockerfile",
+    "commit": "bf7b71c6ad86f849653110762288e251c67b6c2d",
+    "blobSha": "6e3abdaa3e2cf944c0925e23502d01e181e5b380"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/release-tests",
+    "path": "prow/Dockerfile",
+    "commit": "3d684530241fecee18d3adba9faea67f729c7f54",
+    "blobSha": "9be2fe2933e1801f7d7043c1a7d8b4984c659b89"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

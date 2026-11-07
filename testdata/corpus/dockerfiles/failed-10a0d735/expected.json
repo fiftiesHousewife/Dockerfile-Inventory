@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/app-services-openshift-console-plugin",
+    "path": "frontend/packages/dev-console/src/images/dockerfile.svg",
+    "commit": "af1626992de9c64a05300277d6f2c4a967705888",
+    "blobSha": "10a0d73506d4a8c75f6428d878a62504e03f7368"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

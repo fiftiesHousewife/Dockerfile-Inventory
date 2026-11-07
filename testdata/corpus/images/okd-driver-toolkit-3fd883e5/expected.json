@@ -1,0 +1,8 @@
+{
+  "image": "okd-driver-toolkit",
+  "sourceRepository": "openshift/driver-toolkit",
+  "tier": "WEAK",
+  "blobShas": [
+    "0e1d73727d4f305e399b6ffa3dd4900ed822ae56"
+  ]
+}

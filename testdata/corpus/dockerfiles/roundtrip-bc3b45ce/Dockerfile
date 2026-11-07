@@ -1,0 +1,11 @@
+# Get RHCOS base image of target cluster `oc adm release info --image-for rhel-coreos-8`
+# hadolint ignore=DL3006
+FROM quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256...
+
+# Enable cliwrap; this is currently required to intercept some command invocations made from
+# kernel scripts.
+RUN rpm-ostree cliwrap install-to-root /
+# Replace the kernel, kernel-core and kernel-modules packages.
+# hadolint ignore=SC3009
+RUN rpm-ostree override replace http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/kernel-{,core-,modules-,modules-extra-}4.18.0-483.el8.x86_64.rpm && \
+    ostree container commit

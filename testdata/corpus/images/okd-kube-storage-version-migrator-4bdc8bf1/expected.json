@@ -1,0 +1,8 @@
+{
+  "image": "okd-kube-storage-version-migrator",
+  "sourceRepository": "openshift/kubernetes-kube-storage-version-migrator",
+  "tier": "WEAK",
+  "blobShas": [
+    "9d3da3195d8c949df00c1400cbe38a7ee183b9cf"
+  ]
+}

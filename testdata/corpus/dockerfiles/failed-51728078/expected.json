@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/oadp-operator",
+    "path": "build/Dockerfile.catalog",
+    "commit": "29d17b339f75d746af98f37f13bff0392789d68d",
+    "blobSha": "5172807883422d68af62f325704b56f0b40156c6"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

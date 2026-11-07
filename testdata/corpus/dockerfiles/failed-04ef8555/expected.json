@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/rhdh-ai-developer-images",
+    "path": "helm-charts/application-gitops/Containerfile",
+    "commit": "847e01a6f0adc3da4dec23c4a0c14cb18728820e",
+    "blobSha": "04ef855593800bfb69332df53c946054fef26c57"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/ceph-csi",
+    "path": "scripts/Dockerfile.test",
+    "commit": "9b8b723eea4ac9397738a8e0ebcd47ba5fafbc3d",
+    "blobSha": "e1bc3dad772a5c5d9f04ca59b4a1b377e4cd3e2f"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

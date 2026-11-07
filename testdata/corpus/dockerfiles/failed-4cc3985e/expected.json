@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/broken-link-checks",
+    "path": "Dockerfile",
+    "commit": "b49962d221fc8dd7714e99792682d5d16545e353",
+    "blobSha": "4cc3985e53a7b4dc34fc36a0f18172e14876fc17"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

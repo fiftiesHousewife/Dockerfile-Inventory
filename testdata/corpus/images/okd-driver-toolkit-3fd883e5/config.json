@@ -1,0 +1,373 @@
+{
+  "config": {
+    "Labels": {
+      "License": "GPLv2+",
+      "architecture": "x86_64",
+      "build-date": "2026-11-05T00:44:36Z",
+      "com.redhat.component": "driver-toolkit-container",
+      "description": "Empty",
+      "io.buildah.version": "1.44.0",
+      "io.k8s.description": "driver-toolkit is a container with the kernel packages necessary for building driver containers for deploying kernel modules/drivers on OpenShift",
+      "io.k8s.display-name": "Empty",
+      "io.openshift.build.commit.id": "b63b175a79b9fe0c29f6ed63df3c2d7862ba408a",
+      "io.openshift.build.commit.url": "https://github.com/openshift/driver-toolkit/commit/b63b175a79b9fe0c29f6ed63df3c2d7862ba408a",
+      "io.openshift.build.source-location": "https://github.com/openshift/driver-toolkit",
+      "io.openshift.maintainer.component": "Driver Toolkit",
+      "io.openshift.os.streamclass": "rhel-9",
+      "io.openshift.release.operator": "true",
+      "io.openshift.tags": "Empty",
+      "kernel-rt-version": "",
+      "kernel-version": "",
+      "name": "openshift5/driver-toolkit-rhel9",
+      "org.label-schema.build-date": "20260908",
+      "org.label-schema.license": "GPLv2",
+      "org.label-schema.name": "CentOS Stream 10 Base Image",
+      "org.label-schema.schema-version": "1.0",
+      "org.label-schema.vendor": "CentOS",
+      "org.opencontainers.image.created": "2026-11-05T00:44:36Z",
+      "org.opencontainers.image.revision": "4bf523297584e414870ac0af45d82b5ae8f182d9",
+      "release": "202611050030.p2.gb63b175.assembly.stream.scos10",
+      "summary": "Empty",
+      "vcs-ref": "4bf523297584e414870ac0af45d82b5ae8f182d9",
+      "vcs-type": "git",
+      "vendor": "Red Hat, Inc.",
+      "version": "v5.0.0"
+    },
+    "User": "0"
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:6943fbeba2611bcb09b4863efbd776d85c4a021b88fc0e490869571bda3de234",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:ff893b3f69bd17978c878e1b8ac5c6cfa7089b9dc930c4b759742cfecdff73b5",
+      "sha256:d4054adb8dc9dae03f7eaf5e9e8301402ac207f08e6768e9ca57a9f0e43f1183"
+    ]
+  },
+  "history": [
+    {
+      "created": "2026-09-08T04:27:37Z",
+      "created_by": "/bin/sh -c #(nop) osbuild input 'base'"
+    },
+    {
+      "created": "2026-09-09T01:47:58.474040815Z",
+      "created_by": "/bin/sh -c #(nop) LABEL org.label-schema.schema-version=\"1.0\"     org.label-schema.name=\"CentOS Stream 10 Base Image\"     org.label-schema.vendor=\"CentOS\"     org.label-schema.license=\"GPLv2\"     org.label-schema.build-date=\"20260908\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-09T01:48:00.062087356Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]",
+      "comment": "FROM oci-archive"
+    },
+    {
+      "created": "2026-09-21T13:18:23.122388531Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_ENGINE=konflux",
+      "comment": "FROM quay.io/centos/centos:stream10",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.122399958Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_METHOD=cachi2",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.122410818Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_NETWORK=open",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.286940227Z",
+      "created_by": "/bin/sh -c go clean -cache || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.286975008Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_MODE=default",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.28698371Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.460621332Z",
+      "created_by": "/bin/sh -c mkdir -p /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.503054669Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:54edd1de224d71d5f1c5599d774ba1e45d7a95bb149c9b599415b18db269ce0e in /etc/yum.repos.d/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.718807042Z",
+      "created_by": "/bin/sh -c curl https://certs.corp.redhat.com/certs/Current-IT-Root-CAs.pem",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.798723881Z",
+      "created_by": "/bin/sh -c #(nop) ADD f1582bbb014759feab96034b3eb79ad48869c70817be240c04b86efe3fa4608f in /tmp/art      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.79890001Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=update BUILD_RELEASE=202609211316.p2.g3f1cf08.assembly.stream.scos10 BUILD_VERSION=v5.0.0 OS_GIT_MAJOR=5 OS_GIT_MINOR=0 OS_GIT_PATCH=0 OS_GIT_TREE_STATE=clean OS_GIT_VERSION=5.0.0-202609211316.p2.g3f1cf08.assembly.stream.scos10 SOURCE_GIT_TREE_STATE=clean TAGS=scos __doozer_group=okd-5.0 __doozer_key=openshift-enterprise-base-rhel9 __doozer_uuid_tag=openshift-enterprise-base-rhel9-v5.0.0-20260921.131702 __doozer_version=v5.0.0 ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.798995684Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=merge OS_GIT_COMMIT=3f1cf08 OS_GIT_VERSION=5.0.0-202609211316.p2.g3f1cf08.assembly.stream.scos10-3f1cf08 SOURCE_DATE_EPOCH=1789222131 SOURCE_GIT_COMMIT=3f1cf0830f196a6755b8baf179fc0401188251c4 SOURCE_GIT_TAG=3f1cf0830 SOURCE_GIT_URL=https://github.com/openshift/images ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.844892352Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:828306ca895a6394bc2e9784c259b0202f9409cdc5a3d51f5b9bd8cc65f9a02d in /etc/crypto-policies/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:28.427763957Z",
+      "created_by": "/bin/sh -c INSTALL_PKGS=\"       which tar wget hostname shadow-utils       socat findutils lsof bind-utils gzip       procps-ng rsync iproute diffutils python3       python-unversioned-command util-linux\" &&     echo 'skip_missing_names_on_install=0' >> /etc/yum.conf &&     echo 'install_weak_deps=0' >> /etc/yum.conf &&     dnf install -y --nodocs ${INSTALL_PKGS} &&     ( test -d /usr/share/zoneinfo || dnf reinstall -y --nodocs tzdata || dnf install -y --nodocs tzdata ) &&     dnf clean all && rm -rf /var/cache/*",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:28.60352393Z",
+      "created_by": "/bin/sh -c install -d -m 0755 /run/lock",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:44.925993218Z",
+      "created_by": "/bin/sh -c source /etc/os-release  && [ \"${ID}\" != \"centos\" ]  && exit 0 ;     INSTALL_PKGS=\"dnf-plugins-core centos-release-nfv-openvswitch\"  &&     [ \"${VERSION_ID}\" = \"9\" ]  && INSTALL_PKGS=\"${INSTALL_PKGS} centos-release-openstack-zed\" ;     dnf install -y --nodocs --setopt=install_weak_deps=False ${INSTALL_PKGS}  &&         : 'removed dnf config-manager'  &&         dnf clean all  && rm -rf /var/cache/* ;     [ \"${VERSION_ID}\" = \"10\" ]  &&         curl -o /etc/yum.repos.d/delorean.repo https://trunk.rdoproject.org/centos10-master/podified-ci-testing/delorean.repo  &&         curl -o /etc/yum.repos.d/delorean-deps.repo https://trunk.rdoproject.org/centos10-master/delorean-deps.repo  &&         dnf install -y --nodocs --setopt=install_weak_deps=False gpgme  &&         dnf clean all  && rm -rf /var/cache/*  || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:44.926062603Z",
+      "created_by": "/bin/sh -c #(nop) ENV GODEBUG=x509ignoreCN=0,madvdontneed=1",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:44.926076544Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.092103291Z",
+      "created_by": "/bin/sh -c rm -f /etc/yum.repos.d/art-* && mv /tmp/art/yum_temp/* /etc/yum.repos.d/ || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.262549647Z",
+      "created_by": "/bin/sh -c rm -rf /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.26269354Z",
+      "created_by": "/bin/sh -c #(nop) LABEL         io.k8s.display-name=\"OpenShift Container Platform RHEL 9 Base\"         io.k8s.description=\"This is the base image from which all OpenShift Container Platform images inherit.\"         License=\"GPLv2+\"         io.openshift.tags=\"openshift,base\"         name=\"openshift/openshift-enterprise-base-rhel9\"         vendor=\"Red Hat, Inc.\"         com.redhat.component=\"openshift-enterprise-base-rhel9-container\"         io.openshift.maintainer.component=\"Release\"         version=\"v5.0.0\"         release=\"202609211316.p2.g3f1cf08.assembly.stream.scos10\"         io.openshift.build.commit.id=\"3f1cf0830f196a6755b8baf179fc0401188251c4\"         io.openshift.build.source-location=\"https://github.com/openshift/images\"         io.openshift.build.commit.url=\"https://github.com/openshift/images/commit/3f1cf0830f196a6755b8baf179fc0401188251c4\"         description=\"Empty\"         summary=\"Empty\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.309383804Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:6652a03f76d06553b8e2febbb7882b84117ada466aa03c20c40106e39fb28925 in /usr/share/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.35421818Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:6652a03f76d06553b8e2febbb7882b84117ada466aa03c20c40106e39fb28925 in /root/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:46.000511017Z",
+      "created_by": "/bin/sh -c #(nop) LABEL \"org.opencontainers.image.created\"=\"2026-09-21T13:18:17Z\" \"org.opencontainers.image.revision\"=\"c34c282fb56ef9fa2cc498561688d77b8edc0499\" \"build-date\"=\"2026-09-21T13:18:17Z\" \"architecture\"=\"x86_64\" \"vcs-ref\"=\"c34c282fb56ef9fa2cc498561688d77b8edc0499\" \"vcs-type\"=\"git\"org.opencontainers.image.created=2026-09-21T13:18:17Z,org.opencontainers.image.revision=c34c282fb56ef9fa2cc498561688d77b8edc0499"
+    },
+    {
+      "created": "2026-11-05T00:45:07.00472972Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_ENGINE=konflux",
+      "comment": "FROM quay.io/redhat-user-workloads/ocp-art-tenant/art-okd-images@sha256:563787e8ea9d49f119eb13f3d1148eb38a4e8c490d5b6c35aed34adddcd7f157",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:07.004780461Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_METHOD=cachi2",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:07.004828873Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_NETWORK=open",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:07.247373521Z",
+      "created_by": "/bin/sh -c go clean -cache || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:07.247445243Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_MODE=default",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:07.247465303Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:07.482196748Z",
+      "created_by": "/bin/sh -c mkdir -p /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:07.533768027Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:4289af1405718329144c545de6f84e5438c75ee434cfeecdc5016a698f294a22 in /etc/yum.repos.d/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.558217018Z",
+      "created_by": "/bin/sh -c curl https://certs.corp.redhat.com/certs/Current-IT-Root-CAs.pem",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.744081489Z",
+      "created_by": "/bin/sh -c #(nop) ADD 603bebe4bfabe2d3febe511d2a46ab413bc6d7a0842b3e38fe72aaf294d12efa in /tmp/art      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.744309905Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=update BUILD_RELEASE=202611050030.p2.gb63b175.assembly.stream.scos10 BUILD_VERSION=v5.0.0 OS_GIT_MAJOR=5 OS_GIT_MINOR=0 OS_GIT_PATCH=0 OS_GIT_TREE_STATE=clean OS_GIT_VERSION=5.0.0-202611050030.p2.gb63b175.assembly.stream.scos10 SOURCE_GIT_TREE_STATE=clean TAGS=scos __doozer_group=okd-5.0 __doozer_key=driver-toolkit __doozer_uuid_tag=driver-toolkit-rhel9-v5.0.0-20261105.003109 __doozer_version=v5.0.0 ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.744464579Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=merge OS_GIT_COMMIT=b63b175 OS_GIT_VERSION=5.0.0-202611050030.p2.gb63b175.assembly.stream.scos10-b63b175 SOURCE_DATE_EPOCH=1785400629 SOURCE_GIT_COMMIT=b63b175a79b9fe0c29f6ed63df3c2d7862ba408a SOURCE_GIT_TAG=b63b175a SOURCE_GIT_URL=https://github.com/openshift/driver-toolkit ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.744484609Z",
+      "created_by": "/bin/sh -c #(nop) ARG KERNEL_VERSION",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.74449995Z",
+      "created_by": "/bin/sh -c #(nop) ARG KERNEL_VERSION RT_KERNEL_VERSION",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.74451786Z",
+      "created_by": "/bin/sh -c #(nop) ARG KERNEL_VERSION RHEL_VERSION RT_KERNEL_VERSION",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:45:08.983960562Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c [ \"${RHEL_VERSION}\" == \"\" ] && source /etc/os-release && RHEL_VERSION=${VERSION_ID}; echo ${RHEL_VERSION} > /etc/dnf/vars/releasever     && echo -e \"best=True\\ninstall_weak_deps=False\" >> /etc/dnf/dnf.conf",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:00.382038289Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c dnf -y install     kernel-devel${KERNEL_VERSION:+-}${KERNEL_VERSION}     kernel-devel-matched${KERNEL_VERSION:+-}${KERNEL_VERSION}     kernel-headers${KERNEL_VERSION:+-}${KERNEL_VERSION}     kernel-modules${KERNEL_VERSION:+-}${KERNEL_VERSION}     kernel-modules-extra${KERNEL_VERSION:+-}${KERNEL_VERSION}",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:44.22100891Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c if [ $(arch) = x86_64 ]; then     dnf -y install     kernel-rt-devel${RT_KERNEL_VERSION:+-}${RT_KERNEL_VERSION}     kernel-rt-modules${RT_KERNEL_VERSION:+-}${RT_KERNEL_VERSION}     kernel-rt-modules-extra${RT_KERNEL_VERSION:+-}${RT_KERNEL_VERSION};     diff --side-by-side <(rpm -qi kernel-core | grep 'Source RPM') <(rpm -qi kernel-rt-core | grep 'Source RPM') || true;     fi",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:44.457248169Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c if [ $(arch) = aarch64 ]; then     dnf -y install     kernel-64k-devel${KERNEL_VERSION:+-}${KERNEL_VERSION}     kernel-64k-modules${KERNEL_VERSION:+-}${KERNEL_VERSION}     kernel-64k-modules-extra${KERNEL_VERSION:+-}${KERNEL_VERSION};     fi",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:47.00757965Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c dnf -y install kernel-rpm-macros",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:50.012432049Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c dnf -y install autoconf automake binutils elfutils-libelf-devel glibc kabi-dw kmod libtool",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:54.10669476Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c export INSTALLED_KERNEL=$(rpm -q --qf \"%{VERSION}-%{RELEASE}.%{ARCH}\"  kernel-devel) &&     GCC_VERSION=$(cat /lib/modules/${INSTALLED_KERNEL}/config | grep -Eo \"gcc \\(GCC\\) ([0-9\\.]+)\" | grep -Eo \"([0-9\\.]+)\") &&     dnf -y install gcc-${GCC_VERSION} gcc-c++-${GCC_VERSION} || dnf -y install gcc gcc-c++",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:55.452984256Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c dnf -y install xz diffutils flex bison",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:53:58.917253366Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c dnf -y install git make rpm-build",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:02.118130633Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c if [ $(arch) == \"x86_64\" ] || [ $(arch) == \"aarch64\" ]; then     ARCH_DEP_PKGS=\"mokutil\"; fi     && dnf -y install openssl keyutils $ARCH_DEP_PKGS",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:02.579959656Z",
+      "created_by": "|3 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= /bin/sh -c dnf clean all && rm -rf /var/cache/dnf/*",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:02.629642898Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:14dbc34bc12e5057408f6fc85db699b9835b82a401b1963dfb74b97da1b5d23b in /manifests/01-openshift-imagestream.yaml      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:02.679608928Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:493b16e124d8d91dc2c46d613cb50496fa84003b9dba8b87cd81e144a7fcf698 in /manifests/image-references      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:02.679657519Z",
+      "created_by": "/bin/sh -c #(nop) ARG KERNEL_VERSION RHEL_VERSION RT_KERNEL_VERSION TAGS",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:02.914503334Z",
+      "created_by": "|4 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= TAGS=scos /bin/sh -c if echo \"${TAGS:-}\" | grep -q scos > /dev/null 2>&1; then sed -i 's/rhel-coreos/stream-coreos/g' /manifests/*; fi",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:03.196261682Z",
+      "created_by": "|4 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= TAGS=scos /bin/sh -c export INSTALLED_KERNEL=$(rpm -q --qf \"%{VERSION}-%{RELEASE}.%{ARCH}\"  kernel-devel);     export INSTALLED_RT_KERNEL=$(rpm -q --qf \"%{VERSION}-%{RELEASE}.%{ARCH}+rt\"  kernel-rt-core);     echo \"{ \\\"KERNEL_VERSION\\\": \\\"${INSTALLED_KERNEL}\\\", \\\"RT_KERNEL_VERSION\\\": \\\"${INSTALLED_RT_KERNEL}\\\", \\\"RHEL_VERSION\\\": \\\"$(</etc/dnf/vars/releasever)\\\" }\" > /etc/driver-toolkit-release.json",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:03.196317574Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:03.43122676Z",
+      "created_by": "|4 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= TAGS=scos /bin/sh -c rm -f /etc/yum.repos.d/art-* && mv /tmp/art/yum_temp/* /etc/yum.repos.d/ || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:03.661635934Z",
+      "created_by": "|4 KERNEL_VERSION= RHEL_VERSION= RT_KERNEL_VERSION= TAGS=scos /bin/sh -c rm -rf /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:03.661779737Z",
+      "created_by": "/bin/sh -c #(nop) LABEL         io.k8s.description=\"driver-toolkit is a container with the kernel packages necessary for building driver containers for deploying kernel modules/drivers on OpenShift\"         name=\"openshift5/driver-toolkit-rhel9\"         io.openshift.release.operator=\"true\"         version=\"v5.0.0\"         io.openshift.os.streamclass=\"rhel-9\"         kernel-version=\"\"         kernel-rt-version=\"\"         vendor=\"Red Hat, Inc.\"         com.redhat.component=\"driver-toolkit-container\"         io.openshift.maintainer.component=\"Driver Toolkit\"         release=\"202611050030.p2.gb63b175.assembly.stream.scos10\"         io.openshift.build.commit.id=\"b63b175a79b9fe0c29f6ed63df3c2d7862ba408a\"         io.openshift.build.source-location=\"https://github.com/openshift/driver-toolkit\"         io.openshift.build.commit.url=\"https://github.com/openshift/driver-toolkit/commit/b63b175a79b9fe0c29f6ed63df3c2d7862ba408a\"         io.k8s.display-name=\"Empty\"         io.openshift.tags=\"Empty\"         description=\"Empty\"         summary=\"Empty\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:03.713420659Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:c40909e6ec256e22a3533dedca6ff58020965192828f4ffc208769ac4946e192 in /usr/share/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:03.763500242Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:c40909e6ec256e22a3533dedca6ff58020965192828f4ffc208769ac4946e192 in /root/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-05T00:54:09.661623993Z",
+      "created_by": "/bin/sh -c #(nop) LABEL \"org.opencontainers.image.created\"=\"2026-11-05T00:44:36Z\" \"org.opencontainers.image.revision\"=\"4bf523297584e414870ac0af45d82b5ae8f182d9\" \"build-date\"=\"2026-11-05T00:44:36Z\" \"architecture\"=\"x86_64\" \"vcs-ref\"=\"4bf523297584e414870ac0af45d82b5ae8f182d9\" \"vcs-type\"=\"git\"org.opencontainers.image.created=2026-11-05T00:44:36Z,org.opencontainers.image.revision=4bf523297584e414870ac0af45d82b5ae8f182d9"
+    }
+  ]
+}

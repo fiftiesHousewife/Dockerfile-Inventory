@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/moby-moby",
+    "path": "contrib/syntax/textmate/Docker.tmbundle/Syntaxes/Dockerfile.tmLanguage",
+    "commit": "8cf8fe9cf80a07d4e68829f619ea2c71fbb5af0c",
+    "blobSha": "a4a7b7ae8d1517aeb92b0e68e47603d9ef175b72"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

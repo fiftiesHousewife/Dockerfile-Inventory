@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/s2i-dotnetcore",
+    "path": "6.0/runtime/Dockerfile.fedora",
+    "commit": "f770bf5dfced8822adf606dac759bbef5705ed5d",
+    "blobSha": "112d4ff27c47b8b978a1b6a58019a68a8aa83eaa"
+  },
+  "why": "parses only with the parser's comment-in-continuation workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

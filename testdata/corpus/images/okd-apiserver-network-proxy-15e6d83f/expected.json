@@ -1,0 +1,8 @@
+{
+  "image": "okd-apiserver-network-proxy",
+  "sourceRepository": "openshift/apiserver-network-proxy",
+  "tier": "WEAK",
+  "blobShas": [
+    "bbb4336fcc782507ff1f4df765078474e72d8f40"
+  ]
+}

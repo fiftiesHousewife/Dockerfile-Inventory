@@ -1,0 +1,177 @@
+{
+  "config": {
+    "Labels": {
+      "com.redhat.component": "python3",
+      "description": "Python 3.12 available as container is a base platform for building and running various Python 3.12 applications and frameworks. Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python's elegant syntax and dynamic typing, together with its interpreted nature, make it an ideal language for scripting and rapid application development in many areas on most platforms.",
+      "io.buildah.version": "1.37.0",
+      "io.k8s.description": "Python 3.12 available as container is a base platform for building and running various Python 3.12 applications and frameworks. Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python's elegant syntax and dynamic typing, together with its interpreted nature, make it an ideal language for scripting and rapid application development in many areas on most platforms.",
+      "io.k8s.display-name": "Python 3.12",
+      "io.openshift.expose-services": "8080:http",
+      "io.openshift.s2i.scripts-url": "image:///usr/libexec/s2i",
+      "io.openshift.tags": "builder,python,python312,python-312,rh-python312",
+      "io.s2i.scripts-url": "image:///usr/libexec/s2i",
+      "maintainer": "SoftwareCollections.org <sclorg@redhat.com>",
+      "name": "sclorg/python-312-c9s",
+      "org.label-schema.build-date": "20261103",
+      "org.label-schema.license": "GPLv2",
+      "org.label-schema.name": "CentOS Stream 9 Base Image",
+      "org.label-schema.schema-version": "1.0",
+      "org.label-schema.vendor": "CentOS",
+      "summary": "Platform for building and running Python 3.12 applications",
+      "usage": "s2i build https://github.com/sclorg/s2i-python-container.git --context-dir=3.12/test/setup-test-app/ /python3 python-sample-app",
+      "version": "9"
+    },
+    "User": "1001"
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:13fa0a638bad49930cda79267301b47ac1da2c731d0dd94e40b7a86685b2da8c",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:1a6d8ed49506428af330e5332c91e71e34de84750f957763f19bcb8ce8c8810f",
+      "sha256:acfdc9322e12b4e592722a203b4c47ccb1ab2f94f468608bca55ce4afb367be5",
+      "sha256:03059bf7c8947d3c4f1969efe78ae44b360ab3ddad00f81e32579569b5a07767"
+    ]
+  },
+  "history": [
+    {
+      "created": "2026-11-03T04:10:10Z",
+      "created_by": "/bin/sh -c #(nop) osbuild input 'base'"
+    },
+    {
+      "created": "2026-11-04T00:12:49.548095688Z",
+      "created_by": "/bin/sh -c #(nop) LABEL org.label-schema.schema-version=\"1.0\"     org.label-schema.name=\"CentOS Stream 9 Base Image\"     org.label-schema.vendor=\"CentOS\"     org.label-schema.license=\"GPLv2\"     org.label-schema.build-date=\"20261103\"",
+      "comment": "FROM oci-archive",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T00:12:49.550058868Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]"
+    },
+    {
+      "created": "2026-11-06T18:11:28.541779804Z",
+      "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Base image which allows using of source-to-image.\"\t    DESCRIPTION=\"The s2i-core image provides any images layered on top of it with all the tools needed to use source-to-image functionality while keeping the image size as small as possible.\"     NAME=s2i-core     VERSION=9",
+      "comment": "FROM inventory-jcr:8082/docker-local/centos/centos:stream9",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:11:28.541815054Z",
+      "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"s2i core\"       io.openshift.s2i.scripts-url=image:///usr/libexec/s2i       io.s2i.scripts-url=image:///usr/libexec/s2i       com.redhat.component=\"$NAME-container\"       name=\"sclorg/$NAME-c9s\"       version=\"$VERSION\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:11:28.541851971Z",
+      "created_by": "/bin/sh -c #(nop) ENV     STI_SCRIPTS_URL=image:///usr/libexec/s2i     STI_SCRIPTS_PATH=/usr/libexec/s2i     APP_ROOT=/opt/app-root     HOME=/opt/app-root/src     PATH=/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin     PLATFORM=\"el9\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.482652385Z",
+      "created_by": "/bin/sh -c INSTALL_PKGS=\"bsdtar   findutils   gettext   glibc-langpack-en   groff-base   glibc-locale-source   rsync   scl-utils   tar   unzip   xz   yum\" &&   mkdir -p ${HOME}/.pki/nssdb &&   chown -R 1001:0 ${HOME}/.pki &&   dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&   rpm -V $INSTALL_PKGS &&   dnf -y clean all --enablerepo='*'",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.53448876Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:7c2972cc2e4f90cf0d7644aac472086c081dea1e2f64e0f7a9bde1ea291623ec in / ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.543957427Z",
+      "created_by": "/bin/sh -c #(nop) WORKDIR ${HOME}",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.55341351Z",
+      "created_by": "/bin/sh -c #(nop) ENTRYPOINT [\"container-entrypoint\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.562878468Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"base-usage\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:26.000460761Z",
+      "created_by": "/bin/sh -c rpm-file-permissions &&   useradd -u 1001 -r -g 0 -d ${HOME} -c \"Default Application User\" default &&   chown -R 1001:0 ${APP_ROOT}"
+    },
+    {
+      "created": "2026-11-06T18:13:49.819184675Z",
+      "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Base image with essential libraries and tools used as a base for builder images like perl, python, ruby, etc.\"     DESCRIPTION=\"The s2i-base image, being built upon s2i-core, provides any images layered on top of it with all the tools needed to use source-to-image functionality. Additionally, s2i-base also contains various libraries needed for it to serve as a base for other builder images, like s2i-python or s2i-ruby.\"     NODEJS_VER=22     NAME=s2i-base",
+      "comment": "FROM inventory-jcr:8082/docker-local/sclorg/s2i-core-c9s:c9s",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:49.829193591Z",
+      "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"s2i base\"       com.redhat.component=\"$NAME-container\"       name=\"sclorg/$NAME-c9s\"       version=\"$VERSION\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:16:19.856482175Z",
+      "created_by": "/bin/sh -c yum -y module enable nodejs:$NODEJS_VER &&   INSTALL_PKGS=\"nodejs autoconf   automake   bzip2   gcc-c++   gd-devel   gdb   git   libcurl-devel   libpq-devel   libxml2-devel   libxslt-devel   lsof   make   mariadb-connector-c-devel   openssl-devel   patch   procps-ng   npm   redhat-rpm-config   sqlite-devel   unzip   wget   which   zlib-devel\" &&   yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&   rpm -V $INSTALL_PKGS &&   node -v | grep -qe \"^v$NODEJS_VER\\.\" && echo \"Found VERSION $NODEJS_VER\" &&   yum -y clean all --enablerepo='*'"
+    },
+    {
+      "created": "2026-11-06T18:16:27.374649387Z",
+      "created_by": "/bin/sh -c #(nop) EXPOSE 8080",
+      "comment": "FROM inventory-jcr:8082/docker-local/sclorg/s2i-base-c9s:c9s",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:16:27.385337178Z",
+      "created_by": "/bin/sh -c #(nop) ENV PYTHON_VERSION=3.12     PATH=$HOME/.local/bin/:$PATH     PYTHONUNBUFFERED=1     PYTHONIOENCODING=UTF-8     LC_ALL=en_US.UTF-8     LANG=en_US.UTF-8     PIP_NO_CACHE_DIR=off",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:16:27.39503272Z",
+      "created_by": "/bin/sh -c #(nop) ENV NAME=python3     ARCH=x86_64",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:16:27.404484512Z",
+      "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Platform for building and running Python $PYTHON_VERSION applications\"     DESCRIPTION=\"Python $PYTHON_VERSION available as container is a base platform for building and running various Python $PYTHON_VERSION applications and frameworks. Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python's elegant syntax and dynamic typing, together with its interpreted nature, make it an ideal language for scripting and rapid application development in many areas on most platforms.\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:16:27.413475345Z",
+      "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"Python 3.12\"       io.openshift.expose-services=\"8080:http\"       io.openshift.tags=\"builder,python,python312,python-312,rh-python312\"       com.redhat.component=\"$NAME\"       name=\"sclorg/python-312-c9s\"       usage=\"s2i build https://github.com/sclorg/s2i-python-container.git --context-dir=3.12/test/setup-test-app/ $FGC/$NAME python-sample-app\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:17:42.432280838Z",
+      "created_by": "/bin/sh -c INSTALL_PKGS=\"python3.12 python3.12-devel python3.12-pip nss_wrapper-libs httpd         httpd-devel mod_ssl mod_auth_gssapi mod_ldap mod_session         atlas-devel gcc-gfortran libffi-devel libtool-ltdl enchant         krb5-devel\" &&     yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS &&     rpm -V $INSTALL_PKGS &&     yum -y clean all --enablerepo='*'",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:17:42.526754588Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:8237049c925ae491ce41a5ff406d4563c4782a896f0b54fd59713a4c78173905 in $STI_SCRIPTS_PATH ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:17:42.596690088Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:6c2f69deed18ffb578d2a96007444867a2dd7fc828601904eb58231b2f7633a1 in / ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:17:42.657656755Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:f87a12029e54697ad3bdd1c0869a2a0149ef1227a0a54367bec77290841fef7b in /opt/wheels ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:18:01.376157347Z",
+      "created_by": "/bin/sh -c python3.12 -m venv ${APP_ROOT} && ${APP_ROOT}/bin/pip install /opt/wheels/pip-* && rm -r /opt/wheels && chown -R 1001:0 ${APP_ROOT} && fix-permissions ${APP_ROOT} -P && echo \"unset BASH_ENV PROMPT_COMMAND ENV\" >> ${APP_ROOT}/bin/activate",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:18:01.38827443Z",
+      "created_by": "/bin/sh -c #(nop) ENV BASH_ENV=\"${APP_ROOT}/bin/activate\"     ENV=\"${APP_ROOT}/bin/activate\"     PROMPT_COMMAND=\". ${APP_ROOT}/bin/activate\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:18:01.39771943Z",
+      "created_by": "/bin/sh -c #(nop) USER 1001",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:18:02.173288083Z",
+      "created_by": "/bin/sh -c #(nop) CMD $STI_SCRIPTS_PATH/usage"
+    }
+  ]
+}

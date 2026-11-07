@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/confidential-compute-artifacts",
+    "path": "containerfiles/kata-rpm/Containerfile",
+    "commit": "1d3de5e3f3ad617dea687421e48ac05530267b40",
+    "blobSha": "9ee6ecf6473be56f2e52fc78cc35c5df5dd236a0"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

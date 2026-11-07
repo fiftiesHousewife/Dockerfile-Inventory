@@ -1,0 +1,6 @@
+{
+  "image": "ocp-art-tenant-art-okd-images",
+  "sourceRepository": "openshift/images",
+  "tier": "NONE",
+  "blobShas": []
+}

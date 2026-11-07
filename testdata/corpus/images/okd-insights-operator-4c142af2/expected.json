@@ -1,0 +1,8 @@
+{
+  "image": "okd-insights-operator",
+  "sourceRepository": "openshift/insights-operator",
+  "tier": "WEAK",
+  "blobShas": [
+    "c6d1c864945f060db9d7fe4533025565531b9aa8"
+  ]
+}

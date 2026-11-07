@@ -1,0 +1,8 @@
+{
+  "image": "okd-cluster-cloud-controller-manager-operator",
+  "sourceRepository": "openshift/cluster-cloud-controller-manager-operator",
+  "tier": "WEAK",
+  "blobShas": [
+    "3a38596ba19ede20f6b290eb554d5bac45d4c0bb"
+  ]
+}

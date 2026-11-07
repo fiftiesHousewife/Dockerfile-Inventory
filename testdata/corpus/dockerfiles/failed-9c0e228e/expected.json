@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/intellij-dependency-analytics",
+    "path": "src/main/java/org/jboss/tools/intellij/image/build/dockerfile.flex",
+    "commit": "08e8e42141eaa47de8c143c1cd14025da58b56ac",
+    "blobSha": "9c0e228edb93b1ea010ede9dec95e6f428a65a36"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

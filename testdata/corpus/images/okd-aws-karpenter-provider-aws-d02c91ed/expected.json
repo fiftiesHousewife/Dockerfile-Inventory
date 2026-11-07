@@ -1,0 +1,8 @@
+{
+  "image": "okd-aws-karpenter-provider-aws",
+  "sourceRepository": "openshift/aws-karpenter-provider-aws",
+  "tier": "WEAK",
+  "blobShas": [
+    "f9545f77164fdd86f1a1367dd2c3da47eab720b6"
+  ]
+}

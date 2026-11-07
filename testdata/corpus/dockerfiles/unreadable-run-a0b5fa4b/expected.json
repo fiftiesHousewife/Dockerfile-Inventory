@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kubernetes-sigs-agent-sandbox",
+    "path": "examples/hyperlight-sandbox/Containerfile",
+    "commit": "4d7e8911ab68aa439817f6601c07bcafe9e44b6b",
+    "blobSha": "a0b5fa4b66ab7e0e819916b8265ac227fe82cda5"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

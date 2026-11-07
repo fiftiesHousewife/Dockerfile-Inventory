@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/grafana",
+    "path": "scripts/build/ci-build/Dockerfile",
+    "commit": "4b2ca2068a1151ef485d6f7b3f9316f605068cae",
+    "blobSha": "dbff90398da8a825001927b36b9086de51c58435"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

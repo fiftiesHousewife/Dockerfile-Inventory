@@ -1,0 +1,9 @@
+{
+  "image": "okd-cluster-autoscaler",
+  "sourceRepository": "openshift/kubernetes-autoscaler",
+  "tier": "WEAK",
+  "blobShas": [
+    "1d153b544ebec08c743d83dde54ef8aea55c61f9",
+    "b3d57c463094c57972ad782c52f98bd5965e2669"
+  ]
+}

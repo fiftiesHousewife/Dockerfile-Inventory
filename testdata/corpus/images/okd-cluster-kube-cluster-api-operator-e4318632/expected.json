@@ -1,0 +1,8 @@
+{
+  "image": "okd-cluster-kube-cluster-api-operator",
+  "sourceRepository": "openshift/cluster-api-operator",
+  "tier": "WEAK",
+  "blobShas": [
+    "11b1b5dd10d6de2fa7a7b4991019a073d93e2726"
+  ]
+}

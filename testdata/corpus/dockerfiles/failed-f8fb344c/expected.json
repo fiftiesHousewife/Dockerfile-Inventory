@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/network.offline_migration_sdn_to_ovnk",
+    "path": "ci/Dockerfile.debug",
+    "commit": "67b3eac1364b088cbb4fe46030007dfed8329162",
+    "blobSha": "f8fb344c1d6a557bac970b98bc525116e6c1c6af"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

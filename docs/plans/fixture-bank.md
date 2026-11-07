@@ -1,6 +1,6 @@
 # A bank of real cases: plan
 
-Status: planned 7 Nov.
+Status: built 7 Nov.
 
 The owner asked whether we have a really good bank of fixtures for every case that breaks parsing, lineage and the
 round trip. We do not. Seven estates and about sixty fixes later, the real cases that broke something are mostly
@@ -55,3 +55,20 @@ testdata/corpus/README.md                           every case: source (organisa
 4. The converter's corpus test (round trip).
 5. Lineage's corpus test (own steps and links).
 6. The collector run on the combined estate; the README lists every case; `./gradlew check` green.
+
+## As built
+
+- `ParseResult.Parsed` and each facts row say whether the file parsed only on the retry (`retried`); `rates.json`
+  counts them (`parsedOnRetry`): 354 of the combined estate's 5,250 files lean on a workaround.
+- `testdata/corpus/dockerfiles/`: 152 real cases (35 failed, 5 templates, 74 with an unreadable `RUN`, 8 round-trip
+  failures, 29 retried across eight workaround kinds, a control), collected by `scripts/corpus-collect.sh out/all`.
+- `testdata/corpus/images/`: 34 real images from the OKD run with their candidate Dockerfiles, collected by
+  `scripts/corpus-collect-images.sh out/okd`.
+- Corpus tests in facts (`CorpusTest`, with `Corpus` naming outcomes), the converter (`CorpusRoundTripTest`,
+  `CorpusOutcome`) and lineage (`CorpusLinkTest`); each fails when a case's outcome changes, naming the case (checked by
+  breaking one expectation).
+- Secret check: S2's files are never collected, and the corpus holds no key, token or JWT shape (scanned).
+- Per-fix cases (demo F1-F18 and later rounds) are covered by kind rather than one by one: most of those fixes were
+  workarounds, now pinned through `retried-*`, or shell-reading fixes, whose remaining failures are the
+  `unreadable-run-*` cases; their original tests stay in each module.
+

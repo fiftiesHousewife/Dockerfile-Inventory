@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/node-feature-discovery",
+    "path": "Dockerfile.node-feature-discovery-build",
+    "commit": "e1b4b5093a88f6a56daec2bb05c6c512e1cba727",
+    "blobSha": "0153461c0e624e00f60d84d56e98ce7f52a21b94"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/machine-config-operator",
+    "path": "pkg/controller/build/buildrequest/assets/Containerfile.on-cluster-build-template",
+    "commit": "0d9b0b6fc76663bc50671ee966c6f79c74461730",
+    "blobSha": "00c8d3096803cb8778c936e81f9817c717fa9857"
+  },
+  "why": "a template saved under a Dockerfile's name",
+  "parse": "template",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

@@ -1,0 +1,8 @@
+{
+  "image": "okd-azure-service-operator",
+  "sourceRepository": "openshift/azure-service-operator",
+  "tier": "WEAK",
+  "blobShas": [
+    "9197a354bbfab1e0daddb66a4be5e6eb157578e2"
+  ]
+}

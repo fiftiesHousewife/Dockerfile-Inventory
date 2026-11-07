@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/lightspeed-service",
+    "path": "Containerfile",
+    "commit": "5dd38a2315aed7f8236b7906e8f0832abbe539ad",
+    "blobSha": "94b9dac6c90740139578f8b9a481cc05ff673fca"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "retried",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "docker-library/mysql",
+    "path": "Dockerfile.oracle",
+    "commit": "9b6c81572125a4ff828e3037c71940f3f8311978",
+    "blobSha": "0abcd21f5edfe703f4fac8ae5009f7e2adc0b5db"
+  },
+  "why": "a template saved under a Dockerfile's name",
+  "parse": "template",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

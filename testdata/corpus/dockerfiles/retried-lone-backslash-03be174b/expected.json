@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "docker-library/php",
+    "path": "8.2/bookworm/zts/Dockerfile",
+    "commit": "edf9e498995663d335b093735cb527b05bbd2bff",
+    "blobSha": "03be174b9eaf101d671ccb40e189ea7623523e10"
+  },
+  "why": "parses only with the parser's lone-backslash workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

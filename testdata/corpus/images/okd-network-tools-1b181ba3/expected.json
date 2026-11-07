@@ -1,0 +1,8 @@
+{
+  "image": "okd-network-tools",
+  "sourceRepository": "openshift/network-tools",
+  "tier": "WEAK",
+  "blobShas": [
+    "4e9e3ebd72b4c1bb13e0030b6f07306411402119"
+  ]
+}

@@ -1,0 +1,43 @@
+ARG BASE_IMAGE_URL
+ARG BASE_IMAGE_TAG
+FROM ${BASE_IMAGE_URL}:${BASE_IMAGE_TAG}
+
+ARG DNF_OPTIONS
+ARG USHIFT_VER
+ARG USHIFT_URL
+ARG OCPDEP_URL
+ARG USHIFT_REPO="microshift-${USHIFT_VER}-repository"
+ARG OCPDEP_REPO="openshift-${USHIFT_VER}-dependencies"
+
+RUN cat > "/etc/yum.repos.d/${USHIFT_REPO}.repo" <<EOF
+[${USHIFT_REPO}]
+name=MicroShift ${USHIFT_VER} Repository
+baseurl=${USHIFT_URL}
+gpgcheck=0
+enabled=1
+EOF
+
+# hadolint ignore=DL3059
+RUN cat > "/etc/yum.repos.d/${OCPDEP_REPO}.repo" <<EOF
+[${OCPDEP_REPO}]
+name=OpenShift ${USHIFT_VER} Dependencies
+baseurl=${OCPDEP_URL}
+gpgcheck=0
+enabled=1
+EOF
+
+# hadolint ignore=SC1091
+RUN . /etc/os-release && dnf upgrade -y --releasever="${VERSION_ID}" && \
+    dnf install -y ${DNF_OPTIONS} firewalld microshift microshift-release-info && \
+    systemctl enable microshift && \
+    dnf clean all
+
+# Mandatory firewall configuration
+RUN firewall-offline-cmd --zone=public --add-port=22/tcp && \
+    firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 && \
+    firewall-offline-cmd --zone=trusted --add-source=169.254.169.1
+
+# Create a systemd unit to recursively make the root filesystem subtree
+# shared as required by OVN images
+COPY ./systemd/microshift-make-rshared.service /usr/lib/systemd/system/microshift-make-rshared.service
+RUN systemctl enable microshift-make-rshared.service

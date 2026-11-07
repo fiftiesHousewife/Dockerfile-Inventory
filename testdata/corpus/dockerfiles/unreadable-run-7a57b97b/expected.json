@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/installer",
+    "path": "images/installer/Dockerfile.upi.ci",
+    "commit": "4da4f1f39d8fba0011e4d1ebf5dab6fc7d05285a",
+    "blobSha": "7a57b97b70f18c9abe525e7bb364d168718015bc"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

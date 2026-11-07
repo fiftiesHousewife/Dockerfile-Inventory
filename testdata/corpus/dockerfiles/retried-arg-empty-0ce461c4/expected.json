@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "konflux-ci/crossplane-components",
+    "path": "Containerfile",
+    "commit": "138a95b7bfb9a30fcf586dbd9fa69158e8634bca",
+    "blobSha": "0ce461c4cd8e6bb16500db5f33c02ebc90516c74"
+  },
+  "why": "parses only with the parser's arg-empty workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

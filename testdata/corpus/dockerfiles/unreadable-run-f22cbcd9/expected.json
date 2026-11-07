@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "docker-library/redmine",
+    "path": "6.1/bookworm/Dockerfile",
+    "commit": "49a27f29f1d214a4226af75b55578e36d3474c4c",
+    "blobSha": "f22cbcd9eb993fcc73178c332ee1514efad13f51"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

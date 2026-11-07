@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/openshift-virtualization-gitops",
+    "path": ".envsubst/Dockerfile",
+    "commit": "214b4105732c2d81b0215395943361af9465e18b",
+    "blobSha": "d51decf8ef9ae686bdcbbb903fe0b474aec9e941"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 2,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,163 @@
+{
+  "config": {
+    "Labels": {
+      "com.redhat.component": "nginx-124-container",
+      "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+      "description": "Nginx is a web server and a reverse proxy server for HTTP, SMTP, POP3 and IMAP protocols, with a strong focus on high concurrency, performance and low memory usage. The container image provides a containerized packaging of the nginx 1.24 daemon. The image can be used as a base image for other applications based on nginx 1.24 web server. Nginx server image can be extended using source-to-image tool.",
+      "help": "For more information visit https://github.com/sclorg/nginx-container",
+      "io.buildah.version": "1.37.0",
+      "io.k8s.description": "Nginx is a web server and a reverse proxy server for HTTP, SMTP, POP3 and IMAP protocols, with a strong focus on high concurrency, performance and low memory usage. The container image provides a containerized packaging of the nginx 1.24 daemon. The image can be used as a base image for other applications based on nginx 1.24 web server. Nginx server image can be extended using source-to-image tool.",
+      "io.k8s.display-name": "Nginx 1.24",
+      "io.openshift.expose-services": "8443:https",
+      "io.openshift.s2i.scripts-url": "image:///usr/libexec/s2i",
+      "io.openshift.tags": "builder,nginx,nginx-124",
+      "io.s2i.scripts-url": "image:///usr/libexec/s2i",
+      "maintainer": "SoftwareCollections.org <sclorg@redhat.com>",
+      "name": "sclorg/nginx-124-c9s",
+      "org.label-schema.build-date": "20261103",
+      "org.label-schema.license": "GPLv2",
+      "org.label-schema.name": "CentOS Stream 9 Base Image",
+      "org.label-schema.schema-version": "1.0",
+      "org.label-schema.vendor": "CentOS",
+      "summary": "Platform for running nginx 1.24 or building nginx-based application",
+      "usage": "s2i build <SOURCE-REPOSITORY> quay.io/sclorg/nginx-124-c9s:latest <APP-NAME>",
+      "version": "1"
+    },
+    "User": "1001"
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:13fa0a638bad49930cda79267301b47ac1da2c731d0dd94e40b7a86685b2da8c",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:1a6d8ed49506428af330e5332c91e71e34de84750f957763f19bcb8ce8c8810f",
+      "sha256:ff9c65df55e44e27d005a569bd84352137a759a6363f1c5f89d62e4c8a87223d"
+    ]
+  },
+  "history": [
+    {
+      "created": "2026-11-03T04:10:10Z",
+      "created_by": "/bin/sh -c #(nop) osbuild input 'base'"
+    },
+    {
+      "created": "2026-11-04T00:12:49.548095688Z",
+      "created_by": "/bin/sh -c #(nop) LABEL org.label-schema.schema-version=\"1.0\"     org.label-schema.name=\"CentOS Stream 9 Base Image\"     org.label-schema.vendor=\"CentOS\"     org.label-schema.license=\"GPLv2\"     org.label-schema.build-date=\"20261103\"",
+      "comment": "FROM oci-archive",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T00:12:49.550058868Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]"
+    },
+    {
+      "created": "2026-11-06T18:11:28.541779804Z",
+      "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Base image which allows using of source-to-image.\"\t    DESCRIPTION=\"The s2i-core image provides any images layered on top of it with all the tools needed to use source-to-image functionality while keeping the image size as small as possible.\"     NAME=s2i-core     VERSION=9",
+      "comment": "FROM inventory-jcr:8082/docker-local/centos/centos:stream9",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:11:28.541815054Z",
+      "created_by": "/bin/sh -c #(nop) LABEL summary=\"$SUMMARY\"       description=\"$DESCRIPTION\"       io.k8s.description=\"$DESCRIPTION\"       io.k8s.display-name=\"s2i core\"       io.openshift.s2i.scripts-url=image:///usr/libexec/s2i       io.s2i.scripts-url=image:///usr/libexec/s2i       com.redhat.component=\"$NAME-container\"       name=\"sclorg/$NAME-c9s\"       version=\"$VERSION\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:11:28.541851971Z",
+      "created_by": "/bin/sh -c #(nop) ENV     STI_SCRIPTS_URL=image:///usr/libexec/s2i     STI_SCRIPTS_PATH=/usr/libexec/s2i     APP_ROOT=/opt/app-root     HOME=/opt/app-root/src     PATH=/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin     PLATFORM=\"el9\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.482652385Z",
+      "created_by": "/bin/sh -c INSTALL_PKGS=\"bsdtar   findutils   gettext   glibc-langpack-en   groff-base   glibc-locale-source   rsync   scl-utils   tar   unzip   xz   yum\" &&   mkdir -p ${HOME}/.pki/nssdb &&   chown -R 1001:0 ${HOME}/.pki &&   dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&   rpm -V $INSTALL_PKGS &&   dnf -y clean all --enablerepo='*'",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.53448876Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:7c2972cc2e4f90cf0d7644aac472086c081dea1e2f64e0f7a9bde1ea291623ec in / ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.543957427Z",
+      "created_by": "/bin/sh -c #(nop) WORKDIR ${HOME}",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.55341351Z",
+      "created_by": "/bin/sh -c #(nop) ENTRYPOINT [\"container-entrypoint\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:23.562878468Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"base-usage\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:26.000460761Z",
+      "created_by": "/bin/sh -c rpm-file-permissions &&   useradd -u 1001 -r -g 0 -d ${HOME} -c \"Default Application User\" default &&   chown -R 1001:0 ${APP_ROOT}"
+    },
+    {
+      "created": "2026-11-06T18:12:27.103648262Z",
+      "created_by": "/bin/sh -c #(nop) EXPOSE 8080",
+      "comment": "FROM inventory-jcr:8082/docker-local/sclorg/s2i-core-c9s:c9s",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:27.113535262Z",
+      "created_by": "/bin/sh -c #(nop) EXPOSE 8443",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:27.123505303Z",
+      "created_by": "/bin/sh -c #(nop) ENV NAME=nginx     NGINX_VERSION=1.24     NGINX_SHORT_VER=124     VERSION=0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:27.132674637Z",
+      "created_by": "/bin/sh -c #(nop) ENV SUMMARY=\"Platform for running nginx $NGINX_VERSION or building nginx-based application\"     DESCRIPTION=\"Nginx is a web server and a reverse proxy server for HTTP, SMTP, POP3 and IMAP protocols, with a strong focus on high concurrency, performance and low memory usage. The container image provides a containerized packaging of the nginx $NGINX_VERSION daemon. The image can be used as a base image for other applications based on nginx $NGINX_VERSION web server. Nginx server image can be extended using source-to-image tool.\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:27.142133512Z",
+      "created_by": "/bin/sh -c #(nop) LABEL summary=\"${SUMMARY}\"       description=\"${DESCRIPTION}\"       io.k8s.description=\"${DESCRIPTION}\"       io.k8s.display-name=\"Nginx ${NGINX_VERSION}\"       io.openshift.expose-services=\"8080:http\"       io.openshift.expose-services=\"8443:https\"       io.openshift.tags=\"builder,${NAME},${NAME}-${NGINX_SHORT_VER}\"       com.redhat.component=\"${NAME}-${NGINX_SHORT_VER}-container\"       name=\"sclorg/${NAME}-${NGINX_SHORT_VER}-c9s\"       version=\"1\"       com.redhat.license_terms=\"https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI\"       maintainer=\"SoftwareCollections.org <sclorg@redhat.com>\"       help=\"For more information visit https://github.com/sclorg/${NAME}-container\"       usage=\"s2i build <SOURCE-REPOSITORY> quay.io/sclorg/${NAME}-${NGINX_SHORT_VER}-c9s:latest <APP-NAME>\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:12:27.151100178Z",
+      "created_by": "/bin/sh -c #(nop) ENV NGINX_CONFIGURATION_PATH=${APP_ROOT}/etc/nginx.d     NGINX_CONF_PATH=/etc/nginx/nginx.conf     NGINX_DEFAULT_CONF_PATH=${APP_ROOT}/etc/nginx.default.d     NGINX_CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/nginx     NGINX_APP_ROOT=${APP_ROOT}     NGINX_LOG_PATH=/var/log/nginx     NGINX_PERL_MODULE_PATH=${APP_ROOT}/etc/perl",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:44.681005131Z",
+      "created_by": "/bin/sh -c yum -y module enable nginx:$NGINX_VERSION &&     INSTALL_PKGS=\"nss_wrapper gettext hostname nginx nginx-mod-stream nginx-mod-http-perl\" &&     yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&     rpm -V $INSTALL_PKGS &&     nginx -v 2>&1 | grep -qe \"nginx/$NGINX_VERSION\\.\" && echo \"Found VERSION $NGINX_VERSION\" &&     yum -y clean all --enablerepo='*'",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:44.743691214Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:1225aa70035b1d464e69462591dd70c3dc228572becc907e04228317e7baae78 in $STI_SCRIPTS_PATH ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:44.798856089Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:1a1e215c78aaf8893b01f13151def4957fe568a4e96dea5b5332d14296ce0f32 in / ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:47.148594298Z",
+      "created_by": "/bin/sh -c sed -i -f ${NGINX_APP_ROOT}/nginxconf.sed ${NGINX_CONF_PATH} &&     mkdir -p ${NGINX_APP_ROOT}/etc/nginx.d/ &&     mkdir -p ${NGINX_APP_ROOT}/etc/nginx.default.d/ &&     mkdir -p ${NGINX_APP_ROOT}/src/nginx-start/ &&     mkdir -p ${NGINX_CONTAINER_SCRIPTS_PATH}/nginx-start &&     mkdir -p ${NGINX_LOG_PATH} &&     mkdir -p ${NGINX_PERL_MODULE_PATH} &&     chown -R 1001:0 ${NGINX_CONF_PATH} &&     chown -R 1001:0 ${NGINX_APP_ROOT}/etc &&     chown -R 1001:0 ${NGINX_APP_ROOT}/src/nginx-start/  &&     chown -R 1001:0 ${NGINX_CONTAINER_SCRIPTS_PATH}/nginx-start &&     chown -R 1001:0 /var/lib/nginx /var/log/nginx /run &&     chmod    ug+rw  ${NGINX_CONF_PATH} &&     chmod -R ug+rwX ${NGINX_APP_ROOT}/etc &&     chmod -R ug+rwX ${NGINX_APP_ROOT}/src/nginx-start/  &&     chmod -R ug+rwX ${NGINX_CONTAINER_SCRIPTS_PATH}/nginx-start &&     chmod -R ug+rwX /var/lib/nginx /var/log/nginx /run &&     rpm-file-permissions",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:47.159570173Z",
+      "created_by": "/bin/sh -c #(nop) USER 1001",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:47.169291965Z",
+      "created_by": "/bin/sh -c #(nop) STOPSIGNAL SIGQUIT",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-06T18:13:48.001255132Z",
+      "created_by": "/bin/sh -c #(nop) CMD $STI_SCRIPTS_PATH/usage"
+    }
+  ]
+}

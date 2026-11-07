@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/loki",
+    "path": "cmd/loki/Dockerfile.debug",
+    "commit": "2e7df9d6b5452892a5955ff844967ba6e27b5caf",
+    "blobSha": "bc88c55f1e6e723765827f4f75b6634b7d0080a9"
+  },
+  "why": "parses only with the parser's json-comma workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/azure-service-operator",
+    "path": ".devcontainer/Dockerfile",
+    "commit": "26f483f05301e430d384053862923c40864e755e",
+    "blobSha": "ca7d8cb81744badfa55ded343aa9d9d21aeb081b"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

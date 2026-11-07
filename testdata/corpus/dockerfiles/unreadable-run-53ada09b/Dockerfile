@@ -1,0 +1,48 @@
+# In order to use ubi:9 as a build root, we need
+# git pre-installed per the CI documentation[1].
+#
+# [1] https://docs.ci.openshift.org/docs/architecture/ci-operator/#build-root-image
+#
+FROM registry.access.redhat.com/ubi9/ubi:latest
+ARG GOLANGCI_LINT_VERSION="2.10.1"
+# X11, ATK, NSS, and the related libraries are Playwright Chromium runtime dependencies.
+RUN curl -Lso /tmp/golangci-lint.rpm \
+          "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.rpm" && \
+      dnf module enable nodejs:20 -y && \
+      dnf install -y \
+        alsa-lib \
+        at-spi2-atk \
+        at-spi2-core \
+        atk \
+        cairo \
+        cups-libs \
+        dbus-libs \
+        git \
+        go \
+        libX11 \
+        libXcomposite \
+        libXdamage \
+        libXext \
+        libXfixes \
+        libXrandr \
+        libdrm \
+        libxcb \
+        libxkbcommon \
+        make \
+        mesa-libgbm \
+        npm \
+        nspr \
+        nss \
+        pango \
+        python3.14 \
+        python3.14-pip \
+        /tmp/golangci-lint.rpm && \
+      rm /tmp/golangci-lint.rpm && \
+      dnf clean all && \
+      rm -rf /var/cache/dnf && \
+      alternatives --install /usr/bin/python3 python3 /usr/bin/python3.14 1 && \
+      alternatives --set python3 /usr/bin/python3.14
+RUN go install gotest.tools/gotestsum@latest && mv /root/go/bin/gotestsum /usr/bin
+RUN curl -LsSf https://astral.sh/uv/0.11.28/install.sh | sh && \
+      mv /root/.local/bin/uv /usr/bin/uv && \
+      mv /root/.local/bin/uvx /usr/bin/uvx

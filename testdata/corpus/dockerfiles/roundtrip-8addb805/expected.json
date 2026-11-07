@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/rhcos-image-layering-examples",
+    "path": "libreswan/Containerfile",
+    "commit": "edefbbab672e9c71d6d6f75559649ca73d7f062a",
+    "blobSha": "8addb80529f2a8abd932d193326002654ff92a93"
+  },
+  "why": "parses but does not round-trip",
+  "parse": "parsed",
+  "unreadableRuns": 0,
+  "roundTrip": "fails"
+}

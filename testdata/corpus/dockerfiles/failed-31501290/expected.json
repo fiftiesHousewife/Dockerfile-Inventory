@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/evpn-gateway-appliance",
+    "path": "image/rhel10/Containerfile",
+    "commit": "4513031e3e8dd7e1fb29bcb284079ac10fae9340",
+    "blobSha": "315012902fb6adfbcd87fa261fb6c698f5563467"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

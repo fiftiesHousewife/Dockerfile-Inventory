@@ -1,0 +1,121 @@
+# This Dockerfile is used by CI to test UPI platforms for OpenShift Installer
+# It builds an image containing binaries like jq, awscli, oc, etc. to allow bringing up UPI infrastructure.
+# It also contains the `upi` directory that contains various terraform and cloud formation templates that are used to create infrastructure resources.
+
+# We copy from the -artifacts images because they are statically linked
+FROM registry.ci.openshift.org/ocp/5.0:installer-kube-apiserver-artifacts AS kas-artifacts
+FROM registry.ci.openshift.org/ocp/5.0:installer-etcd-artifacts AS etcd-artifacts
+
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.26-openshift-5.0 AS builder
+# FIPS support is offered via the baremetal-installer image
+ENV GO_COMPLIANCE_EXCLUDE=".*"
+ARG TAGS=""
+ARG SKIP_ENVTEST="y"
+ARG BUILD_VERSION=""
+WORKDIR /go/src/github.com/openshift/installer
+COPY . .
+COPY --from=kas-artifacts /usr/share/openshift/ cluster-api/bin/
+COPY --from=etcd-artifacts /usr/share/openshift/ cluster-api/bin/
+RUN mkdir -p cluster-api/bin/$(go env GOOS)_$(go env GOHOSTARCH) && \
+	mv cluster-api/bin/$(go env GOOS)/$(go env GOHOSTARCH)/* -t cluster-api/bin/$(go env GOOS)_$(go env GOHOSTARCH)/
+RUN DEFAULT_ARCH="$(go env GOHOSTARCH)" hack/build.sh
+
+FROM registry.ci.openshift.org/ocp/5.1:cli as cli
+FROM quay.io/ocp-splat/govc:v0.30.7 as govc
+FROM quay.io/ocp-splat/pwsh:latest as pwsh
+FROM quay.io/multi-arch/yq:3.3.0 as yq3
+FROM quay.io/multi-arch/yq:4.30.5 as yq4
+
+FROM registry.ci.openshift.org/ocp/5.1:base-rhel10
+COPY --from=cli /usr/bin/oc /bin/oc
+COPY --from=builder /go/src/github.com/openshift/installer/bin/openshift-install /bin/openshift-install
+COPY --from=builder /go/src/github.com/openshift/installer/upi /var/lib/openshift-install/upi
+
+# Install VMware plugin for powershell
+COPY --from=pwsh /opt/microsoft/powershell /opt/microsoft/powershell
+COPY --from=pwsh /root/.local/share/powershell/Modules /root/.local/share/powershell/Modules
+COPY --from=pwsh /usr/local/share/powershell/Modules /usr/local/share/powershell/Modules
+RUN ln -s /opt/microsoft/powershell/7/pwsh /bin/pwsh
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
+
+# Create settings directory /output/.local/share/VMware/PowerCLI
+RUN mkdir -p /output/.local/share/VMware/PowerCLI && chmod -R 777 /output/.local
+
+COPY --from=govc /govc /bin/govc
+
+# Install repo for gcloud and use env var to include /etc/yum.repos.d in the CI context build repo search path
+RUN sh -c 'echo -e "[google-cloud-cli]\nname=Google Cloud CLI\nbaseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el10-x86_64\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=0\ngpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key-v10.gpg" > /etc/yum.repos.d/google-cloud-sdk.repo'
+ENV ART_DNF_WRAPPER_POLICY=append
+
+RUN yum update -y && \
+    yum install --setopt=tsflags=nodocs -y \      
+      gettext \
+      libxcrypt-compat \
+      google-cloud-cli-563.0.0-1.el10 \
+      gzip \
+      jq \
+      unzip \
+      openssh-clients \
+      openssl \      
+      python3-pip \
+      python3-pyyaml \
+      util-linux \
+      xz \
+      qemu-img && \
+    yum clean all && \
+    rm -rf /var/cache/yum/* && \
+    chmod g+w /etc/passwd
+
+COPY --from=yq3 /yq /bin/yq-go
+COPY --from=yq4 /usr/bin/yq /bin/yq-v4
+
+# Not packaged, but required by gcloud. See https://cloud.google.com/sdk/crypto
+# Pin version because of https://github.com/GoogleCloudPlatform/gsutil/issues/1753
+RUN pip3 install --no-cache-dir cryptography pyOpenSSL==23.2.0
+
+ENV CLOUDSDK_PYTHON=/usr/bin/python3
+ENV CLOUDSDK_PYTHON_SITEPACKAGES=1
+
+# aicli
+RUN pip3 install --no-cache-dir aicli==99.0.202407291433
+
+# Install Azure CLI in a virtual environment so it uses the system Python.
+# The venv path must remain /go/src/github.com/openshift/installer/azure-cli
+# because the Azure Stack CI steps reference this path directly.
+# Pin setuptools < 80.0.0 to ensure azure-cli 2.72.0 compatibility on Python 3.12.
+RUN /usr/bin/python3 -m venv /go/src/github.com/openshift/installer/azure-cli && \
+    /go/src/github.com/openshift/installer/azure-cli/bin/python3 -m pip install --no-cache-dir "setuptools<80.0.0" azure-cli==2.72.0 && \
+    ln -s /go/src/github.com/openshift/installer/azure-cli/bin/az /bin/az
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install -b /bin && \
+    rm -rf ./aws awscliv2.zip
+
+# Download the latest IBM Cloud release binary
+ARG IBMCLI_URI=https://clis.cloud.ibm.com/install/linux
+RUN HOME=/output && \ 
+    echo "-4" > $HOME/.curlrc && \
+    curl -fsSL ${IBMCLI_URI} | sh && \    
+    ibmcloud plugin install vpc-infrastructure -f && \
+    ibmcloud plugin install cloud-dns-services -f && \
+    ibmcloud plugin install cloud-internet-services -f && \
+    ibmcloud plugin install key-protect -f && \
+    ibmcloud plugin install infrastructure-service -f && \
+    ibmcloud plugin install power-iaas -f && \
+    ibmcloud plugin install cloud-object-storage -f && \
+    ibmcloud plugin install dl-cli -f && \
+    ibmcloud plugin install dns -f && \
+    ibmcloud plugin install tg-cli -f && \
+    cp /usr/local/bin/ibmcloud /bin/ibmcloud && \
+    rm -f $HOME/.curlrc && \
+    ibmcloud version && \
+    ibmcloud plugin list
+
+
+RUN mkdir /output/.ssh && chown 1000:1000 "/output/.ssh/" && chmod -R g=u "/output/.ssh/"
+
+RUN chown 1000:1000 /output && chmod -R g=u "/output/.bluemix/"
+USER 1000:1000
+ENV HOME /output
+WORKDIR /output

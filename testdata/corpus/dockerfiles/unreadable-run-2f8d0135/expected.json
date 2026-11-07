@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/podman-desktop-demo",
+    "path": "wasm/rust-hello-world/Containerfile",
+    "commit": "0cf8514f7974abfb0f0f2d5dd6c4da2c19facae6",
+    "blobSha": "2f8d0135dd6688a4f97485d91388198225f557a0"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/microshift",
+    "path": "test/image-blueprints-bootc/el10/layer2-presubmit/group2/rhel102-bootc-source-fips.containerfile",
+    "commit": "6d9435a3ce448ef6d35b332b5261781a84f794ad",
+    "blobSha": "ae6f69cc9e595808c8b7debdf1089f461d784f83"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

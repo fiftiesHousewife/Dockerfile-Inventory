@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "konflux-ci/diffused",
+    "path": "Containerfile",
+    "commit": "5ff6fcc0272310f41dd250a8e4ed4dce24d8b815",
+    "blobSha": "0139fabb2062905f19ee9ddc74c42f1f68b7af84"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,56 @@
+FROM registry.access.redhat.com/ubi9/go-toolset:1.26 AS golang
+
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/main/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.12.2
+RUN go install gotest.tools/gotestsum@v1.12.3
+
+FROM quay.io/centos/centos:stream9
+
+ENV GOROOT=/usr/lib/golang
+ENV GOPATH=/opt/app-root/src/go
+ENV VIRTUAL_ENV=/opt/venv
+# A directory in the path with write permission even for non-root users
+ENV TOOLS=/tools/
+ENV PATH="$VIRTUAL_ENV/bin:$GOROOT/bin:$GOPATH/bin:$TOOLS:$PATH"
+
+COPY --from=golang $GOPATH $GOPATH
+COPY --from=golang $GOROOT $GOROOT
+
+RUN chmod 775 -R $GOPATH && chmod 775 -R $GOROOT
+
+# TODO: Replace with version 0.30.4 once it is released.
+#
+# We need version 5d0a00d of go-swagger because it is the first that contains
+# the change that we need in order to be able to reject unknown JSON fields.
+# That will eventually be part of release 0.30.4, but that doesn't exist yet.
+#
+# For details see the pull request where that capability was added:
+#
+# https://github.com/go-swagger/go-swagger/pull/2863
+#
+# And the ticket:
+#
+# https://issues.redhat.com/browse/MGMT-12697
+COPY --from=quay.io/goswagger/swagger:sha-5d0a00d /usr/bin/swagger /usr/bin/goswagger
+
+COPY --from=quay.io/edge-infrastructure/swagger-codegen-cli:2.4.18 /opt/swagger-codegen-cli /opt/swagger-codegen-cli
+COPY --from=quay.io/openshift/origin-cli:latest /usr/bin/oc /usr/bin
+COPY --from=quay.io/operator-framework/upstream-opm-builder:v1.16.1 /bin/opm /bin
+COPY --from=registry.k8s.io/kustomize/kustomize:v5.7.1 /app/kustomize /usr/bin/
+
+RUN dnf install -y --enablerepo=crb \
+        openssl openssl-devel postgresql nmstate-devel sqlite gcc genisoimage git libvirt-client libvirt-devel java make && \
+    dnf clean all
+
+# Git checks if the user that owns the files on the filesystem match the
+# current user.  We need to disable this check because tests in Prow are
+# running with a random user.
+RUN git config --system --add safe.directory '*'
+
+WORKDIR /home/assisted-service
+RUN mkdir build $TOOLS --mode g+xw
+COPY ./hack/setup_env.sh ./dev-requirements.txt ./
+RUN ./setup_env.sh podman_remote && echo "podman_remote" && \
+    ./setup_env.sh assisted_service && echo "assisted_service" && \
+    dnf clean all && \
+    chmod g+xw -R $GOPATH
+COPY ./data /tmp/data

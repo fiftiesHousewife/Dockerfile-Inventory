@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "konflux-ci/ci-terraform-runner",
+    "path": "Containerfile",
+    "commit": "c0811b944f9289bf9c6bf0c511e1011786b61202",
+    "blobSha": "57197a2c29bf5edaca4521fb4be36c4e52e965ad"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

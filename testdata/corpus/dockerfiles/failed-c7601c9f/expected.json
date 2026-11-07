@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/imagebuilder",
+    "path": "dockerfile/parser/testfile-line/Dockerfile",
+    "commit": "c8afb7645103bbfd0d4d87622f0c0d2ca47c0811",
+    "blobSha": "c7601c9f692b9419a5c6c132460f7cb03aafd41e"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

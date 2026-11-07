@@ -1,0 +1,290 @@
+{
+  "config": {
+    "Labels": {
+      "License": "GPLv2+",
+      "architecture": "x86_64",
+      "build-date": "2026-11-04T01:15:55Z",
+      "com.redhat.component": "aws-karpenter-provider-aws-container",
+      "description": "Empty",
+      "io.buildah.version": "1.44.0",
+      "io.k8s.description": "Karpenter is a Kubernetes Node Autoscaler built for flexibility, performance, and simplicity.",
+      "io.k8s.display-name": "Karpenter AWS provider for OpenShift",
+      "io.openshift.build.commit.id": "d8ba4583eda5714f006524d6c05390d55842f830",
+      "io.openshift.build.commit.url": "https://github.com/openshift/aws-karpenter-provider-aws/commit/d8ba4583eda5714f006524d6c05390d55842f830",
+      "io.openshift.build.source-location": "https://github.com/openshift/aws-karpenter-provider-aws",
+      "io.openshift.maintainer.component": "autoscaling / karpenter",
+      "io.openshift.release.operator": "true",
+      "io.openshift.tags": "Empty",
+      "name": "openshift5/aws-karpenter-provider-aws-rhel9",
+      "org.label-schema.build-date": "20260908",
+      "org.label-schema.license": "GPLv2",
+      "org.label-schema.name": "CentOS Stream 10 Base Image",
+      "org.label-schema.schema-version": "1.0",
+      "org.label-schema.vendor": "CentOS",
+      "org.opencontainers.image.created": "2026-11-04T01:15:55Z",
+      "org.opencontainers.image.revision": "f9ac9961fd8e923a00bdcf9bca0d14475fa7b3e2",
+      "release": "202611040030.p2.gd8ba458.assembly.stream.scos10",
+      "summary": "Empty",
+      "vcs-ref": "f9ac9961fd8e923a00bdcf9bca0d14475fa7b3e2",
+      "vcs-type": "git",
+      "vendor": "Red Hat, Inc.",
+      "version": "v5.0.0"
+    },
+    "User": "0"
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:6943fbeba2611bcb09b4863efbd776d85c4a021b88fc0e490869571bda3de234",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:ff893b3f69bd17978c878e1b8ac5c6cfa7089b9dc930c4b759742cfecdff73b5",
+      "sha256:0f91e20418718e1929eaceea18792962e81f458d619ee40b0d05f7031d991188"
+    ]
+  },
+  "history": [
+    {
+      "created": "2026-09-08T04:27:37Z",
+      "created_by": "/bin/sh -c #(nop) osbuild input 'base'"
+    },
+    {
+      "created": "2026-09-09T01:47:58.474040815Z",
+      "created_by": "/bin/sh -c #(nop) LABEL org.label-schema.schema-version=\"1.0\"     org.label-schema.name=\"CentOS Stream 10 Base Image\"     org.label-schema.vendor=\"CentOS\"     org.label-schema.license=\"GPLv2\"     org.label-schema.build-date=\"20260908\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-09T01:48:00.062087356Z",
+      "created_by": "/bin/sh -c #(nop) CMD [\"/bin/bash\"]",
+      "comment": "FROM oci-archive"
+    },
+    {
+      "created": "2026-09-21T13:18:23.122388531Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_ENGINE=konflux",
+      "comment": "FROM quay.io/centos/centos:stream10",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.122399958Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_METHOD=cachi2",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.122410818Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_NETWORK=open",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.286940227Z",
+      "created_by": "/bin/sh -c go clean -cache || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.286975008Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_MODE=default",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.28698371Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.460621332Z",
+      "created_by": "/bin/sh -c mkdir -p /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.503054669Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:54edd1de224d71d5f1c5599d774ba1e45d7a95bb149c9b599415b18db269ce0e in /etc/yum.repos.d/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.718807042Z",
+      "created_by": "/bin/sh -c curl https://certs.corp.redhat.com/certs/Current-IT-Root-CAs.pem",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.798723881Z",
+      "created_by": "/bin/sh -c #(nop) ADD f1582bbb014759feab96034b3eb79ad48869c70817be240c04b86efe3fa4608f in /tmp/art      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.79890001Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=update BUILD_RELEASE=202609211316.p2.g3f1cf08.assembly.stream.scos10 BUILD_VERSION=v5.0.0 OS_GIT_MAJOR=5 OS_GIT_MINOR=0 OS_GIT_PATCH=0 OS_GIT_TREE_STATE=clean OS_GIT_VERSION=5.0.0-202609211316.p2.g3f1cf08.assembly.stream.scos10 SOURCE_GIT_TREE_STATE=clean TAGS=scos __doozer_group=okd-5.0 __doozer_key=openshift-enterprise-base-rhel9 __doozer_uuid_tag=openshift-enterprise-base-rhel9-v5.0.0-20260921.131702 __doozer_version=v5.0.0 ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.798995684Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=merge OS_GIT_COMMIT=3f1cf08 OS_GIT_VERSION=5.0.0-202609211316.p2.g3f1cf08.assembly.stream.scos10-3f1cf08 SOURCE_DATE_EPOCH=1789222131 SOURCE_GIT_COMMIT=3f1cf0830f196a6755b8baf179fc0401188251c4 SOURCE_GIT_TAG=3f1cf0830 SOURCE_GIT_URL=https://github.com/openshift/images ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:23.844892352Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:828306ca895a6394bc2e9784c259b0202f9409cdc5a3d51f5b9bd8cc65f9a02d in /etc/crypto-policies/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:28.427763957Z",
+      "created_by": "/bin/sh -c INSTALL_PKGS=\"       which tar wget hostname shadow-utils       socat findutils lsof bind-utils gzip       procps-ng rsync iproute diffutils python3       python-unversioned-command util-linux\" &&     echo 'skip_missing_names_on_install=0' >> /etc/yum.conf &&     echo 'install_weak_deps=0' >> /etc/yum.conf &&     dnf install -y --nodocs ${INSTALL_PKGS} &&     ( test -d /usr/share/zoneinfo || dnf reinstall -y --nodocs tzdata || dnf install -y --nodocs tzdata ) &&     dnf clean all && rm -rf /var/cache/*",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:28.60352393Z",
+      "created_by": "/bin/sh -c install -d -m 0755 /run/lock",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:44.925993218Z",
+      "created_by": "/bin/sh -c source /etc/os-release  && [ \"${ID}\" != \"centos\" ]  && exit 0 ;     INSTALL_PKGS=\"dnf-plugins-core centos-release-nfv-openvswitch\"  &&     [ \"${VERSION_ID}\" = \"9\" ]  && INSTALL_PKGS=\"${INSTALL_PKGS} centos-release-openstack-zed\" ;     dnf install -y --nodocs --setopt=install_weak_deps=False ${INSTALL_PKGS}  &&         : 'removed dnf config-manager'  &&         dnf clean all  && rm -rf /var/cache/* ;     [ \"${VERSION_ID}\" = \"10\" ]  &&         curl -o /etc/yum.repos.d/delorean.repo https://trunk.rdoproject.org/centos10-master/podified-ci-testing/delorean.repo  &&         curl -o /etc/yum.repos.d/delorean-deps.repo https://trunk.rdoproject.org/centos10-master/delorean-deps.repo  &&         dnf install -y --nodocs --setopt=install_weak_deps=False gpgme  &&         dnf clean all  && rm -rf /var/cache/*  || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:44.926062603Z",
+      "created_by": "/bin/sh -c #(nop) ENV GODEBUG=x509ignoreCN=0,madvdontneed=1",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:44.926076544Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.092103291Z",
+      "created_by": "/bin/sh -c rm -f /etc/yum.repos.d/art-* && mv /tmp/art/yum_temp/* /etc/yum.repos.d/ || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.262549647Z",
+      "created_by": "/bin/sh -c rm -rf /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.26269354Z",
+      "created_by": "/bin/sh -c #(nop) LABEL         io.k8s.display-name=\"OpenShift Container Platform RHEL 9 Base\"         io.k8s.description=\"This is the base image from which all OpenShift Container Platform images inherit.\"         License=\"GPLv2+\"         io.openshift.tags=\"openshift,base\"         name=\"openshift/openshift-enterprise-base-rhel9\"         vendor=\"Red Hat, Inc.\"         com.redhat.component=\"openshift-enterprise-base-rhel9-container\"         io.openshift.maintainer.component=\"Release\"         version=\"v5.0.0\"         release=\"202609211316.p2.g3f1cf08.assembly.stream.scos10\"         io.openshift.build.commit.id=\"3f1cf0830f196a6755b8baf179fc0401188251c4\"         io.openshift.build.source-location=\"https://github.com/openshift/images\"         io.openshift.build.commit.url=\"https://github.com/openshift/images/commit/3f1cf0830f196a6755b8baf179fc0401188251c4\"         description=\"Empty\"         summary=\"Empty\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.309383804Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:6652a03f76d06553b8e2febbb7882b84117ada466aa03c20c40106e39fb28925 in /usr/share/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:45.35421818Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:6652a03f76d06553b8e2febbb7882b84117ada466aa03c20c40106e39fb28925 in /root/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-09-21T13:18:46.000511017Z",
+      "created_by": "/bin/sh -c #(nop) LABEL \"org.opencontainers.image.created\"=\"2026-09-21T13:18:17Z\" \"org.opencontainers.image.revision\"=\"c34c282fb56ef9fa2cc498561688d77b8edc0499\" \"build-date\"=\"2026-09-21T13:18:17Z\" \"architecture\"=\"x86_64\" \"vcs-ref\"=\"c34c282fb56ef9fa2cc498561688d77b8edc0499\" \"vcs-type\"=\"git\"org.opencontainers.image.created=2026-09-21T13:18:17Z,org.opencontainers.image.revision=c34c282fb56ef9fa2cc498561688d77b8edc0499"
+    },
+    {
+      "created": "2026-11-04T02:08:20.177536692Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_ENGINE=konflux",
+      "comment": "FROM quay.io/redhat-user-workloads/ocp-art-tenant/art-okd-images@sha256:563787e8ea9d49f119eb13f3d1148eb38a4e8c490d5b6c35aed34adddcd7f157",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:20.177587134Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_METHOD=cachi2",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:20.177620105Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_NETWORK=open",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:20.436267347Z",
+      "created_by": "/bin/sh -c go clean -cache || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:20.436349929Z",
+      "created_by": "/bin/sh -c #(nop) ENV ART_BUILD_DEPS_MODE=default",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:20.43636895Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:20.678467117Z",
+      "created_by": "/bin/sh -c mkdir -p /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:20.728333426Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:54edd1de224d71d5f1c5599d774ba1e45d7a95bb149c9b599415b18db269ce0e in /etc/yum.repos.d/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.141773671Z",
+      "created_by": "/bin/sh -c curl https://certs.corp.redhat.com/certs/Current-IT-Root-CAs.pem",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.211441483Z",
+      "created_by": "/bin/sh -c #(nop) ADD 603bebe4bfabe2d3febe511d2a46ab413bc6d7a0842b3e38fe72aaf294d12efa in /tmp/art      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.211642249Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=update BUILD_RELEASE=202611040030.p2.gd8ba458.assembly.stream.scos10 BUILD_VERSION=v5.0.0 OS_GIT_MAJOR=5 OS_GIT_MINOR=0 OS_GIT_PATCH=0 OS_GIT_TREE_STATE=clean OS_GIT_VERSION=5.0.0-202611040030.p2.gd8ba458.assembly.stream.scos10 SOURCE_GIT_TREE_STATE=clean TAGS=scos __doozer_group=okd-5.0 __doozer_key=aws-karpenter-provider-aws __doozer_uuid_tag=aws-karpenter-provider-aws-rhel9-v5.0.0-20261104.003045 __doozer_version=v5.0.0 ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.211746083Z",
+      "created_by": "/bin/sh -c #(nop) ENV __doozer=merge OS_GIT_COMMIT=d8ba458 OS_GIT_VERSION=5.0.0-202611040030.p2.gd8ba458.assembly.stream.scos10-d8ba458 SOURCE_DATE_EPOCH=1790718872 SOURCE_GIT_COMMIT=d8ba4583eda5714f006524d6c05390d55842f830 SOURCE_GIT_TAG=d8ba4583 SOURCE_GIT_URL=https://github.com/openshift/aws-karpenter-provider-aws ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.211763313Z",
+      "created_by": "/bin/sh -c #(nop) ARG TARGETARCH",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.347726868Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:fa5a047b86f5f951ad8835f01aee4e5f73528fa18ddbd376f2516c3619a99427 in /usr/bin/karpenter-provider-aws      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.34776912Z",
+      "created_by": "/bin/sh -c #(nop) ENTRYPOINT [\"/usr/bin/karpenter-provider-aws\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.347789Z",
+      "created_by": "/bin/sh -c #(nop) USER 0",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.586747334Z",
+      "created_by": "|1 TARGETARCH=amd64 /bin/sh -c rm -f /etc/yum.repos.d/art-* && mv /tmp/art/yum_temp/* /etc/yum.repos.d/ || true",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.816567202Z",
+      "created_by": "|1 TARGETARCH=amd64 /bin/sh -c rm -rf /tmp/art",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.817390629Z",
+      "created_by": "/bin/sh -c #(nop) LABEL         io.k8s.display-name=\"Karpenter AWS provider for OpenShift\"         io.k8s.description=\"Karpenter is a Kubernetes Node Autoscaler built for flexibility, performance, and simplicity.\"         io.openshift.release.operator=\"true\"         name=\"openshift5/aws-karpenter-provider-aws-rhel9\"         vendor=\"Red Hat, Inc.\"         com.redhat.component=\"aws-karpenter-provider-aws-container\"         io.openshift.maintainer.component=\"autoscaling / karpenter\"         version=\"v5.0.0\"         release=\"202611040030.p2.gd8ba458.assembly.stream.scos10\"         io.openshift.build.commit.id=\"d8ba4583eda5714f006524d6c05390d55842f830\"         io.openshift.build.source-location=\"https://github.com/openshift/aws-karpenter-provider-aws\"         io.openshift.build.commit.url=\"https://github.com/openshift/aws-karpenter-provider-aws/commit/d8ba4583eda5714f006524d6c05390d55842f830\"         io.openshift.tags=\"Empty\"         description=\"Empty\"         summary=\"Empty\"",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.865948269Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:4e8e875cfa08ba25b6cf6ce2c11ae66ee591adf06365b5bd23a1ffbd0647fdb6 in /usr/share/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:21.916135531Z",
+      "created_by": "/bin/sh -c #(nop) COPY dir:4e8e875cfa08ba25b6cf6ce2c11ae66ee591adf06365b5bd23a1ffbd0647fdb6 in /root/buildinfo/      ",
+      "empty_layer": true
+    },
+    {
+      "created": "2026-11-04T02:08:22.575087071Z",
+      "created_by": "/bin/sh -c #(nop) LABEL \"org.opencontainers.image.created\"=\"2026-11-04T01:15:55Z\" \"org.opencontainers.image.revision\"=\"f9ac9961fd8e923a00bdcf9bca0d14475fa7b3e2\" \"build-date\"=\"2026-11-04T01:15:55Z\" \"architecture\"=\"x86_64\" \"vcs-ref\"=\"f9ac9961fd8e923a00bdcf9bca0d14475fa7b3e2\" \"vcs-type\"=\"git\"org.opencontainers.image.created=2026-11-04T01:15:55Z,org.opencontainers.image.revision=f9ac9961fd8e923a00bdcf9bca0d14475fa7b3e2"
+    }
+  ]
+}

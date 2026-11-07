@@ -1,0 +1,61 @@
+## This Containerfile makes use of docker's Buildkit to cache crates between
+## builds, dramatically speeding up the local development process.
+
+# Move to Ubunutu 24.04 to track how images are built in github and Containerfile.bpfman.multi.arch.
+# This is a short term fix and will be moving to ubi9minimal as soon as possible. So try to keep
+# keep Ubuntu specifics on their own lines.
+#FROM rust:1 AS bpfman-build
+FROM ubuntu:26.04 AS bpfman-build
+
+# Packages need to build on Ubuntu
+RUN apt-get update && apt-get install -y\
+    pkg-config\
+    curl
+
+RUN apt-get update && apt-get install -y\
+    clang\
+    gcc-multilib\
+    libbpf-dev\
+    libclang-dev\
+    libssl-dev\
+    cmake
+
+# Get Rust for Ubuntu base build
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH=/root/.cargo/bin:$PATH
+
+# Install bindgen-cli (required for aws-lc-sys on some architectures)
+RUN --mount=type=cache,target=/usr/src/bpfman/target/ \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo install bindgen-cli
+
+WORKDIR /usr/src/bpfman
+COPY ./ /usr/src/bpfman
+
+# Compile bpfman cli, bpfman-ns, and bpfman-rpc binaries
+RUN --mount=type=cache,target=/usr/src/bpfman/target/ \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo build --release
+
+RUN --mount=type=cache,target=/usr/src/bpfman/target/ \
+    cp /usr/src/bpfman/target/release/bpfman ./bpfman/
+
+RUN --mount=type=cache,target=/usr/src/bpfman/target/ \
+    cp /usr/src/bpfman/target/release/bpfman-ns ./bpfman/
+
+RUN --mount=type=cache,target=/usr/src/bpfman/target/ \
+    cp /usr/src/bpfman/target/release/bpfman-rpc ./bpfman/
+
+#FROM fedora:40
+FROM ubuntu:26.04
+
+## Image for Local testing is much more of a debug image, give it bpftool and tcpdump
+# RUN dnf makecache --refresh && dnf -y install bpftool tcpdump
+RUN apt-get update && \
+    apt-get -y install linux-tools-common tcpdump ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/\* /tmp/\* /var/tmp/*
+
+COPY --from=bpfman-build  ./usr/src/bpfman/bpfman /usr/local/sbin/
+
+ENTRYPOINT ["bpfman-rpc", "--timeout=0"]

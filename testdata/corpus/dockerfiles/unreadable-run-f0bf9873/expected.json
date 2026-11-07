@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kedacore-keda",
+    "path": ".devcontainer/Dockerfile",
+    "commit": "c5462027e2be64ae98ff88910fd7fa419c17f53e",
+    "blobSha": "f0bf9873c41e52e0fd7f32ad6a45f1dfb71090c2"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/aro-e2e",
+    "path": "Dockerfile.ansible.constraints",
+    "commit": "441fdd5cd901914a4d6a9b002c55b12738c19781",
+    "blobSha": "2604a96406285af05e8ceb2e58c269720bdd9405"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

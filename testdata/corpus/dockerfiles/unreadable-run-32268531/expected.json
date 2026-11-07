@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "redhat-developer/rh-che",
+    "path": "dockerfiles/pr-check/Dockerfile",
+    "commit": "0280a007ca0467540246ffd0e52db7a647a6d1fc",
+    "blobSha": "32268531e4bcfee1709c92d4c83d5de6c8402c55"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

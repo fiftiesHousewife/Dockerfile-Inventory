@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kata-containers",
+    "path": "tools/packaging/static-build/virtiofsd/gnu/Dockerfile",
+    "commit": "9ba2b6264d266df5f611b5bf9eeb97cef1b5fb75",
+    "blobSha": "73f84826b247d104abf1f468394bc2ea929a2d9d"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

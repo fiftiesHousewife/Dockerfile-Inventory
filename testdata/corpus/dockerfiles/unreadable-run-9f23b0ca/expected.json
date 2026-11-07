@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "docker-library/redmine",
+    "path": "7.0/alpine3.24/Dockerfile",
+    "commit": "49a27f29f1d214a4226af75b55578e36d3474c4c",
+    "blobSha": "9f23b0ca1f7f5041788c4a58726c5e69c9c440cb"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

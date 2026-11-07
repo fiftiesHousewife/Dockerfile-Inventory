@@ -1,0 +1,8 @@
+{
+  "image": "okd-azure-cluster-api-controllers",
+  "sourceRepository": "openshift/cluster-api-provider-azure",
+  "tier": "WEAK",
+  "blobShas": [
+    "2fbd9aeeffcce347acef9632cd72dcfa83dd7d2d"
+  ]
+}

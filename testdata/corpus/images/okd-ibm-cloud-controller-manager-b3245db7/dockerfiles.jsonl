@@ -1,0 +1,1 @@
+{"blobSha":"c37a9c2a379c5ce816bfca028699813478e6215a","steps":[{"keyword":"LABEL","text":"description"},{"keyword":"COPY","text":"/bin/ibm-cloud-controller-manager"},{"keyword":"ENTRYPOINT","text":"[ \"/bin/ibm-cloud-controller-manager\" ]"}],"fromPath":"ocp/5.0","repository":"openshift/cloud-provider-ibm"}

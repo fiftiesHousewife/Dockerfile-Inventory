@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/open-telemetry-opentelemetry-operator",
+    "path": "tests/test-e2e-apps/java/Dockerfile",
+    "commit": "456ee956c877fe7cad118b29638fab08f114d0c5",
+    "blobSha": "863a3be3f99fcef052cae63b7957ff1fc5dbbec6"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

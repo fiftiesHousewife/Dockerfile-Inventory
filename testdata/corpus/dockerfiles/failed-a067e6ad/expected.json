@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/moby-moby",
+    "path": "contrib/syntax/vim/syntax/dockerfile.vim",
+    "commit": "8cf8fe9cf80a07d4e68829f619ea2c71fbb5af0c",
+    "blobSha": "a067e6ad4c5109c74d3065562871bd307e5bb144"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

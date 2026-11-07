@@ -1,0 +1,37 @@
+FROM registry.access.redhat.com/ubi9/go-toolset:1.26 AS golang
+
+ENV GOFLAGS=""
+
+ARG GOLANGCI_LINT_VERSION=v2.15.0
+
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/${GOLANGCI_LINT_VERSION}/install.sh | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION} && \
+  go install golang.org/x/tools/cmd/goimports@v0.34.0 && \
+  go install github.com/onsi/ginkgo/ginkgo@v1.16.1 && \
+  go install go.uber.org/mock/mockgen@v0.4.0 && \
+  go install gotest.tools/gotestsum@v1.12.3 && \
+  go install github.com/axw/gocov/gocov@v1.1.0 && \
+  go install github.com/AlekSi/gocov-xml@v1.1.0
+
+FROM quay.io/centos/centos:stream9
+
+RUN dnf install -y 'dnf-command(config-manager)' && \
+    dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
+    dnf install -y \
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        make \
+        git \
+        openssl-devel \
+        gcc \
+    && dnf clean all
+RUN update-crypto-policies --set DEFAULT:PQ
+
+ENV GOROOT=/usr/lib/golang
+ENV GOPATH=/opt/app-root/src/go
+ENV PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+
+COPY --from=golang $GOPATH $GOPATH
+COPY --from=golang $GOROOT $GOROOT
+
+RUN chmod 775 -R $GOPATH && chmod 775 -R $GOROOT

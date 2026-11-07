@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/ovn-kubernetes",
+    "path": "Dockerfile.base",
+    "commit": "4df88b49aacd59fafcef9c48d8ba167e98817383",
+    "blobSha": "629ba03066e8a798c6df94f3c2262f8041365578"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/go-dockerclient",
+    "path": "testing/data/dockerfile.tar",
+    "commit": "7511300f03c521cfc8e07e88ea8c915add790f50",
+    "blobSha": "32c9ce64704835cd096b85ac44c35b5087b5ccdd"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

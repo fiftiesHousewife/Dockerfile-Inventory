@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "sclorg/nginx-container",
+    "path": "1.24/Dockerfile.rhel9",
+    "commit": "ab2e6dab8db0f2372d94e1be0eb5c02f9bbd77b2",
+    "blobSha": "3ee212d1be1dfea5f444f6c7e398f2edecc3f5e9"
+  },
+  "why": "parses only with the parser's key-value-comment workaround",
+  "parse": "retried",
+  "unreadableRuns": 0,
+  "roundTrip": "passes"
+}

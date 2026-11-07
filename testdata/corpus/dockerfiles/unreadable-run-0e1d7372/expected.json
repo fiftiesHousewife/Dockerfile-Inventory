@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/driver-toolkit",
+    "path": "Dockerfile",
+    "commit": "b63b175a79b9fe0c29f6ed63df3c2d7862ba408a",
+    "blobSha": "0e1d73727d4f305e399b6ffa3dd4900ed822ae56"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

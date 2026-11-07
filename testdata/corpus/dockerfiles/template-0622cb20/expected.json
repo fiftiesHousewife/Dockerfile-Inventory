@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/microshift",
+    "path": "test/image-blueprints-bootc/el9/layer1-base/group2/rhel98-bootc-crel-isolated.containerfile",
+    "commit": "6d9435a3ce448ef6d35b332b5261781a84f794ad",
+    "blobSha": "0622cb201d119c98686b6abfdc4b1077537a5338"
+  },
+  "why": "a template saved under a Dockerfile's name",
+  "parse": "template",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

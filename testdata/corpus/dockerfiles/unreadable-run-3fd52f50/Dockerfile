@@ -1,0 +1,166 @@
+#
+# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
+#
+# PLEASE DO NOT EDIT IT DIRECTLY.
+#
+
+FROM ruby:4.0-slim-trixie
+
+# explicitly set uid/gid to guarantee that it won't change in the future
+# the values 999:999 are identical to the current user/group id assigned
+RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
+
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		bzr \
+		ca-certificates \
+		ghostscript \
+		git \
+		gsfonts \
+		imagemagick \
+		mercurial \
+		openssh-client \
+		subversion \
+		tini \
+		tzdata-legacy \
+		wget \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
+# grab gosu for easy step-down from root
+# https://github.com/tianon/gosu/releases
+ENV GOSU_VERSION 1.19
+RUN set -eux; \
+	\
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		gnupg \
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+	\
+	dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
+	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
+	wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
+	export GNUPGHOME="$(mktemp -d)"; \
+	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
+	gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
+	gpgconf --kill all; \
+	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
+	\
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark > /dev/null; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	\
+# smoke test
+	chmod +x /usr/local/bin/gosu; \
+	gosu --version; \
+	gosu nobody true
+
+ENV RAILS_ENV production
+WORKDIR /usr/src/redmine
+
+# https://github.com/docker-library/redmine/issues/138#issuecomment-438834176
+# (bundler needs this for running as an arbitrary user)
+ENV HOME /home/redmine
+RUN set -eux; \
+	[ ! -d "$HOME" ]; \
+	mkdir -p "$HOME"; \
+	chown redmine:redmine "$HOME"; \
+	chmod 1777 "$HOME"
+
+ENV REDMINE_VERSION 7.0.3
+ENV REDMINE_DOWNLOAD_URL https://www.redmine.org/releases/redmine-7.0.3.tar.gz
+ENV REDMINE_DOWNLOAD_SHA256 0b6b24c033341a9d7ad52cfcfa7b1bc913c191c7a604f740d863f16249dd3c15
+ENV RAILS_LOG_TO_STDOUT true
+
+RUN set -eux; \
+	wget -O redmine.tar.gz "$REDMINE_DOWNLOAD_URL"; \
+	echo "$REDMINE_DOWNLOAD_SHA256 *redmine.tar.gz" | sha256sum -c -; \
+	tar -xf redmine.tar.gz --strip-components=1; \
+	rm redmine.tar.gz files/delete.me log/delete.me; \
+	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
+	set -- 'config' 'db' 'log' 'public/assets' 'sqlite' 'tmp' 'tmp/pdf' 'tmp/pids'; \
+	mkdir -p "$@"; \
+	chown -R redmine:redmine ./; \
+# fix permissions for running as an arbitrary user
+	chmod -R ugo=rwX "$@"; \
+	find "$@" -type d -exec chmod 1777 '{}' +
+
+RUN set -eux; \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		default-libmysqlclient-dev \
+		freetds-dev \
+		gcc \
+		libclang-dev \
+		libpq-dev \
+		libsqlite3-dev \
+		libxml2-dev \
+		libxslt-dev \
+		libyaml-dev \
+		make \
+		patch \
+		pkgconf \
+		xz-utils \
+	; \
+# error: rustc 1.85.0 is not supported by the following packages: ... requires rustc 1.88.0
+# install cargo/rust from backports so that it is new enough
+# https://packages.debian.org/trixie-backports/cargo
+	echo 'deb http://deb.debian.org/debian trixie-backports main' > /etc/apt/sources.list.d/backports.list; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends cargo/trixie-backports rustc/trixie-backports; \
+	rm -f /etc/apt/sources.list.d/backports.list; \
+	rm -rf /var/lib/apt/lists/*; \
+	\
+	gosu redmine bundle config --local without 'development test'; \
+# https://github.com/redmine/redmine/commit/23dc108e70a0794f444803ac827a690085dcd557
+# ("gem puma" already exists in the Gemfile, but under "group :test" and we want it all the time)
+	puma="$(grep -E "^[[:space:]]*gem [:'\"]puma['\",[:space:]].*\$" Gemfile)"; \
+	{ echo; echo "$puma"; } | sed -re 's/^[[:space:]]+//' >> Gemfile; \
+# fill up "database.yml" with bogus entries so the redmine Gemfile will pre-install all database adapter dependencies
+# https://github.com/redmine/redmine/blob/e9f9767089a4e3efbd73c35fc55c5c7eb85dd7d3/Gemfile#L50-L79
+	echo '# the following entries only exist to force `bundle install` to pre-install all database adapter dependencies -- they can be safely removed/ignored' > ./config/database.yml; \
+	for adapter in mysql2 postgresql sqlserver sqlite3; do \
+		echo "$adapter:" >> ./config/database.yml; \
+		echo "  adapter: $adapter" >> ./config/database.yml; \
+	done; \
+# ruby gems (like nokogiri) don't publish arm32v5-compatible, pre-compiled libraries
+# force them to compile so that they don't pull arm32v[6-7] libraries
+	arch="$(dpkg --print-architecture)"; \
+	if [ "$arch" = 'armel' ]; then \
+		gosu redmine bundle config set force_ruby_platform true; \
+	fi; \
+# nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
+	gosu redmine bundle config set build.nokogiri --use-system-libraries; \
+	gosu redmine bundle install --jobs "$(nproc)"; \
+	rm ./config/database.yml; \
+# fix permissions for running as an arbitrary user
+	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
+	rm -rf ~redmine/.bundle; \
+	\
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+	find /usr/local -type f -executable -exec ldd '{}' ';' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
+		| sort -u \
+		| xargs -rt dpkg-query --search \
+# https://manpages.debian.org/trixie/dpkg/dpkg-query.1.en.html#S (we ignore diversions and it'll be really unusual for more than one package to provide any given .so file)
+		| awk 'sub(":$", "", $1) { print $1 }' \
+		| sort -u \
+		| xargs -r apt-mark manual \
+	; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	# verify Kyiv timezone isn't missing
+	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
+
+VOLUME /usr/src/redmine/files
+
+COPY docker-entrypoint.sh /
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+EXPOSE 3000
+CMD ["rails", "server", "-b", "0.0.0.0"]

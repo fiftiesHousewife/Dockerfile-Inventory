@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/openshift-tools",
+    "path": "jenkins/build/Dockerfile",
+    "commit": "e342f6659a4ef1a188ff403e2fc6b06ac6d119c7",
+    "blobSha": "8b137891791fe96927ad78e64b0aad7bded08bdc"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

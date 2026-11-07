@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "konflux-ci/release-service-utils",
+    "path": "Dockerfile",
+    "commit": "1ec45f9e5a41a3f9dd1176886a323ed949a378e2",
+    "blobSha": "8408c095eace3a7073f5acdc2657c5fc9596773a"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

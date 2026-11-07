@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/kubernetes-sigs-agent-sandbox",
+    "path": "examples/claude-code-sandbox/Dockerfile",
+    "commit": "4d7e8911ab68aa439817f6601c07bcafe9e44b6b",
+    "blobSha": "73b7fd6e9a19ccbda8788ae6bd1c4817f49a8295"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

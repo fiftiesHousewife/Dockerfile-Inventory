@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/verification-tests",
+    "path": "tools/openshift-ci/Dockerfile.centos",
+    "commit": "becccdc55c6bf1b96ba645be67dd086197a54a70",
+    "blobSha": "7bd844c2e107b6ff8f1edec02afdfc4c44e71d58"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}

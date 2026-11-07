@@ -1,0 +1,6 @@
+{
+  "image": "sclorg-s2i-python-container-3-12-c9s",
+  "sourceRepository": "",
+  "tier": "NONE",
+  "blobShas": []
+}

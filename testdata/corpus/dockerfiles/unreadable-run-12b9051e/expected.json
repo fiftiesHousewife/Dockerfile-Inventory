@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/ansible-operator-plugins",
+    "path": "images/ansible-operator/Dockerfile",
+    "commit": "8b81c30b17b6461f659bd2bcaddb0de057abc751",
+    "blobSha": "12b9051e91e639dd9558a4fe8224428f2d3a299c"
+  },
+  "why": "a RUN the shell reader cannot follow",
+  "parse": "parsed",
+  "unreadableRuns": 1,
+  "roundTrip": "passes"
+}

@@ -1,0 +1,27 @@
+FROM fedora:44
+
+RUN dnf -y copr enable rhcontainerbot/podman-next && \
+    dnf -y install podman socat go make git && \
+    ln -s /run/podman/podman.sock /var/run/docker.sock
+
+RUN mkdir -p /etc/containers && \
+cat > /etc/containers/registries.conf <<EOF
+unqualified-search-registries = ["docker.io", "quay.io", "registry.fedoraproject.org", "registry.access.redhat.com"]
+short-name-mode="permissive"
+
+[[registry]]
+location="registry.localtest.me"
+insecure=true
+EOF
+
+
+RUN mkdir /workspace
+WORKDIR /workspace
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+ENV KUBECONFIG=/workspace/hack/bin/kubeconfig.yaml
+

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "repository": "openshift/aws-efs-utils",
+    "path": "Dockerfile",
+    "commit": "ce6e339a3223eaf69aac69e5aac1c8e87c7648b3",
+    "blobSha": "34df2f7747429923cf852768f84d6df69046aafc"
+  },
+  "why": "rewrite-docker rejects it",
+  "parse": "failed",
+  "unreadableRuns": 0,
+  "roundTrip": "not-parsed"
+}
