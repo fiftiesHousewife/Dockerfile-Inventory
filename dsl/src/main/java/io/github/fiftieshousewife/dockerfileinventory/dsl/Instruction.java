@@ -87,7 +87,7 @@ public sealed interface Instruction {
         }
     }
 
-    /** Text the model cannot type, rendered as written; every use is reported (Phase 4, D3). */
+    /** Text the model cannot type, rendered as written; the reason is kept because every use is reviewed. */
     record Raw(String text, String reason) implements Instruction {
 
         public Raw {

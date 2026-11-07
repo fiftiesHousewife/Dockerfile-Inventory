@@ -4,11 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Renders a package install as the commands of one {@code RUN}, cleaning in the same {@code RUN} (H1) so the cache
- * never reaches a layer. Weak dependencies and documentation are left out to keep the layer small (Phase 4, D5).
- */
-public final class PackageInstallRenderer {
+final class PackageInstallRenderer {
 
     private static final Map<String, PackageManager> BY_FAMILY = Map.of(
             "ubi-minimal", PackageManager.MICRODNF,
@@ -20,7 +16,7 @@ public final class PackageInstallRenderer {
     private PackageInstallRenderer() {
     }
 
-    public static List<String> commands(PackageInstall install) {
+    static List<String> commands(PackageInstall install) {
         String packages = String.join(" ", install.packages());
         return switch (install.manager()) {
             case MICRODNF, DNF, YUM -> {
@@ -34,12 +30,11 @@ public final class PackageInstallRenderer {
         };
     }
 
-    private static String flags(PackageInstall install, String house) {
+    static String flags(PackageInstall install, String house) {
         return (install.flags().isEmpty() ? house : String.join(" ", install.flags())) + " ";
     }
 
-    /** The manager a base's family ships with; any other base must name its manager. */
-    public static PackageManager forBase(BaseImage base) {
+    static PackageManager forBase(BaseImage base) {
         PackageManager manager = BY_FAMILY.get(base.family());
         if (manager == null) {
             throw new IllegalArgumentException("no known package manager for " + base.name() + "; name one");

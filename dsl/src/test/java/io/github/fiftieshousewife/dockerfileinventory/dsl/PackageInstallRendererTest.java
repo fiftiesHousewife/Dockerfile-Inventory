@@ -48,6 +48,15 @@ class PackageInstallRendererTest {
                 .containsExactly("apt-get update", "apt-get install -y curl", "rm -rf /var/lib/apt/lists/*");
     }
 
+    @Test
+    void flagsAreTheInstallsOwnOrElseTheHouseFlagsFollowedByASpace() {
+        assertThat(PackageInstallRenderer.flags(new PackageInstall(PackageManager.APK, PACKAGES), "--no-cache"))
+                .isEqualTo("--no-cache ");
+        assertThat(PackageInstallRenderer.flags(
+                new PackageInstall(PackageManager.APK, List.of("-q", "--no-cache"), PACKAGES), "--house"))
+                .isEqualTo("-q --no-cache ");
+    }
+
     private static List<String> commands(PackageManager manager) {
         return PackageInstallRenderer.commands(new PackageInstall(manager, PACKAGES));
     }

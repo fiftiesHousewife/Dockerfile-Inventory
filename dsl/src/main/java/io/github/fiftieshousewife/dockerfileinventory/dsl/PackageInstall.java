@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * Packages to install with one manager; the renderer always cleans in the same {@code RUN} (H1). With no flags the
- * house flags apply (Phase 4, D5); with flags, exactly those render, so a converted Dockerfile keeps its own
- * (Phase 5, Q2).
+ * house flags apply (no weak dependencies or documentation, to keep the layer small); with flags, exactly those
+ * render, so a converted Dockerfile keeps its own.
  */
 public record PackageInstall(PackageManager manager, List<String> flags, List<String> packages) {
 

@@ -92,8 +92,8 @@ class DockerfileRendererTest {
 
     @Test
     void escapedPairsAreKeptAndAnyOtherBackslashIsDoubled() {
-        Dockerfile env = single(new Instruction.Env(new java.util.LinkedHashMap<>(Map.of("P", "pre\\\\$HOME"))));
-        Dockerfile windows = single(new Instruction.Env(new java.util.LinkedHashMap<>(Map.of("W", "C:\\tools\\"))));
+        Dockerfile env = single(new Instruction.Env(Map.of("P", "pre\\\\$HOME")));
+        Dockerfile windows = single(new Instruction.Env(Map.of("W", "C:\\tools\\")));
 
         assertThat(DockerfileRenderer.render(env, Target.DEFAULT)).contains("P=\"pre\\\\$HOME\"");
         assertThat(DockerfileRenderer.render(windows, Target.DEFAULT)).contains("W=\"C:\\\\tools\\\\\"");
@@ -115,6 +115,54 @@ class DockerfileRendererTest {
     void renderingIsStable() {
         assertThat(DockerfileRenderer.render(MODEL, Target.DEFAULT)).isEqualTo(DockerfileRenderer.render(MODEL,
                 Target.DEFAULT));
+    }
+
+    @Test
+    void fromNamesTheBaseWithTagAndDigestOrTheEarlierStageAndAnyAlias() {
+        assertThat(DockerfileRenderer.from(new Stage("build", new BaseImage("alpine", "3.20", DIGEST), null,
+                List.of()))).isEqualTo("FROM alpine:3.20@" + DIGEST + " AS build");
+        assertThat(DockerfileRenderer.from(new Stage(null, null, "build", List.of()))).isEqualTo("FROM build");
+    }
+
+    @Test
+    void referenceLeavesOutAMissingTagOrDigest() {
+        assertThat(DockerfileRenderer.reference(new BaseImage("alpine", null, null))).isEqualTo("alpine");
+        assertThat(DockerfileRenderer.reference(new BaseImage("alpine", null, DIGEST))).isEqualTo("alpine@" + DIGEST);
+    }
+
+    @Test
+    void endedAddsABlankLineOnlyAfterATrailingBackslash() {
+        assertThat(DockerfileRenderer.ended("COPY a C:\\")).isEqualTo("COPY a C:\\\n");
+        assertThat(DockerfileRenderer.ended("USER 1001")).isEqualTo("USER 1001");
+    }
+
+    @Test
+    void supportedPassesALineTheTargetCanRead() {
+        assertThat(DockerfileRenderer.supported("RUN make", Target.DEFAULT)).isEqualTo("RUN make");
+        assertThat(DockerfileRenderer.supported("RUN --network=none --mount=type=cache make", new Target(false, true)))
+                .contains("--mount");
+    }
+
+    @Test
+    void copyWritesFromBeforeChownAndLeavesOutWhatIsNotSet() {
+        assertThat(DockerfileRenderer.copy(new Instruction.Copy(List.of("a", "b"), "/d/", null, null)))
+                .isEqualTo("COPY a b /d/");
+        assertThat(DockerfileRenderer.copy(new Instruction.Copy(List.of("a"), "/d/", "1:0", "build")))
+                .isEqualTo("COPY --from=build --chown=1:0 a /d/");
+    }
+
+    @Test
+    void pairsAlignsEachFurtherPairUnderTheFirst() {
+        assertThat(DockerfileRenderer.pairs("ENV", ordered("A", "1", "B", "2")))
+                .isEqualTo("ENV A=\"1\" \\\n    B=\"2\"");
+    }
+
+    @Test
+    void stageRefusesAnInstructionTheTargetCannotRead() {
+        Stage stage = new Stage(null, null, "build", List.of(new Instruction.Raw("RUN <<EOT\nx\nEOT", "script")));
+
+        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.stage(stage, Target.DEFAULT));
+        assertThat(DockerfileRenderer.stage(stage, new Target(true, false))).isEqualTo("FROM build\nRUN <<EOT\nx\nEOT");
     }
 
     private static Dockerfile single(Instruction instruction) {
