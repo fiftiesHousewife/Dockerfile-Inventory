@@ -14,6 +14,8 @@ import tools.jackson.databind.JsonNode;
 record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<Location> missing,
               Map<String, UserKind> effectiveUsers) {
 
+    private static final Set<String> START_COMMANDS = Set.of("CMD", "ENTRYPOINT");
+
     Estate {
         dockerfiles = List.copyOf(dockerfiles);
         failures = List.copyOf(failures);
@@ -65,7 +67,16 @@ record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<Locatio
                 new Base(base.path("name").stringValue(null), base.path("tag").stringValue(null),
                         base.path("digest").stringValue(null)),
                 finalPackages(facts), managers, facts.path("userKind").asString(), facts.path("runs").asInt(),
-                facts.path("opaqueRuns").asInt(), locations, facts.path("otherShellRuns").asInt());
+                facts.path("opaqueRuns").asInt(), locations, facts.path("otherShellRuns").asInt(), metadataOnly(row));
+    }
+
+    // An operator bundle: an image of files and labels with nothing to run, so its user, base and shape mean nothing.
+    static boolean metadataOnly(JsonNode row) {
+        JsonNode facts = row.path("facts");
+        boolean startCommand = row.path("steps").valueStream()
+                .anyMatch(step -> START_COMMANDS.contains(step.path("keyword").asString()));
+        return "scratch".equals(facts.path("base").path("name").stringValue(null)) && facts.path("runs").asInt() == 0
+                && facts.path("entrypointForm").asString().equals("NONE") && !startCommand;
     }
 
     static Set<String> finalPackages(JsonNode facts) {

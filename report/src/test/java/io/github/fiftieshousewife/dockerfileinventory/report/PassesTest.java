@@ -88,7 +88,7 @@ class PassesTest {
     static Dockerfile dockerfile(String sha, String textHash, String signatureHash, int locations) {
         return new Dockerfile(sha, textHash, signatureHash, "ubi-minimal:9|microdnf|git|ROOT||NONE|stages=1",
                 new Base("ubi9/ubi-minimal", "9.4", null), Set.of("git"), Set.of("microdnf"), "ROOT", 1, 0,
-                locations(sha, locations), 0);
+                locations(sha, locations), 0, false);
     }
 
     static Failure failure(String sha, int locations) {

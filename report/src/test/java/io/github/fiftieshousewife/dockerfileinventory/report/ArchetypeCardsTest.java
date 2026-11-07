@@ -23,7 +23,7 @@ class ArchetypeCardsTest {
         Dockerfile file = new Dockerfile("b1", "t", "s", signature, new Base("ubi9/ubi-minimal", "9.4", null),
                 Set.of(), Set.of(), "NUMERIC", 0, 0,
                 List.of(new Location("org/app", "Dockerfile", "RELEASED"),
-                        new Location("org/api", "Dockerfile", "RELEASED")), 0);
+                        new Location("org/api", "Dockerfile", "RELEASED")), 0, false);
         Estate estate = new Estate(List.of(file), List.of(), List.of(), Map.of());
         List<Archetype> archetypes = IntStream.range(0, 11).mapToObj(i -> new Archetype(i + 1, "k" + i, 2,
                 List.of("b1", "b2"), signature, i == 0 ? "b1" : "gone", List.of("org/api", "org/app"))).toList();

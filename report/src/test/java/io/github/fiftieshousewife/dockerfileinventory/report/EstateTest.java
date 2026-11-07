@@ -90,6 +90,49 @@ class EstateTest {
     }
 
     @Test
+    void aMetadataOnlyBundleIsScratchWithNoRunAndNoStartCommand() {
+        JsonNode bundle = JSON.readTree("""
+                {"facts":{"base":{"name":"scratch"},"runs":0,"entrypointForm":"NONE"},"steps":[
+                  {"keyword":"LABEL","text":"operators.operatorframework.io.bundle.mediatype.v1"},
+                  {"keyword":"COPY","text":"/manifests/"},{"keyword":"COPY","text":"/metadata/"}]}
+                """);
+
+        assertThat(Estate.metadataOnly(bundle)).isTrue();
+    }
+
+    @Test
+    void aScratchImageWithABinaryAndAnEntrypointIsNotABundle() {
+        JsonNode binary = JSON.readTree("""
+                {"facts":{"base":{"name":"scratch"},"runs":0,"entrypointForm":"EXEC"},"steps":[
+                  {"keyword":"COPY","text":"/xds-control-plane"},
+                  {"keyword":"ENTRYPOINT","text":"[\\"/xds-control-plane\\"]"}]}
+                """);
+
+        assertThat(Estate.metadataOnly(binary)).isFalse();
+    }
+
+    @Test
+    void aCommandOrARunOrAnotherBaseMeansNotABundle() {
+        assertThat(Estate.metadataOnly(JSON.readTree("""
+                {"facts":{"base":{"name":"scratch"},"runs":0,"entrypointForm":"NONE"},
+                 "steps":[{"keyword":"CMD","text":"/app"}]}"""))).isFalse();
+        assertThat(Estate.metadataOnly(JSON.readTree("""
+                {"facts":{"base":{"name":"scratch"},"runs":1,"entrypointForm":"NONE"},"steps":[]}"""))).isFalse();
+        assertThat(Estate.metadataOnly(JSON.readTree("""
+                {"facts":{"base":{"name":"alpine"},"runs":0,"entrypointForm":"NONE"},"steps":[]}"""))).isFalse();
+    }
+
+    @Test
+    void eachDockerfileSaysWhetherItIsABundle() {
+        JsonNode bundle = JSON.readTree("""
+                {"blobSha":"b","facts":{"stageCount":1,"base":{"name":"scratch"},"runs":0,"entrypointForm":"NONE"}}
+                """);
+
+        assertThat(Estate.dockerfile(bundle, List.of()).bundle()).isTrue();
+        assertThat(Estate.read(FIXTURES, FIXTURES, null).dockerfiles()).noneMatch(Dockerfile::bundle);
+    }
+
+    @Test
     void finalPackagesAreThoseInstalledInTheLastStageOnly() {
         JsonNode facts = JSON.readTree("""
                 {"stageCount":2,"packageCalls":[

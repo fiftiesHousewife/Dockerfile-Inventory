@@ -7,7 +7,7 @@ import java.util.TreeSet;
 
 record Dockerfile(String blobSha, String textHash, String signatureHash, String signature, Base base,
                          Set<String> finalPackages, Set<String> managers, String userKind, int runs, int opaqueRuns,
-                         List<Location> locations, int otherShellRuns) {
+                         List<Location> locations, int otherShellRuns, boolean bundle) {
 
     Dockerfile {
         finalPackages = Collections.unmodifiableSortedSet(new TreeSet<>(finalPackages));
