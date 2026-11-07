@@ -17,4 +17,10 @@ class ContinuationsTest {
                 .isEqualTo("COPY a C:\\\\Windows\\\\");
         assertThat(Continuations.oneLine("RUN make \\  \n    && make install")).isEqualTo("RUN make && make install");
     }
+
+    @Test
+    void withoutTrailingBackslashDropsOnlyAFinalBackslash() {
+        assertThat(Continuations.withoutTrailingBackslash("make \\")).isEqualTo("make ");
+        assertThat(Continuations.withoutTrailingBackslash("make")).isEqualTo("make");
+    }
 }

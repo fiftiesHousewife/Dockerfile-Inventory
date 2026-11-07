@@ -5,50 +5,60 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.openrewrite.docker.tree.Docker;
 
 class FactExtractorTest {
 
     static ImageFacts facts(String dockerfile) {
-        ParseResult parsed = new FactsParser().parse("sha", dockerfile);
-        assertThat(parsed).isInstanceOf(ParseResult.Parsed.class);
-        return FactExtractor.extract(((ParseResult.Parsed) parsed).file());
+        return FactExtractor.extract(Parsed.file(dockerfile));
     }
 
     @Test
     void readsTheFinalBaseOfAPlainFrom() {
         ImageFacts facts = facts("FROM registry.example.com/ubi9/ubi-minimal:9.4-1227\n");
 
-        assertThat(facts.stageCount()).isEqualTo(1);
-        assertThat(facts.base()).isEqualTo(new BaseImage("registry.example.com/ubi9/ubi-minimal", "9.4-1227", null));
-        assertThat(facts.base().digestPinned()).isFalse();
+        assertThat(facts).satisfies(f -> {
+            assertThat(f.stageCount()).isEqualTo(1);
+            assertThat(f.base()).isEqualTo(new BaseImage("registry.example.com/ubi9/ubi-minimal", "9.4-1227", null));
+            assertThat(f.base().digestPinned()).isFalse();
+        });
     }
 
     @Test
     void readsADigestPin() {
         ImageFacts facts = facts("FROM ubi9/ubi-minimal:9.4@sha256:" + "a".repeat(64) + "\n");
 
-        assertThat(facts.base().digest()).isEqualTo("sha256:" + "a".repeat(64));
-        assertThat(facts.base().digestPinned()).isTrue();
+        assertThat(facts.base()).satisfies(base -> {
+            assertThat(base.digest()).isEqualTo("sha256:" + "a".repeat(64));
+            assertThat(base.digestPinned()).isTrue();
+        });
     }
 
     @Test
     void substitutesGlobalArgDefaultsIntoFrom() {
         ImageFacts facts = facts("ARG BASE=ubi9/ubi-minimal\nARG TAG=9.4\nFROM ${BASE}:${TAG}\n");
 
-        assertThat(facts.base()).isEqualTo(new BaseImage("ubi9/ubi-minimal", "9.4", null));
-        assertThat(facts.base().resolved()).isTrue();
+        assertThat(facts.base()).satisfies(base -> {
+            assertThat(base).isEqualTo(new BaseImage("ubi9/ubi-minimal", "9.4", null));
+            assertThat(base.resolved()).isTrue();
+        });
     }
 
     @Test
     void leavesABaseFromAnArgWithoutDefaultUnresolved() {
         ImageFacts facts = facts("ARG BASE\nFROM $BASE\n");
 
-        assertThat(facts.base().name()).isEqualTo("${BASE}");
-        assertThat(facts.base().resolved()).isFalse();
+        assertThat(facts.base()).satisfies(base -> {
+            assertThat(base.name()).isEqualTo("${BASE}");
+            assertThat(base.resolved()).isFalse();
+        });
     }
 
     @ParameterizedTest
@@ -72,8 +82,10 @@ class FactExtractorTest {
                 FROM app
                 """);
 
-        assertThat(facts.stageCount()).isEqualTo(3);
-        assertThat(facts.base()).isEqualTo(new BaseImage("ubi9/ubi", "9.4", null));
+        assertThat(facts).satisfies(f -> {
+            assertThat(f.stageCount()).isEqualTo(3);
+            assertThat(f.base()).isEqualTo(new BaseImage("ubi9/ubi", "9.4", null));
+        });
     }
 
     @Test
@@ -108,8 +120,10 @@ class FactExtractorTest {
                 RUN curl -sSL https://x.example/install | sh
                 """);
 
-        assertThat(facts.runs()).isEqualTo(3);
-        assertThat(facts.opaqueRuns()).isEqualTo(2);
+        assertThat(facts).satisfies(f -> {
+            assertThat(f.runs()).isEqualTo(3);
+            assertThat(f.opaqueRuns()).isEqualTo(2);
+        });
     }
 
     @ParameterizedTest
@@ -130,8 +144,10 @@ class FactExtractorTest {
     void readsTheFinalUserAndItsKind(String dockerfile, String user, UserKind kind) {
         ImageFacts facts = facts(dockerfile.replace("\\n", "\n") + "\n");
 
-        assertThat(facts.finalUser()).isEqualTo(user);
-        assertThat(facts.userKind()).isEqualTo(kind);
+        assertThat(facts).satisfies(f -> {
+            assertThat(f.finalUser()).isEqualTo(user);
+            assertThat(f.userKind()).isEqualTo(kind);
+        });
     }
 
     @Test
@@ -234,9 +250,11 @@ class FactExtractorTest {
                 USER $UID:$GROUP
                 """);
 
-        assertThat(facts.base().name()).isEqualTo("quay.io/ubi9/ubi");
-        assertThat(facts.base().tag()).isEqualTo("9");
-        assertThat(facts.userKind()).isEqualTo(UserKind.NUMERIC);
+        assertThat(facts).satisfies(f -> {
+            assertThat(f.base().name()).isEqualTo("quay.io/ubi9/ubi");
+            assertThat(f.base().tag()).isEqualTo("9");
+            assertThat(f.userKind()).isEqualTo(UserKind.NUMERIC);
+        });
     }
 
     @Test
@@ -246,8 +264,10 @@ class FactExtractorTest {
                 RUN for p in git curl; do apk add --no-cache $p; done
                 """);
 
-        assertThat(facts.packageCalls()).extracting(c -> c.call().packages()).containsExactly(List.of("git", "curl"));
-        assertThat(facts.opaqueRuns()).isZero();
+        assertThat(facts).satisfies(f -> {
+            assertThat(f.packageCalls()).extracting(c -> c.call().packages()).containsExactly(List.of("git", "curl"));
+            assertThat(f.opaqueRuns()).isZero();
+        });
     }
 
     @Test
@@ -283,5 +303,57 @@ class FactExtractorTest {
         assertThat(facts(dockerfile).packageCalls()).extracting(StagedCall::call)
                 .filteredOn(c -> c.subcommand().equals("install"))
                 .flatExtracting(PackageCall::packages).containsExactly("ca-certificates", "curl", "procps");
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', nullValues = "-", value = {
+        "-          | ROOT",
+        "root       | ROOT",
+        "0          | ROOT",
+        "1001       | NUMERIC",
+        "appuser    | NAMED",
+        "${APP_UID} | UNRESOLVED",
+    })
+    void kindClassifiesAUserAsTheDockerfileAloneSaysIt(String user, UserKind kind) {
+        assertThat(FactExtractor.kind(user)).isEqualTo(kind);
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "$A   | true",
+        "${A} | true",
+        "$AB  | false",
+        "1    | false",
+    })
+    void ownNameIsADefaultThatOnlyReferencesItsOwnName(String value, boolean own) {
+        assertThat(FactExtractor.ownName(value, "A")).isEqualTo(own);
+    }
+
+    @Test
+    void argPairsReadsEveryNameInOrderWithItsUnquotedValueOrNull() {
+        Docker.Arg arg = Parsed.first("FROM ubi9\nARG A=1 B=\"two words\" C D=$D\n", Docker.Arg.class);
+
+        assertThat(FactExtractor.argPairs(arg)).containsExactly(
+                Map.entry("A", "1"), Map.entry("B", "two words"), new SimpleEntry<>("C", null),
+                new SimpleEntry<>("D", null));
+    }
+
+    @Test
+    void globalArgsExpandEarlierGlobalsAndSkipNamesWithoutAValue() {
+        assertThat(FactExtractor.globalArgs(Parsed.file("ARG REG=quay.io\nARG IMAGE=$REG/ubi9 NONE\nFROM $IMAGE\n")))
+                .containsExactlyInAnyOrderEntriesOf(Map.of("REG", "quay.io", "IMAGE", "quay.io/ubi9"));
+    }
+
+    @Test
+    void scannedStartsFromTheNamedStageItIsBuiltOnAndRecordsItsOwnEndUnderItsName() {
+        Docker.File file = Parsed.file("FROM ubi9 AS base\nUSER 1001\nFROM base AS app\nEXPOSE 8080\n");
+        Map<String, StageEnd> byStageName = new HashMap<>();
+        RunTally runs = new RunTally();
+        FactExtractor.scanned(0, file.getStages().get(0), Map.of(), byStageName, runs);
+
+        StageEnd end = FactExtractor.scanned(1, file.getStages().get(1), Map.of(), byStageName, runs);
+
+        assertThat(end).isEqualTo(new StageEnd("1001", List.of("8080"), EntrypointForm.NONE));
+        assertThat(byStageName).containsOnlyKeys("base", "app");
     }
 }

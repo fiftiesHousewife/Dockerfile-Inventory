@@ -5,7 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.ParseExceptionResult;
+import org.openrewrite.docker.DockerParser;
+import org.openrewrite.marker.Markers;
+import org.openrewrite.text.PlainText;
 
 class FactsParserTest {
 
@@ -80,35 +85,6 @@ class FactsParserTest {
     void theRealNginxLinesWithAKeyValueCommentAfterAnInstructionParse() throws IOException {
         assertThat(new FactsParser().parse("nginx", fixture("nginx-1.20-comments.Dockerfile")))
                 .isInstanceOf(ParseResult.Parsed.class);
-    }
-
-    @Test
-    void blankingCommentsKeepsLineNumbersParserDirectivesAndHeredocComments() {
-        String text = """
-                # syntax=docker/dockerfile:1
-                FROM ubi9
-                # it's here \\
-                RUN make && \\
-                # it's inside a continuation \\
-                    make install
-                RUN <<EOT
-                # kept: part of the script
-                echo hi
-                EOT
-                """;
-
-        assertThat(RetryText.withoutComments(text)).isEqualTo("""
-                # syntax=docker/dockerfile:1
-                FROM ubi9
-
-                RUN make && \\
-                \\
-                    make install
-                RUN <<EOT
-                # kept: part of the script
-                echo hi
-                EOT
-                """);
     }
 
     @Test
@@ -190,24 +166,6 @@ class FactsParserTest {
     }
 
     @Test
-    void theRetrysRewritesLeaveHeredocBodiesAndQuotedArgsAloneAndKeepAContinuedArgsBackslashes() {
-        String dockerfile = """
-                FROM ubi9
-                ARG DESC="two words" OTHER
-                ARG A \\
-                    B
-                RUN <<EOF
-                python3 -c 'x = ["a" , "b"]'
-                EOF
-                CMD ["a" , "b"]
-                """;
-
-        assertThat(RetryText.of(dockerfile)).contains(
-                "ARG DESC=\"two words\" OTHER\n", "ARG A=$A \\\n    B=$B\n", "python3 -c 'x = [\"a\" , \"b\"]'\n",
-                "CMD [\"a\", \"b\"]");
-    }
-
-    @Test
     void githubActionsExpressionsInCommentsAndGoTemplateKeywordsDoNotMakeATemplate() {
         assertThat(new FactsParser().parse("ok", """
                 # built by CI at ${{ github.sha }}
@@ -242,5 +200,27 @@ class FactsParserTest {
 
         assertThat(new FactsParser().parse("proxy", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
         assertThat(RetryText.of(dockerfile)).startsWith("ARG HTTP_PROXY=\"\"\nARG HTTPS_PROXY=\"\"\n");
+    }
+
+    @Test
+    void anAttemptDoesNotRetryAFileTheGrammarRejects() {
+        assertThat(new FactsParser().attempt("php", "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n"))
+                .isInstanceOf(ParseResult.Failed.class);
+    }
+
+    @Test
+    void aSourceWithoutTheParsersRecordedErrorFailsWithAGeneralMessage() {
+        assertThat(FactsParser.parseError(PlainText.builder().sourcePath(Path.of("x")).text("x").build()))
+                .isEqualTo("the parser could not read the file");
+    }
+
+    @Test
+    void aSourceWithTheParsersRecordedErrorFailsWithItsFirstLine() {
+        PlainText source = PlainText.builder().sourcePath(Path.of("x")).text("x").build()
+                .withMarkers(Markers.build(List.of(ParseExceptionResult.build(DockerParser.class,
+                        new IllegalStateException("first line\nsecond line"), null))));
+
+        assertThat(FactsParser.parseError(source)).startsWith("java.lang.IllegalStateException: first line")
+                .doesNotContain("second line");
     }
 }

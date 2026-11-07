@@ -15,28 +15,20 @@ import java.util.stream.Stream;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-/**
- * Phase 1 over a discovery output directory: every blob in {@code blobs/} is parsed once and written to
- * {@code facts.jsonl} or {@code parse-failures.jsonl} under the output directory, and {@code rates.json} is
- * rewritten from every row recorded so far.
- */
-public final class FactsRun {
+final class FactsRun {
 
-    /** One row of {@code facts.jsonl}; {@code steps} and {@code fromPath} are what lineage matches images on. */
-    public record FactRow(String blobSha, String textHash, String signatureHash, String signature, ImageFacts facts,
-                          List<Step> steps, String fromPath) {
+    record FactRow(String blobSha, String textHash, String signatureHash, String signature, ImageFacts facts,
+                   List<Step> steps, String fromPath) {
 
-        /** A row written before steps were recorded reads back with none. */
-        public FactRow {
+        FactRow {
             steps = steps == null ? List.of() : List.copyOf(steps);
         }
     }
 
-    public record Summary(int parsed, int failed, int alreadyDone) {
+    record Summary(int parsed, int failed, int alreadyDone) {
     }
 
-    /** One row of {@code parse-failures.jsonl}. */
-    public record FailureRow(String blobSha, String message) {
+    record FailureRow(String blobSha, String message) {
     }
 
     private final Path discoveryDir;
@@ -44,17 +36,14 @@ public final class FactsRun {
     private final ObjectMapper json = JsonMapper.builder().build();
     private final FactsParser parser = new FactsParser();
 
-    public FactsRun(Path discoveryDir, Path outDir) {
+    FactsRun(Path discoveryDir, Path outDir) {
         this.discoveryDir = discoveryDir;
         this.outDir = outDir;
     }
 
-    /** Parses every blob not already recorded; rows are appended one at a time, so an interrupted run resumes. */
-    public Summary run() throws IOException {
+    Summary run() throws IOException {
         Files.createDirectories(outDir);
-        Set<String> done = new HashSet<>();
-        read("facts.jsonl", FactRow.class).forEach(r -> done.add(r.blobSha()));
-        read("parse-failures.jsonl", FailureRow.class).forEach(r -> done.add(r.blobSha()));
+        Set<String> done = recorded();
         int parsed = 0;
         int failed = 0;
         int alreadyDone = 0;
@@ -62,32 +51,47 @@ public final class FactsRun {
             String sha = String.valueOf(blob.getFileName());
             if (done.contains(sha)) {
                 alreadyDone++;
-                continue;
-            }
-            String text = Files.readString(blob, StandardCharsets.UTF_8);
-            switch (parser.parse(sha, text)) {
-                case ParseResult.Parsed result -> {
-                    ImageFacts facts = FactExtractor.extract(result.file());
-                    append("facts.jsonl", new FactRow(sha, NormalForms.textHash(text), NormalForms.signatureHash(facts),
-                            NormalForms.signature(facts), facts,
-                            Steps.of(result.file()), NormalForms.fromPath(facts.base())));
-                    parsed++;
-                }
-                case ParseResult.Failed result -> {
-                    append("parse-failures.jsonl", new FailureRow(sha, result.message()));
-                    failed++;
-                }
+            } else if (record(sha, Files.readString(blob, StandardCharsets.UTF_8))) {
+                parsed++;
+            } else {
+                failed++;
             }
         }
+        writeRates();
+        return new Summary(parsed, failed, alreadyDone);
+    }
+
+    Set<String> recorded() throws IOException {
+        Set<String> done = new HashSet<>();
+        read("facts.jsonl", FactRow.class).forEach(r -> done.add(r.blobSha()));
+        read("parse-failures.jsonl", FailureRow.class).forEach(r -> done.add(r.blobSha()));
+        return done;
+    }
+
+    boolean record(String sha, String text) {
+        return switch (parser.parse(sha, text)) {
+            case ParseResult.Parsed result -> {
+                ImageFacts facts = FactExtractor.extract(result.file());
+                append("facts.jsonl", new FactRow(sha, NormalForms.textHash(text), NormalForms.signatureHash(facts),
+                        NormalForms.signature(facts), facts, Steps.of(result.file()),
+                        NormalForms.fromPath(facts.base())));
+                yield true;
+            }
+            case ParseResult.Failed result -> {
+                append("parse-failures.jsonl", new FailureRow(sha, result.message()));
+                yield false;
+            }
+        };
+    }
+
+    private void writeRates() throws IOException {
         Rates rates = Rates.of(read("facts.jsonl", FactRow.class), read("parse-failures.jsonl", FailureRow.class),
                 locations());
         Files.writeString(outDir.resolve("rates.json"), json.writerWithDefaultPrettyPrinter().writeValueAsString(rates),
                 StandardCharsets.UTF_8);
-        return new Summary(parsed, failed, alreadyDone);
     }
 
-    /** (repository, blob SHA) for every Dockerfile location in discovery's manifest. */
-    private List<Map.Entry<String, String>> locations() throws IOException {
+    List<Map.Entry<String, String>> locations() throws IOException {
         Path manifest = discoveryDir.resolve("manifest.jsonl");
         if (Files.notExists(manifest)) {
             return List.of();
@@ -111,12 +115,14 @@ public final class FactsRun {
         }
     }
 
-    private List<Path> blobs() throws IOException {
+    List<Path> blobs() throws IOException {
         try (Stream<Path> files = Files.list(discoveryDir.resolve("blobs"))) {
-            // Discovery writes a blob to <sha>...part, then renames it; a .part file is unfinished.
-            return files.filter(f -> Files.isRegularFile(f) && !String.valueOf(f.getFileName()).endsWith(".part"))
-                    .sorted().toList();
+            return files.filter(f -> Files.isRegularFile(f) && !stillBeingWritten(f)).sorted().toList();
         }
+    }
+
+    static boolean stillBeingWritten(Path blob) {
+        return String.valueOf(blob.getFileName()).endsWith(".part");
     }
 
     private void append(String file, Object row) {

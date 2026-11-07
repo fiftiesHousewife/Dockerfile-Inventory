@@ -11,14 +11,15 @@ import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Timeout;
+import org.openrewrite.docker.tree.Docker;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 class StepsTest {
 
-    /** Shared with lineage, which must reduce the image's real history to the same steps. */
     private static final Path CONTRACT = Path.of("../testdata/contracts/python-311.steps.json");
 
     @ParameterizedTest
@@ -174,9 +175,57 @@ class StepsTest {
                 .containsExactly(new Step("RUN", "make && make install"));
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "run make install  | RUN    | make install",
+        "HEALTHCHECK       | HEALTHCHECK | ''",
+        "copy a b /dest    | COPY   | /dest",
+    })
+    void fromLineUpperCasesTheKeywordAndReducesTheRest(String line, String keyword, String text) {
+        assertThat(Steps.fromLine(line)).isEqualTo(new Step(keyword, text));
+    }
+
+    @Test
+    void destinationIsTheLastArgumentAfterAnyFlagsOrTheLastArrayElement() {
+        assertThat(Steps.destination("--chown=1:0 --link a b /opt/")).isEqualTo("/opt/");
+        assertThat(Steps.destination("--chown=1:0 [\"a b\", \"/c d/\"]")).isEqualTo("/c d/");
+    }
+
+    @Test
+    void pairKeysAreTheSortedKeysOrALegacyPairsOnlyKey() {
+        assertThat(Steps.pairKeys("b=1 a=\"x y\"")).isEqualTo("a b");
+        assertThat(Steps.pairKeys("\"MAINTAINER\" someone <a@b>")).isEqualTo("MAINTAINER");
+    }
+
+    @Test
+    void earlierStageIsTheLastEarlierStageWithTheBasesName() {
+        List<Docker.Stage> stages = Parsed.file("FROM a AS base\nFROM b AS base\nFROM base\n").getStages();
+
+        assertThat(Steps.earlierStage(stages.get(2).getFrom(), stages.subList(0, 2))).isEqualTo(1);
+    }
+
+    @Test
+    void earlierStageIsNoneForATaggedBaseOrAnUnnamedImage() {
+        List<Docker.Stage> stages = Parsed.file("FROM a AS base\nFROM base:1\nFROM other\n").getStages();
+
+        assertThat(Steps.earlierStage(stages.get(1).getFrom(), stages.subList(0, 1))).isEqualTo(-1);
+        assertThat(Steps.earlierStage(stages.get(2).getFrom(), stages.subList(0, 2))).isEqualTo(-1);
+    }
+
+    @Test
+    void namedIsFalseForAStageWithoutAName() {
+        assertThat(Steps.named(Parsed.lastStage("FROM a\n"), "a")).isFalse();
+    }
+
+    @Test
+    void finalImageHoldsTheChainOfStagesItIsBuiltOnInOrder() {
+        assertThat(Steps.finalImage(Parsed.file("FROM a AS one\nUSER 1\nFROM b\nUSER 2\nFROM one\nUSER 3\n")))
+                .map(instruction -> ((Docker.User) instruction).getUser().getContents().getFirst())
+                .map(literal -> ((Docker.Literal) literal).getText())
+                .containsExactly("1", "3");
+    }
+
     static List<Step> steps(String dockerfile) {
-        ParseResult parsed = new FactsParser().parse("sha", dockerfile);
-        assertThat(parsed).isInstanceOf(ParseResult.Parsed.class);
-        return Steps.of(((ParseResult.Parsed) parsed).file());
+        return Steps.of(Parsed.file(dockerfile));
     }
 }

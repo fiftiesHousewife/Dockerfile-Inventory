@@ -83,4 +83,40 @@ class NormalFormsTest {
     void theFromPathDropsARegistryHostButKeepsAFirstSegmentThatIsNotOne(String name, String path) {
         assertThat(NormalForms.fromPath(new BaseImage(name, "1", null))).isEqualTo(path);
     }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "registry.example.com/ubi9/ubi-minimal | ubi-minimal",
+        "${BASE}                               | unresolved",
+    })
+    void familyIsTheLastPathSegmentOrUnresolved(String name, String family) {
+        assertThat(NormalForms.family(new BaseImage(name, null, null))).isEqualTo(family);
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', nullValues = "-", value = {
+        "9.4-1227 | 9",
+        "latest   | ''",
+        "-        | ''",
+    })
+    void majorIsTheTagsLeadingDigits(String tag, String major) {
+        assertThat(NormalForms.major(new BaseImage("ubi9", tag, null))).isEqualTo(major);
+    }
+
+    @Test
+    void upperKeywordUpperCasesOnlyTheFirstWord() {
+        assertThat(NormalForms.upperKeyword("run make all")).isEqualTo("RUN make all");
+        assertThat(NormalForms.upperKeyword("onbuild")).isEqualTo("ONBUILD");
+    }
+
+    @Test
+    void textNormalDropsCommentsAndBlankLinesJoinsContinuationsAndCollapsesWhitespace() {
+        assertThat(NormalForms.textNormal("# c\r\nfrom  a\n\nrun x \\\n   y\n")).isEqualTo("FROM a\nRUN x y");
+    }
+
+    @Test
+    void sha256IsTheHexDigest() {
+        assertThat(NormalForms.sha256(""))
+                .isEqualTo("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    }
 }

@@ -13,8 +13,8 @@ import org.openrewrite.docker.DockerParser;
 import org.openrewrite.docker.tree.Docker;
 
 /**
- * The one place that calls rewrite-docker's parser. Syntax errors do not throw: the parser reports them to the
- * execution context's error handler and still returns a tree, so they are collected here.
+ * The one place that calls rewrite-docker's parser, which reports syntax errors to its execution context instead of
+ * throwing; they are collected here so a failure is a finding, not a crash.
  */
 public final class FactsParser {
 
@@ -26,9 +26,9 @@ public final class FactsParser {
     private final DockerParser parser = DockerParser.builder().build();
 
     /**
-     * Parses the text; if rewrite-docker rejects it, parses it again with its known bugs worked around
-     * ({@link RetryText}), keeping every line number. A file that parses first time is left exactly as written. A
-     * template is a failure either way, so rates can count it apart.
+     * The parsed file, or the failure. A rejected file is parsed again with rewrite-docker's known bugs worked around,
+     * every line number kept; a file that parses first time is left exactly as written. A template is a failure
+     * either way.
      */
     public ParseResult parse(String blobSha, String text) {
         ParseResult first = attempt(blobSha, text);
@@ -47,7 +47,7 @@ public final class FactsParser {
         return new ParseResult.Failed(blobSha, TEMPLATE + " (" + line + "); " + detail);
     }
 
-    private ParseResult attempt(String blobSha, String text) {
+    ParseResult attempt(String blobSha, String text) {
         var input = new Parser.Input(Path.of(blobSha, "Dockerfile"),
                 () -> new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
         List<Throwable> errors = new ArrayList<>();
@@ -65,8 +65,7 @@ public final class FactsParser {
                 .orElseGet(() -> new ParseResult.Parsed(blobSha, file));
     }
 
-    /** A source the parser gave up on (it could not print the input back exactly), as its recorded message. */
-    private static String parseError(SourceFile source) {
+    static String parseError(SourceFile source) {
         return source.getMarkers().findFirst(ParseExceptionResult.class)
                 .map(ParseExceptionResult::getMessage)
                 .map(message -> message.lines().findFirst().orElse(message))
