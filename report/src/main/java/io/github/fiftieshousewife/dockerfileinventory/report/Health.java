@@ -4,6 +4,13 @@ import java.util.List;
 
 final class Health {
 
+    static final String PARSE_FAILURES = "Parse failures";
+    static final String ROOT = "Final user root";
+    static final String PINNED = "Bases pinned by digest";
+    static final String EOL = "Bases at end of life";
+    static final String RELEASED = "Scanned at a released commit";
+    static final String OPAQUE = "RUN too complex to read";
+
     enum State { GOOD, WATCH, ACT }
 
     record Metric(String name, double value, State state) {

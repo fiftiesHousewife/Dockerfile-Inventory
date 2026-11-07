@@ -14,4 +14,9 @@ record Dockerfile(String blobSha, String textHash, String signatureHash, String 
         managers = Collections.unmodifiableSortedSet(new TreeSet<>(managers));
         locations = List.copyOf(locations);
     }
+
+    Dockerfile at(List<Location> elsewhere) {
+        return new Dockerfile(blobSha, textHash, signatureHash, signature, base, finalPackages, managers, userKind, runs,
+                opaqueRuns, elsewhere, otherShellRuns, bundle);
+    }
 }

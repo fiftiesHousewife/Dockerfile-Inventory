@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
 
 record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<Location> missing,
@@ -21,6 +23,30 @@ record Estate(List<Dockerfile> dockerfiles, List<Failure> failures, List<Locatio
         failures = List.copyOf(failures);
         missing = List.copyOf(missing);
         effectiveUsers = Map.copyOf(effectiveUsers);
+    }
+
+    List<String> organisations() {
+        return Stream.of(dockerfiles.stream().flatMap(d -> d.locations().stream()),
+                        failures.stream().flatMap(f -> f.locations().stream()), missing.stream())
+                .flatMap(s -> s).map(Location::organisation).distinct().sorted().toList();
+    }
+
+    Estate within(String organisation) {
+        Predicate<Location> in = l -> l.organisation().equals(organisation);
+        return new Estate(
+                dockerfiles.stream().map(d -> d.at(only(d.locations(), in))).filter(d -> !d.locations().isEmpty())
+                        .toList(),
+                failures.stream().map(f -> new Failure(f.blobSha(), f.message(), only(f.locations(), in)))
+                        .filter(f -> !f.locations().isEmpty()).toList(),
+                only(missing, in), effectiveUsers);
+    }
+
+    Estate withoutBundles() {
+        return new Estate(dockerfiles.stream().filter(d -> !d.bundle()).toList(), failures, missing, effectiveUsers);
+    }
+
+    private static List<Location> only(List<Location> locations, Predicate<Location> in) {
+        return locations.stream().filter(in).toList();
     }
 
     static Estate read(Path factsDir, Path discoveryDir, Path lineageDir) {
