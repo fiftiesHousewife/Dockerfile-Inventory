@@ -8,8 +8,10 @@ import org.junit.jupiter.api.Test;
 
 class OrganisationsSectionTest {
 
-    private static final Figures ACME = Figures.of("acme", FiguresTest.ESTATE.within("acme"), EolList.empty());
-    private static final Figures BETA = Figures.of("beta", FiguresTest.ESTATE.within("beta"), EolList.empty());
+    private static final Figures ACME = Figures.of("acme", FiguresTest.ESTATE.within("acme"), EolList.empty(),
+            FiguresTest.SOURCES);
+    private static final Figures BETA = Figures.of("beta", FiguresTest.ESTATE.within("beta"), EolList.empty(),
+            FiguresTest.SOURCES);
 
     @Test
     void eachOrganisationIsARowLinkingToItsPageWithItsFigures() {

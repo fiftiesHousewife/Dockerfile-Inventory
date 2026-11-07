@@ -16,6 +16,17 @@ record Figures(String name, int locations, int repositories, int files, Apart bu
     record Apart(int files, int locations) {
     }
 
+    // Whether an end-of-life list matched any base and a release index covered any location, across the estate:
+    // without them a share of zero means nothing, and every organisation's figure is "no data" alike.
+    record Sources(boolean eolList, boolean releaseIndex) {
+
+        static Sources of(Estate estate, EolList eol) {
+            return new Sources(BaseCatalogue.of(estate.withoutBundles(), eol).stream()
+                    .anyMatch(b -> !b.status().equals("unknown")),
+                    locations(estate).stream().anyMatch(l -> l.scope().equals("RELEASED")));
+        }
+    }
+
     record Count(int part, int whole, boolean known) {
 
         double share() {
@@ -30,7 +41,7 @@ record Figures(String name, int locations, int repositories, int files, Apart bu
         counts = Collections.unmodifiableMap(new LinkedHashMap<>(counts));
     }
 
-    static Figures of(String name, Estate estate, EolList eol) {
+    static Figures of(String name, Estate estate, EolList eol, Sources sources) {
         Estate images = estate.withoutBundles();
         List<Location> all = locations(estate);
         Map<String, Integer> byRepository = all.stream()
@@ -42,7 +53,7 @@ record Figures(String name, int locations, int repositories, int files, Apart bu
         return new Figures(name, all.size(), byRepository.size(),
                 estate.dockerfiles().size() + estate.failures().size(), bundles(estate), templates(estate),
                 Summary.users(images), Summary.managers(images), families(images), largest.getKey(),
-                largest.getValue(), counts(estate, images, all, BaseCatalogue.of(images, eol)));
+                largest.getValue(), counts(estate, images, all, BaseCatalogue.of(images, eol), sources));
     }
 
     static Apart bundles(Estate estate) {
@@ -61,7 +72,8 @@ record Figures(String name, int locations, int repositories, int files, Apart bu
                 d -> d.locations().size(), Integer::sum, TreeMap::new));
     }
 
-    static Map<String, Count> counts(Estate estate, Estate images, List<Location> all, List<BaseRow> bases) {
+    static Map<String, Count> counts(Estate estate, Estate images, List<Location> all, List<BaseRow> bases,
+                                     Sources sources) {
         int templates = templates(estate).files();
         int users = Summary.users(images).values().stream().mapToInt(Integer::intValue).sum();
         List<BaseRow> pinnable = bases.stream().filter(b -> !b.path().equals("scratch")).toList();
@@ -74,8 +86,8 @@ record Figures(String name, int locations, int repositories, int files, Apart bu
                 sum(pinnable, BaseRow::locations), true));
         counts.put(Health.EOL, new Count(sum(bases.stream().filter(b -> b.status().equals("eol")).toList(),
                 BaseRow::locations), sum(bases, BaseRow::locations),
-                bases.stream().anyMatch(b -> !b.status().equals("unknown"))));
-        counts.put(Health.RELEASED, new Count(released, all.size(), released > 0));
+                sources.eolList()));
+        counts.put(Health.RELEASED, new Count(released, all.size(), sources.releaseIndex()));
         counts.put(Health.OPAQUE, new Count(sum(images.dockerfiles(), Dockerfile::opaqueRuns),
                 sum(images.dockerfiles(), Dockerfile::runs), true));
         return counts;

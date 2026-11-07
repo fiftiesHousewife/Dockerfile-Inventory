@@ -24,9 +24,10 @@ record Report(Estate estate, Figures figures, List<Figures> organisations, Ranki
 
     static Report of(Estate estate, Ranking ranking, List<PassCount> passes, int archetypes, EolList eol,
                      Optional<LineageView> lineage, Path discoveryDir) {
+        Figures.Sources sources = Figures.Sources.of(estate, eol);
         List<Figures> organisations = estate.organisations().stream()
-                .map(o -> Figures.of(o, estate.within(o), eol)).toList();
-        return new Report(estate, Figures.of("estate", estate, eol), organisations, ranking,
+                .map(o -> Figures.of(o, estate.within(o), eol, sources)).toList();
+        return new Report(estate, Figures.of("estate", estate, eol, sources), organisations, ranking,
                 ArchetypeRows.of(ranking, estate), passes, archetypes,
                 BaseCatalogue.of(estate.withoutBundles(), eol), eol, lineage, ReportRun.locations(estate),
                 discoveryDir);
