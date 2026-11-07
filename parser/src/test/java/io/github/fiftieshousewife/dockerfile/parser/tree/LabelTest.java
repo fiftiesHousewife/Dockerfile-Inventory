@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: tests for LABEL pairs with variables and empty values (issue 4).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,6 +144,30 @@ class LabelTest implements RewriteTest {
               LABEL RUN='/usr/bin/docker run -d --name myapp ${IMAGE}'
               RUN yum install -y curl
               """
+          )
+        );
+    }
+
+    @Test
+    void labelPairsWithVariablesAndEmptyValues() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              LABEL a=$REV b=${SRC}/x c="v$X" \\
+                    d= e=f
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var label = (Docker.Label) doc.getStages().getFirst().getInstructions().getLast();
+                assertThat(label.getPairs()).extracting(pair -> ((Docker.Literal) pair.getKey().getContents().getFirst()).getText())
+                  .containsExactly("a", "b", "c", "d", "e");
+                assertThat(label.getPairs()).allSatisfy(pair -> assertThat(pair.isHasEquals()).isTrue());
+                var a = label.getPairs().getFirst().getValue().getContents();
+                assertThat(a).singleElement().isInstanceOfSatisfying(Docker.EnvironmentVariable.class,
+                  variable -> assertThat(variable.getName()).isEqualTo("REV"));
+                assertThat(label.getPairs().get(1).getValue().getContents()).hasSize(2);
+                assertThat(label.getPairs().get(3).getValue().getContents()).isEmpty();
+            })
           )
         );
     }

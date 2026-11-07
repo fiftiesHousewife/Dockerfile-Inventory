@@ -17,7 +17,7 @@ final class RunScripts {
 
     static Optional<String> script(Docker.Run run) {
         return switch (run.getCommand()) {
-            case Docker.ShellForm shell -> Optional.of(shell.getArgument().getText());
+            case Docker.ShellForm shell -> Optional.of(Continuations.withoutCommentLines(shell.getArgument().getText()));
             case Docker.HeredocForm heredoc -> Optional.of(heredoc.getBodies().stream()
                     .flatMap(b -> b.getContentLines().stream())
                     .collect(Collectors.joining("\n")));

@@ -45,7 +45,7 @@ class FactsParserTest {
         ParseResult result = new FactsParser().parse("k8s", "FROM BASEIMAGE\n\nCROSS_BUILD_COPY qemu /usr/bin/\n");
 
         assertThat(result).isInstanceOfSatisfying(ParseResult.Failed.class,
-                failed -> assertThat(failed.message()).endsWith(": CROSS_BUILD_COPY qemu /usr/bin/"));
+                failed -> assertThat(failed.message()).contains("line 3:0 unrecognised line: CROSS_BUILD_COPY qemu /usr/bin/"));
     }
 
     @Test
@@ -139,20 +139,18 @@ class FactsParserTest {
     }
 
     @Test
-    void aParseSaysWhetherItNeededTheRetrysWorkarounds() {
-        assertThat(new FactsParser().parse("clean", "FROM ubi9\nRUN make\n"))
+    void aFileThatOnceNeededTheRetryParsesFirstTimeAndIsNotMarkedRetried() {
+        assertThat(new FactsParser().parse("proxy", "FROM ubi9\nARG HTTP_PROXY=\n"))
                 .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isFalse());
-        assertThat(new FactsParser().parse("php", "FROM php:8.5\nCMD [\"php\" , \"-S\"]\n"))
-                .isInstanceOfSatisfying(ParseResult.Parsed.class, p -> assertThat(p.retried()).isTrue());
     }
 
     @Test
-    void anExecFormWithASpaceBeforeACommaParsesAndKeepsItsWords() {
+    void anExecFormWithASpaceBeforeACommaParsesAndKeepsItsWordsAsWritten() {
         String dockerfile = "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n";
 
         assertThat(new FactsParser().parse("php", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
         assertThat(Steps.of(((ParseResult.Parsed) new FactsParser().parse("php", dockerfile)).file()))
-                .contains(new Step("CMD", "[\"php\", \"-S\", \"0.0.0.0:8080\"]"));
+                .contains(new Step("CMD", "[\"php\", \"-S\" , \"0.0.0.0:8080\"]"));
     }
 
     @Test
@@ -183,13 +181,6 @@ class FactsParserTest {
     }
 
     @Test
-    void aJinjaTemplateThatOnlyParsesOnTheRetryIsStillATemplate() {
-        assertThat(new FactsParser().parse("tpl", "FROM ubi9\nENV V={{ spec.version }}\nCMD [\"a\" , \"b\"]\n"))
-                .isInstanceOfSatisfying(ParseResult.Failed.class,
-                        failed -> assertThat(failed.message()).startsWith(FactsParser.TEMPLATE));
-    }
-
-    @Test
     void anArgMixingNamesAndSimpleValuesOrContinuedOverLinesParses() {
         assertThat(new FactsParser().parse("mixed", """
                 FROM golang:1.22
@@ -207,13 +198,7 @@ class FactsParserTest {
                 + "ARG CROSSPLANE_VERSION=\nWORKDIR /workspace\n";
 
         assertThat(new FactsParser().parse("proxy", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
-        assertThat(RetryText.of(dockerfile)).startsWith("ARG HTTP_PROXY=\"\"\nARG HTTPS_PROXY=\"\"\n");
-    }
-
-    @Test
-    void anAttemptDoesNotRetryAFileTheGrammarRejects() {
-        assertThat(new FactsParser().attempt("php", "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n"))
-                .isInstanceOf(ParseResult.Failed.class);
+        assertThat(FactExtractor.globalArgs(Parsed.file(dockerfile))).containsEntry("HTTP_PROXY", "");
     }
 
     @Test

@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: ARG holds several names, each with or without a value (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@
 package io.github.fiftieshousewife.dockerfile.parser.tree;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.With;
@@ -30,6 +32,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
+
+import static java.util.Collections.emptyList;
 
 public interface Docker extends Tree {
 
@@ -331,6 +335,7 @@ public interface Docker extends Tree {
     @Value
     @EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
     @With
+    @AllArgsConstructor
     class Arg implements Instruction {
         @EqualsAndHashCode.Include
         UUID id;
@@ -342,12 +347,39 @@ public interface Docker extends Tree {
 
         Literal name;
 
+        /**
+         * The default, null for a name without one; empty for {@code ARG NAME=}
+         */
         @Nullable
         Argument value;
+
+        /**
+         * The names declared after the first, as in {@code ARG A=1 B}; empty when there is one
+         */
+        List<ArgPair> additionalPairs;
+
+        public Arg(UUID id, Space prefix, Markers markers, String keyword, Literal name, @Nullable Argument value) {
+            this(id, prefix, markers, keyword, name, value, emptyList());
+        }
 
         @Override
         public <P> Docker acceptDocker(DockerVisitor<P> v, P p) {
             return v.visitArg(this, p);
+        }
+
+        @Value
+        @EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
+        @With
+        public static class ArgPair {
+            @EqualsAndHashCode.Include
+            UUID id;
+
+            Space prefix;
+            Markers markers;
+            Literal name;
+
+            @Nullable
+            Argument value;
         }
     }
 

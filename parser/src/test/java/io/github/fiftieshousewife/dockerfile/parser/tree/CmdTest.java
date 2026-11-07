@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: tests for whitespace before a comma in a JSON array (issue 8).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +69,23 @@ class CmdTest implements RewriteTest {
               FROM ubuntu:20.04
               CMD [ "/bin/bash" ]
               """
+          )
+        );
+    }
+
+    @Test
+    void execFormWithWhitespaceBeforeComma() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              CMD ["a" , "b"	,"c"]
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var cmd = (Docker.Cmd) doc.getStages().getFirst().getInstructions().getLast();
+                var execForm = (Docker.ExecForm) cmd.getCommand();
+                assertThat(execForm.getArguments()).extracting(Docker.Literal::getText).containsExactly("a", "b", "c");
+            })
           )
         );
     }

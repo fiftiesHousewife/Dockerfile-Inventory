@@ -1,6 +1,8 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: whitespace before a comma in a JSON array is printed (issue 8).
+ * Modified by Dockerfile Inventory, 2026: ARG's further names are printed (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +20,7 @@ package io.github.fiftieshousewife.dockerfile.parser.internal;
 
 import org.openrewrite.PrintOutputCapture;
 import io.github.fiftieshousewife.dockerfile.parser.DockerVisitor;
+import io.github.fiftieshousewife.dockerfile.parser.tree.CommaPrefix;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Comment;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Space;
@@ -150,6 +153,14 @@ public class DockerPrinter<P> extends DockerVisitor<PrintOutputCapture<P>> {
             p.append("=");
             visit(arg.getValue(), p);
         }
+        for (Docker.Arg.ArgPair pair : arg.getAdditionalPairs()) {
+            visitSpace(pair.getPrefix(), p);
+            visit(pair.getName(), p);
+            if (pair.getValue() != null) {
+                p.append("=");
+                visit(pair.getValue(), p);
+            }
+        }
         afterSyntax(arg, p);
         return arg;
     }
@@ -237,6 +248,7 @@ public class DockerPrinter<P> extends DockerVisitor<PrintOutputCapture<P>> {
                 visit(arg, p);
                 // Print comma after this element if not last
                 if (i < volume.getValues().size() - 1) {
+                    commaPrefix(arg, p);
                     p.append(",");
                 }
             }
@@ -264,6 +276,7 @@ public class DockerPrinter<P> extends DockerVisitor<PrintOutputCapture<P>> {
             visit(arg, p);
             // Print comma after this element if not last
             if (i < shell.getArguments().size() - 1) {
+                commaPrefix(arg, p);
                 p.append(",");
             }
         }
@@ -361,6 +374,7 @@ public class DockerPrinter<P> extends DockerVisitor<PrintOutputCapture<P>> {
             visit(argument, p);
             // Print comma after this element if not last
             if (i < arguments.size() - 1) {
+                commaPrefix(argument, p);
                 p.append(",");
             }
         }
@@ -453,6 +467,10 @@ public class DockerPrinter<P> extends DockerVisitor<PrintOutputCapture<P>> {
         }
         afterSyntax(environmentVariable, p);
         return environmentVariable;
+    }
+
+    private void commaPrefix(Docker element, PrintOutputCapture<P> p) {
+        element.getMarkers().findFirst(CommaPrefix.class).ifPresent(commaPrefix -> visitSpace(commaPrefix.getSpace(), p));
     }
 
     private static final java.util.function.UnaryOperator<String> DOCKERFILE_MARKER_WRAPPER =

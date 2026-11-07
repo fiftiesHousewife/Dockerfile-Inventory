@@ -1,6 +1,11 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: whitespace before a comma in a JSON array is kept (issue 8).
+ * Modified by Dockerfile Inventory, 2026: a flag value ${NAME:-default} keeps its default (issue 9).
+ * Modified by Dockerfile Inventory, 2026: ARG declares several names, each with or without a value (issues 10, 12, 13).
+ * Modified by Dockerfile Inventory, 2026: a LABEL value holds its adjacent tokens, variables split out (issue 4).
+ * Modified by Dockerfile Inventory, 2026: variables in an ENV KEY=value value are split out (issue 6).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +30,7 @@ import org.openrewrite.FileAttributes;
 import io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerLexer;
 import io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerParser;
 import io.github.fiftieshousewife.dockerfile.parser.internal.grammar.DockerParserBaseVisitor;
+import io.github.fiftieshousewife.dockerfile.parser.tree.CommaPrefix;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Space;
 import org.openrewrite.internal.EncodingDetectingInputStream;
@@ -462,21 +468,16 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
         String argKeyword = ctx.ARG().getText();
         skip(ctx.ARG().getSymbol());
 
-        // ARG name is always a simple identifier
-        Space namePrefix = prefix(ctx.argName().getStart());
-        skip(ctx.argName().getStop());
-        Docker.Literal name = new Docker.Literal(
-                randomId(),
-                namePrefix,
-                Markers.EMPTY,
-                ctx.argName().getText(),
-                null
-        );
-
-        Docker.Argument value = null;
-        if (ctx.EQUALS() != null) {
-            skip(ctx.EQUALS().getSymbol());
-            value = visitArgument(ctx.argValue());
+        // The first declaration's name carries its prefix; each further one is a pair with its own
+        List<DockerParser.ArgDeclarationContext> declarations = ctx.argDeclaration();
+        DockerParser.ArgDeclarationContext first = declarations.getFirst();
+        Docker.Literal name = argName(first, prefix(first.getStart()));
+        Docker.Argument value = argValue(first);
+        List<Docker.Arg.ArgPair> additionalPairs = new ArrayList<>();
+        for (DockerParser.ArgDeclarationContext declaration : declarations.subList(1, declarations.size())) {
+            Space pairPrefix = prefix(declaration.getStart());
+            additionalPairs.add(new Docker.Arg.ArgPair(randomId(), pairPrefix, Markers.EMPTY,
+                    argName(declaration, Space.EMPTY), argValue(declaration)));
         }
 
         // Advance cursor to end of instruction
@@ -484,7 +485,22 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             advanceCursor(ctx.getStop().getStopIndex() + 1);
         }
 
-        return new Docker.Arg(randomId(), prefix, Markers.EMPTY, argKeyword, name, value);
+        return new Docker.Arg(randomId(), prefix, Markers.EMPTY, argKeyword, name, value, additionalPairs);
+    }
+
+    private Docker.Literal argName(DockerParser.ArgDeclarationContext declaration, Space namePrefix) {
+        // ARG name is always a simple identifier
+        skip(declaration.argName().getStop());
+        return new Docker.Literal(randomId(), namePrefix, Markers.EMPTY, declaration.argName().getText(), null);
+    }
+
+    // null without =; an empty argument for NAME= with nothing after it
+    private Docker.@Nullable Argument argValue(DockerParser.ArgDeclarationContext declaration) {
+        if (declaration.EQUALS() == null) {
+            return null;
+        }
+        skip(declaration.EQUALS().getSymbol());
+        return visitArgument(declaration.argValue());
     }
 
     @Override
@@ -519,7 +535,7 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             // Handle both forms: KEY=value (envValueEquals) or KEY value (envValueSpace)
             Docker.Argument value;
             if (pairCtx.envValueEquals() != null) {
-                value = visitArgument(pairCtx.envValueEquals().envTextEquals());
+                value = envValue(pairCtx.envValueEquals().envTextEquals());
             } else {
                 value = visitArgument(pairCtx.envValueSpace());
             }
@@ -555,7 +571,7 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                 // New format: LABEL key=value
                 key = visitLabelKeyOrValue(pairCtx.labelKey());
                 skip(pairCtx.EQUALS().getSymbol());
-                value = visitLabelKeyOrValue(pairCtx.labelValue());
+                value = labelValue(pairCtx.labelValue());
             } else {
                 // Old format: LABEL key value
                 key = visitLabelKeyOrValue(pairCtx.labelKey());
@@ -571,6 +587,40 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
         }
 
         return new Docker.Label(randomId(), prefix, Markers.EMPTY, labelKeyword, pairs);
+    }
+
+    // Each unquoted variable is an EnvironmentVariable; the text between them, quoted strings as written, is a Literal
+    private Docker.Argument envValue(DockerParser.EnvTextEqualsContext ctx) {
+        Space prefix = prefix(ctx.getStart());
+        List<Docker.ArgumentContent> contents = new ArrayList<>();
+        Space literalPrefix = Space.EMPTY;
+        int literalStart = -1;
+        for (DockerParser.EnvTextElementEqualsContext elemCtx : ctx.envTextElementEquals()) {
+            Token token = elemCtx.getStart();
+            if (token.getType() == DockerLexer.ENV_VAR) {
+                addLiteral(contents, literalPrefix, literalStart);
+                literalStart = -1;
+                Space variablePrefix = prefix(token);
+                skip(token);
+                contents.add(createEnvVar(token.getText()).withPrefix(variablePrefix));
+            } else {
+                if (literalStart < 0) {
+                    literalPrefix = prefix(token);
+                    literalStart = token.getStartIndex();
+                }
+                skip(token);
+            }
+        }
+        addLiteral(contents, literalPrefix, literalStart);
+        return new Docker.Argument(randomId(), prefix, Markers.EMPTY, contents);
+    }
+
+    // The source from a code point index to the cursor, if a literal was started
+    private void addLiteral(List<Docker.ArgumentContent> contents, Space literalPrefix, int literalStart) {
+        if (literalStart >= 0) {
+            String text = source.substring(source.offsetByCodePoints(0, literalStart), cursor);
+            contents.add(new Docker.Literal(randomId(), literalPrefix, Markers.EMPTY, text, null));
+        }
     }
 
     private Docker.Argument visitLabelKeyOrValue(ParserRuleContext ctx) {
@@ -603,6 +653,31 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             }
         }
 
+        return new Docker.Argument(randomId(), prefix, Markers.EMPTY, contents);
+    }
+
+    // Each adjacent token after the =: quoted strings, variables and plain text; no contents for key=
+    private Docker.Argument labelValue(DockerParser.@Nullable LabelValueContext ctx) {
+        if (ctx == null) {
+            return new Docker.Argument(randomId(), Space.EMPTY, Markers.EMPTY, emptyList());
+        }
+        Space prefix = prefix(ctx.getStart());
+        List<Docker.ArgumentContent> contents = new ArrayList<>();
+        for (DockerParser.LabelValueElementContext elemCtx : ctx.labelValueElement()) {
+            Token token = elemCtx.getStart();
+            String text = token.getText();
+            Space elementPrefix = prefix(token);
+            skip(token);
+            if (token.getType() == DockerLexer.DOUBLE_QUOTED_STRING) {
+                contents.add(new Docker.Literal(randomId(), elementPrefix, Markers.EMPTY, text.substring(1, text.length() - 1), Docker.Literal.QuoteStyle.DOUBLE));
+            } else if (token.getType() == DockerLexer.SINGLE_QUOTED_STRING) {
+                contents.add(new Docker.Literal(randomId(), elementPrefix, Markers.EMPTY, text.substring(1, text.length() - 1), Docker.Literal.QuoteStyle.SINGLE));
+            } else if (token.getType() == DockerLexer.ENV_VAR) {
+                contents.add(createEnvVar(text).withPrefix(elementPrefix));
+            } else {
+                contents.add(new Docker.Literal(randomId(), elementPrefix, Markers.EMPTY, text, null));
+            }
+        }
         return new Docker.Argument(randomId(), prefix, Markers.EMPTY, contents);
     }
 
@@ -846,7 +921,6 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             for (int i = 0; i < jsonStrings.size(); i++) {
                 // convertJsonString captures the prefix correctly (space after [ or after ,)
                 Docker.Argument arg = convertJsonString(jsonStrings.get(i));
-                arguments.add(arg);
 
                 // Skip comma after this element if it's not the last one
                 // The grammar is: jsonString ( COMMA jsonString )*
@@ -859,12 +933,13 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                             if (terminal.getSymbol().getType() == DockerLexer.COMMA &&
                                     terminal.getSymbol().getStartIndex() > jsonStrings.get(i).getStop().getStopIndex() &&
                                     terminal.getSymbol().getStartIndex() < jsonStrings.get(i + 1).getStart().getStartIndex()) {
-                                skip(terminal.getSymbol());
+                                arg = withCommaPrefix(arg, terminal.getSymbol());
                                 break;
                             }
                         }
                     }
                 }
+                arguments.add(arg);
             }
         }
 
@@ -933,7 +1008,6 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
             for (int i = 0; i < jsonStrings.size(); i++) {
                 // convertJsonString captures the prefix correctly (space after [ or after ,)
                 Docker.Argument arg = convertJsonString(jsonStrings.get(i));
-                arguments.add(arg);
 
                 // Skip comma after this element if it's not the last one
                 if (i < jsonStrings.size() - 1) {
@@ -944,12 +1018,13 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                             if (terminal.getSymbol().getType() == DockerLexer.COMMA &&
                                     terminal.getSymbol().getStartIndex() > jsonStrings.get(i).getStop().getStopIndex() &&
                                     terminal.getSymbol().getStartIndex() < jsonStrings.get(i + 1).getStart().getStartIndex()) {
-                                skip(terminal.getSymbol());
+                                arg = withCommaPrefix(arg, terminal.getSymbol());
                                 break;
                             }
                         }
                     }
                 }
+                arguments.add(arg);
             }
         }
 
@@ -1256,13 +1331,8 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                     // Braced form: ${VAR}
                     int endBrace = text.indexOf('}', i + 2);
                     if (endBrace > i + 2) {
-                        String varContent = text.substring(i + 2, endBrace);
-                        // Handle ${VAR:-default} and similar forms
-                        String varName = varContent;
-                        int colonIdx = varContent.indexOf(':');
-                        if (colonIdx >= 0) {
-                            varName = varContent.substring(0, colonIdx);
-                        }
+                        // ${VAR:-default} and similar forms keep their modifier in the name, as ENV_VAR tokens do
+                        String varName = text.substring(i + 2, endBrace);
                         contents.add(new Docker.EnvironmentVariable(randomId(), Space.EMPTY, Markers.EMPTY, varName, true));
                         i = endBrace + 1;
                         continue;
@@ -1378,18 +1448,19 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
                 }
                 advanceCursor(jsonStr.DOUBLE_QUOTED_STRING().getSymbol().getStopIndex() + 1);
 
-                args.add(new Docker.Literal(
+                Docker.Literal arg = new Docker.Literal(
                         randomId(),
                         argPrefix,
                         Markers.EMPTY,
                         value,
                         Docker.Literal.QuoteStyle.DOUBLE
-                ));
+                );
 
-                // Skip the comma after this element (if not the last element)
+                // Skip the comma after this element (if not the last element), keeping any whitespace before it
                 if (i < commas.size()) {
-                    skip(commas.get(i).getSymbol());
+                    arg = withCommaPrefix(arg, commas.get(i).getSymbol());
                 }
+                args.add(arg);
             }
         }
 
@@ -1677,6 +1748,15 @@ public class DockerParserVisitor extends DockerParserBaseVisitor<Docker> {
         boolean braced = text.startsWith("${");
         String varName = braced ? text.substring(2, text.length() - 1) : text.substring(1);
         return new Docker.EnvironmentVariable(randomId(), Space.EMPTY, Markers.EMPTY, varName, braced);
+    }
+
+    /**
+     * Skips a JSON array's comma, keeping any whitespace before it on the element it follows.
+     */
+    private <T extends Docker> T withCommaPrefix(T element, Token comma) {
+        Space space = prefix(comma);
+        skip(comma);
+        return space.isEmpty() ? element : element.withMarkers(element.getMarkers().add(new CommaPrefix(randomId(), space)));
     }
 
     // Helper methods for cursor management

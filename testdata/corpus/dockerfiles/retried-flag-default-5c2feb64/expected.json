@@ -5,8 +5,8 @@
     "commit": "0aacc4f8b51637153c001fb1cd8db2605ce035f5",
     "blobSha": "5c2feb64dab27bc84ed2b7e7bfc494c4d07e8732"
   },
-  "why": "parses only with the parser's flag-default workaround",
-  "parse": "retried",
+  "why": "parsed only with the parser's flag-default workaround until the fork fixed issue 9",
+  "parse": "parsed",
   "unreadableRuns": 0,
   "roundTrip": "passes"
 }

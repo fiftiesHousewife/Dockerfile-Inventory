@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: tests for several names, empty defaults and several values (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +85,70 @@ class ArgTest implements RewriteTest {
                 assertThat(doc.getGlobalArgs()).hasSize(1);
                 Docker.Arg globalArg = doc.getGlobalArgs().getFirst();
                 assertThat(globalArg.getName().getText()).isEqualTo("VERSION");
+            })
+          )
+        );
+    }
+
+    @Test
+    void severalNamesWithoutValues() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              ARG TARGETOS TARGETARCH \\
+                  OTHER
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var arg = (Docker.Arg) doc.getStages().getFirst().getInstructions().getLast();
+                assertThat(arg.getName().getText()).isEqualTo("TARGETOS");
+                assertThat(arg.getValue()).isNull();
+                assertThat(arg.getAdditionalPairs()).extracting(pair -> pair.getName().getText())
+                  .containsExactly("TARGETARCH", "OTHER");
+                assertThat(arg.getAdditionalPairs()).allSatisfy(pair -> assertThat(pair.getValue()).isNull());
+            })
+          )
+        );
+    }
+
+    @Test
+    void emptyDefault() {
+        rewriteRun(
+          docker(
+            """
+              ARG HTTP_PROXY=
+              FROM ubi9
+              ARG A= B=
+              RUN make
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var global = doc.getGlobalArgs().getFirst();
+                assertThat(global.getName().getText()).isEqualTo("HTTP_PROXY");
+                assertThat(global.getValue()).isNotNull();
+                assertThat(global.getValue().getContents()).isEmpty();
+                var arg = (Docker.Arg) doc.getStages().getFirst().getInstructions().getFirst();
+                assertThat(arg.getValue().getContents()).isEmpty();
+                assertThat(arg.getAdditionalPairs().getFirst().getValue().getContents()).isEmpty();
+            })
+          )
+        );
+    }
+
+    @Test
+    void severalNamesWithValues() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              ARG A=1 B="two words" C D=${A:-x}/y
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var arg = (Docker.Arg) doc.getStages().getFirst().getInstructions().getLast();
+                assertThat(arg.getName().getText()).isEqualTo("A");
+                assertThat(((Docker.Literal) arg.getValue().getContents().getFirst()).getText()).isEqualTo("1");
+                assertThat(arg.getAdditionalPairs()).extracting(pair -> pair.getName().getText())
+                  .containsExactly("B", "C", "D");
+                assertThat(arg.getAdditionalPairs().get(1).getValue()).isNull();
             })
           )
         );

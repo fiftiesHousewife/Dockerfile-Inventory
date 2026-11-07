@@ -5,8 +5,8 @@
     "commit": "ab2e6dab8db0f2372d94e1be0eb5c02f9bbd77b2",
     "blobSha": "4a5bce6482939ad5c18689b4d4e882b5067abe7b"
   },
-  "why": "parses only with the parser's key-value-comment workaround",
-  "parse": "retried",
+  "why": "parsed only with the parser's key-value-comment workaround until the fork fixed issues 1 and 2",
+  "parse": "parsed",
   "unreadableRuns": 0,
   "roundTrip": "passes"
 }

@@ -1,10 +1,29 @@
 // $antlr-format alignTrailingComments true, columnLimit 150, minEmptyLines 1, maxEmptyLinesToKeep 1, reflowComments false, useTab false
 // $antlr-format allowShortRulesOnASingleLine false, allowShortBlocksOnASingleLine true, alignSemicolons hanging, alignColons hanging
 
+// Copyright the original author or authors; Apache License 2.0. From openrewrite/rewrite@398a634, rewrite-docker/.
+// Modified by Dockerfile Inventory, 2026: ARG declares several names, each with or without a value (issues 10, 12, 13).
+// Modified by Dockerfile Inventory, 2026: ENV KEY= has an empty value (issue 5).
+// Modified by Dockerfile Inventory, 2026: a LABEL value is the adjacent tokens after =, variables too (issue 4).
+// Modified by Dockerfile Inventory, 2026: KEY=value only when = is right after the key, else legacy (issue 15).
+// Modified by Dockerfile Inventory, 2026: a heredoc may follow a command, as in RUN cat > f <<EOF (issue 11).
+
 parser grammar DockerParser;
 
 options {
     tokenVocab = DockerLexer;
+}
+
+@members {
+    // Whitespace is hidden, so words are told apart by a gap between one token and the next.
+    private boolean noGapBefore() {
+        return _input.LT(1).getStartIndex() == _input.LT(-1).getStopIndex() + 1;
+    }
+
+    // KEY=... rather than KEY = ... or KEY value; at an alternative's left edge, so prediction uses it
+    private boolean equalsRightAfterKey() {
+        return _input.LT(2).getType() == EQUALS && _input.LT(2).getStartIndex() == _input.LT(1).getStopIndex() + 1;
+    }
 }
 
 // Root rule
@@ -102,7 +121,12 @@ workdirInstruction
     ;
 
 argInstruction
-    : ARG argName ( EQUALS argValue )?
+    : ARG argDeclaration+
+    ;
+
+// NAME, NAME= (an empty default) or NAME=value; the value is the tokens up to the next gap
+argDeclaration
+    : argName ( EQUALS ( {noGapBefore()}? argValue )? )?
     ;
 
 onbuildInstruction
@@ -189,7 +213,7 @@ heredoc
 // For single heredoc: just "<<EOF" or "<<EOF /dest" (for COPY/ADD)
 // For multi heredoc: "<<EOF1 cat >file1 && <<EOF2 cat >file2"
 heredocPreamble
-    : HEREDOC_START preambleElement* ( HEREDOC_START preambleElement* )*
+    : preambleElement* HEREDOC_START preambleElement* ( HEREDOC_START preambleElement* )*  // a command may come first (issue 11)
     ;
 
 // Elements that can appear in the heredoc preamble (shell command text, destination paths)
@@ -248,7 +272,7 @@ labelPairs
     ;
 
 labelPair
-    : labelKey EQUALS labelValue    // New format: key=value
+    : {equalsRightAfterKey()}? labelKey EQUALS ( {noGapBefore()}? labelValue )?    // New format: key=value, key=
     | labelKey labelOldValue        // Old format: key value
     ;
 
@@ -257,8 +281,21 @@ labelKey
     : UNQUOTED_TEXT | DOUBLE_QUOTED_STRING | SINGLE_QUOTED_STRING
     ;
 
+// The tokens up to the next gap, so a=$X b=$Y is two pairs
 labelValue
-    : UNQUOTED_TEXT | DOUBLE_QUOTED_STRING | SINGLE_QUOTED_STRING
+    : labelValueElement ( {noGapBefore()}? labelValueElement )*
+    ;
+
+labelValueElement
+    : UNQUOTED_TEXT
+    | DOUBLE_QUOTED_STRING
+    | SINGLE_QUOTED_STRING
+    | ENV_VAR
+    | COMMAND_SUBST
+    | BACKTICK_SUBST
+    | SPECIAL_VAR
+    | DOLLAR
+    | EQUALS
     ;
 
 // Value in old-style LABEL (rest of line after key)
@@ -301,7 +338,7 @@ envPairs
     ;
 
 envPair
-    : envKey EQUALS envValueEquals  // New form: KEY=value (no = in value)
+    : {equalsRightAfterKey()}? envKey EQUALS ( {noGapBefore()}? envValueEquals )?  // New form: KEY=value, KEY=
     | envKey envValueSpace           // Old form: KEY value (rest of line, can have =)
     ;
 
@@ -392,7 +429,7 @@ argName
     ;
 
 argValue
-    : text
+    : textElement ( {noGapBefore()}? textElement )*
     ;
 
 signal

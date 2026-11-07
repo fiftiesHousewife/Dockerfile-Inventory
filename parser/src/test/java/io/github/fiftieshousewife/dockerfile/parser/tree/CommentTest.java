@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: tests for comment lines inside continuations and strings, and after the first instruction (issues 1, 2).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.test.RewriteTest;
 
 import static io.github.fiftieshousewife.dockerfile.parser.Assertions.docker;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class CommentTest implements RewriteTest {
 
@@ -89,6 +91,79 @@ class CommentTest implements RewriteTest {
               FROM 'ubuntu:22.04' # Trailing comment
               RUN apt-get update
               """
+          )
+        );
+    }
+
+    @Test
+    void commentLineWithAnApostropheInsideAContinuedRun() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              RUN echo a && \\
+              # because it's tested better \\
+                  echo b
+              RUN echo c && \\
+                # it's here too
+                  echo d
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var instructions = doc.getStages().getFirst().getInstructions();
+                assertThat(instructions).hasExactlyElementsOfTypes(Docker.Run.class, Docker.Run.class);
+                var run = (Docker.ShellForm) ((Docker.Run) instructions.getFirst()).getCommand();
+                assertThat(run.getArgument().getText()).startsWith("echo a").endsWith("echo b");
+            })
+          )
+        );
+    }
+
+    @Test
+    void keyValueCommentAfterTheFirstInstructionIsAComment() {
+        rewriteRun(
+          docker(
+            """
+              # syntax=docker/dockerfile:1
+              FROM ubi9
+              # a=b
+              # UID=1001 && GID=0
+              # syntax=docker/dockerfile:1
+              RUN echo
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var run = doc.getStages().getFirst().getInstructions().getFirst();
+                assertThat(run).isInstanceOf(Docker.Run.class);
+                assertThat(run.getPrefix().getComments()).extracting(Comment::getText)
+                  .containsExactly("# a=b", "# UID=1001 && GID=0", "# syntax=docker/dockerfile:1");
+            })
+          )
+        );
+    }
+
+    @Test
+    void commentLineWithAQuoteInsideAQuotedStringSpanningLines() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              RUN conf=' \\
+                  A=y \\
+              # we've removed B here \\
+              # "C" doesn't build \\
+                  D=y \\
+              '; \\
+                  echo "$conf \\
+                # the "E" setting
+                  F"; \\
+                  echo 'done'
+              RUN echo next
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var instructions = doc.getStages().getFirst().getInstructions();
+                assertThat(instructions).hasExactlyElementsOfTypes(Docker.Run.class, Docker.Run.class);
+                var run = (Docker.ShellForm) ((Docker.Run) instructions.getFirst()).getCommand();
+                assertThat(run.getArgument().getText()).startsWith("conf=' ").endsWith("echo 'done'");
+            })
           )
         );
     }

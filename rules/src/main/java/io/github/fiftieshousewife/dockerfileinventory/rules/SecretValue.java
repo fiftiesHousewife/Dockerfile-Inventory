@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
 final class SecretValue implements Rule {
@@ -41,7 +42,10 @@ final class SecretValue implements Rule {
             case Docker.Env env -> env.getPairs().stream()
                     .flatMap(pair -> check(subject, line, "ENV", pair.getKey().getText(), pair.getValue()).stream())
                     .toList();
-            case Docker.Arg arg -> check(subject, line, "ARG", arg.getName().getText(), arg.getValue()).stream()
+            case Docker.Arg arg -> Stream.concat(
+                            check(subject, line, "ARG", arg.getName().getText(), arg.getValue()).stream(),
+                            arg.getAdditionalPairs().stream().flatMap(pair ->
+                                    check(subject, line, "ARG", pair.getName().getText(), pair.getValue()).stream()))
                     .toList();
             default -> List.of();
         };
@@ -65,8 +69,9 @@ final class SecretValue implements Rule {
                 .collect(Collectors.joining())
                 .strip();
         boolean singleQuoted = text.length() >= 2 && text.startsWith("'") && text.endsWith("'");
-        // rewrite-docker issues 5 and 6 (docs/upstream/): an empty KEY= is "=", and $NAME stays plain text
-        if (!singleQuoted && text.contains("$") || text.equals("=")) {
+        // The tree splits out unquoted variables (rewrite-docker issue 6, fixed in the fork), but a variable inside
+        // double quotes stays in the quoted string's text, so a $ outside single quotes still counts as one.
+        if (!singleQuoted && text.contains("$")) {
             return Optional.empty();
         }
         if (singleQuoted || text.length() >= 2 && text.startsWith("\"") && text.endsWith("\"")) {

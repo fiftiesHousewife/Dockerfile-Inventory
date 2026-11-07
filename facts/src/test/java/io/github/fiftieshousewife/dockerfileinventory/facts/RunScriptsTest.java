@@ -59,4 +59,12 @@ class RunScriptsTest {
     void isOtherShellIgnoresQuotesCaseAPathAndAnExeSuffix(String program, boolean other) {
         assertThat(RunScripts.isOtherShell(program)).isEqualTo(other);
     }
+
+    @Test
+    void aShellFormRunsScriptDropsCommentLinesAsDockerDoesEvenInsideAQuotedString() {
+        Docker.Run quoted = run("RUN conf=' \\\n    A=y \\\n# we've removed B \\\n    C=y'; \\\n    echo \"$conf\"");
+
+        assertThat(RunScripts.script(quoted)).hasValueSatisfying(script -> assertThat(script).doesNotContain("we've"));
+        assertThat(RunScripts.commands(quoted)).isPresent();
+    }
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: ARG's further names are visited (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +110,18 @@ public class DockerVisitor<P> extends TreeVisitor<Docker, P> {
         if (a.getValue() != null) {
             a = a.withValue((Docker.Argument) visit(a.getValue(), p));
         }
-        return a;
+        return a.withAdditionalPairs(ListUtils.map(a.getAdditionalPairs(), pair -> visitArgPair(pair, p)));
+    }
+
+    public Docker.Arg.ArgPair visitArgPair(Docker.Arg.ArgPair pair, P p) {
+        Docker.Arg.ArgPair ap = pair;
+        ap = ap.withPrefix(visitSpace(ap.getPrefix(), p));
+        ap = ap.withMarkers(visitMarkers(ap.getMarkers(), p));
+        ap = ap.withName((Docker.Literal) visit(ap.getName(), p));
+        if (ap.getValue() != null) {
+            ap = ap.withValue((Docker.Argument) visit(ap.getValue(), p));
+        }
+        return ap;
     }
 
     public Docker visitEnv(Docker.Env env, P p) {

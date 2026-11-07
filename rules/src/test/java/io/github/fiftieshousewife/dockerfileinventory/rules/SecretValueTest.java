@@ -105,6 +105,14 @@ class SecretValueTest {
         assertThat(SecretValue.literal(argValue(Subjects.of("FROM ubi9\nARG A\n")))).isEmpty();
     }
 
+    @Test
+    void literalIsNoneForAnEmptyEnvValue() {
+        Subject subject = Subjects.of("FROM ubi9\nENV SECRET_KEY=\n");
+        Docker.Env env = (Docker.Env) subject.file().getStages().getFirst().getInstructions().getFirst();
+
+        assertThat(SecretValue.literal(env.getPairs().getFirst().getValue())).isEmpty();
+    }
+
     private static Docker.Argument argValue(Subject subject) {
         return ((Docker.Arg) subject.file().getStages().getFirst().getInstructions().getFirst()).getValue();
     }

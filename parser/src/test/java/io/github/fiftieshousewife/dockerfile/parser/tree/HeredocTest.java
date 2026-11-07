@@ -1,6 +1,8 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: a test for a heredoc after a command (issue 11).
+ * Modified by Dockerfile Inventory, 2026: a test for a quoted heredoc word (issue 14).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,6 +118,60 @@ class HeredocTest implements RewriteTest {
                 assertThat(body2.getOpening()).isEqualTo("<<EOF2");
                 assertThat(body2.getClosing()).isEqualTo("EOF2");
                 assertThat(body2.getContentLines()).anyMatch(line -> line.contains("script 2"));
+            })
+          )
+        );
+    }
+
+    @Test
+    void heredocAfterACommand() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              RUN cat > /etc/x.toml <<EOF
+              a = 1
+              EOF
+              RUN --mount=type=cache,target=/root mkdir -p /etc/y && \\
+                  tee /etc/y/z.conf <<-END >/dev/null
+              b = 2
+              END
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var instructions = doc.getStages().getFirst().getInstructions();
+                assertThat(instructions).hasExactlyElementsOfTypes(Docker.Run.class, Docker.Run.class);
+                var heredoc = (Docker.HeredocForm) ((Docker.Run) instructions.getFirst()).getCommand();
+                assertThat(heredoc.getPreamble()).isEqualTo("cat > /etc/x.toml <<EOF");
+                assertThat(heredoc.getBodies()).singleElement()
+                  .satisfies(body -> assertThat(body.getContentLines()).containsExactly("a = 1\n"));
+            })
+          )
+        );
+    }
+
+    @Test
+    void heredocWithQuotedDelimiter() {
+        rewriteRun(
+          docker(
+            """
+              FROM ubi9
+              COPY <<'EOF' /etc/x.conf
+              a = $HOME
+              EOF
+              RUN <<"END" bash
+              echo "$HOME"
+              END
+              """,
+            spec -> spec.afterRecipe(doc -> {
+                var instructions = doc.getStages().getFirst().getInstructions();
+                assertThat(instructions).hasExactlyElementsOfTypes(Docker.Copy.class, Docker.Run.class);
+                var copy = (Docker.HeredocForm) ((Docker.Copy) instructions.getFirst()).getForm();
+                assertThat(copy.getPreamble()).isEqualTo("<<'EOF'");
+                assertThat(((Docker.Literal) copy.getDestination().getContents().getFirst()).getText()).isEqualTo("/etc/x.conf");
+                assertThat(copy.getBodies()).singleElement().satisfies(body -> {
+                    assertThat(body.getContentLines()).containsExactly("a = $HOME\n");
+                    assertThat(body.getClosing()).isEqualTo("EOF");
+                });
             })
           )
         );

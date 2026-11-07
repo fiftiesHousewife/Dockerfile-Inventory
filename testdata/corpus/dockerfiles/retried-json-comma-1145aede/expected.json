@@ -5,8 +5,8 @@
     "commit": "68a7815cb622c7919e07bfba0e08334576189a25",
     "blobSha": "1145aede27001dac69fa0c02b8e1cb8b13a91bdc"
   },
-  "why": "parses only with the parser's json-comma workaround",
-  "parse": "retried",
+  "why": "parsed only with the parser's json-comma workaround until the fork fixed issue 8",
+  "parse": "parsed",
   "unreadableRuns": 0,
   "roundTrip": "passes"
 }

@@ -5,8 +5,8 @@
     "commit": "f770bf5dfced8822adf606dac759bbef5705ed5d",
     "blobSha": "112d4ff27c47b8b978a1b6a58019a68a8aa83eaa"
   },
-  "why": "parses only with the parser's comment-in-continuation workaround",
-  "parse": "retried",
+  "why": "parsed only with the parser's comment-in-continuation workaround until the fork fixed issue 7",
+  "parse": "parsed",
   "unreadableRuns": 0,
   "roundTrip": "passes"
 }

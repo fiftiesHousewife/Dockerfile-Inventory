@@ -2,6 +2,12 @@
 // $antlr-format allowShortRulesOnASingleLine true, allowShortBlocksOnASingleLine true, minEmptyLines 0, alignSemicolons ownLine
 // $antlr-format alignColons trailing, singleLineOverrulesHangingColon true, alignLexerCommands true, alignLabels true, alignTrailers true
 
+// Copyright the original author or authors; Apache License 2.0. From openrewrite/rewrite@398a634, rewrite-docker/.
+// Modified by Dockerfile Inventory, 2026: a backslash before a newline never joins a word (issue 7).
+// Modified by Dockerfile Inventory, 2026: parser directives only before the first instruction (issue 2).
+// Modified by Dockerfile Inventory, 2026: a comment line inside a string spanning lines is part of it (issue 1).
+// Modified by Dockerfile Inventory, 2026: a heredoc's word may be quoted, as in COPY <<'EOF' (issue 14).
+
 lexer grammar DockerLexer;
 
 @lexer::header
@@ -19,6 +25,17 @@ import java.util.Queue;}
     private boolean afterFrom = false;
     // Track if we're after HEALTHCHECK to recognize CMD/NONE as keywords
     private boolean afterHealthcheck = false;
+    // Parser directives are read only before the first instruction; after it, # key=value is a comment
+    private boolean directivesAllowed = true;
+
+    @Override
+    public Token nextToken() {
+        Token token = super.nextToken();
+        if (token.getChannel() == Token.DEFAULT_CHANNEL && token.getType() != PARSER_DIRECTIVE) {
+            directivesAllowed = false;
+        }
+        return token;
+    }
 }
 
 options {
@@ -27,7 +44,7 @@ options {
 
 // Parser directives (must be at the beginning of file)
 // After a parser directive, we're at line start (it consumes the newline)
-PARSER_DIRECTIVE : '#' WS_CHAR* [A-Z_]+ WS_CHAR* '=' WS_CHAR* ~[\r\n]* NEWLINE_CHAR { atLineStart = true; };
+PARSER_DIRECTIVE : '#' WS_CHAR* [A-Z_]+ WS_CHAR* '=' WS_CHAR* ~[\r\n]* NEWLINE_CHAR {directivesAllowed}? { atLineStart = true; };
 
 // Comments (after parser directives) - HIDDEN in main mode
 COMMENT : '#' ~[\r\n]* -> channel(HIDDEN);
@@ -63,15 +80,18 @@ MAINTAINER : 'MAINTAINER' { if (!atLineStart) setType(UNQUOTED_TEXT); atLineStar
 AS         : 'AS' { if (!afterFrom) setType(UNQUOTED_TEXT); atLineStart = false; afterFrom = false; };
 
 // Heredoc start - captures <<EOF or <<-EOF including the identifier and switches to HEREDOC_PREAMBLE mode
-HEREDOC_START : '<<' '-'? [A-Z_][A-Z0-9_]* {
+HEREDOC_START : '<<' '-'? HEREDOC_MARKER {
     // Extract and store the heredoc marker identifier in FIFO order
     String text = getText();
     int prefixLen = text.charAt(2) == '-' ? 3 : 2;
-    String marker = text.substring(prefixLen);
+    String marker = text.substring(prefixLen).replaceAll("^(['\"])(.*)\\1$", "$2");
     heredocIdentifiers.add(marker);
     heredocIdentifierCaptured = true;
     atLineStart = false;
 } -> pushMode(HEREDOC_PREAMBLE);
+
+// A heredoc's word, bare or quoted ('EOF' or "EOF": the body is not expanded); the closing line is the bare word (issue 14)
+fragment HEREDOC_MARKER : [A-Z_][A-Z0-9_]* | '\'' [A-Z_][A-Z0-9_]* '\'' | '"' [A-Z_][A-Z0-9_]* '"';
 
 // Line continuation - HIDDEN in main mode
 // Supports both backslash (Linux) and backtick (Windows with # escape=`)
@@ -104,20 +124,25 @@ DASH_DASH  : '--' { if (!afterHealthcheck) atLineStart = false; };
 // This matches text that doesn't start with -- or <<
 // Note: < is excluded to allow HEREDOC_START (<<) to match
 fragment UNQUOTED_CHAR : ~[ \t\r\n\\"'$[\]=<];
-fragment ESCAPED_CHAR : '\\' .;
+// Not a newline: a backslash before one is a line continuation, which Docker removes, never part of a word (issue 7)
+fragment ESCAPED_CHAR : '\\' ~[\r\n];
 
 // String literals
 // Double-quoted strings support escape sequences, line continuation, and bare newlines
 // Backtick followed by whitespace+newline is continuation; standalone backtick is regular char
 // Bare newlines are allowed (e.g., comment lines inside PowerShell strings don't need trailing backtick)
-DOUBLE_QUOTED_STRING : '"' ( ESCAPE_SEQUENCE | INLINE_CONTINUATION | '`' | [\r\n] | ~["\\\r\n`] )* '"' { if (!afterHealthcheck) atLineStart = false; };
+DOUBLE_QUOTED_STRING : '"' ( ESCAPE_SEQUENCE | INLINE_CONTINUATION | '`' | [\r\n]+ STRING_COMMENT_LINE* | ~["\\\r\n`] )* '"' { if (!afterHealthcheck) atLineStart = false; };
 // Single-quoted strings in shell are literal - no escape processing inside
 // But they DO support line continuation (backslash or backtick followed by newline)
 // Bare newlines are also allowed for multi-line strings
-SINGLE_QUOTED_STRING : '\'' ( INLINE_CONTINUATION | [\r\n] | ~['\r\n] )* '\'' { if (!afterHealthcheck) atLineStart = false; };
+SINGLE_QUOTED_STRING : '\'' ( INLINE_CONTINUATION | [\r\n]+ STRING_COMMENT_LINE* | ~['\r\n] )* '\'' { if (!afterHealthcheck) atLineStart = false; };
 
 // Inline line continuation (inside strings) - backtick or backslash followed by newline
-fragment INLINE_CONTINUATION : ('\\' | '`') [ \t]* [\r\n]+;
+fragment INLINE_CONTINUATION : ('\\' | '`') [ \t]* [\r\n]+ STRING_COMMENT_LINE*;
+
+// A comment line inside a string that spans lines: Docker drops it before the shell reads the string, so a quote in it
+// neither ends nor starts one (issue 1)
+fragment STRING_COMMENT_LINE : [ \t]* '#' ~[\r\n]* [\r\n]+;
 
 fragment ESCAPE_SEQUENCE
     : '\\' ~[\r\n]   // Backslash followed by any char except newline (includes \n, \t, \\, \", Windows paths like \P)
@@ -188,11 +213,11 @@ HP_COMMENT : '/*' .*? '*/'  -> channel(HIDDEN);
 HP_LINE_COMMENT : ('//' | '#') ~[\r\n]* '\r'? -> channel(HIDDEN);
 
 // Additional heredoc marker in preamble (for multi-heredoc support)
-HP_HEREDOC_START : '<<' '-'? [A-Z_][A-Z0-9_]* {
+HP_HEREDOC_START : '<<' '-'? HEREDOC_MARKER {
     // Extract and store the heredoc marker identifier in FIFO order
     String text = getText();
     int prefixLen = text.charAt(2) == '-' ? 3 : 2;
-    String marker = text.substring(prefixLen);
+    String marker = text.substring(prefixLen).replaceAll("^(['\"])(.*)\\1$", "$2");
     heredocIdentifiers.add(marker);
 } -> type(HEREDOC_START);
 
