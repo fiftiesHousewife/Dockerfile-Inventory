@@ -341,6 +341,13 @@ builds the same model and so the same Dockerfile.
 Two tests check the converter against real Dockerfiles. Both read a discovery output, so they run as well on an
 enterprise estate as on the public one.
 
+They exist because the converter is what lets a team hand its Dockerfile over to the builders: the generated class
+replaces the file, and every later fix is made by changing the class and regenerating. That is safe only if
+regenerating changes nothing a running container can see. `roundTrip` checks the text across a whole estate: every
+instruction understood, the rewritten Dockerfile the same instructions, the generated class rebuilding it.
+`imageRoundTrip` checks what the text cannot show, by building the original and the regenerated Dockerfile and
+comparing the images they make: the evidence a team needs before it opts in.
+
 ```bash
 export ROUND_TRIP_DISCOVERY_DIR=out/all/discovery     # any discovery output (this is the default)
 ./gradlew roundTrip                                   # every Dockerfile in it converted; no Docker needed
