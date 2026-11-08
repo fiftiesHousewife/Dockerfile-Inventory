@@ -38,15 +38,18 @@ final class CatalogueRun {
         Set<String> archived = Unmaintained.archivedRepositories(inputs.discoveryDir());
         Map<String, Conversions.Conversion> conversions = Conversions.read(inputs.converterDir());
         Map<String, Siblings.Found> siblings = Siblings.of(inputs.nearDuplicates());
+        Map<String, CatalogueEntry> bySha = CatalogueEntries.bySha(parsed);
         List<CatalogueEntry> entries = new ArrayList<>(parsed.stream()
-                .map(entry -> entry.placed(new Placement(links.get(entry.blobSha()),
-                        Footprint.through(entry.blobSha(), parsed, links),
-                        Runtimes.inherited(entry.blobSha(), parsed, links),
-                        hierarchies.of(entry, parsed, links, archived),
-                        new Actions(ReleaseScope.of(entry.locations()),
-                                Reaches.of(entry.blobSha(), parsed, links, hierarchies.imagesBelow(entry.blobSha())),
-                                Conversions.of(conversions, entry.blobSha()),
-                                Siblings.of(siblings, entry.blobSha())))))
+                .map(entry -> {
+                    Footprint.Found footprint = Footprint.through(entry.blobSha(), bySha, links);
+                    return entry.placed(new Placement(links.get(entry.blobSha()), footprint,
+                            Runtimes.inherited(footprint.through(), bySha),
+                            hierarchies.of(entry, bySha, footprint.through(), archived),
+                            new Actions(ReleaseScope.of(entry.locations()),
+                                    Reaches.of(entry.blobSha(), bySha, links, hierarchies.imagesBelow(entry.blobSha())),
+                                    Conversions.of(conversions, entry.blobSha()),
+                                    Siblings.of(siblings, entry.blobSha()))));
+                })
                 .toList());
         JsonLines.read(inputs.factsDir().resolve("parse-failures.jsonl")).forEach(failure -> entries.add(
                 CatalogueEntries.unparsed(failure, places.get(failure.path("blobSha").asString()))));

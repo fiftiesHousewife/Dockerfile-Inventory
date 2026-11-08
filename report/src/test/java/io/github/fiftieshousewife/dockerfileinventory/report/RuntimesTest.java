@@ -54,7 +54,7 @@ class RuntimesTest {
                 Map.of("name", "acme/app"));
         List<CatalogueEntry> entries = List.of(base, app);
 
-        assertThat(Runtimes.inherited("bbb", entries, CatalogueLinks.of(entries, null))).containsExactly(
+        assertThat(Runtimes.inherited(List.of("aaa"), CatalogueEntries.bySha(entries))).containsExactly(
                 new Runtimes.Found("java", "inherited",
                         "from aaa: stage 0 base registry.access.redhat.com/ubi9/openjdk-21"));
     }

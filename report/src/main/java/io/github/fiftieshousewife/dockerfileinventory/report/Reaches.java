@@ -16,10 +16,10 @@ final class Reaches {
     private Reaches() {
     }
 
-    static Reach of(String sha, List<CatalogueEntry> entries, Map<String, CatalogueLinks.Links> links,
+    static Reach of(String sha, Map<String, CatalogueEntry> bySha, Map<String, CatalogueLinks.Links> links,
                     int imagesBelow) {
         Set<String> below = below(sha, links);
-        List<CatalogueEntry.Place> places = entries.stream().filter(entry -> below.contains(entry.blobSha()))
+        List<CatalogueEntry.Place> places = below.stream().map(bySha::get).filter(Objects::nonNull)
                 .flatMap(entry -> entry.locations().stream()).toList();
         return new Reach(below.size(), (int) places.stream().map(CatalogueEntry.Place::repository).distinct().count(),
                 places.size(), imagesBelow);

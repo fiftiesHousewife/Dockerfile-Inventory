@@ -26,7 +26,7 @@ class ReachesTest {
                 in("bbb", "registry.example.com/acme/base:1", "acme/runtime", "acme/runtime"),
                 in("ccc", "registry.example.com/acme/runtime:1", "acme/app", "acme/app", "acme/app-fork"));
 
-        assertThat(Reaches.of("aaa", entries, CatalogueLinks.of(entries, null), 0))
+        assertThat(Reaches.of("aaa", CatalogueEntries.bySha(entries), CatalogueLinks.of(entries, null), 0))
                 .isEqualTo(new Reaches.Reach(2, 3, 3, 0));
     }
 

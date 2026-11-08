@@ -1,7 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,9 +21,7 @@ final class Footprint {
     private Footprint() {
     }
 
-    static Found through(String sha, List<CatalogueEntry> entries, Map<String, CatalogueLinks.Links> links) {
-        Map<String, CatalogueEntry> bySha = new HashMap<>();
-        entries.forEach(entry -> bySha.put(entry.blobSha(), entry));
+    static Found through(String sha, Map<String, CatalogueEntry> bySha, Map<String, CatalogueLinks.Links> links) {
         List<String> through = new ArrayList<>();
         String current = sha;
         for (List<CatalogueLinks.Link> up = parents(links, current); !up.isEmpty()

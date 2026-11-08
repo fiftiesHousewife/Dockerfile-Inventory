@@ -21,6 +21,12 @@ final class CatalogueEntries {
                 Estate.metadataOnly(row), image(row), build(row), null, null, null, null, null);
     }
 
+    static Map<String, CatalogueEntry> bySha(List<CatalogueEntry> entries) {
+        Map<String, CatalogueEntry> bySha = new HashMap<>();
+        entries.forEach(entry -> bySha.put(entry.blobSha(), entry));
+        return bySha;
+    }
+
     static CatalogueEntry unparsed(JsonNode failure, List<CatalogueEntry.Place> places) {
         return new CatalogueEntry(failure.path("blobSha").asString(), places == null ? List.of() : places, false,
                 null, null, null, null, null, null, failure.path("message").asString());

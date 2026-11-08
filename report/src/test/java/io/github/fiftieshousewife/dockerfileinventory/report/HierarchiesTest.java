@@ -61,7 +61,7 @@ class HierarchiesTest {
     void layersAreCountedFromTheImageWhenTheRegistryHasOne() {
         CatalogueEntry python = python();
 
-        assertThat(hierarchies(RegistryImages.read(LINEAGE), 40).of(python, List.of(python), Map.of(), Set.of())
+        assertThat(hierarchies(RegistryImages.read(LINEAGE), 40).of(python, Map.of(), List.of(), Set.of())
                 .layers()).isEqualTo(new Hierarchies.Layers(1, 4, 5, "image", false));
     }
 
@@ -73,7 +73,8 @@ class HierarchiesTest {
                 Map.of("name", "acme/app")), 2, List.of());
         List<CatalogueEntry> entries = List.of(base, app);
 
-        assertThat(hierarchies(Map.of(), 40).of(app, entries, CatalogueLinks.of(entries, null), Set.of()).layers())
+        assertThat(hierarchies(Map.of(), 40).of(app, CatalogueEntries.bySha(entries), List.of("aaa"), Set.of())
+                .layers())
                 .isEqualTo(new Hierarchies.Layers(2, 3, 5, "declared", false));
     }
 
@@ -81,7 +82,7 @@ class HierarchiesTest {
     void anImageOverTheLayerLimitIsFlagged() {
         CatalogueEntry python = python();
 
-        assertThat(hierarchies(RegistryImages.read(LINEAGE), 4).of(python, List.of(python), Map.of(), Set.of())
+        assertThat(hierarchies(RegistryImages.read(LINEAGE), 4).of(python, Map.of(), List.of(), Set.of())
                 .layers().overLimit()).isTrue();
     }
 
@@ -90,7 +91,7 @@ class HierarchiesTest {
         CatalogueEntry python = python();
 
         Hierarchies.Hierarchy hierarchy = hierarchies(RegistryImages.read(LINEAGE), 40)
-                .of(python, List.of(python), Map.of(), Set.of("sclorg/s2i-python-container"));
+                .of(python, Map.of(), List.of(), Set.of("sclorg/s2i-python-container"));
 
         assertAll(
                 () -> assertThat(hierarchy.images()).extracting(Hierarchies.BuiltImage::configDigest)
@@ -104,7 +105,7 @@ class HierarchiesTest {
                 "quay.io/sclorg/s2i-core-c9s:c9s", Map.of()), 2, List.of());
 
         Hierarchies.Hierarchy hierarchy = hierarchies(RegistryImages.read(LINEAGE), 40)
-                .of(nginx, List.of(nginx), Map.of(), Set.of());
+                .of(nginx, Map.of(), List.of(), Set.of());
 
         assertAll(
                 () -> assertThat(hierarchy.images()).isEmpty(),
@@ -131,7 +132,7 @@ class HierarchiesTest {
                 python.candidates()));
         CatalogueEntry entry = python();
 
-        assertThat(hierarchies(images, 40).of(entry, List.of(entry), Map.of(), Set.of()).layers().counted())
+        assertThat(hierarchies(images, 40).of(entry, Map.of(), List.of(), Set.of()).layers().counted())
                 .isEqualTo("declared");
     }
 
@@ -183,7 +184,7 @@ class HierarchiesTest {
                 "quay.io/sclorg/s2i-base-c9s:c9s", Map.of("name", "sclorg/python-312-c9s")), 1, List.of());
 
         Map<String, Hierarchies.Label> labels = hierarchies(RegistryImages.read(LINEAGE), 40)
-                .of(python, List.of(python), Map.of(), Set.of()).images().getFirst().labels();
+                .of(python, Map.of(), List.of(), Set.of()).images().getFirst().labels();
 
         assertAll(
                 () -> assertThat(labels.get("name").source()).isEqualTo("dockerfile"),

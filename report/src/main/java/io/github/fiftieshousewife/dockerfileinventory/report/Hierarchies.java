@@ -1,6 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,6 +34,8 @@ final class Hierarchies {
 
     private final Map<String, RegistryImage> images;
     private final Map<String, List<RegistryImage>> builtFrom = new HashMap<>();
+    private final Map<String, List<String>> candidatesOf = new HashMap<>();
+    private final Map<String, List<String>> childrenOf = new HashMap<>();
     private final Instant newestPush;
     private final int staleAfterMonths;
     private final int layerLimit;
@@ -42,24 +46,29 @@ final class Hierarchies {
         this.layerLimit = layerLimit;
         String newest = RegistryImages.newestPush(List.copyOf(images.values()));
         this.newestPush = newest == null ? Instant.EPOCH : Instant.parse(newest);
-        images.values().forEach(image -> image.blobShas().forEach(sha ->
-                builtFrom.computeIfAbsent(sha, key -> new ArrayList<>()).add(image)));
+        images.values().forEach(image -> {
+            image.blobShas().forEach(sha -> builtFrom.computeIfAbsent(sha, key -> new ArrayList<>()).add(image));
+            image.candidates().forEach(sha -> candidatesOf.computeIfAbsent(sha, key -> new ArrayList<>())
+                    .add(image.configDigest()));
+            if (image.parent() != null) {
+                childrenOf.computeIfAbsent(image.parent(), key -> new ArrayList<>()).add(image.configDigest());
+            }
+        });
     }
 
-    Hierarchy of(CatalogueEntry entry, List<CatalogueEntry> entries, Map<String, CatalogueLinks.Links> links,
+    Hierarchy of(CatalogueEntry entry, Map<String, CatalogueEntry> bySha, List<String> ancestors,
                  Set<String> archivedRepositories) {
         List<BuiltImage> built = builtFrom.getOrDefault(entry.blobSha(), List.of()).stream()
                 .sorted(Comparator.comparing(RegistryImage::configDigest))
                 .map(image -> built(image.configDigest(), entry.image().labels().keySet())).toList();
-        List<String> candidates = images.values().stream().filter(image -> image.candidates().contains(entry.blobSha()))
-                .map(RegistryImage::configDigest).sorted().toList();
-        return new Hierarchy(layers(entry, entries, links), built, candidates,
+        List<String> candidates = candidatesOf.getOrDefault(entry.blobSha(), List.of()).stream().sorted().toList();
+        return new Hierarchy(layers(entry, bySha, ancestors), built, candidates,
                 Unmaintained.archived(entry.locations(), archivedRepositories));
     }
 
-    Layers layers(CatalogueEntry entry, List<CatalogueEntry> entries, Map<String, CatalogueLinks.Links> links) {
+    Layers layers(CatalogueEntry entry, Map<String, CatalogueEntry> bySha, List<String> ancestors) {
         return newestImage(entry.blobSha()).map(this::imageLayers)
-                .orElseGet(() -> declaredLayers(entry, entries, links));
+                .orElseGet(() -> declaredLayers(entry, bySha, ancestors));
     }
 
     Optional<RegistryImage> newestImage(String blobSha) {
@@ -73,12 +82,10 @@ final class Hierarchies {
         return limited(image.layers() - inherited, inherited, "image");
     }
 
-    Layers declaredLayers(CatalogueEntry entry, List<CatalogueEntry> entries,
-                          Map<String, CatalogueLinks.Links> links) {
-        Map<String, CatalogueEntry> bySha = new HashMap<>();
-        entries.forEach(e -> bySha.put(e.blobSha(), e));
-        int inherited = Footprint.through(entry.blobSha(), entries, links).through().stream().map(bySha::get)
-                .filter(ancestor -> ancestor.build() != null).mapToInt(ancestor -> ancestor.build().layers()).sum();
+    Layers declaredLayers(CatalogueEntry entry, Map<String, CatalogueEntry> bySha, List<String> ancestors) {
+        int inherited = ancestors.stream().map(bySha::get)
+                .filter(ancestor -> ancestor != null && ancestor.build() != null)
+                .mapToInt(ancestor -> ancestor.build().layers()).sum();
         return limited(entry.build().layers(), inherited, "declared");
     }
 
@@ -117,10 +124,13 @@ final class Hierarchies {
     }
 
     int imagesBelow(String blobSha) {
-        Set<String> own = new HashSet<>();
-        builtFrom.getOrDefault(blobSha, List.of()).forEach(image -> own.add(image.configDigest()));
-        return own.isEmpty() ? 0 : (int) images.keySet().stream().filter(digest -> chain(digest).stream().skip(1)
-                .anyMatch(step -> own.contains(step.configDigest()))).count();
+        Set<String> below = new HashSet<>();
+        Deque<String> next = new ArrayDeque<>();
+        builtFrom.getOrDefault(blobSha, List.of()).forEach(image -> next.push(image.configDigest()));
+        while (!next.isEmpty()) {
+            childrenOf.getOrDefault(next.pop(), List.of()).stream().filter(below::add).forEach(next::push);
+        }
+        return below.size();
     }
 
     Integer parentLayers(RegistryImage image) {
