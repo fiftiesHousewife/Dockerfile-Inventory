@@ -291,7 +291,7 @@ what the estate builds. Secret-shaped values, and values under a secret's name, 
 | `links` | The estate Dockerfiles that build its base (`parents`) and build on it (`children`), each from `lineage` or `inferred` with its evidence, and how many deep its chain is |
 | `footprint` | The class of the base at its chain's root: micro, minimal, full, distroless, scratch, alpine, slim or unknown |
 | `hierarchy.layers` | Its own, inherited and total layers, `counted` from its newest registry image or, without one, `declared` by the Dockerfiles; `overLimit` above `LAYER_LIMIT` |
-| `hierarchy.images` | With `LINEAGE_DIR`: each registry image built from it, with its created and last-pushed times, its `chain` to the root (each image's own layers, times and reasons it is unmaintained) and `blockedBy`, the unmaintained images above it |
+| `hierarchy.images` | With `LINEAGE_DIR`: each registry image built from it, with its created and last-pushed times, its `chain` to the root (each image's own layers, times and reasons it is unmaintained) and `blockedBy`, the unmaintained images above it; and its `labels`, each with its `source`: `dockerfile` (a `LABEL` in this Dockerfile), `build` (set when this image was built, not by its Dockerfile), `ancestor` or `base` (set above it, named in `setBy`), or `unknown` |
 | `hierarchy.unmaintained` | `every repository holding it is archived`, when that is so |
 
 An image is unmaintained when it was not rebuilt on its updated base, or was not pushed for `STALE_AFTER_MONTHS`

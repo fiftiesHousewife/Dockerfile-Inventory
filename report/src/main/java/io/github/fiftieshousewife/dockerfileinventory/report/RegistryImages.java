@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
+import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -29,6 +30,7 @@ final class RegistryImages {
         Map<String, String> parents = parents(lineageDir.resolve("lineage.jsonl"));
         Map<String, List<String>> blobShas = blobShas(lineageDir.resolve("links.jsonl"));
         Map<String, String> newer = newerBases(lineageDir.resolve("outdated-bases.jsonl"));
+        Map<String, Map<String, ImageLabel>> labels = labels(lineageDir.resolve("effective.jsonl"));
         Map<String, RegistryImage> images = new LinkedHashMap<>();
         tags.forEach((digest, rows) -> {
             JsonNode config = config(lineageDir, digest);
@@ -36,7 +38,7 @@ final class RegistryImages {
                     parents.get(digest), blobShas.getOrDefault(digest, List.of()),
                     config.path("rootfs").path("diff_ids").size(), config.path("created").stringValue(null),
                     newest(rows.stream().map(row -> row.path("lastPushed").stringValue(null)).toList()),
-                    newer.get(digest)));
+                    newer.get(digest), labels.getOrDefault(digest, Map.of())));
         });
         return images;
     }
@@ -45,6 +47,25 @@ final class RegistryImages {
         Map<String, String> newer = new HashMap<>();
         JsonLines.read(outdated).forEach(row -> newer.put(row.path("image").asString(), row.path("newer").asString()));
         return newer;
+    }
+
+    static Map<String, Map<String, ImageLabel>> labels(Path effective) {
+        Map<String, Map<String, ImageLabel>> labels = new HashMap<>();
+        JsonLines.read(effective).forEach(row -> {
+            Map<String, ImageLabel> image = new LinkedHashMap<>();
+            row.path("labels").propertyNames().forEach(name -> image.put(name, label(name, row.path("labels")
+                    .path(name))));
+            labels.put(row.path("configDigest").asString(), image);
+        });
+        return labels;
+    }
+
+    static ImageLabel label(String name, JsonNode property) {
+        JsonNode setBy = property.path("setBy");
+        String kind = setBy.path("kind").asString();
+        return new ImageLabel(Secrets.shown(name, property.path("value").asString()),
+                "Image".equals(kind) ? setBy.path("configDigest").asString() : null,
+                "ExternalBase".equals(kind) ? setBy.path("path").asString() : null);
     }
 
     static String newestPush(List<RegistryImage> images) {

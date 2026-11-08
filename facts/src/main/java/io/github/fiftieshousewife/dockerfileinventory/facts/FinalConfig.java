@@ -2,11 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -89,25 +85,12 @@ final class FinalConfig {
         List<KeyValuePairs.Pair> written = KeyValuePairs.of(rest);
         if (!written.isEmpty() && written.getFirst().value() == null) {
             String[] legacy = rest.split("\\s+", 2);
-            pairs.put(legacy[0], shown(legacy[0], legacy.length > 1 ? legacy[1] : ""));
+            pairs.put(legacy[0], Secrets.shown(legacy[0], legacy.length > 1 ? legacy[1] : ""));
             return pairs;
         }
         written.forEach(pair -> pairs.put(KeyValuePairs.unquoted(pair.key()),
-                shown(pair.key(), KeyValuePairs.unquoted(pair.value()))));
+                Secrets.shown(pair.key(), KeyValuePairs.unquoted(pair.value()))));
         return pairs;
-    }
-
-    static String shown(String name, String value) {
-        return Secrets.secret(name, value) ? "(hidden " + hash(value) + ")" : value;
-    }
-
-    static String hash(String value) {
-        try {
-            return "sha256:" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     private static List<String> json(String rest) {

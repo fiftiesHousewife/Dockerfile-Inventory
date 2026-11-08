@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 final class Hierarchies {
 
@@ -19,7 +20,10 @@ final class Hierarchies {
     }
 
     record BuiltImage(String configDigest, List<String> names, String created, String lastPushed, List<Step> chain,
-                      List<Step> blockedBy) {
+                      List<Step> blockedBy, Map<String, Label> labels) {
+    }
+
+    record Label(String value, String source, String setBy) {
     }
 
     record Step(String configDigest, List<String> names, List<String> blobShas, int ownLayers, String created,
@@ -46,7 +50,7 @@ final class Hierarchies {
                  Set<String> archivedRepositories) {
         List<BuiltImage> built = builtFrom.getOrDefault(entry.blobSha(), List.of()).stream()
                 .sorted(Comparator.comparing(RegistryImage::configDigest))
-                .map(image -> built(image.configDigest())).toList();
+                .map(image -> built(image.configDigest(), entry.image().labels().keySet())).toList();
         return new Hierarchy(layers(entry, entries, links), built,
                 Unmaintained.archived(entry.locations(), archivedRepositories));
     }
@@ -75,11 +79,26 @@ final class Hierarchies {
         return limited(entry.build().layers(), inherited, "declared");
     }
 
-    BuiltImage built(String configDigest) {
+    BuiltImage built(String configDigest, Set<String> dockerfileLabels) {
         RegistryImage image = images.get(configDigest);
         List<Step> chain = chain(configDigest);
+        Map<String, Label> labels = new TreeMap<>();
+        image.labels().forEach((name, label) -> labels.put(name, label(name, label, configDigest, dockerfileLabels)));
         return new BuiltImage(configDigest, image.names(), image.created(), image.lastPushed(), chain,
-                chain.stream().skip(1).filter(step -> !step.unmaintained().isEmpty()).toList());
+                chain.stream().skip(1).filter(step -> !step.unmaintained().isEmpty()).toList(), labels);
+    }
+
+    static Label label(String name, ImageLabel label, String configDigest, Set<String> dockerfileLabels) {
+        if (label.setByBase() != null) {
+            return new Label(label.value(), "base", label.setByBase());
+        }
+        if (label.setByImage() == null) {
+            return new Label(label.value(), "unknown", null);
+        }
+        if (!label.setByImage().equals(configDigest)) {
+            return new Label(label.value(), "ancestor", label.setByImage());
+        }
+        return new Label(label.value(), dockerfileLabels.contains(name) ? "dockerfile" : "build", configDigest);
     }
 
     List<Step> chain(String configDigest) {

@@ -1,5 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -48,5 +52,19 @@ public final class Secrets {
     public static String hideShapes(String text) {
         return SECRET_SHAPES.stream()
                 .reduce(text, (hidden, shape) -> shape.matcher(hidden).replaceAll("(hidden)"), (a, b) -> b);
+    }
+
+    /** The value, or {@code (hidden sha256:...)} in its place when it is a secret, so a change still shows. */
+    public static String shown(String name, String value) {
+        return secret(name, value) ? "(hidden " + hash(value) + ")" : value;
+    }
+
+    private static String hash(String value) {
+        try {
+            return "sha256:" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

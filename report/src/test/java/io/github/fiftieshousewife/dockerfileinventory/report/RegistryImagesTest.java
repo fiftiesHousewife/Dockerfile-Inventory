@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class RegistryImagesTest {
 
@@ -32,6 +34,29 @@ class RegistryImagesTest {
     }
 
     @Test
+    void anImageCarriesItsLabelsWithTheImageThatSetEach() {
+        Map<String, ImageLabel> labels = RegistryImages.read(LINEAGE).get(PYTHON).labels();
+
+        assertAll(
+                () -> assertThat(labels.get("name")).isEqualTo(new ImageLabel("sclorg/python-312-c9s", PYTHON, null)),
+                () -> assertThat(labels.get("version")).isEqualTo(new ImageLabel("9", S2I_BASE, null)),
+                () -> assertThat(labels.get("io.buildah.version")).isEqualTo(new ImageLabel("1.37.0", null, null)));
+    }
+
+    @Test
+    void aLabelSetByTheExternalBaseNamesItsPath() {
+        assertThat(RegistryImages.label("vendor", json(
+                "{\"value\":\"Red Hat\",\"setBy\":{\"kind\":\"ExternalBase\",\"path\":\"ubi9/ubi\"}}")))
+                .isEqualTo(new ImageLabel("Red Hat", null, "ubi9/ubi"));
+    }
+
+    @Test
+    void aSecretLabelValueIsHiddenAsItIsRead() {
+        assertThat(RegistryImages.label("build.token", json(
+                "{\"value\":\"abc123\",\"setBy\":{\"kind\":\"Unknown\"}}")).value()).startsWith("(hidden sha256:");
+    }
+
+    @Test
     void theRootHasNoParent() {
         assertThat(RegistryImages.read(LINEAGE).get(
                 "sha256:cdc65e3dc1b675127b1e26ef79884f63cae4c46c00a89f0c18cb5c617bec62c8").parent()).isNull();
@@ -50,5 +75,9 @@ class RegistryImagesTest {
     void theNewestPushIsTheRegistrysLatest() {
         assertThat(RegistryImages.newestPush(List.copyOf(RegistryImages.read(LINEAGE).values())))
                 .isEqualTo("2026-11-06T18:18:06.098Z");
+    }
+
+    private static JsonNode json(String text) {
+        return new ObjectMapper().readTree(text);
     }
 }

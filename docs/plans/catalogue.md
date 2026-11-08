@@ -161,8 +161,8 @@ Progress (8 Nov): facts records the final image's configuration and, per stage, 
 changes and unusual steps; the report writes `catalogue/dockerfiles.jsonl` (no archetype, no end-of-life status),
 each entry with its stages, packages, language runtimes (final, build-only, or inherited from the nearest ancestor
 whose final image has it, with evidence), links (lineage or inferred) and footprint (its chain root's base class,
-built in for now; the settable list to come), its hierarchy and each location's last change (slices below). Still to
-build: image labels, then the action fields; measured on an estate with lineage.
+built in for now; the settable list to come), its hierarchy, each location's last change and its images' labels (slices
+below). Still to build: the action fields; measured on an estate with lineage.
 
 ## Slice: the hierarchy (planned 8 Nov; built 8 Nov)
 
@@ -216,6 +216,28 @@ Tests, in order:
 4. `DiscoveryOutput`: changes recorded and read back.
 5. `ChangeFetch`: batches of 50; the answers recorded; the run asks only for locations without a change.
 6. `CatalogueEntries.places`: a location's last change from `changes.jsonl`; none when it is missing; README.
+
+## Slice: image labels (planned 8 Nov; built 8 Nov)
+
+The table's last row: the labels each registry image carries, beside the Dockerfile's own `LABEL`s, saying who set
+each. Lineage's `effective.jsonl` already attributes every label (its `Fold`) to the image that set it, the
+external base, or no one it can tell; the catalogue reads that rather than comparing configs again.
+
+- Each image in `hierarchy.images` gains `labels`: per name its value (hidden as the Dockerfile's are, through dsl's
+  `Secrets`, which takes facts' formatting so both write the same `(hidden sha256:...)`), its `source` and `setBy`
+  (the image's config digest or the base's path):
+  - `dockerfile`: set by this image, and its Dockerfile has a `LABEL` of that name;
+  - `build`: set by this image, but not by its Dockerfile (added by the build: Buildah, Konflux, a `--label`);
+  - `ancestor`: set by an image above it, named; `base`: by the external base, named;
+  - `unknown`: lineage could not tell (Buildah's `io.buildah.version`, which every build rewrites).
+
+Tests, in order:
+
+1. `Secrets.shown`: a plain value as it is; a secret-named or secret-shaped value as `(hidden sha256:...)`; facts'
+   `FinalConfig` using it, its tests unchanged.
+2. `RegistryImages`: an image's labels with who set them, from `effective.jsonl` (the demo run's, added unedited).
+3. `Hierarchies`: each source, one at a time, on the Python 3.12 image; a secret label value hidden.
+4. `CatalogueRun` writing them; README.
 
 ## Tests, in order
 

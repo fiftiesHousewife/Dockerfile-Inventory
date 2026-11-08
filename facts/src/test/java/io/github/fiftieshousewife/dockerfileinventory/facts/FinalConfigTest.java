@@ -64,7 +64,8 @@ class FinalConfigTest {
 
         assertAll(
                 () -> assertThat(config.environment()).containsExactly(Map.entry("APP_HOME", "/opt/app"),
-                        Map.entry("LEGACY_TOKEN", "(hidden " + FinalConfig.hash("abc123") + ")"),
+                        Map.entry("LEGACY_TOKEN",
+                                "(hidden sha256:6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090)"),
                         Map.entry("LANG", "en_US.UTF-8")),
                 () -> assertThat(config.labels()).containsExactly(Map.entry("name", "payments"),
                         Map.entry("version", "1.2")));

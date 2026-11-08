@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -17,7 +18,7 @@ class UnmaintainedTest {
 
     private static RegistryImage pushed(String lastPushed, String newerBase) {
         return new RegistryImage("sha256:d071", List.of("sclorg/s2i-python-container-3-12-c9s:c9s"), "sha256:bf34",
-                List.of(), 5, "2026-11-06T18:18:01Z", lastPushed, newerBase);
+                List.of(), 5, "2026-11-06T18:18:01Z", lastPushed, newerBase, Map.of());
     }
 
     private static CatalogueEntry.Place in(String repository) {

@@ -50,10 +50,10 @@ class HierarchiesTest {
         Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
         RegistryImage base = images.get(S2I_BASE);
         images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
-                base.layers(), base.created(), base.lastPushed(), "sha256:0b1c"));
+                base.layers(), base.created(), base.lastPushed(), "sha256:0b1c", base.labels()));
 
-        assertThat(hierarchies(images, 40).built(PYTHON).blockedBy()).extracting(Hierarchies.Step::configDigest)
-                .containsExactly(S2I_BASE);
+        assertThat(hierarchies(images, 40).built(PYTHON, Set.of()).blockedBy())
+                .extracting(Hierarchies.Step::configDigest).containsExactly(S2I_BASE);
     }
 
     @Test
@@ -107,5 +107,50 @@ class HierarchiesTest {
     @Test
     void aDockerfileNoImageWasBuiltFromHasNoNewestImage() {
         assertThat(hierarchies(RegistryImages.read(LINEAGE), 40).newestImage("aaa")).isEmpty();
+    }
+
+    @Test
+    void aLabelTheImageSetFromItsDockerfileComesFromTheDockerfile() {
+        assertThat(Hierarchies.label("name", new ImageLabel("sclorg/python-312-c9s", PYTHON, null), PYTHON,
+                Set.of("name"))).isEqualTo(new Hierarchies.Label("sclorg/python-312-c9s", "dockerfile", PYTHON));
+    }
+
+    @Test
+    void aLabelTheImageSetWithoutItsDockerfileComesFromTheBuild() {
+        assertThat(Hierarchies.label("release", new ImageLabel("7", PYTHON, null), PYTHON, Set.of("name")))
+                .isEqualTo(new Hierarchies.Label("7", "build", PYTHON));
+    }
+
+    @Test
+    void aLabelAnImageAboveSetComesFromThatAncestor() {
+        assertThat(Hierarchies.label("version", new ImageLabel("9", S2I_BASE, null), PYTHON, Set.of("version")))
+                .isEqualTo(new Hierarchies.Label("9", "ancestor", S2I_BASE));
+    }
+
+    @Test
+    void aLabelTheExternalBaseSetComesFromTheBase() {
+        assertThat(Hierarchies.label("vendor", new ImageLabel("Red Hat", null, "ubi9/ubi"), PYTHON, Set.of()))
+                .isEqualTo(new Hierarchies.Label("Red Hat", "base", "ubi9/ubi"));
+    }
+
+    @Test
+    void aLabelLineageCouldNotAttributeIsUnknown() {
+        assertThat(Hierarchies.label("io.buildah.version", new ImageLabel("1.37.0", null, null), PYTHON, Set.of()))
+                .isEqualTo(new Hierarchies.Label("1.37.0", "unknown", null));
+    }
+
+    @Test
+    void eachImageBuiltFromAnEntryCarriesItsLabelsBySource() {
+        CatalogueEntry python = withLayers(CatalogueLinksTest.entry(PYTHON_DOCKERFILE,
+                "quay.io/sclorg/s2i-base-c9s:c9s", Map.of("name", "sclorg/python-312-c9s")), 1, List.of());
+
+        Map<String, Hierarchies.Label> labels = hierarchies(RegistryImages.read(LINEAGE), 40)
+                .of(python, List.of(python), Map.of(), Set.of()).images().getFirst().labels();
+
+        assertAll(
+                () -> assertThat(labels.get("name").source()).isEqualTo("dockerfile"),
+                () -> assertThat(labels.get("summary").source()).isEqualTo("build"),
+                () -> assertThat(labels.get("org.label-schema.vendor").source()).isEqualTo("ancestor"),
+                () -> assertThat(labels.get("io.buildah.version").source()).isEqualTo("unknown"));
     }
 }

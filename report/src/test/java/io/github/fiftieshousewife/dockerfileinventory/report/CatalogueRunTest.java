@@ -66,7 +66,9 @@ class CatalogueRunTest {
                 .path("hierarchy").path("images").path(0);
         assertAll(
                 () -> assertThat(image.path("configDigest").asString()).isEqualTo(RegistryImagesTest.PYTHON),
-                () -> assertThat(image.path("chain").size()).isEqualTo(4));
+                () -> assertThat(image.path("chain").size()).isEqualTo(4),
+                () -> assertThat(image.path("labels").path("io.buildah.version").path("source").asString())
+                        .isEqualTo("unknown"));
     }
 
     @Test
