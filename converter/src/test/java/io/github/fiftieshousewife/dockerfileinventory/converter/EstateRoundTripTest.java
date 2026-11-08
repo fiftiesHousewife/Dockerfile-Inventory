@@ -14,15 +14,15 @@ import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-@Tag("estate")
-class EstateConversionTest {
+@Tag("roundtrip")
+class EstateRoundTripTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test
     void everyInstructionIsTypedTheRoundTripHoldsItsCountAndEveryPassingClassRebuildsItsDockerfile(@TempDir Path out)
             throws IOException {
-        Path discovery = Path.of(System.getenv().getOrDefault("ESTATE_DISCOVERY_DIR", "../out/all/discovery"));
+        Path discovery = Path.of(System.getenv().getOrDefault("ROUND_TRIP_DISCOVERY_DIR", "../out/all/discovery"));
         assumeTrue(Files.isDirectory(discovery.resolve("blobs")), "no estate at " + discovery.toAbsolutePath());
 
         new ConverterRun(discovery, null, null, out, true).run();

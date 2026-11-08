@@ -20,15 +20,15 @@ import org.junit.jupiter.api.function.Executable;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-@Tag("images")
-class EstateImageTest {
+@Tag("image-roundtrip")
+class ImageRoundTripTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Path OUT = Path.of("build/image-comparison");
+    private static final Path OUT = Path.of("build/image-round-trip");
 
     @Test
     void eachRepresentativesRegeneratedDockerfileBuildsTheSameImageAsTheOriginal() throws IOException {
-        Path discovery = Path.of(System.getenv().getOrDefault("ESTATE_DISCOVERY_DIR", "../out/all/discovery"));
+        Path discovery = Path.of(System.getenv().getOrDefault("ROUND_TRIP_DISCOVERY_DIR", "../out/all/discovery"));
         assumeTrue(Files.isDirectory(discovery.resolve("blobs")), "no estate at " + discovery.toAbsolutePath());
         assumeTrue(dockerRuns(), "Docker is not reachable");
         Map<String, JsonNode> locations = locations(discovery);
