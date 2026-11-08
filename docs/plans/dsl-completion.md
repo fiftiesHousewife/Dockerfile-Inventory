@@ -164,6 +164,29 @@ the builder's `copy(Copy)`; the same for `Add`, `CopyHeredoc`, `RunBody.Heredoc`
 `BuilderCalls` for each, then the long methods removed, the compiled-class test and the estate's round trip
 unchanged.
 
+## S3 in detail
+
+**What runs.** After the text round trip, every Dockerfile that passed it has its builder class emitted
+(`JavaEmitter`, package `roundtrip`, class `D<blob sha>`). All of them compile in one in-memory compilation
+(`javax.tools`, sources and class files held in memory, the converter's own class path); a class that does not
+compile is reported with its first error and the rest compile again without it. Each class is loaded and its
+`dockerfile()` called; it passes when the model it builds equals the conversion's model and that model passes the
+text round trip against the original.
+
+**Output.** Each `roundtrip.jsonl` row gains `javaPassed` and, when it failed, `javaDifference`; `coverage.json`
+gains `javaRoundTrip: {passed, of}`. `JAVA_ROUND_TRIP=false` skips the check (rows then have no `javaPassed`),
+for a quick run; it is on by default. The container's JRE gains `jdk.compiler`, which jdeps cannot see.
+
+**Classes.** `InMemoryCompiler` (sources in, class bytes and per-class errors out, the retry without failures),
+`JavaRoundTrip` (emit, compile, load, call, compare; one result per blob), the run wiring in `ConverterRun`.
+
+**Tests, in order**, one assertion each, several in `assertAll`: `InMemoryCompiler` compiles a class to bytes; a
+class with an error is named with its message while the others compile; `JavaRoundTrip` passes a real conversion,
+fails a model that differs, and reports a class that does not compile; `ConverterRun` writes `javaPassed` and the
+coverage count, and leaves them out when the setting is off; `ConverterMain` reads the setting and refuses a bad
+value. Measured: the Java pass count equals the text pass count (5,149) on the combined estate; any difference is
+a bug in `JavaEmitter` or the builders, fixed test first.
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
