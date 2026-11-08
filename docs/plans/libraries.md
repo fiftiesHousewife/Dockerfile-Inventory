@@ -10,7 +10,9 @@ compatibility check, waits for a first release to compare with. F1, the parser's
 the combined estate's parse failures 93 -> 90, all templates, other preprocessors or not Dockerfiles but one broken
 for Docker too; the round trip 5,149 -> 5,152. F2, `DockerParser.parseText(String)`: the tree, or the first syntax error
 with its line and column (`DockerParsingException.getLine`, `getColumn`) instead of one passed silently to a default
-execution context.
+execution context. F4 dropped: the one round trip it rested on is a `RUN --mount=...` with no
+command, which Docker rejects too; the default target stays conservative, since the builder that will read the
+Dockerfile may be an older Buildah, and the converter already picks the target from the Dockerfile's own features.
 
 ## Why
 
