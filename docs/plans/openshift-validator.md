@@ -42,6 +42,44 @@ Each finding also says how sure it is: *read* (from the Dockerfile's instruction
 *inferred* (a heuristic on text, such as which paths are written at run time, or a port the application might not
 use), so the plan can show the read ones first.
 
+## Beyond the platform: antipatterns (asked 8 Nov: all of them)
+
+Besides what OpenShift refuses or breaks, the validator reports the estate's antipatterns, each with its action and
+reach as above; those the rules already find keep their IDs. Severity is *breaks*, *drift* or *information* as the
+platform's checks have it; each is confirmed on a sample of its findings before its fix is offered, as every rule is.
+
+| Group | Antipattern | Data | Today |
+| --- | --- | --- | --- |
+| hierarchy | a stale intermediate: its base published since it was built, so its fix reaches nothing below it | lineage (`outdated-bases.jsonl`) | new |
+| hierarchy | a deep chain: many estate images between a leaf and its root | catalogue hierarchy | new |
+| hierarchy | an application image used as another's base | catalogue hierarchy (a parent with a start command and children) | new |
+| hierarchy | siblings repeating the same first steps: a shared base to extract | facts steps, compared across a parent's children | new |
+| hierarchy | a floating base (`latest`, or no tag) | facts | R1 |
+| hierarchy | many images on different digests of one base | facts and lineage | new |
+| hierarchy | a published intermediate with no children; children of an image no estate Dockerfile builds | lineage | new |
+| footprint | could be smaller: a final stage on a full base that installs nothing (micro or distroless), or that installs packages (minimal) | catalogue footprint and packages | new |
+| layers | a single-stage build that ships its toolchain (compilers, `-devel`, `git`, `curl`) | facts packages, stage count | new |
+| layers | a file removed in a later layer than the one that added it | facts steps and shell commands | new |
+| layers | `chown -R` or `chmod -R` in a `RUN` of its own after a `COPY` | facts per-stage permissions | new |
+| layers | `COPY --from=stage / /`: a whole stage copied | facts copies | new |
+| layers | `apt-get upgrade`, `dnf update` in the build | facts packages | new |
+| layers | `ADD` of a URL without `--checksum`, or of a plain local file | facts copies | new |
+| layers | an install not cleaned in its `RUN` | facts | H1 |
+| layers | `curl` or `wget` piped to a shell | facts | S3 |
+| layers | packages without a version | facts | I1 |
+| layers | adjacent `RUN`s that could be one | facts | H3 |
+| permissions | final user root or unset | facts and lineage | S4 |
+| permissions | `chmod 777` or `a+w` | facts per-stage permissions | new |
+| permissions | paths written at run time not group-0 writable | facts per-stage permissions | S4 partly |
+| permissions | `sudo` installed, setuid relied on | facts packages and commands | new (platform check above) |
+| permissions | a secret in `ENV` or `ARG` | facts (hidden) | S2 |
+| permissions | a key or credential copied in, then removed | facts copies and commands | new |
+| start | a shell-form entrypoint | facts | H2 |
+| start | no `ENTRYPOINT` or `CMD` in a runnable image | facts, catalogue | new |
+| start | an exposed port below 1024 | facts | new (platform check above) |
+| start | a path changed after a `VOLUME` declared it (the change is discarded at build) | facts steps and per-stage permissions | new |
+| start | `ENV` holding build-only values (better an `ARG`) | facts config and steps | new, information |
+
 ## The profiles
 
 Data, not code: a profile file the estate owner chooses, copies and changes (the SCC, its UID behaviour, the

@@ -18,7 +18,8 @@ Its pages:
 
 - **Summary**: how many Dockerfiles, images and locations; how deep the chains go and how many layers they carry
   (distributions); how many intermediates are unmaintained, by reason, and how many images they block; how many
-  final images run as root, bind a low port, or ship a toolchain; how many did not parse.
+  final images run as root, bind a low port, or ship a toolchain; the footprints (micro, minimal, full, distroless,
+  scratch, alpine) of the images, by their chain's root; how many did not parse.
 - **Hierarchy**: the trees from each root (an external base or the estate's own), every node a Dockerfile and its
   images, with own and total layers, created, last changed and last published, and an unmaintained mark with its
   reason; each node links to its Dockerfile's page.

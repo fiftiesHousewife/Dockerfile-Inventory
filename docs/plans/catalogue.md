@@ -100,6 +100,14 @@ without a registry still gets every Dockerfile's entry.
   `chmod` in `RUN`s, with their paths; `--chown` and `--chmod` on copies), so group-0 writability can be read off;
 - facts records these per stage (`StageGraph` grows; the shell reader already splits `RUN`s into commands).
 
+**Also asked 8 Nov: footprint.** Each image's footprint, the class of the base at the root of its chain: `micro`
+(`ubi-micro`), `minimal` (`ubi-minimal`, `fedora-minimal`, `busybox`), `full` (`ubi`, `debian`, `ubuntu`, `fedora`,
+`centos`), `distroless`, `scratch`, `alpine`, `slim`, or `unknown`; a Dockerfile built on another estate image
+takes its root's class through the hierarchy (on the combined estate 2,119 of 4,516 runnable Dockerfiles are built
+on such an image, so their own `FROM` says nothing). The mapping from base path to class ships as a settable list,
+read as the approved-bases list is. Measured 8 Nov on the combined estate by final `FROM` alone: micro 47, minimal
+641, full 729, distroless 171, scratch 150 (bundles aside), alpine 211.
+
 ## Questions
 
 1. One record per distinct Dockerfile, its locations listed (and a locations table), or one per location?
