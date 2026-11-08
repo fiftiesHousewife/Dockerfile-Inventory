@@ -57,15 +57,10 @@ class RulesRunTest {
     }
 
     @Test
-    void theFindingsTableHasOneRowPerFindingPerLocation() throws IOException {
+    void noCsvTableOrDdlIsWritten() {
         new RulesRun(discovery, null, null, null, out).run();
 
-        assertThat(Files.readAllLines(out.resolve("tables/findings.csv"))).satisfies(csv -> {
-            assertThat(csv.getFirst())
-                    .isEqualTo("rule,severity,repository,path,blob_sha,line,message,value_hash,contributing");
-            assertThat(csv).filteredOn(line -> line.startsWith("S3,")).hasSize(3);
-        });
-        assertThat(Files.readString(out.resolve("tables/ddl.sql"))).contains("CREATE TABLE findings");
+        assertThat(out.resolve("tables")).doesNotExist();
     }
 
     @Test

@@ -342,7 +342,6 @@ its line.
 | File | Contents |
 | --- | --- |
 | `findings.jsonl` | One finding per rule per distinct Dockerfile, with its line where known; rules about inherited properties name the Dockerfile to change |
-| `tables/findings.csv`, `tables/ddl.sql` | One row per finding per location, for Oracle |
 | `rates.json` | Findings, files and locations per rule; the rules skipped |
 | `samples/<rule>.csv` | Up to 50 findings per rule, spread across organisations, with a `verdict` column for people to classify before any fix is enabled |
 

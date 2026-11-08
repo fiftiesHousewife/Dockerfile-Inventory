@@ -74,7 +74,7 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
                     Rule, EffectiveRule, Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
                     one class per rule (S1-S4, R1-R3, H1-H3, I1, I2); RuleSet, RulesRun, DiscoveryFiles,
-                    FindingsTable, RuleRates, Samples; renovate/ holds the Renovate preset
+                    RuleRates, Samples; renovate/ holds the Renovate preset
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
                     io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model
@@ -151,7 +151,7 @@ GHE organisations + repos ──────┴─► discovery ─► manifest.
                                      facts ◄───────┘ ─► facts.jsonl, parse-failures.jsonl, rates.json
 Artifactory REST ───────► lineage ─► images.jsonl, lineage.jsonl, links.jsonl, effective.jsonl, gaps
                 facts + lineage ─► report ─► catalogue/dockerfiles.jsonl, archetypes.jsonl, index.html and pages
-                facts + lineage ─► rules  ─► findings.jsonl, tables, samples ─► Oracle; fixes later
+                facts + lineage ─► rules  ─► findings.jsonl, rates.json, samples; fixes later
                 facts           ─► converter ─► roundtrip.jsonl, coverage.json, builder classes
 ```
 

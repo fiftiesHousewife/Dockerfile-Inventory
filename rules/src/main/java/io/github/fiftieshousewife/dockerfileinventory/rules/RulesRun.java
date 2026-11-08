@@ -57,8 +57,6 @@ final class RulesRun {
 
     private void write(List<Finding> findings, Map<String, List<Location>> locations, List<String> skipped) {
         write("findings.jsonl", jsonLines(findings));
-        write("tables/findings.csv", FindingsTable.csv(findings, locations));
-        write("tables/ddl.sql", FindingsTable.DDL);
         write("rates.json", json.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(RuleRates.of(findings, locations, skipped)));
         Samples.of(findings, locations).forEach((rule, csv) -> write("samples/" + rule + ".csv", csv));
@@ -66,7 +64,6 @@ final class RulesRun {
 
     private void write(String file, String text) {
         try {
-            Files.createDirectories(outDir.resolve("tables"));
             Files.createDirectories(outDir.resolve("samples"));
             Files.writeString(outDir.resolve(file), text, StandardCharsets.UTF_8);
         } catch (IOException e) {
