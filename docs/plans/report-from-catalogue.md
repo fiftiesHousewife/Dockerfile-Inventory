@@ -19,7 +19,9 @@ Its pages:
 - **Summary**: how many Dockerfiles, images and locations; how deep the chains go and how many layers they carry
   (distributions); how many intermediates are unmaintained, by reason, and how many images they block; how many
   final images run as root, bind a low port, or ship a toolchain; the footprints (micro, minimal, full, distroless,
-  scratch, alpine) of the images, by their chain's root; how many did not parse.
+  scratch, alpine) of the images, by their chain's root; the images over the layer limit; the images with each
+  language runtime (Java, Go, Node.js, Python) in their hierarchy, in the final image or in a build stage only;
+  the unusual steps, counted by kind; how many did not parse.
 - **Hierarchy**: the trees from each root (an external base or the estate's own), every node a Dockerfile and its
   images, with own and total layers, created, last changed and last published, and an unmaintained mark with its
   reason; each node links to its Dockerfile's page.

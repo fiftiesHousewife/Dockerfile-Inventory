@@ -108,6 +108,24 @@ on such an image, so their own `FROM` says nothing). The mapping from base path 
 read as the approved-bases list is. Measured 8 Nov on the combined estate by final `FROM` alone: micro 47, minimal
 641, full 729, distroless 171, scratch 150 (bundles aside), alpine 211.
 
+**Also asked 8 Nov: unusual steps, too many layers, language runtimes.**
+
+- **Unusual steps**: every step that is neither the everyday instructions (`FROM`, `RUN`, `COPY`, `ENV`, `ARG`,
+  `LABEL`, `WORKDIR`, `USER`, `EXPOSE`, `ENTRYPOINT`, `CMD`) nor their everyday forms: `ADD` (above all of a URL or
+  Git repository), `ONBUILD`, `SHELL`, `HEALTHCHECK`, `VOLUME`, `STOPSIGNAL`, `RUN` in exec form, with a heredoc or
+  with `--mount`, `--network` or `--security`, `COPY --link`, `--parents` or `--exclude`, and a `SHELL` that is not
+  `sh`. Each listed with its stage and form, so the catalogue can be searched for them and the report can count
+  them; facts adds each stage's instructions by keyword and form.
+- **Too many layers**: an image's total layers (from the registry's config where lineage read it, else the layers
+  its chain's Dockerfiles declare), its own and its ancestors' share, flagged above a limit (`LAYER_LIMIT`, default
+  40, as a setting; overlay storage refuses 128).
+- **Language runtimes in the hierarchy**: Java, Go, Node.js and Python (a settable list of each runtime's evidence),
+  found in a base's name (`openjdk`, `eclipse-temurin`, `ubi9/openjdk-21`, `golang`, `go-toolset`, `node`,
+  `nodejs-20`, `python`, `python-311`), in packages installed (`java-*-openjdk*`, `golang`, `nodejs`, `python3*`) or
+  in the environment (`JAVA_HOME`, `GOPATH`, `NODE_VERSION`, `PYTHON_VERSION`). Each runtime says where it is: in the
+  final image, only in a build stage (a Go builder's compiler does not reach the image), or inherited from an
+  ancestor, named with the evidence, so "every image with Java in its hierarchy" is one search.
+
 ## Questions
 
 1. One record per distinct Dockerfile, its locations listed (and a locations table), or one per location?

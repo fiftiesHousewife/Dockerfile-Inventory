@@ -48,8 +48,8 @@ facts/              stage 1: blobs -> rewrite-docker -> ImageFacts, steps, norma
                     FactsParser (parse, verdict), Templates
                     FactExtractor (entry), StageScan, StageEnd, RunTally, RunScripts, BaseImages, BuildKitFeatures,
                     ArgumentText; Steps (the final image's steps, lineage's normal form); FinalConfig (ImageConfig: the
-                    final image's configuration, secrets hidden) and StageGraph (ImageStage: per stage its counts, StageCopies'
-                    CopyFacts and StagePermissions' PermissionChanges), for the catalogue
+                    final image's configuration, secrets hidden) and StageGraph (ImageStage: per stage its counts,
+                    StageCopies' CopyFacts and StagePermissions' PermissionChanges), for the catalogue
                     ShellTokeniser (entry): ShellWords, ShellScan, ShellQuotes, ShellSubstitutions, ShellToken
                     (characters to words), ShellCommands, ShellCommand, ShellKeywords (words to commands)
                     PackageCalls; shared text: Continuations, KeyValuePairs, Expansions; NormalForms; FactsRun
@@ -113,8 +113,8 @@ Each module's run entry point is its `...Main`; the README lists their settings.
 ./gradlew imageRoundTrip                          # tag image-roundtrip: chosen Dockerfiles built twice (Docker)
 ```
 
-Bulk checks are JUnit tests tagged `roundtrip` or `image-roundtrip`, never scripts: `test` and `check` leave them out, and each
-skips with its reason when its input (an estate on disk, Docker) is missing. Their expectations are in
+Bulk checks are JUnit tests tagged `roundtrip` or `image-roundtrip`, never scripts: `test` and `check` leave them
+out, and each skips with its reason when its input (an estate on disk, Docker) is missing. Their expectations are in
 `converter/src/test/resources/estate/`.
 
 Inside Claude Code's sandbox use `./gradlew-claude` (gitignored; copy it from another checkout if missing): the
