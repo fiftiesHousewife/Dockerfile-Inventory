@@ -86,7 +86,9 @@ Questions (8 Nov):
 Answers (8 Nov): the archetype leaves the entry (it stays in the report and `archetypes.json`); 5, unmaintained is
 any of: not rebuilt on its updated base (its parent published after it was built), not published for longer than
 a threshold (default 12 months, a setting), its repository archived; 6, discovery fetches each Dockerfile's last
-commit date up to the scanned commit (GraphQL, batched per repository, kept by blob).
+commit date up to the scanned commit (GraphQL, batched per repository, kept by blob); 7, one entry per Dockerfile,
+the images it built attached, each with its chain to the root, layers, times and `blockedBy`, so an estate read
+without a registry still gets every Dockerfile's entry.
 
 **Also asked 8 Nov: complexity, permissions and provenance.** Per stage, so a multi-stage build reads as a graph:
 
