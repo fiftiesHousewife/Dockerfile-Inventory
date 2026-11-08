@@ -25,8 +25,8 @@ build-logic/        included build: the inventory.java convention plugin (toolch
                     SpotBugs), inventory.vendored (the same for copied code, without -Werror and SpotBugs, generated
                     code out of coverage), inventory.published (a Maven Central bundle, built and verified in check)
                     and inventory.dependency-updates (verifyUpToDate); every module applies inventory.java, except
-                    parser, which applies inventory.vendored; parser, dsl and reader also apply inventory.published (built
-                    for and tested on Java 21)
+                    parser, which applies inventory.vendored; parser, dsl and reader also apply inventory.published
+                    (built for and tested on Java 21)
 gradle/             libs.versions.toml, the one version catalogue
 parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docker 8.90.4 (Apache 2.0), packages
                     io.github.fiftieshousewife.dockerfile.parser (.tree, .internal, .internal.grammar), published
@@ -85,7 +85,8 @@ dsl/                stage 4: the Dockerfile model and the one renderer; no OpenR
                     ImageBuilder (the fluent API) over InstructionBuilder, MetadataInstructionBuilder,
                     FileInstructionBuilder (AddSources), Built, Checks; Draft, FinalStage, RunMerge;
                     Policy, PolicyCheck, UncleanedInstalls, PolicyViolation
-reader/             Dockerfile text -> model, published as dockerfile-reader (io.github.fiftieshousewife.dockerfile.reader)
+reader/             Dockerfile text -> model, published as dockerfile-reader
+                    (package io.github.fiftieshousewife.dockerfile.reader)
                     DockerfileReader (entry), Conversion (the model and its comments); Convert (dispatch),
                     ConvertPairs, ConvertCopy, ConvertAdd, ConvertCommands, ConvertMetadata, Printed, Pairs
                     internal/ (not API; facts, rules and the converter use it): ShellTokeniser (entry): ShellWords,
