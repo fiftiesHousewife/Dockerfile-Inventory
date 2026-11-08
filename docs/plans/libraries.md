@@ -1,6 +1,6 @@
 # Publishing a set of libraries: plan
 
-Status: planned 8 Nov; questions open.
+Status: planned 8 Nov; questions answered 8 Nov.
 
 ## Why
 
@@ -32,12 +32,39 @@ the modules beside them, a Java 25 baseline, and a release script for the parser
 
 L1 decides L3, L4, L7 and L10; L13 can happen any time before L14.
 
+## What the answers settle
+
+- **The set**: `dockerfile-parser` (the `parser` module, 1.0.0) and `dockerfile-model` (the `dsl` module, packages
+  `io.github.fiftieshousewife.dockerfile.model`, first 0.1.0); the converter stays a pipeline module.
+- **Versions**: one each, `inventory.parserVersion` and `inventory.modelVersion`, released apart, tags
+  `dockerfile-parser-v<version>` and `dockerfile-model-v<version>`.
+- **Java**: both libraries compiled with `--release 21` and their tests run on a 21 toolchain; every other module
+  stays on 25.
+- **`Instruction`**: each instruction's record top-level in its own file (`Copy`, `Add`, `Run`, ...), still the
+  sealed interface's permitted types, before 0.1.0.
+- **What leaves `dsl`'s API**: `Secrets` (shared by facts, rules, report and the converter) moves to a small module
+  that is not published; `Built`'s raw instructions and anything else only the converter needs move to an unexported
+  package of the model.
+
 ## Tests, in order
 
-To be written once the questions are answered. The expected shape: a module descriptor per library that the build
-compiles and the tests run against (so an unexported type is unreachable); the published modules compiled at the
-chosen release; each README example as a test; the japicmp check in `check`; each bundle verified in `check`; the
-release task's dry run writing every bundle and its tag names without uploading.
+One assertion each, several in `assertAll`.
+
+1. Licence: the root `LICENSE` and `NOTICE` in each published jar (the bundle check grows to look).
+2. `Secrets` in its own unpublished module; its users' tests unchanged. Then the package rename of `dsl` to
+   `dockerfile.model`, a refactor with every test green and the converter's goldens byte for byte the same.
+3. The `Instruction` split, a refactor: renderer goldens and the converter's round trip byte for byte the same.
+4. Module descriptors: `module-info.java` for both libraries, exporting only their API; a test from outside the
+   module that an unexported type cannot be reached.
+5. `--release 21`: both libraries compile and their tests pass on 21; what uses a newer feature is rewritten, each
+   with its test.
+6. Doclint on for both; the missing Javadoc written.
+7. `inventory.published` on `dockerfile-model`, its POM and bundle verified in `check`.
+8. japicmp in `check` for each library against its last release (none yet: the check runs once a release exists).
+9. A Gradle release task replacing `scripts/release-parser.sh`: its dry run in `check` writes both signed (or, without
+   a key, unsigned) bundles and names the tags; the upload only with the Portal token in the environment.
+10. Each library's README example compiled and run as a test.
+11. After the owner's Central setup: both released, then used from a project outside this repository on Java 21.
 
 ## Questions
 
@@ -51,3 +78,6 @@ release task's dry run writing every bundle and its tag names without uploading.
    or a name that leads with the builder?
 6. `Instruction`: split it (each instruction's record and its builder methods apart) before the first release, or
    keep it as it is?
+
+Answers (8 Nov): 1, the parser and `dsl`; 2, one version each; 3, Java 21; 4, `dockerfile-model` at 0.1.0, the parser
+at 1.0.0; 5, `dockerfile-model`, package `io.github.fiftieshousewife.dockerfile.model`; 6, split `Instruction` first.
