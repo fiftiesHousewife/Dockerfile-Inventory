@@ -319,19 +319,22 @@ export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
 export OPT_IN=/data/opt-in.txt                # optional: owner/repo per line; only these get classes
 export ALLOW_LIST=/data/approved-bases.csv    # optional: approved bases, for the TODO list
 export OUT_DIR=/data/converter
+export JAVA_ROUND_TRIP=true                   # default; false skips compiling a class per Dockerfile
 ./gradlew :converter:run
 ```
 
 Every distinct Dockerfile is converted to the builder model faithfully, so the generated class reproduces the
 image as it is, and is checked by a round trip: the rendered conversion must parse back to the same model and
 have the same instructions as the original. A Dockerfile that already uses heredocs or `RUN --mount` is rendered
-for a builder that has them. Policy breaches become `// TODO(<rule>)` comments, for later fixes.
+for a builder that has them. Policy breaches become `// TODO(<rule>)` comments, for later fixes. Then every
+Dockerfile that passed has its class generated, compiled and run, and passes the Java round trip when the class
+builds the same model and so the same Dockerfile.
 
 | File | Contents |
 | --- | --- |
 | `generated/images/<owner>/<Name>Image.java` | One builder class per opted-in Dockerfile that passed the round trip |
-| `roundtrip.jsonl` | Each Dockerfile, whether it passed, and the first difference when not |
-| `coverage.json` | Typed instructions over all instructions per Dockerfile, and how often each reason left an instruction untyped |
+| `roundtrip.jsonl` | Each Dockerfile, whether it passed, and the first difference when not; with the Java round trip, `javaPassed` and `javaDifference` |
+| `coverage.json` | Typed instructions over all instructions per Dockerfile, how often each reason left an instruction untyped, and `javaRoundTrip`: classes that rebuilt their Dockerfile, of those tried |
 
 ## Contributing
 

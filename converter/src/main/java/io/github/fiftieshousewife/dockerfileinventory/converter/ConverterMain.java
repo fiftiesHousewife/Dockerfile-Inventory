@@ -16,8 +16,19 @@ public final class ConverterMain {
     public static void main(String[] args) {
         Path out = Path.of(required("OUT_DIR", System.getenv("OUT_DIR")));
         new ConverterRun(Path.of(required("DISCOVERY_DIR", System.getenv("DISCOVERY_DIR"))),
-                optional(System.getenv("OPT_IN")), optional(System.getenv("ALLOW_LIST")), out).run();
+                optional(System.getenv("OPT_IN")), optional(System.getenv("ALLOW_LIST")), out,
+                javaRoundTrip(System.getenv("JAVA_ROUND_TRIP"))).run();
         System.out.println("Conversions written to " + out);
+    }
+
+    static boolean javaRoundTrip(String value) {
+        if (value == null || value.isBlank() || value.equals("true")) {
+            return true;
+        }
+        if (value.equals("false")) {
+            return false;
+        }
+        throw new IllegalStateException("JAVA_ROUND_TRIP is true or false, not " + value);
     }
 
     static Path optional(String value) {

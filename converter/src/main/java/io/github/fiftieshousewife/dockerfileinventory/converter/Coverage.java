@@ -11,6 +11,7 @@ final class Coverage {
 
     private final Map<String, Double> images = new TreeMap<>();
     private final Map<String, Integer> rawReasons = new TreeMap<>();
+    private Map<String, Integer> javaRoundTrip;
 
     void add(String blobSha, Conversion conversion) {
         images.put(blobSha, of(conversion));
@@ -21,7 +22,15 @@ final class Coverage {
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("images", images);
         summary.put("rawReasons", rawReasons);
+        if (javaRoundTrip != null) {
+            summary.put("javaRoundTrip", javaRoundTrip);
+        }
         return json.writerWithDefaultPrettyPrinter().writeValueAsString(summary);
+    }
+
+    void javaRoundTrip(int passed, int of) {
+        javaRoundTrip = new LinkedHashMap<>(Map.of("passed", passed));
+        javaRoundTrip.put("of", of);
     }
 
     static double of(Conversion conversion) {

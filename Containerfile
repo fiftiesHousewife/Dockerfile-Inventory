@@ -19,7 +19,7 @@ RUN INVENTORY_MIRROR="${INVENTORY_MIRROR}" ./gradlew --no-daemon -q -x verifyUpT
            cp -r "$stage/build/install/$stage" /opt/inventory/; \
        done \
     && modules=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 25 \
-           --class-path '/opt/inventory/*/lib/*' /opt/inventory/*/lib/*.jar),jdk.crypto.ec,jdk.localedata \
+           --class-path '/opt/inventory/*/lib/*' /opt/inventory/*/lib/*.jar),jdk.crypto.ec,jdk.localedata,jdk.compiler \
     && jlink --add-modules "$modules" --strip-debug --no-man-pages --no-header-files --compress zip-6 \
            --output /opt/jre
 

@@ -1,6 +1,6 @@
 # Completing the DSL: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 next.
+Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4 next.
 
 The owner asked for the DSL to be made completely ready. It works: an immutable model, one renderer, policy-enforcing
 builders, four goldens passing every rule, and a converter that round-trips 5,149 of the combined estate's 5,250 files
@@ -186,6 +186,14 @@ fails a model that differs, and reports a class that does not compile; `Converte
 coverage count, and leaves them out when the setting is off; `ConverterMain` reads the setting and refuses a bad
 value. Measured: the Java pass count equals the text pass count (5,149) on the combined estate; any difference is
 a bug in `JavaEmitter` or the builders, fixed test first.
+
+### S3 as built
+
+As designed. On the combined estate every one of the 5,149 Dockerfiles that pass the text round trip has its
+class generated, compiled in one in-memory compilation, loaded and run, and every class builds the same model:
+`javaRoundTrip: {passed: 5149, of: 5149}`; the whole converter run, compilation included, takes about 16 seconds.
+No fault was left for S3 to find: the compiled-class test already caught the one (`Map.ofEntries` losing order)
+while S1 was being built.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

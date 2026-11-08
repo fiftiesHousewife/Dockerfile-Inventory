@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.dsl.Policy;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsParser;
@@ -52,7 +53,7 @@ class ConverterRunTest {
 
     @Test
     void passingDockerfilesInOptedInRepositoriesGetAClassAndFailuresARowWithTheirDifference() throws IOException {
-        new ConverterRun(discovery, lists.resolve("opt-in.txt"), null, out).run();
+        new ConverterRun(discovery, lists.resolve("opt-in.txt"), null, out, false).run();
 
         List<JsonNode> rows = Files.readAllLines(out.resolve("roundtrip.jsonl")).stream().map(JSON::readTree).toList();
         String generated = Files.readString(out.resolve("generated/images/payments/PaymentsApiImage.java"));
@@ -69,7 +70,7 @@ class ConverterRunTest {
 
     @Test
     void coverageIsTypedInstructionsOverAllPerImageWithAHistogramOfRawReasons() {
-        new ConverterRun(discovery, null, null, out).run();
+        new ConverterRun(discovery, null, null, out, false).run();
 
         JsonNode coverage = JSON.readTree(out.resolve("coverage.json").toFile());
         SoftAssertions.assertSoftly(softly -> {
@@ -81,20 +82,42 @@ class ConverterRunTest {
     }
 
     @Test
+    void withTheJavaRoundTripEachPassingDockerfileSaysWhetherItsClassRebuildsItAndCoverageCountsThem()
+            throws IOException {
+        new ConverterRun(discovery, null, null, out, true).run();
+
+        List<JsonNode> rows = Files.readAllLines(out.resolve("roundtrip.jsonl")).stream().map(JSON::readTree).toList();
+        JsonNode coverage = JSON.readTree(out.resolve("coverage.json").toFile());
+        assertAll(
+                () -> assertThat(rows).extracting(r -> r.path("blobSha").asString() + "=" + r.path("javaPassed"))
+                        .containsExactlyInAnyOrder("good=true", "elsewhere=true", "odd-digest=", "bad="),
+                () -> assertThat(coverage.path("javaRoundTrip").toString()).isEqualTo("{\"passed\":2,\"of\":2}"));
+    }
+
+    @Test
+    void withoutTheJavaRoundTripNoRowOrCoverageMentionsIt() throws IOException {
+        new ConverterRun(discovery, null, null, out, false).run();
+
+        assertAll(
+                () -> assertThat(Files.readString(out.resolve("roundtrip.jsonl"))).doesNotContain("java"),
+                () -> assertThat(Files.readString(out.resolve("coverage.json"))).doesNotContain("java"));
+    }
+
+    @Test
     void aDockerfileThatDoesNotParseIsARowSayingSo() {
-        ConverterRun run = new ConverterRun(discovery, null, null, out);
+        ConverterRun run = new ConverterRun(discovery, null, null, out, false);
 
         ConverterRun.Row row = run.row(new FactsParser(), discovery.resolve("blobs/bad"), new Coverage(),
                 new GeneratedClasses(Set.of(), Map.of(), Policy.of(List.of()), false, new RunFiles(discovery, out)));
 
-        assertThat(row).isEqualTo(new ConverterRun.Row("bad", false, "the Dockerfile does not parse"));
+        assertThat(row).isEqualTo(new ConverterRun.Row("bad", false, "the Dockerfile does not parse", null, null));
     }
 
     @Test
     void jsonLinesIsOneObjectPerLineEndingInANewlineUnlessThereAreNone() {
-        ConverterRun run = new ConverterRun(discovery, null, null, out);
+        ConverterRun run = new ConverterRun(discovery, null, null, out, false);
 
-        assertThat(run.jsonLines(List.of(new ConverterRun.Row("a", true, null))))
+        assertThat(run.jsonLines(List.of(new ConverterRun.Row("a", true, null, null, null))))
                 .isEqualTo("{\"blobSha\":\"a\",\"passed\":true,\"difference\":null}\n");
         assertThat(run.jsonLines(List.of())).isEmpty();
     }
