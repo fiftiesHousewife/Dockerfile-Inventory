@@ -23,6 +23,15 @@ tasks.named<Jar>("jar") {
     }
 }
 
+// Libraries are built for the LTS users run, and tested on it; the pipeline's own modules stay on the newest.
+val libraryRelease = providers.gradleProperty("inventory.libraryRelease").orElse("21").get().toInt()
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(libraryRelease)
+}
+tasks.withType<Test>().configureEach {
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libraryRelease)) })
+}
+
 val central = layout.buildDirectory.dir("central")
 
 publishing {
