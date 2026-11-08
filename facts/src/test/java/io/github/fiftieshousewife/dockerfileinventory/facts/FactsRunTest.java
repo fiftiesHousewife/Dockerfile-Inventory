@@ -48,6 +48,15 @@ class FactsRunTest {
     }
 
     @Test
+    void eachFactsRowCarriesTheFinalImagesConfigurationAndItsStages() throws IOException {
+        new FactsRun(discovery, out).run();
+
+        assertThat(Files.readAllLines(out.resolve("facts.jsonl"))).singleElement()
+                .satisfies(line -> assertThat(line).contains("\"config\":{\"workdir\":null").contains("\"layers\":1")
+                        .contains("\"stages\":[{\"name\":null,\"base\":{\"name\":\"ubi9/ubi-minimal\""));
+    }
+
+    @Test
     void aRerunParsesNothingAlreadyRecorded() throws IOException {
         new FactsRun(discovery, out).run();
 

@@ -47,7 +47,8 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
 facts/              stage 1: blobs -> rewrite-docker -> ImageFacts, steps, normal-form hashes, rates
                     FactsParser (parse, verdict), Templates
                     FactExtractor (entry), StageScan, StageEnd, RunTally, RunScripts, BaseImages, BuildKitFeatures,
-                    ArgumentText; Steps (the final image's steps, lineage's normal form)
+                    ArgumentText; Steps (the final image's steps, lineage's normal form); FinalConfig (ImageConfig: the
+                    final image's configuration, secrets hidden) and StageGraph (ImageStage), for the catalogue
                     ShellTokeniser (entry): ShellWords, ShellScan, ShellQuotes, ShellSubstitutions, ShellToken
                     (characters to words), ShellCommands, ShellCommand, ShellKeywords (words to commands)
                     PackageCalls; shared text: Continuations, KeyValuePairs, Expansions; NormalForms; FactsRun

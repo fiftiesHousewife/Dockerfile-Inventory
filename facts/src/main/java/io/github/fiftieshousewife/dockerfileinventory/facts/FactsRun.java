@@ -18,10 +18,11 @@ import tools.jackson.databind.json.JsonMapper;
 final class FactsRun {
 
     record FactRow(String blobSha, String textHash, String signatureHash, String signature, ImageFacts facts,
-                   List<Step> steps, String fromPath, boolean retried) {
+                   List<Step> steps, String fromPath, boolean retried, ImageConfig config, List<ImageStage> stages) {
 
         FactRow {
             steps = steps == null ? List.of() : List.copyOf(steps);
+            stages = stages == null ? List.of() : List.copyOf(stages);
         }
     }
 
@@ -74,7 +75,8 @@ final class FactsRun {
                 ImageFacts facts = FactExtractor.extract(result.file());
                 append("facts.jsonl", new FactRow(sha, NormalForms.textHash(text), NormalForms.signatureHash(facts),
                         NormalForms.signature(facts), facts, Steps.of(result.file()),
-                        NormalForms.fromPath(facts.base()), result.retried()));
+                        NormalForms.fromPath(facts.base()), result.retried(), FinalConfig.of(result.file()),
+                        StageGraph.of(result.file())));
                 yield true;
             }
             case ParseResult.Failed result -> {

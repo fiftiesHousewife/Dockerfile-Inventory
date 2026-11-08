@@ -10,7 +10,7 @@ class RatesTest {
 
     private static FactsRun.FactRow row(String blobSha, String dockerfile) {
         return new FactsRun.FactRow(blobSha, "t", "s", "sig", FactExtractorTest.facts(dockerfile), List.of(), null,
-                false);
+                false, null, List.of());
     }
 
     @Test

@@ -65,6 +65,8 @@ from lineage where a registry was read, and otherwise inferred, each inferred li
 values shown, a secret-shaped value or one under a secret's name `(hidden)` with its hash; 4, in `report` (answered
 with the validator's plan, whose stage reads the facts and lineage directly).
 
+Progress: step 1 done 8 Nov (`FinalConfig`, `StageGraph`, both on each facts row; `facts` depends on `dsl`).
+
 ## Tests, in order
 
 One assertion each, several in `assertAll`; Dockerfile fixtures are real files, trimmed.
