@@ -1,7 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
+import io.github.fiftieshousewife.dockerfileinventory.secrets.Secrets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

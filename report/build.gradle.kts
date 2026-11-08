@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":dsl"))
+    implementation(project(":secrets"))
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
 }

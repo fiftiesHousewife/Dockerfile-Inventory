@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     implementation(project(":facts"))
-    implementation(project(":dsl"))
+    implementation(project(":secrets"))
     implementation(platform(libs.rewrite.bom))
     implementation(libs.rewrite.core)
     implementation(project(":parser"))

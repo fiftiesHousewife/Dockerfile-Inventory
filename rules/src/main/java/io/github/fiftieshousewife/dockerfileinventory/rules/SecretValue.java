@@ -1,6 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
+import io.github.fiftieshousewife.dockerfileinventory.secrets.Secrets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

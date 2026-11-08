@@ -1,6 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
+import io.github.fiftieshousewife.dockerfileinventory.secrets.Secrets;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;

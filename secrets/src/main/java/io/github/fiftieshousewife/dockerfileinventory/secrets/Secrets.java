@@ -1,4 +1,4 @@
-package io.github.fiftieshousewife.dockerfileinventory.dsl;
+package io.github.fiftieshousewife.dockerfileinventory.secrets;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -9,8 +9,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * What counts as a secret, shared by rule S2 and the report (which must never write one out). Here, not in rules,
- * because the report depends on no module that imports OpenRewrite.
+ * What counts as a secret, shared by facts, rule S2 and the report, none of which may ever write one out.
  */
 public final class Secrets {
 

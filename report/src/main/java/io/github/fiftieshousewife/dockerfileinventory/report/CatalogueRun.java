@@ -1,6 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Secrets;
+import io.github.fiftieshousewife.dockerfileinventory.secrets.Secrets;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
