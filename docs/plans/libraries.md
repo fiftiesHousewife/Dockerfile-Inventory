@@ -14,7 +14,8 @@ execution context. F4 dropped: the one round trip it rested on is a `RUN --mount
 command, which Docker rejects too; the default target stays conservative, since the builder that will read the
 Dockerfile may be an older Buildah, and the converter already picks the target from the Dockerfile's own features. F3, `dockerfile-reader`: the converter's reading half and facts' shell reader and text
 helpers moved into a `reader` module (`DockerfileReader.read`, `Conversion`; the helpers in `.internal`, not API),
-Jackson an implementation dependency for JSON arrays (to revisit); the converter's output byte for byte the same.
+Jackson an implementation dependency for JSON arrays (to revisit); the converter's output byte for byte the same. Step 10, a README for each library whose example is a
+test, line for line; the root README lists them.
 
 ## Why
 
