@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -106,5 +107,30 @@ class RegistryImagesTest {
 
     private static JsonNode json(String text) {
         return new ObjectMapper().readTree(text);
+    }
+
+    @Test
+    void aConfigIsReadFromTheLineageDirectoryAndIsEmptyWhenAbsent() {
+        assertAll(
+                () -> assertThat(RegistryImages.config(LINEAGE, PYTHON).path("rootfs").isObject()).isTrue(),
+                () -> assertThat(RegistryImages.config(LINEAGE, "sha256:absent").isEmpty()).isTrue());
+    }
+
+    @Test
+    void eachImagesParentIsReadAndTheRootHasNone() {
+        Map<String, String> parents = RegistryImages.parents(LINEAGE.resolve("lineage.jsonl"));
+
+        assertAll(
+                () -> assertThat(parents).containsEntry(PYTHON, S2I_BASE),
+                () -> assertThat(parents).doesNotContainKey(
+                        "sha256:cdc65e3dc1b675127b1e26ef79884f63cae4c46c00a89f0c18cb5c617bec62c8"));
+    }
+
+    @Test
+    void theNewestOfSeveralTimesIsTheLatestInstantWithMissingOnesIgnored() {
+        assertAll(
+                () -> assertThat(RegistryImages.newest(Arrays.asList("2026-01-01T00:00:00Z", null,
+                        "2026-11-06T18:18:06.098Z"))).isEqualTo("2026-11-06T18:18:06.098Z"),
+                () -> assertThat(RegistryImages.newest(List.of())).isNull());
     }
 }

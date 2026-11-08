@@ -59,7 +59,7 @@ public final class Secrets {
         return secret(name, value) ? "(hidden " + hash(value) + ")" : value;
     }
 
-    private static String hash(String value) {
+    static String hash(String value) {
         try {
             return "sha256:" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                     .digest(value.getBytes(StandardCharsets.UTF_8)));

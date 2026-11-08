@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tools.jackson.databind.node.BooleanNode;
 
 class ConversionsTest {
 
@@ -52,5 +53,12 @@ class ConversionsTest {
     void aDifferenceWithoutASecretIsShownAsItIs() {
         assertThat(Conversions.shown("step 2 differs: USER 1001 became USER 0")).isEqualTo(
                 "step 2 differs: USER 1001 became USER 0");
+    }
+
+    @Test
+    void aRoundTripIsPassedOrFailed() {
+        assertAll(
+                () -> assertThat(Conversions.outcome(BooleanNode.TRUE)).isEqualTo("passed"),
+                () -> assertThat(Conversions.outcome(BooleanNode.FALSE)).isEqualTo("failed"));
     }
 }

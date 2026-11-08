@@ -87,7 +87,7 @@ final class RegistryImages {
         return newest(images.stream().map(RegistryImage::lastPushed).toList());
     }
 
-    private static Map<String, String> parents(Path lineage) {
+    static Map<String, String> parents(Path lineage) {
         Map<String, String> parents = new HashMap<>();
         JsonLines.read(lineage).stream().filter(row -> "Of".equals(row.path("parent").path("kind").asString()))
                 .forEach(row -> parents.put(row.path("configDigest").asString(),
@@ -108,7 +108,7 @@ final class RegistryImages {
         return credited ? new Linked(shas, List.of()) : new Linked(List.of(), shas);
     }
 
-    private static JsonNode config(Path lineageDir, String digest) {
+    static JsonNode config(Path lineageDir, String digest) {
         Path file = lineageDir.resolve("configs").resolve(digest.replace(':', '_') + ".json");
         try {
             return Files.exists(file) ? JSON.readTree(Files.readString(file)) : JSON.createObjectNode();
@@ -121,7 +121,7 @@ final class RegistryImages {
         return tag.path("image").asString() + ":" + tag.path("tag").asString();
     }
 
-    private static String newest(List<String> times) {
+    static String newest(List<String> times) {
         return times.stream().filter(time -> time != null).max(Comparator.comparing(Instant::parse)).orElse(null);
     }
 }

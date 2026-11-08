@@ -146,7 +146,7 @@ final class Hierarchies {
         return image.layers() == null || inherited == null ? null : image.layers() - inherited;
     }
 
-    private Layers limited(int own, int inherited, String counted) {
+    Layers limited(int own, int inherited, String counted) {
         return new Layers(own, inherited, own + inherited, counted, own + inherited > layerLimit);
     }
 }

@@ -192,4 +192,13 @@ class HierarchiesTest {
                 () -> assertThat(labels.get("org.label-schema.vendor").source()).isEqualTo("ancestor"),
                 () -> assertThat(labels.get("io.buildah.version").source()).isEqualTo("unknown"));
     }
+
+    @Test
+    void layersAreOverTheLimitOnlyAboveIt() {
+        Hierarchies hierarchies = hierarchies(Map.of(), 40);
+
+        assertAll(
+                () -> assertThat(hierarchies.limited(30, 10, "declared").overLimit()).isFalse(),
+                () -> assertThat(hierarchies.limited(30, 11, "declared").overLimit()).isTrue());
+    }
 }
