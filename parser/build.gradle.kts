@@ -22,6 +22,8 @@ tasks.jar {
     manifest {
         attributes(
             "Implementation-Title" to "Dockerfile Parser",
+            // rewrite-core declares no module name, so the parser cannot be a named module that requires it.
+            "Automatic-Module-Name" to "io.github.fiftieshousewife.dockerfile.parser",
             "Implementation-Version" to version,
             "Based-On" to "org.openrewrite:rewrite-docker:8.90.4@398a6349648ca802aa050bdb6fe45a99395dce47",
         )

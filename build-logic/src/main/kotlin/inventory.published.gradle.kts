@@ -96,6 +96,10 @@ val verifyBundle by tasks.registering {
             listOf("META-INF/LICENSE", "META-INF/NOTICE").forEach {
                 check(jar.getEntry(it) != null) { "the jar lacks $it" }
             }
+            val manifest = jar.getInputStream(jar.getEntry("META-INF/MANIFEST.MF")).reader().readText()
+            check(jar.getEntry("module-info.class") != null || manifest.contains("Automatic-Module-Name:")) {
+                "the jar is neither a module nor names one (Automatic-Module-Name)"
+            }
         }
     }
 }

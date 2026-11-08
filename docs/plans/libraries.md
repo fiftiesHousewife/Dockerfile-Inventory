@@ -1,7 +1,7 @@
 # Publishing a set of libraries: plan
 
 Status: planned 8 Nov; questions answered 8 Nov. Done: step 1, the licence; step 2, `Secrets` in its own module and `dsl` renamed to
-`io.github.fiftieshousewife.dockerfile.model` (the estate round trip unchanged); step 3, `Instruction` split into a record per file.
+`io.github.fiftieshousewife.dockerfile.model` (the estate round trip unchanged); step 3, `Instruction` split into a record per file; step 4, module names.
 
 ## Why
 
@@ -63,6 +63,14 @@ Docker too. What a library user would still miss:
   model stays dependency-free and the Java builder generation stays internal. First version 0.1.0.
 - **F4, the default render target**: BuildKit's features (heredocs, `RUN --mount`) allowed by default, the older
   syntax a choice; the one bind-mount round trip that fails today fails on the narrow default.
+
+## Found on the way
+
+- Step 4 (8 Nov): `rewrite-core` declares no module name, so Gradle keeps it on the classpath and a named module
+  cannot require it, short of a name derived from its file, which Maven warns against. The parser therefore names
+  its module in its manifest (`Automatic-Module-Name: io.github.fiftieshousewife.dockerfile.parser`) and its
+  `.internal` packages are internal by name only; `dockerfile-model` is a full named module exporting its one
+  package. The bundle check requires one or the other of every published jar.
 
 ## Tests, in order
 
