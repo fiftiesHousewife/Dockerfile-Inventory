@@ -1,0 +1,86 @@
+package io.github.fiftieshousewife.dockerfileinventory.report;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+// The summary's numbers for a set of catalogue entries: the estate or one organisation.
+record EstateFigures(int dockerfiles, int unparsed, int locations, int images, int organisations,
+                     Map<Integer, Integer> depths, Map<String, Integer> layerBands, int overLimit, int root,
+                     int lowPort, int toolchain, Map<String, Integer> footprints, Map<String, Integer> runtimes,
+                     Map<String, Integer> unusual, Map<String, Integer> unmaintained, int blockedImages) {
+
+    private static final Pattern TOOLCHAIN = Pattern.compile(
+            "gcc|gcc-c\\+\\+|g\\+\\+|make|cmake|git|binutils|build-essential|golang|maven|gradle|.*-devel|.*-dev");
+
+    static EstateFigures of(List<CatalogueEntry> entries) {
+        List<CatalogueEntry> parsed = entries.stream().filter(e -> e.parseError() == null).toList();
+        List<Hierarchies.BuiltImage> images = parsed.stream().flatMap(e -> e.hierarchy().images().stream()).toList();
+        return new EstateFigures(parsed.size(), entries.size() - parsed.size(),
+                entries.stream().mapToInt(e -> e.locations().size()).sum(), images.size(),
+                (int) entries.stream().map(CatalogueView::organisation).distinct().count(),
+                tally(parsed.stream().map(e -> e.links().depth()).toList()),
+                tally(parsed.stream().map(e -> layerBand(e.hierarchy().layers().total())).toList()),
+                (int) parsed.stream().filter(e -> e.hierarchy().layers().overLimit()).count(),
+                (int) parsed.stream().filter(e -> "ROOT".equals(e.image().userKind())).count(),
+                (int) parsed.stream().filter(e -> lowPort(e.image().ports())).count(),
+                (int) parsed.stream().filter(e -> toolchain(e.build())).count(),
+                tally(parsed.stream().map(e -> e.footprint().footprint()).toList()),
+                tally(parsed.stream().flatMap(e -> e.build().runtimes().stream()
+                        .map(r -> r.runtime() + " (" + r.where() + ")").distinct()).toList()),
+                tally(parsed.stream().flatMap(e -> e.build().stages().stream()
+                        .flatMap(s -> s.unusual().stream()).distinct()).toList()),
+                unmaintained(parsed, images),
+                (int) images.stream().filter(i -> !i.blockedBy().isEmpty()).count());
+    }
+
+    static Map<String, Integer> unmaintained(List<CatalogueEntry> parsed, List<Hierarchies.BuiltImage> images) {
+        Map<String, Set<String>> byReason = new HashMap<>();
+        images.forEach(image -> image.chain().forEach(step -> step.unmaintained().forEach(reason -> byReason
+                .computeIfAbsent(reasonKind(reason), kind -> new HashSet<>()).add(step.configDigest()))));
+        Map<String, Integer> counts = new TreeMap<>();
+        byReason.forEach((kind, steps) -> counts.put(kind, steps.size()));
+        int archived = (int) parsed.stream().filter(e -> !e.hierarchy().unmaintained().isEmpty()).count();
+        if (archived > 0) {
+            counts.put("in archived repositories only", archived);
+        }
+        return counts;
+    }
+
+    static String reasonKind(String reason) {
+        return reason.startsWith("not rebuilt") ? "not rebuilt on its updated base" : "not published for a while";
+    }
+
+    static boolean lowPort(List<String> ports) {
+        return ports.stream().map(port -> port.replaceFirst("/.*$", "").replaceFirst("-.*$", ""))
+                .filter(port -> port.matches("\\d{1,5}")).anyMatch(port -> Integer.parseInt(port) < 1024);
+    }
+
+    static boolean toolchain(CatalogueEntry.Build build) {
+        Set<Integer> finals = Set.copyOf(Runtimes.finalStages(build.stages()));
+        return build.packages().stream().anyMatch(p -> finals.contains(p.stage())
+                && TOOLCHAIN.matcher(p.name()).matches());
+    }
+
+    static String layerBand(int layers) {
+        if (layers <= 5) {
+            return "1-5";
+        }
+        if (layers <= 10) {
+            return "6-10";
+        }
+        if (layers <= 20) {
+            return "11-20";
+        }
+        return layers <= 40 ? "21-40" : "over 40";
+    }
+
+    private static <K extends Comparable<K>> Map<K, Integer> tally(List<K> values) {
+        return values.stream().collect(Collectors.toMap(v -> v, v -> 1, Integer::sum, TreeMap::new));
+    }
+}
