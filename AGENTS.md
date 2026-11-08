@@ -48,7 +48,8 @@ facts/              stage 1: blobs -> rewrite-docker -> ImageFacts, steps, norma
                     FactsParser (parse, verdict), Templates
                     FactExtractor (entry), StageScan, StageEnd, RunTally, RunScripts, BaseImages, BuildKitFeatures,
                     ArgumentText; Steps (the final image's steps, lineage's normal form); FinalConfig (ImageConfig: the
-                    final image's configuration, secrets hidden) and StageGraph (ImageStage), for the catalogue
+                    final image's configuration, secrets hidden) and StageGraph (ImageStage: per stage its counts, StageCopies'
+                    CopyFacts and StagePermissions' PermissionChanges), for the catalogue
                     ShellTokeniser (entry): ShellWords, ShellScan, ShellQuotes, ShellSubstitutions, ShellToken
                     (characters to words), ShellCommands, ShellCommand, ShellKeywords (words to commands)
                     PackageCalls; shared text: Continuations, KeyValuePairs, Expansions; NormalForms; FactsRun

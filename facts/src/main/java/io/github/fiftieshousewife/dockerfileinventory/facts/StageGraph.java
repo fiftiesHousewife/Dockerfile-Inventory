@@ -4,16 +4,13 @@ import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.openrewrite.Cursor;
 
 final class StageGraph {
-
-    private static final Pattern COPY_FROM = Pattern.compile("^COPY\\s+(?:--\\S+\\s+)*?--from=(\\S+)",
-            Pattern.CASE_INSENSITIVE);
 
     private StageGraph() {
     }
@@ -28,8 +25,8 @@ final class StageGraph {
             boolean onStage = from.getTag() == null && from.getDigest() == null && earlier.contains(image);
             Docker.From.As as = from.getAs();
             String name = as == null ? null : as.getName().getText();
-            stages.add(new ImageStage(name, onStage ? null : BaseImages.base(from, globalArgs), onStage ? image : null,
-                    copiesFrom(file, stage)));
+            stages.add(scanned(file, stage, Set.copyOf(earlier)).stage(name,
+                    onStage ? null : BaseImages.base(from, globalArgs), onStage ? image : null));
             if (name != null) {
                 earlier.add(name);
             }
@@ -37,13 +34,68 @@ final class StageGraph {
         return stages;
     }
 
-    static List<String> copiesFrom(Docker.File file, Docker.Stage stage) {
-        return stage.getInstructions().stream()
-                .filter(Docker.Copy.class::isInstance)
-                .map(copy -> COPY_FROM.matcher(Continuations.oneLine(copy.printTrimmed(new Cursor(null, file)))))
-                .filter(Matcher::find)
-                .map(matcher -> matcher.group(1))
-                .distinct()
-                .toList();
+    static Scan scanned(Docker.File file, Docker.Stage stage, Set<String> earlier) {
+        Scan scan = new Scan(earlier);
+        stage.getInstructions().stream()
+                .map(instruction -> Continuations.oneLine(instruction.printTrimmed(new Cursor(null, file))))
+                .forEach(scan::accept);
+        return scan;
+    }
+
+    static final class Scan {
+
+        private final Set<String> earlier;
+        private final List<CopyFact> copies = new ArrayList<>();
+        private final List<PermissionChange> permissions = new ArrayList<>();
+        private int instructions;
+        private int runs;
+        private int commands;
+        private int unreadRuns;
+        private int layers;
+
+        Scan(Set<String> earlier) {
+            this.earlier = earlier;
+        }
+
+        void accept(String line) {
+            instructions++;
+            String keyword = line.split("\\s+", 2)[0].toUpperCase(Locale.ROOT);
+            switch (keyword) {
+                case "RUN" -> run(script(line));
+                case "COPY", "ADD" -> copies.add(StageCopies.copy(line, earlier));
+                default -> {
+                }
+            }
+            if (keyword.equals("RUN") || keyword.equals("COPY") || keyword.equals("ADD")) {
+                layers++;
+            }
+        }
+
+        void run(String script) {
+            runs++;
+            if (script.startsWith("[")) {
+                commands++;
+                return;
+            }
+            Optional<List<List<String>>> read = ShellTokeniser.parse(script);
+            if (read.isEmpty()) {
+                unreadRuns++;
+                return;
+            }
+            commands += read.get().size();
+            permissions.addAll(StagePermissions.of(script));
+        }
+
+        ImageStage stage(String name, BaseImage base, String fromStage) {
+            return new ImageStage(name, base, fromStage, copies.stream().filter(c -> c.from() != null)
+                    .map(CopyFact::from).distinct().toList(), instructions, runs, commands, unreadRuns, layers,
+                    copies, permissions);
+        }
+
+        // The RUN's text after its keyword and flags (--mount, --network).
+        static String script(String line) {
+            String rest = line.split("\\s+", 2).length > 1 ? line.split("\\s+", 2)[1] : "";
+            return rest.replaceFirst("^(--\\S+\\s+)*", "").strip();
+        }
     }
 }
