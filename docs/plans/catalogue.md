@@ -126,6 +126,23 @@ read as the approved-bases list is. Measured 8 Nov on the combined estate by fin
   final image, only in a build stage (a Go builder's compiler does not reach the image), or inherited from an
   ancestor, named with the evidence, so "every image with Java in its hierarchy" is one search.
 
+**Also asked 8 Nov: what drives action** (all of these, not vulnerabilities):
+
+| Field | Why | Source |
+| --- | --- | --- |
+| blast radius: images and repositories descending from it | fix-once value | catalogue hierarchy |
+| release-scoped or default branch only | fix what ships first | discovery (scope) |
+| converts and round-trips | a fix can be generated and checked, not hand-edited | the converter's `roundtrip.jsonl` |
+| near-duplicate siblings | candidates for one shared base or template | the report's near-duplicate pass |
+| rebuild cadence: how often published, and how long after its base | the slow links | lineage (`images.jsonl`, pushes over time) |
+| image and layer sizes | biggest savings first | lineage (the manifests carry each layer's size) |
+| base lag: its base tag against the newest tag of that base | concrete upgrades | the registry's tag list, read by lineage |
+| owner: `CODEOWNERS`, or the repository's team | who acts | new: discovery fetches `CODEOWNERS` with the Dockerfiles |
+| used: pulls in the last 90 days | an unused image is not worth fixing | new: Artifactory's download statistics, read by lineage |
+| provenance: signed, an SBOM attached, built by a known pipeline | trust and release readiness | new: the registry's signatures and attestations; Konflux labels |
+| architectures | multi-arch readiness | the registry's image indexes, read by lineage |
+| where it runs: internet-facing, privileges asked for | exposure | the deployment manifests, a later slice (as the validator plan) |
+
 ## Questions
 
 1. One record per distinct Dockerfile, its locations listed (and a locations table), or one per location?
