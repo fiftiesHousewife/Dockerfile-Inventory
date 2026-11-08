@@ -25,8 +25,8 @@ build-logic/        included build: the inventory.java convention plugin (toolch
                     SpotBugs), inventory.vendored (the same for copied code, without -Werror and SpotBugs, generated
                     code out of coverage), inventory.published (a Maven Central bundle, built and verified in check)
                     and inventory.dependency-updates (verifyUpToDate); every module applies inventory.java, except
-                    parser, which applies inventory.vendored; parser and dsl also apply inventory.published (built for
-                    and tested on Java 21)
+                    parser, which applies inventory.vendored; parser, dsl and reader also apply inventory.published (built
+                    for and tested on Java 21)
 gradle/             libs.versions.toml, the one version catalogue
 parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docker 8.90.4 (Apache 2.0), packages
                     io.github.fiftieshousewife.dockerfile.parser (.tree, .internal, .internal.grammar), published
@@ -48,13 +48,11 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
                     vendor/ or test inputs)
 facts/              stage 1: blobs -> rewrite-docker -> ImageFacts, steps, normal-form hashes, rates
                     FactsParser (parse, verdict), Templates
-                    FactExtractor (entry), StageScan, StageEnd, RunTally, RunScripts, BaseImages, BuildKitFeatures,
-                    ArgumentText; Steps (the final image's steps, lineage's normal form); FinalConfig (ImageConfig: the
+                    FactExtractor (entry), StageScan, StageEnd, RunTally, RunScripts, BaseImages, BuildKitFeatures;
+                    Steps (the final image's steps, lineage's normal form); FinalConfig (ImageConfig: the
                     final image's configuration, secrets hidden) and StageGraph (ImageStage: per stage its counts,
                     StageCopies' CopyFacts and StagePermissions' PermissionChanges), for the catalogue
-                    ShellTokeniser (entry): ShellWords, ShellScan, ShellQuotes, ShellSubstitutions, ShellToken
-                    (characters to words), ShellCommands, ShellCommand, ShellKeywords (words to commands)
-                    PackageCalls; shared text: Continuations, KeyValuePairs, Expansions; NormalForms; FactsRun
+                    PackageCalls; NormalForms; FactsRun; the shell reader and shared text helpers come from reader
 lineage/            stage 1b: Artifactory images -> family tree -> links to Dockerfiles -> effective images, gaps
                     Artifactory (interface) / ArtifactoryHttp (endpoints, REST only, never AQL), ArtifactoryClient
                     (authorised GET, retries); Inventory -> images.jsonl, configs/; ImageNodes, ImageConfig
@@ -87,10 +85,15 @@ dsl/                stage 4: the Dockerfile model and the one renderer; no OpenR
                     ImageBuilder (the fluent API) over InstructionBuilder, MetadataInstructionBuilder,
                     FileInstructionBuilder (AddSources), Built, Checks; Draft, FinalStage, RunMerge;
                     Policy, PolicyCheck, UncleanedInstalls, PolicyViolation
-converter/          stage 5: Dockerfile -> model -> Dockerfile, and Java builder classes
-                    Convert (dispatch), ConvertPairs, ConvertCopy, ConvertAdd, ConvertCommands, ConvertMetadata,
-                    Printed, Values, Pairs, Installs, Conversion (the model and its comments), Location; RoundTrip,
-                    CanonicalSteps; JavaEmitter, BuilderCalls,
+reader/             Dockerfile text -> model, published as dockerfile-reader (io.github.fiftieshousewife.dockerfile.reader)
+                    DockerfileReader (entry), Conversion (the model and its comments); Convert (dispatch),
+                    ConvertPairs, ConvertCopy, ConvertAdd, ConvertCommands, ConvertMetadata, Printed, Pairs
+                    internal/ (not API; facts, rules and the converter use it): ShellTokeniser (entry): ShellWords,
+                    ShellScan, ShellQuotes, ShellSubstitutions, ShellToken (characters to words), ShellCommands,
+                    ShellCommand, ShellKeywords (words to commands); Continuations, KeyValuePairs, Expansions,
+                    ArgumentText, ArgPairs; Values, Installs
+converter/          stage 5: Dockerfile -> model (through reader) -> Dockerfile, and Java builder classes
+                    Location; RoundTrip, CanonicalSteps; JavaEmitter, BuilderCalls,
                     RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles; JavaRoundTrip,
                     InMemoryCompiler; Phase 5b: ImageComparisonRun (Builder; BuildahContainer, Checkouts with
                     CloneSource, Processes), DockerfileSelection, Regenerated, LocalSources, Stubs, TarListing,

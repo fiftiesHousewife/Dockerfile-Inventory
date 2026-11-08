@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.Continuations;
+import io.github.fiftieshousewife.dockerfile.reader.internal.KeyValuePairs;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfileinventory.secrets.Secrets;
 import java.util.ArrayList;

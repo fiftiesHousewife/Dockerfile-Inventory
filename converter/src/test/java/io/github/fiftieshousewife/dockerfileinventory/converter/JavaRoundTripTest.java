@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.fiftieshousewife.dockerfile.model.BaseImage;
@@ -23,14 +24,14 @@ class JavaRoundTripTest {
 
     @Test
     void aGeneratedClassThatRebuildsTheModelPasses() {
-        JavaRoundTrip.Candidate candidate = new JavaRoundTrip.Candidate(ORIGINAL, Convert.of(Parsed.of(ORIGINAL)));
+        JavaRoundTrip.Candidate candidate = new JavaRoundTrip.Candidate(ORIGINAL, DockerfileReader.read(Parsed.of(ORIGINAL)));
 
         assertThat(JavaRoundTrip.check(Map.of("abc123", candidate))).containsEntry("abc123", new RoundTrip(true, null));
     }
 
     @Test
     void aBuiltModelThatDiffersFails() {
-        JavaRoundTrip.Candidate candidate = new JavaRoundTrip.Candidate(ORIGINAL, Convert.of(Parsed.of(ORIGINAL)));
+        JavaRoundTrip.Candidate candidate = new JavaRoundTrip.Candidate(ORIGINAL, DockerfileReader.read(Parsed.of(ORIGINAL)));
         Dockerfile other = new Dockerfile(List.of(), List.of(new Stage(null, new BaseImage("alpine", "3", null), null,
                 List.of())));
 
@@ -40,7 +41,7 @@ class JavaRoundTripTest {
 
     @Test
     void aClassThatDoesNotCompileFailsWithItsError() {
-        JavaRoundTrip.Candidate candidate = new JavaRoundTrip.Candidate(ORIGINAL, Convert.of(Parsed.of(ORIGINAL)));
+        JavaRoundTrip.Candidate candidate = new JavaRoundTrip.Candidate(ORIGINAL, DockerfileReader.read(Parsed.of(ORIGINAL)));
         InMemoryCompiler.Compiled compiled = new InMemoryCompiler.Compiled(Map.of(),
                 Map.of("roundtrip.Dabc", "code too large"));
 

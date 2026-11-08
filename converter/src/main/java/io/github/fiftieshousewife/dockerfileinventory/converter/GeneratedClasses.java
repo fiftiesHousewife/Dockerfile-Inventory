@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.Conversion;
 import io.github.fiftieshousewife.dockerfile.model.ImageBuilder;
 import io.github.fiftieshousewife.dockerfile.model.Policy;
 import io.github.fiftieshousewife.dockerfile.model.PolicyViolation;

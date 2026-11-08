@@ -318,26 +318,6 @@ class FactExtractorTest {
         assertThat(FactExtractor.kind(user)).isEqualTo(kind);
     }
 
-    @ParameterizedTest
-    @CsvSource(delimiter = '|', value = {
-        "$A   | true",
-        "${A} | true",
-        "$AB  | false",
-        "1    | false",
-    })
-    void ownNameIsADefaultThatOnlyReferencesItsOwnName(String value, boolean own) {
-        assertThat(FactExtractor.ownName(value, "A")).isEqualTo(own);
-    }
-
-    @Test
-    void argPairsReadsEveryNameInOrderWithItsUnquotedValueOrNull() {
-        Docker.Arg arg = Parsed.first("FROM ubi9\nARG A=1 B=\"two words\" C D=$D\n", Docker.Arg.class);
-
-        assertThat(FactExtractor.argPairs(arg)).containsExactly(
-                Map.entry("A", "1"), Map.entry("B", "two words"), new SimpleEntry<>("C", null),
-                new SimpleEntry<>("D", null));
-    }
-
     @Test
     void globalArgsExpandEarlierGlobalsAndSkipNamesWithoutAValue() {
         assertThat(FactExtractor.globalArgs(Parsed.file("ARG REG=quay.io\nARG IMAGE=$REG/ubi9 NONE\nFROM $IMAGE\n")))

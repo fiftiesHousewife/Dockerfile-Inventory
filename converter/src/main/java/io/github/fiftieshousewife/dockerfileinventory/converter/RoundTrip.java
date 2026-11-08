@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.Values;
+import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
 import io.github.fiftieshousewife.dockerfile.model.DockerfileRenderer;
 import io.github.fiftieshousewife.dockerfile.model.Target;
@@ -33,7 +35,7 @@ record RoundTrip(boolean passed, String difference) {
     }
 
     static RoundTrip compare(Docker.File before, Docker.File after, Dockerfile model) {
-        if (!Convert.of(after).model().equals(model)) {
+        if (!DockerfileReader.read(after).model().equals(model)) {
             return fail("the rendered conversion converts back to a different model");
         }
         List<String> fromBefore = froms(before);

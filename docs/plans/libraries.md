@@ -12,7 +12,9 @@ for Docker too; the round trip 5,149 -> 5,152. F2, `DockerParser.parseText(Strin
 with its line and column (`DockerParsingException.getLine`, `getColumn`) instead of one passed silently to a default
 execution context. F4 dropped: the one round trip it rested on is a `RUN --mount=...` with no
 command, which Docker rejects too; the default target stays conservative, since the builder that will read the
-Dockerfile may be an older Buildah, and the converter already picks the target from the Dockerfile's own features.
+Dockerfile may be an older Buildah, and the converter already picks the target from the Dockerfile's own features. F3, `dockerfile-reader`: the converter's reading half and facts' shell reader and text
+helpers moved into a `reader` module (`DockerfileReader.read`, `Conversion`; the helpers in `.internal`, not API),
+Jackson an implementation dependency for JSON arrays (to revisit); the converter's output byte for byte the same.
 
 ## Why
 

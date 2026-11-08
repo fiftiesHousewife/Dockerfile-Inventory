@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.Conversion;
+import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import io.github.fiftieshousewife.dockerfile.model.User;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,7 +59,7 @@ class JavaEmitterTest {
     void theEmittedClassCompilesAndItsDockerfilePassesTheRoundTrip() throws Exception {
         for (String original : List.of(MULTISTAGE,
                 Files.readString(Path.of("../facts/src/test/resources/fixtures/dockerfiles/python-311.Dockerfile")))) {
-            Conversion conversion = Convert.of(Parsed.of(original));
+            Conversion conversion = DockerfileReader.read(Parsed.of(original));
 
             Dockerfile emitted = run(JavaEmitter.emit("com.example.images", "ServiceImage", conversion, List.of()));
 
@@ -68,7 +70,7 @@ class JavaEmitterTest {
 
     @Test
     void commentsInTheOriginalBecomeLineCommentsBeforeTheirInstruction() {
-        String source = JavaEmitter.emit("com.example.images", "ServiceImage", Convert.of(Parsed.of(MULTISTAGE)),
+        String source = JavaEmitter.emit("com.example.images", "ServiceImage", DockerfileReader.read(Parsed.of(MULTISTAGE)),
                 List.of());
 
         assertThat(source).containsSubsequence("// build the server", "\"go build -o /out/server ./cmd/server\")",
@@ -77,7 +79,7 @@ class JavaEmitterTest {
 
     @Test
     void eachPolicyBreachBecomesATodoAtTheTopOfTheClass() {
-        String source = JavaEmitter.emit("com.example.images", "ServiceImage", Convert.of(Parsed.of(MULTISTAGE)),
+        String source = JavaEmitter.emit("com.example.images", "ServiceImage", DockerfileReader.read(Parsed.of(MULTISTAGE)),
                 List.of(new PolicyViolation.Breach("R1", "base registry.example.com/ubi9/ubi-minimal is not pinned")));
 
         assertThat(source).containsSubsequence("// TODO(R1): base registry.example.com/ubi9/ubi-minimal is not pinned",
@@ -86,7 +88,7 @@ class JavaEmitterTest {
 
     @Test
     void aBreachMessageHoldingDollarSignsIsWrittenAsItIs() {
-        String source = JavaEmitter.emit("com.example.images", "ServiceImage", Convert.of(Parsed.of(MULTISTAGE)),
+        String source = JavaEmitter.emit("com.example.images", "ServiceImage", DockerfileReader.read(Parsed.of(MULTISTAGE)),
                 List.of(new PolicyViolation.Breach("H1", "install $INSTALL_PKGS without a clean")));
 
         assertThat(source).contains("// TODO(H1): install $INSTALL_PKGS without a clean");

@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.Conversion;
 import io.github.fiftieshousewife.dockerfile.model.Raw;
 import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import java.util.LinkedHashMap;

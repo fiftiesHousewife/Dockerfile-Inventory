@@ -8,6 +8,7 @@ dependencies {
     implementation(platform(libs.rewrite.bom))
     implementation(libs.rewrite.core)
     implementation(project(":parser"))
+    implementation(project(":reader"))
     implementation(project(":secrets"))
     // OpenRewrite's bundled JGit logs through SLF4J when it reports a file the parser cannot print back; without it
     // that report fails with NoClassDefFoundError and hides the parser's own message.

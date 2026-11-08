@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.Conversion;
+import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.fiftieshousewife.dockerfile.model.Policy;
@@ -13,7 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class GeneratedClassesTest {
 
-    private static final Conversion UNAPPROVED_BASE = Convert.of(Parsed.of("FROM ubi9:9.4\nUSER 1001\n"));
+    private static final Conversion UNAPPROVED_BASE = DockerfileReader.read(Parsed.of("FROM ubi9:9.4\nUSER 1001\n"));
 
     @TempDir
     Path out;

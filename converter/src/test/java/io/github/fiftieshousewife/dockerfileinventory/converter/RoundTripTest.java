@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import io.github.fiftieshousewife.dockerfile.model.Label;
 import io.github.fiftieshousewife.dockerfile.model.User;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +23,7 @@ class RoundTripTest {
         String original =
                 Files.readString(Path.of("../facts/src/test/resources/fixtures/dockerfiles/python-311.Dockerfile"));
 
-        RoundTrip result = RoundTrip.check(original, Convert.of(Parsed.of(original)).model());
+        RoundTrip result = RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model());
 
         assertThat(result).satisfies(r -> assertThat(r.difference()).isNull(), r -> assertThat(r.passed()).isTrue());
     }
@@ -32,7 +33,7 @@ class RoundTripTest {
         String original = Files.readString(Path.of("../facts/src/test/resources/fixtures/dockerfiles",
                 "origin-atomic-registry-single-quoted-label.Dockerfile"));
 
-        RoundTrip result = RoundTrip.check(original, Convert.of(Parsed.of(original)).model());
+        RoundTrip result = RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model());
 
         assertThat(result.difference()).isNull();
     }
@@ -40,7 +41,7 @@ class RoundTripTest {
     @Test
     void aConversionThatDropsOrChangesAnInstructionFailsNamingTheStep() {
         String original = "FROM ubi9\nUSER 1001\nRUN make\n";
-        Dockerfile converted = Convert.of(Parsed.of(original)).model();
+        Dockerfile converted = DockerfileReader.read(Parsed.of(original)).model();
         Stage stage = converted.stages().getFirst();
         Dockerfile dropped = new Dockerfile(List.of(), List.of(new Stage(null, stage.base(), null,
                 List.of(stage.instructions().getFirst()))));
@@ -55,7 +56,7 @@ class RoundTripTest {
     void flagAndPackageOrderInsideAnInstallDoNotCount() {
         String original = "FROM ubi9\nRUN microdnf install tar git -y && microdnf clean all\n";
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).passed()).isTrue();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).passed()).isTrue();
     }
 
     @Test
@@ -68,14 +69,14 @@ class RoundTripTest {
                 CMD [ "run-thermostat-agent" ]
                 """;
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
     void aBackslashFollowedByTrailingSpacesContinuesTheLineAsDockerReadsIt() {
         String original = "FROM ubi9\nLABEL Version=\"1.4\" \\ \n      Release=\"8\"\n";
 
-        Dockerfile model = Convert.of(Parsed.of(original)).model();
+        Dockerfile model = DockerfileReader.read(Parsed.of(original)).model();
 
         assertThat(model).satisfies(
                 m -> assertThat(m.stages().getFirst().instructions())
@@ -93,7 +94,7 @@ class RoundTripTest {
                 EOF
                 """;
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
@@ -101,14 +102,14 @@ class RoundTripTest {
         String original = "ARG BASE_DOCKER_SHA\nFROM quay.io/prometheus/busybox@sha256:${BASE_DOCKER_SHA}\n"
                 + "COPY app /bin/app\n";
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
     void aVariableWithOrWithoutBracesIsTheSameToDocker() {
         String original = "FROM ubi9\nARG UID GID\nUSER $UID:$GID\n";
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
@@ -123,14 +124,14 @@ class RoundTripTest {
                 EXPOSE 50000
                 """;
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
     void aBackslashKeptInsideDoubleQuotesIsTheSameValueAfterTheRoundTrip() {
         String original = "FROM ubi9\nLABEL vendor=\"Red Hat\\, Inc.\" name=x\n";
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
@@ -149,7 +150,7 @@ class RoundTripTest {
                 USER 1001
                 """;
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
@@ -165,19 +166,19 @@ class RoundTripTest {
                 ENV MONGO_VERSION 8.3.13
                 """;
 
-        assertThat(RoundTrip.check(original, Convert.of(Parsed.of(original)).model()).difference()).isNull();
+        assertThat(RoundTrip.check(original, DockerfileReader.read(Parsed.of(original)).model()).difference()).isNull();
     }
 
     @Test
     void aConversionTheOriginalsBuilderCouldNotBuildFailsSayingItDoesNotRender() {
-        Dockerfile mounts = Convert.of(Parsed.of("FROM ubi9\nRUN --mount=type=cache,target=/c make\n")).model();
+        Dockerfile mounts = DockerfileReader.read(Parsed.of("FROM ubi9\nRUN --mount=type=cache,target=/c make\n")).model();
 
         assertThat(RoundTrip.check("FROM ubi9\n", mounts).difference()).startsWith("the conversion does not render");
     }
 
     @Test
     void anOriginalThatDoesNotParseFails() {
-        Dockerfile model = Convert.of(Parsed.of("FROM ubi9\n")).model();
+        Dockerfile model = DockerfileReader.read(Parsed.of("FROM ubi9\n")).model();
 
         assertThat(RoundTrip.check("not a dockerfile\n", model).difference()).isEqualTo("the original does not parse");
     }
@@ -187,7 +188,7 @@ class RoundTripTest {
         Docker.File before = Parsed.of("FROM ubi9\nUSER 1001\n");
         Docker.File after = Parsed.of("FROM ubi9\nUSER 1002\n");
 
-        assertThat(RoundTrip.compare(before, after, Convert.of(before).model()).difference())
+        assertThat(RoundTrip.compare(before, after, DockerfileReader.read(before).model()).difference())
                 .isEqualTo("the rendered conversion converts back to a different model");
     }
 
@@ -196,7 +197,7 @@ class RoundTripTest {
         Docker.File before = Parsed.of("FROM ubi9:9.4\n");
         Docker.File after = Parsed.of("FROM ubi9:9.5\n");
 
-        assertThat(RoundTrip.compare(before, after, Convert.of(after).model()).difference())
+        assertThat(RoundTrip.compare(before, after, DockerfileReader.read(after).model()).difference())
                 .isEqualTo("stages differ: [ubi9:9.4] became [ubi9:9.5]");
     }
 

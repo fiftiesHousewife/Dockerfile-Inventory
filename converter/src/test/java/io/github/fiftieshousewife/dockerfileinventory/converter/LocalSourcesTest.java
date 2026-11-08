@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -21,7 +22,7 @@ class LocalSourcesTest {
                 EOF
                 """;
 
-        assertThat(LocalSources.of(Convert.of(Parsed.of(dockerfile)).model())).containsExactly("go.mod", "go.sum",
+        assertThat(LocalSources.of(DockerfileReader.read(Parsed.of(dockerfile)).model())).containsExactly("go.mod", "go.sum",
                 "bin/app-${TARGETOS}-${TARGETARCH}", "target/lib/*", "rootfs.tar.gz");
     }
 
@@ -41,7 +42,7 @@ class LocalSourcesTest {
                 RUN --mount=type=secret,id=token make install
                 """;
 
-        assertThat(LocalSources.secretIds(Convert.of(Parsed.of(dockerfile)).model()))
+        assertThat(LocalSources.secretIds(DockerfileReader.read(Parsed.of(dockerfile)).model()))
                 .containsExactly("downloads_url", "token");
     }
 }

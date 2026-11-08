@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.Conversion;
+import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.github.fiftieshousewife.dockerfile.model.Policy;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsParser;
@@ -64,7 +66,7 @@ final class ConverterRun {
         }
         Conversion conversion;
         try {
-            conversion = Convert.of(parsed.file());
+            conversion = DockerfileReader.read(parsed.file());
         } catch (IllegalArgumentException e) {
             return new Row(sha, false, "conversion failed: " + e.getMessage(), null, null);
         }

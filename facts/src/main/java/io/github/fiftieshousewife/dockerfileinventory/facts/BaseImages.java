@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.ArgumentText;
 import java.util.HashMap;
 import java.util.Map;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;

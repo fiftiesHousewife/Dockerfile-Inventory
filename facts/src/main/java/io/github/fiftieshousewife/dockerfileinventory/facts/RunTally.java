@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.ShellTokeniser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

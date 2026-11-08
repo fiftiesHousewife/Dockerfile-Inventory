@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.Installs;
+import io.github.fiftieshousewife.dockerfile.reader.internal.Values;
 import io.github.fiftieshousewife.dockerfileinventory.facts.Step;
 import java.util.List;
 import java.util.TreeSet;

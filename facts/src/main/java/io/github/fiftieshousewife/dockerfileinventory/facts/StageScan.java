@@ -1,5 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.ArgPairs;
+import io.github.fiftieshousewife.dockerfile.reader.internal.ArgumentText;
+import io.github.fiftieshousewife.dockerfile.reader.internal.Expansions;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -47,7 +50,7 @@ final class StageScan {
     }
 
     void arg(Docker.Arg arg) {
-        FactExtractor.argPairs(arg).forEach((name, declared) -> Optional
+        ArgPairs.of(arg).forEach((name, declared) -> Optional
                 .ofNullable(declared == null ? globalArgs.get(name) : Expansions.expanded(declared, variables))
                 .ifPresent(value -> variables.put(name, value)));
     }

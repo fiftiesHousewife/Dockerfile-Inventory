@@ -1,6 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
-import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
+import io.github.fiftieshousewife.dockerfile.reader.internal.Continuations;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.openrewrite.Cursor;

@@ -36,7 +36,7 @@ dependencies {
     api(platform(libs.rewrite.bom))
     api(libs.rewrite.core)
     implementation(libs.antlr.runtime)
-    compileOnly(libs.jetbrains.annotations)
+    compileOnlyApi(libs.jetbrains.annotations)
     antlrGeneration(libs.antlr.tool)
 
     testImplementation(platform(libs.rewrite.bom))

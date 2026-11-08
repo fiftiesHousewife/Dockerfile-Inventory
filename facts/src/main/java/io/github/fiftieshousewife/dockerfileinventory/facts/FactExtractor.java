@@ -1,5 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.ArgPairs;
+import io.github.fiftieshousewife.dockerfile.reader.internal.ArgumentText;
+import io.github.fiftieshousewife.dockerfile.reader.internal.Continuations;
+import io.github.fiftieshousewife.dockerfile.reader.internal.Expansions;
+import io.github.fiftieshousewife.dockerfile.reader.internal.KeyValuePairs;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,31 +58,12 @@ public final class FactExtractor {
 
     static Map<String, String> globalArgs(Docker.File file) {
         Map<String, String> globalArgs = new HashMap<>();
-        file.getGlobalArgs().forEach(arg -> argPairs(arg).forEach((name, value) -> {
+        file.getGlobalArgs().forEach(arg -> ArgPairs.of(arg).forEach((name, value) -> {
             if (value != null) {
                 globalArgs.put(name, Expansions.expanded(value, globalArgs));
             }
         }));
         return globalArgs;
-    }
-
-    /** An {@code ARG}'s names and their values as written, unquoted, in order; null for a name without one. */
-    public static Map<String, String> argPairs(Docker.Arg arg) {
-        Map<String, String> pairs = new LinkedHashMap<>();
-        declare(pairs, arg.getName(), arg.getValue());
-        arg.getAdditionalPairs().forEach(pair -> declare(pairs, pair.getName(), pair.getValue()));
-        return pairs;
-    }
-
-    static void declare(Map<String, String> pairs, Docker.Literal name, Docker.Argument value) {
-        String declared = value == null ? null
-                : KeyValuePairs.unquoted(Continuations.removed(ArgumentText.of(value, Map.of())));
-        pairs.put(name.getText(), declared == null || ownName(declared, name.getText()) ? null : declared);
-    }
-
-    // ARG A=$A names itself; it is read as no default, as when the parser's retry wrote ARG A B that way.
-    static boolean ownName(String value, String name) {
-        return value.equals("$" + name) || value.equals("${" + name + "}");
     }
 
     static UserKind kind(String user) {

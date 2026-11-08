@@ -1,5 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.Continuations;
+import io.github.fiftieshousewife.dockerfile.reader.internal.Expansions;
+import io.github.fiftieshousewife.dockerfile.reader.internal.KeyValuePairs;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;

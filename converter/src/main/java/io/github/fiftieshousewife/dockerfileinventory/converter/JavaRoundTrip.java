@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.reader.Conversion;
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;

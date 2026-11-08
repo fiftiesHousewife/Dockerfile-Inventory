@@ -37,7 +37,7 @@ and one line when its gate is met.
   severity, reach and certainty.
 - Next (asked 8 Nov, `docs/plans/libraries.md`, questions answered): three published libraries, `dockerfile-parser`
   1.0.0 (its last bugs fixed, a plain `parse(String)`), `dockerfile-model` 0.1.0 (today's `dsl`) and
-  `dockerfile-reader` 0.1.0 (text to model, from the converter), on Java 21, each with a licence, a library package name, a module descriptor exporting only its
+  `dockerfile-reader` 0.1.0 (text to model, from the converter; built 8 Nov), on Java 21, each with a licence, a library package name, a module descriptor exporting only its
   API, a Java release users can take, Javadoc, a compatibility check, a Central bundle, a release task instead of
   `scripts/release-parser.sh`, docs with tested examples; the owner's Central namespace, token and signing key.
 - Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
