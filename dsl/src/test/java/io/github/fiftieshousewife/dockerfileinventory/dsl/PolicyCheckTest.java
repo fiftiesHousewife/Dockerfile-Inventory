@@ -81,4 +81,10 @@ class PolicyCheckTest {
         assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Cmd(List.of("./run.sh"), CommandForm.SHELL)))
                 .isEmpty();
     }
+
+    @Test
+    void scratchHasNoDigestToPinSoIsNoR1Breach() {
+        assertThat(PolicyCheck.pin(new BaseImage("scratch", null, null))).isEmpty();
+        assertThat(PolicyCheck.pin(new BaseImage("busybox", null, null))).isPresent();
+    }
 }

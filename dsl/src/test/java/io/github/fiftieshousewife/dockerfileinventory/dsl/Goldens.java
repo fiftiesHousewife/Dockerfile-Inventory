@@ -27,10 +27,15 @@ final class Goldens {
     static final BaseImage OCP_BASE = new BaseImage("registry.ci.openshift.org/ocp/5.0", "base-rhel9",
             "sha256:" + "7".repeat(64));
 
+    static final BaseImage DEBIAN = new BaseImage("debian", "bookworm-slim", "sha256:" + "8".repeat(64));
+
+    static final BaseImage SCRATCH = new BaseImage("scratch", null, null);
+
     static Map<String, ImageBuilder> all() {
         return Map.of("java-service", javaService(), "node-service", nodeService(), "python-service",
                 pythonService(), "go-multistage", goMultistage(), "bitnami-app", bitnamiApp(), "olm-catalog",
-                olmCatalog(), "go-operator", goOperator());
+                olmCatalog(), "go-operator", goOperator(), "php-from-source", phpFromSource(),
+                "rpm-rootfs", rpmRootfs(), "binary-on-ubi", binaryOnUbi());
     }
 
     private static ImageBuilder labelled(ImageBuilder builder) {
@@ -153,5 +158,125 @@ final class Goldens {
                         "io.openshift.tags", "openshift,ptp"))
                 .user(1001)
                 .entrypoint("/usr/local/bin/ptp-operator");
+    }
+
+    static ImageBuilder phpFromSource() {
+        return labelled(ImageBuilder.finalStage(DEBIAN))
+                .run("{ echo 'Package: php*'; echo 'Pin: release *'; echo 'Pin-Priority: -1'; }"
+                        + " > /etc/apt/preferences.d/no-debian-php")
+                .env("PHPIZE_DEPS", "autoconf dpkg-dev file g++ gcc libc-dev make pkg-config re2c")
+                .install(PackageManager.APT, List.of("-y", "--no-install-recommends"),
+                        List.of("$PHPIZE_DEPS", "ca-certificates", "curl", "xz-utils"))
+                .env("PHP_INI_DIR", "/usr/local/etc/php")
+                .run("mkdir -p \"$PHP_INI_DIR/conf.d\"", "mkdir -p /var/www/html")
+                .env(OrderedMap.of(
+                        "PHP_CFLAGS",
+                        "-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64",
+                        "PHP_CPPFLAGS", "$PHP_CFLAGS", "PHP_LDFLAGS", "-Wl,-O1 -pie",
+                        "GPG_KEYS", "AFD8691FDAEDF03BDF6E460563F15A9B715376CA 9D7F99A0CB8F05C8A6958D6256A97AF7600A39A6"
+                                + " 0616E93D95AF471243E26761770426E17EBBB3DD",
+                        "PHP_VERSION", "8.4.27", "PHP_URL", "https://www.php.net/distributions/php-8.4.27.tar.xz",
+                        "PHP_ASC_URL", "https://www.php.net/distributions/php-8.4.27.tar.xz.asc",
+                        "PHP_SHA256", "dcf93923b0e38e0d5252b25b796520b5a47761a08b3488b6d0b5d1115764d3f0"))
+                .run("savedAptMark=\"$(apt-mark showmanual)\"",
+                        "apt-get update",
+                        "apt-get install -y --no-install-recommends gnupg",
+                        "rm -rf /var/lib/apt/lists/*",
+                        "mkdir -p /usr/src",
+                        "cd /usr/src",
+                        "curl -fsSL -o php.tar.xz \"$PHP_URL\"",
+                        "echo \"$PHP_SHA256 *php.tar.xz\" | sha256sum -c -",
+                        "curl -fsSL -o php.tar.xz.asc \"$PHP_ASC_URL\"",
+                        "export GNUPGHOME=\"$(mktemp -d)\"",
+                        "for key in $GPG_KEYS; do gpg --batch --keyserver keyserver.ubuntu.com --recv-keys \"$key\";"
+                                + " done",
+                        "gpg --batch --verify php.tar.xz.asc php.tar.xz",
+                        "gpgconf --kill all",
+                        "rm -rf \"$GNUPGHOME\"",
+                        "apt-mark auto '.*' > /dev/null",
+                        "apt-mark manual $savedAptMark > /dev/null",
+                        "apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false")
+                .copy("docker-php-source", "/usr/local/bin/")
+                .run("savedAptMark=\"$(apt-mark showmanual)\"",
+                        "apt-get update",
+                        "apt-get install -y --no-install-recommends libargon2-dev libcurl4-openssl-dev libonig-dev"
+                                + " libreadline-dev libsodium-dev libsqlite3-dev libssl-dev libxml2-dev zlib1g-dev",
+                        "export CFLAGS=\"$PHP_CFLAGS\" CPPFLAGS=\"$PHP_CPPFLAGS\" LDFLAGS=\"$PHP_LDFLAGS\""
+                                + " PHP_BUILD_PROVIDER='https://github.com/docker-library/php' PHP_UNAME='Linux -"
+                                + " Docker'",
+                        "docker-php-source extract",
+                        "cd /usr/src/php",
+                        "gnuArch=\"$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)\"",
+                        "debMultiarch=\"$(dpkg-architecture --query DEB_BUILD_MULTIARCH)\"",
+                        "if [ ! -d /usr/include/curl ]; then ln -sT \"/usr/include/$debMultiarch/curl\""
+                                + " /usr/local/include/curl; fi",
+                        "./configure --build=\"$gnuArch\" --sysconfdir=\"${PHP_INI_DIR%/php}\""
+                                + " --with-config-file-path=\"$PHP_INI_DIR\""
+                                + " --with-config-file-scan-dir=\"$PHP_INI_DIR/conf.d\" --enable-option-checking=fatal"
+                                + " --with-mhash --with-pic --enable-mbstring --enable-mysqlnd --with-password-argon2"
+                                + " --with-sodium=shared --with-pdo-sqlite=/usr --with-sqlite3=/usr --with-curl"
+                                + " --with-iconv --with-openssl --with-readline --with-zlib --enable-phpdbg"
+                                + " --enable-phpdbg-readline --with-pear --with-libdir=\"lib/$debMultiarch\""
+                                + " --enable-embed --enable-zts --disable-zend-signals",
+                        "make -j \"$(nproc)\"",
+                        "find -type f -name '*.a' -delete",
+                        "make install",
+                        "find /usr/local -type f -perm '/0111' -exec sh -euxc 'strip --strip-all \"$@\" || :' -- '{}'"
+                                + " +",
+                        "make clean",
+                        "cp -v php.ini-* \"$PHP_INI_DIR/\"",
+                        "cd /",
+                        "docker-php-source delete",
+                        "apt-mark auto '.*' > /dev/null",
+                        "{ [ -z \"$savedAptMark\" ] || apt-mark manual $savedAptMark; }",
+                        "find /usr/local -type f -executable -exec ldd '{}' ';' | awk '/=>/ { so = $(NF-1); if"
+                                + " (index(so, \"/usr/local/\") == 1) { next }; gsub(\"^/(usr/)?\", \"\", so); printf"
+                                + " \"*%s\\n\", so }' | sort -u | xargs -rt dpkg-query --search | awk 'sub(\":$\","
+                                + " \"\", $1) { print $1 }' | sort -u | xargs -r apt-mark manual",
+                        "apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false",
+                        "rm -rf /var/lib/apt/lists/*",
+                        "pecl update-channels",
+                        "rm -rf /tmp/pear ~/.pearrc",
+                        "php --version")
+                .copy(List.of("docker-php-ext-*", "docker-php-entrypoint"), "/usr/local/bin/", null, null)
+                .run("docker-php-ext-enable opcache", "docker-php-ext-enable sodium")
+                .writablePaths("/var/www/html")
+                .user(1001)
+                .entrypoint("docker-php-entrypoint")
+                .cmd("php", "-a");
+    }
+
+    static ImageBuilder rpmRootfs() {
+        return ImageBuilder.stage("minimal-ubi", UBI)
+                .run("dnf update -y --allowerasing",
+                        "mkdir /image",
+                        "ln -s usr/bin /image/bin",
+                        "ln -s usr/sbin /image/sbin",
+                        "ln -s usr/lib64 /image/lib64",
+                        "ln -s usr/lib /image/lib",
+                        "mkdir -p /image/{usr/bin,usr/lib64,usr/lib,root,home,proc,etc,sys,var,dev}",
+                        "rpm --root /image --initdb",
+                        "dnf install -y --installroot=/image --releasever=9 --setopt=install_weak_deps=false --nodocs"
+                                + " glibc tzdata ca-certificates",
+                        "dnf clean all --installroot=/image",
+                        "rm -rf /image/var/cache/dnf /image/var/log/*")
+                .thenFrom(SCRATCH)
+                .arg("REVISION").arg("SOURCE")
+                .label("org.opencontainers.image.revision", "${REVISION}")
+                .label("org.opencontainers.image.source", "${SOURCE}")
+                .label("description", "External Secrets Operator is a Kubernetes operator that integrates external"
+                        + " secret management systems")
+                .copy(List.of("/image/"), "/", "0:0", "minimal-ubi")
+                .arg("TARGETOS").arg("TARGETARCH")
+                .copy(List.of("bin/external-secrets-${TARGETOS}-${TARGETARCH}"), "/bin/external-secrets", "0:0", null)
+                .user(65534)
+                .entrypoint("/bin/external-secrets");
+    }
+
+    static ImageBuilder binaryOnUbi() {
+        return labelled(ImageBuilder.finalStage(UBI_MINIMAL))
+                .copy(List.of("private-org-peribolos-sync"), "/usr/bin/private-org-peribolos-sync", "0:0", null)
+                .user(1001)
+                .entrypoint("/usr/bin/private-org-peribolos-sync");
     }
 }

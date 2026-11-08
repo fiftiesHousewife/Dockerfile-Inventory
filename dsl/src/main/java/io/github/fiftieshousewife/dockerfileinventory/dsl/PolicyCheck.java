@@ -45,7 +45,8 @@ final class PolicyCheck {
 
     static Optional<PolicyViolation.Breach> pin(BaseImage base) {
         if (base.digest() == null) {
-            return Optional.of(new PolicyViolation.Breach("R1", "base " + base.name() + " is not pinned by digest"));
+            return base.name().equals("scratch") ? Optional.empty()
+                    : Optional.of(new PolicyViolation.Breach("R1", "base " + base.name() + " is not pinned by digest"));
         }
         if (base.digest().contains("$")) {
             String argument = base.digest().replaceAll("sha256:\\$\\{?([A-Za-z0-9_]+)}?", "$1");

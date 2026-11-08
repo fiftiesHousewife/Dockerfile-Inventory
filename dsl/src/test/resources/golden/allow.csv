@@ -4,3 +4,5 @@ ubi9/ubi,
 bitnami/minideb,bookworm
 openshift4/ose-operator-registry-rhel9,v4
 ocp/5.0,base-rhel9
+debian,bookworm-slim
+scratch,
