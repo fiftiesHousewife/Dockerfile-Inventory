@@ -217,3 +217,7 @@ on another check too. By check on the combined estate: P1 2,982 (most inferred),
 The report's page (test 6) built 9 Nov: with `VALIDATOR_DIR`, `openshift.html` leads with the verdicts under the
 profile, lists the first 250 actions most urgent first, each linked to its Dockerfile's page, then the actions per
 repository; the summary leads with the same sentence. On OKD: 40,037 links, none broken.
+
+P2 reads sclorg's `fix-permissions <path>` in the final image's `RUN` steps as a recursive group-0 write (9 Nov), and
+leaves a `HOME` in `/tmp` alone: P2 on the combined estate 1,142 -> 1,055, on OKD 366 -> 360; verdicts on the
+combined estate 3,590 break, 693 drift, 2 information, 187 run.

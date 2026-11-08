@@ -31,10 +31,10 @@ class ValidatorRunTest {
 
         assertAll(
                 () -> assertThat(plan.path("profile").asString()).isEqualTo("openshift-4-restricted-v2"),
-                () -> assertThat(plan.path("images").asInt()).isEqualTo(12),
+                () -> assertThat(plan.path("images").asInt()).isEqualTo(13),
                 () -> assertThat(plan.path("notRunnable").asInt()).isEqualTo(1),
                 () -> assertThat(plan.path("verdicts").path("runs").asInt()).isEqualTo(1),
-                () -> assertThat(plan.path("verdicts").path("drift").asInt()).isEqualTo(1),
+                () -> assertThat(plan.path("verdicts").path("drift").asInt()).isEqualTo(2),
                 () -> assertThat(plan.path("repositories").path("openshift/moby-moby").asInt()).isPositive());
     }
 
@@ -54,7 +54,7 @@ class ValidatorRunTest {
     void eachImagesVerdictIsWrittenOnePerLine() throws IOException {
         plan();
 
-        assertThat(Files.readAllLines(out.resolve("verdicts.jsonl"))).hasSize(12)
+        assertThat(Files.readAllLines(out.resolve("verdicts.jsonl"))).hasSize(13)
                 .contains("{\"blobSha\":\"01c982921d4919768f2c03ea30ab8db209baab7a\",\"verdict\":\"RUNS\"}");
     }
 }

@@ -15,7 +15,7 @@ class SubjectTest {
     @Test
     void theFinalStagesAreTheLastAndTheStagesItBuildsOnByNameOrIndex() {
         Subject subject = new Subject("aaa", null, null, List.of(stage("base", null), stage("builder", null),
-                stage("runtime", "0"), stage(null, "runtime")));
+                stage("runtime", "0"), stage(null, "runtime")), List.of());
 
         assertThat(subject.finalStages()).extracting(Subject.Stage::name).containsExactly(null, "runtime", "base");
     }

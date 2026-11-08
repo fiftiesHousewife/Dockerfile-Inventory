@@ -12,7 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 // One Dockerfile's facts as the checks read them: the parts of a facts.jsonl line that say how its image runs.
-record Subject(String blobSha, Facts facts, Config config, List<Stage> stages) {
+record Subject(String blobSha, Facts facts, Config config, List<Stage> stages, List<Step> steps) {
 
     private static final ObjectMapper JSON = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
@@ -44,11 +44,15 @@ record Subject(String blobSha, Facts facts, Config config, List<Stage> stages) {
                 String chmod) {
     }
 
+    record Step(String keyword, String text) {
+    }
+
     record Permission(String command, String setting, List<String> paths, boolean recursive) {
     }
 
     Subject {
         stages = List.copyOf(stages);
+        steps = List.copyOf(steps);
     }
 
     boolean runnable() {

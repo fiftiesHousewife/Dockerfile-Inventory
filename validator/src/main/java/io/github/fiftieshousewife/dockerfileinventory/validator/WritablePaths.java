@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 final class WritablePaths implements PlatformCheck {
 
     private static final Pattern OCTAL = Pattern.compile("0?[0-7]{3}");
+    private static final Pattern FIX_PERMISSIONS = Pattern.compile("(?:^|[\\s/])fix-permissions\\s+(/\\S+)");
     private static final Pattern CLAUSE = Pattern.compile("([ugoa]*)([+=])([rwxXstugo]*)");
 
     @Override
@@ -24,8 +25,10 @@ final class WritablePaths implements PlatformCheck {
     @Override
     public List<String> problems(Subject image, Profile profile) {
         List<Subject.Stage> stages = image.finalStages();
+        List<String> fixed = fixedPermissions(image.steps());
         return written(image).stream().filter(path -> !path.value().contains("$"))
                 .filter(path -> stages.stream().noneMatch(stage -> writable(stage, path.value())))
+                .filter(path -> fixed.stream().noneMatch(directory -> under(path.value(), directory)))
                 .map(path -> path.kind() + " " + path.value() + " is never made writable by group 0 (chmod g=u or "
                         + "g+w), so OpenShift's arbitrary UID may not write it")
                 .toList();
@@ -42,10 +45,16 @@ final class WritablePaths implements PlatformCheck {
             paths.add(new Written("WORKDIR", config.workdir()));
         }
         String home = config.environment().get("HOME");
-        if (home != null && !home.equals("/")) {
+        if (home != null && !List.of("/", "/tmp").contains(home)) {
             paths.add(new Written("HOME", home));
         }
         return paths;
+    }
+
+    // sclorg's fix-permissions runs chgrp 0 and chmod g+rw over the whole tree below each path it is given.
+    static List<String> fixedPermissions(List<Subject.Step> steps) {
+        return steps.stream().filter(step -> step.keyword().equals("RUN"))
+                .flatMap(step -> FIX_PERMISSIONS.matcher(step.text()).results().map(m -> m.group(1))).toList();
     }
 
     static boolean writable(Subject.Stage stage, String path) {
@@ -69,7 +78,7 @@ final class WritablePaths implements PlatformCheck {
                         && (m.group(3).contains("w") || m.group(3).equals("u")));
     }
 
-    private static boolean under(String path, String directory) {
+    static boolean under(String path, String directory) {
         String dir = trimmed(directory);
         return trimmed(path).equals(dir) || path.startsWith(dir.endsWith("/") ? dir : dir + "/");
     }
