@@ -46,12 +46,14 @@ final class CatalogueEntries {
 
     static CatalogueEntry.Build build(JsonNode row) {
         JsonNode facts = row.path("facts");
-        JsonNode stages = row.path("stages");
-        return new CatalogueEntry.Build(
-                IntStream.range(0, stages.size()).mapToObj(i -> stage(i, stages.get(i))).toList(),
-                packages(facts.path("packageCalls")), strings(facts.path("buildKitFeatures")),
+        JsonNode stageRows = row.path("stages");
+        List<CatalogueEntry.StageEntry> stages =
+                IntStream.range(0, stageRows.size()).mapToObj(i -> stage(i, stageRows.get(i))).toList();
+        List<CatalogueEntry.PackageEntry> packages = packages(facts.path("packageCalls"));
+        return new CatalogueEntry.Build(stages, packages, strings(facts.path("buildKitFeatures")),
                 row.path("config").path("layers").asInt(), facts.path("runs").asInt(),
-                facts.path("opaqueRuns").asInt(), instructions(row.path("steps")));
+                facts.path("opaqueRuns").asInt(), instructions(row.path("steps")),
+                Runtimes.of(stages, packages, pairs(row.path("config").path("environment"))));
     }
 
     static CatalogueEntry.StageEntry stage(int index, JsonNode stage) {

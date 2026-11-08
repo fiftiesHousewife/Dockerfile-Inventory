@@ -157,7 +157,11 @@ from lineage where a registry was read, and otherwise inferred, each inferred li
 values shown, a secret-shaped value or one under a secret's name `(hidden)` with its hash; 4, in `report` (answered
 with the validator's plan, whose stage reads the facts and lineage directly).
 
-Progress: step 1 done 8 Nov (`FinalConfig`, `StageGraph`, both on each facts row; `facts` depends on `dsl`).
+Progress (8 Nov): facts records the final image's configuration and, per stage, its counts, copies, permission
+changes and unusual steps; the report writes `catalogue/dockerfiles.jsonl` (no archetype, no end-of-life status),
+each entry with its stages, packages, language runtimes (final or build-only, with evidence) and links (lineage or
+inferred). Still to build: footprint, the hierarchy part (layers, times, `blockedBy`) and the action fields, which
+need lineage or new discovery data; a runtime inherited from an ancestor; the layer limit.
 
 ## Tests, in order
 

@@ -71,6 +71,12 @@ class CatalogueEntriesTest {
     }
 
     @Test
+    void theBuildNamesTheLanguageRuntimesAndWhetherTheyReachTheImage() {
+        assertThat(entry().build().runtimes()).containsExactly(
+                new Runtimes.Found("go", "build", "stage 0 base registry.access.redhat.com/ubi9/go-toolset"));
+    }
+
+    @Test
     void anEntryCarriesItsLinksOnceTheyAreKnown() {
         CatalogueLinks.Links links = new CatalogueLinks.Links(List.of(), List.of(), 0);
 

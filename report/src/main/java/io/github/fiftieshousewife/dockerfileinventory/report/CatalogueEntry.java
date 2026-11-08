@@ -64,13 +64,14 @@ record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Ima
     }
 
     record Build(List<StageEntry> stages, List<PackageEntry> packages, List<String> buildKitFeatures, int layers,
-                 int runs, int opaqueRuns, Map<String, Integer> instructions) {
+                 int runs, int opaqueRuns, Map<String, Integer> instructions, List<Runtimes.Found> runtimes) {
 
         Build {
             stages = List.copyOf(stages);
             packages = List.copyOf(packages);
             buildKitFeatures = List.copyOf(buildKitFeatures);
             instructions = Collections.unmodifiableMap(new LinkedHashMap<>(instructions));
+            runtimes = List.copyOf(runtimes);
         }
     }
 
