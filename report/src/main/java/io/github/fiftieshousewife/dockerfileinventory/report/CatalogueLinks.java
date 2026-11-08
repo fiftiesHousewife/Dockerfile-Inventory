@@ -91,6 +91,11 @@ final class CatalogueLinks {
     }
 
     static String finalBase(CatalogueEntry entry) {
+        CatalogueEntry.StageEntry stage = finalBaseStage(entry);
+        return stage == null ? null : stage.baseName();
+    }
+
+    static CatalogueEntry.StageEntry finalBaseStage(CatalogueEntry entry) {
         List<CatalogueEntry.StageEntry> stages = entry.build().stages();
         CatalogueEntry.StageEntry stage = stages.isEmpty() ? null : stages.getLast();
         Set<String> seen = new HashSet<>();
@@ -98,7 +103,7 @@ final class CatalogueLinks {
             String name = stage.fromStage();
             stage = stages.stream().filter(s -> name.equals(s.name())).findFirst().orElse(null);
         }
-        return stage == null ? null : stage.baseName();
+        return stage == null || stage.baseName() == null ? null : stage;
     }
 
     static int depth(String sha, Map<String, List<Link>> parents) {

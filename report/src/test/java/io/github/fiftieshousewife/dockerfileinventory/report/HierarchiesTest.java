@@ -117,7 +117,8 @@ class HierarchiesTest {
         Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
         RegistryImage base = images.get(S2I_BASE);
         images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
-                null, base.created(), base.lastPushed(), null, base.labels(), base.candidates(), base.size(), base.architectures()));
+                null, base.created(), base.lastPushed(), null, base.labels(), base.candidates(), base.size(),
+                base.architectures()));
 
         assertThat(hierarchies(images, 40).chain(PYTHON)).extracting(Hierarchies.Step::ownLayers)
                 .containsExactly(null, null, 1, 2);

@@ -88,6 +88,23 @@ class CatalogueRunTest {
                 () -> assertThat(actions.path("nearDuplicates").path("count").asInt()).isEqualTo(1));
     }
 
+    @Test
+    void aBaseWithANewerTagInTheRegistryIsTheEntrysBaseLag(@TempDir Path lineage, @TempDir Path out)
+            throws IOException {
+        Files.writeString(lineage.resolve("images.jsonl"), """
+                {"repository":"remote","image":"ubi9/ubi-minimal","tag":"9.4","lastPushed":null,"configDigest":null}
+                {"repository":"remote","image":"ubi9/ubi-minimal","tag":"9.6","lastPushed":null,"configDigest":null}
+                """);
+
+        CatalogueRun.write(inputs(FIXTURES, lineage, null), out, CatalogueSettings.DEFAULTS);
+
+        JsonNode lag = JsonLines.read(out.resolve("catalogue/dockerfiles.jsonl")).getFirst().path("actions")
+                .path("baseLag");
+        assertAll(
+                () -> assertThat(lag.path("tag").asString()).isEqualTo("9.4"),
+                () -> assertThat(lag.path("newestTag").asString()).isEqualTo("9.6"));
+    }
+
     private static CatalogueRun.Inputs inputs(Path facts, Path lineage, Path converter) {
         return new CatalogueRun.Inputs(facts, FIXTURES, lineage, converter, List.of());
     }

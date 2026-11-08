@@ -277,7 +277,7 @@ parsed; conversion passed 5,149 and failed 8, as the round trip's committed expe
 others, the most sclorg's `s2i-base-container` `core/Dockerfile.rhel9` (47 Dockerfiles in 23 repositories); 86
 released, 5,071 default branch only; 3,580 with near-duplicate siblings, the largest group 631.
 
-## Slice: registry facts and the footprint list (planned 8 Nov)
+## Slice: registry facts and the footprint list (planned 8 Nov; built 8 Nov)
 
 Asked 8 Nov: the rest of the action fields, owner aside (`CODEOWNERS` is mostly absent, so unreliable), and the
 settable footprint list.
@@ -304,6 +304,12 @@ Tests, in order:
 4. `Cadence`: pushes in the year, the median days between them, days after the parent.
 5. `BaseLag`: a newer tag of the same shape; none when the tag is the newest or of another shape.
 6. `CatalogueRun` writing them; `ReportMain` reading `FOOTPRINTS`; README; measured.
+
+Measured 8 Nov on OKD: the default footprint rules classify exactly as before; two `ocp/*` rules take unknown from
+1,284 to 841. Base lag: 47 Dockerfiles on `centos/centos:stream9` with `stream10` in the registry. No image there is
+attached any more: every OKD link is WEAK, and since the review an image counts only for a STRONG or single
+PROBABLE link, so its 30 images are candidates, and sizes and cadence wait for a run whose links are firmer (OKD's
+lineage also predates sizes and architectures being recorded).
 
 ## Tests, in order
 

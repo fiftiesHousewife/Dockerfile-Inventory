@@ -67,6 +67,15 @@ final class RegistryImages {
         return pushes;
     }
 
+    static Map<String, List<String>> tagsByImage(Path lineageDir) {
+        Map<String, List<String>> tags = new HashMap<>();
+        JsonLines.read(lineageDir.resolve("images.jsonl")).stream()
+                .filter(row -> !row.path("tag").asString().equals("*"))
+                .forEach(row -> tags.computeIfAbsent(row.path("image").asString(), image -> new ArrayList<>())
+                        .add(row.path("tag").asString()));
+        return tags;
+    }
+
     static Long size(List<JsonNode> rows) {
         return rows.stream().map(row -> row.path("size")).filter(JsonNode::isNumber).map(JsonNode::asLong)
                 .findFirst().orElse(null);

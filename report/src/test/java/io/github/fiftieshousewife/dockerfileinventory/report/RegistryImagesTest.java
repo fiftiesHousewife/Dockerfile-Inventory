@@ -163,4 +163,9 @@ class RegistryImagesTest {
         assertThat(RegistryImages.pushesByName(LINEAGE)).containsEntry("sclorg/s2i-python-container-3-12-c9s",
                 List.of(Instant.parse("2026-11-06T18:18:06.098Z")));
     }
+
+    @Test
+    void eachImagePathsTagsAreReadFromTheRegistry() {
+        assertThat(RegistryImages.tagsByImage(LINEAGE)).containsEntry("centos/centos", List.of("stream9"));
+    }
 }

@@ -29,7 +29,8 @@ class ReportMainTest {
 
     @Test
     void theCatalogueSettingsDefaultToTwelveMonthsAndFortyLayers() {
-        assertThat(ReportMain.catalogueSettings(Map.of())).isEqualTo(new CatalogueSettings(12, 40, FootprintRules.defaults()));
+        assertThat(ReportMain.catalogueSettings(Map.of()))
+                .isEqualTo(new CatalogueSettings(12, 40, FootprintRules.defaults()));
     }
 
     @Test

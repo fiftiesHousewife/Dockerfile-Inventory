@@ -17,7 +17,8 @@ class FootprintTest {
         List<CatalogueEntry> entries = List.of(root, leaf);
         Map<String, CatalogueLinks.Links> links = CatalogueLinks.of(entries, null);
 
-        assertThat(Footprint.through("bbb", CatalogueEntries.bySha(entries), links, FootprintRules.defaults())).isEqualTo(
+        assertThat(Footprint.through("bbb", CatalogueEntries.bySha(entries), links, FootprintRules.defaults()))
+                .isEqualTo(
                 new Footprint.Found("minimal", "registry.access.redhat.com/ubi9/ubi-minimal", List.of("aaa")));
     }
 }

@@ -40,6 +40,7 @@ final class CatalogueRun {
         Map<String, Conversions.Conversion> conversions = Conversions.read(inputs.converterDir());
         Map<String, Siblings.Found> siblings = Siblings.of(inputs.nearDuplicates());
         Map<String, CatalogueEntry> bySha = CatalogueEntries.bySha(parsed);
+        BaseLags baseLags = new BaseLags(lineageDir == null ? Map.of() : RegistryImages.tagsByImage(lineageDir));
         List<CatalogueEntry> entries = new ArrayList<>(parsed.stream()
                 .map(entry -> {
                     Footprint.Found footprint = Footprint.through(entry.blobSha(), bySha, links, settings.footprints());
@@ -49,7 +50,7 @@ final class CatalogueRun {
                             new Actions(ReleaseScope.of(entry.locations()),
                                     Reaches.of(entry.blobSha(), bySha, links, hierarchies.imagesBelow(entry.blobSha())),
                                     Conversions.of(conversions, entry.blobSha()),
-                                    Siblings.of(siblings, entry.blobSha()))));
+                                    Siblings.of(siblings, entry.blobSha()), baseLag(entry, baseLags))));
                 })
                 .toList());
         JsonLines.read(inputs.factsDir().resolve("parse-failures.jsonl")).forEach(failure -> entries.add(
@@ -62,6 +63,12 @@ final class CatalogueRun {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    static BaseLags.BaseLag baseLag(CatalogueEntry entry, BaseLags baseLags) {
+        CatalogueEntry.StageEntry base = CatalogueLinks.finalBaseStage(entry);
+        return base == null || base.baseTag() == null ? null
+                : baseLags.of(base.baseName() + ":" + base.baseTag()).orElse(null);
     }
 
     static String hideSecretShapesMissedUpstream(String line) {
