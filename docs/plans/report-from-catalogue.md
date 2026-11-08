@@ -55,9 +55,9 @@ one record per line, as the catalogue is, so `archetypes.json` becomes `archetyp
 One assertion each, several in `assertAll`; the report's pages read only `catalogue/dockerfiles.jsonl`, and the
 first slices remove before they add, each keeping what stays byte for byte.
 
-1. Removal: the CSV tables and `ddl.sql` no longer written (`Tables`, `Table` and their tests go); `EOL_LIST` and the
-   end-of-life share and column gone from the report; `archetypes.jsonl`, one archetype per line, in place of
-   `archetypes.json`.
+1. Removal: the CSV tables and `ddl.sql` no longer written (`Tables`, `Table` and their tests go); `archetypes.jsonl`,
+   one archetype per line, in place of `archetypes.json`. Done 8 Nov. End-of-life is woven through the pages being
+   replaced (the health strip, the figures, the bases page), so it leaves with them in step 8.
 2. `CatalogueView`: the catalogue file read back into entries the pages use (counts, chains, blocked, per
    organisation), with no other input.
 3. Summary page from the view: counts, chain depth and layer distributions, unmaintained by reason and what they
@@ -66,4 +66,5 @@ first slices remove before they add, each keeping what stays byte for byte.
 5. Blocked page: unmaintained intermediates ordered by how many images each holds back.
 6. A page per Dockerfile: locations, stage graph, copies, permissions, per-stage counts, images with their chains.
 7. Organisations: the summary per organisation; the archetypes page linked from the summary.
-8. `ReportRun` writing the pages from the catalogue; README; measured on an estate.
+8. `ReportRun` writing the pages from the catalogue, the old pages and `EOL_LIST` removed with what only they used;
+   README; measured on an estate.

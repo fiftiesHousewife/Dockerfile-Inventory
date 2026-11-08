@@ -15,8 +15,7 @@ import java.util.stream.IntStream;
 final class SummarySections {
 
     static final int TOP = 10;
-    static final List<String> DOWNLOADS = List.of("tables/dockerfiles.csv", "tables/locations.csv",
-            "tables/archetypes.csv", "tables/bases.csv", "tables/ddl.sql", "archetypes.json", "passes.json");
+    static final List<String> DOWNLOADS = List.of("catalogue/dockerfiles.jsonl", "archetypes.jsonl", "passes.json");
 
     private SummarySections() {
     }

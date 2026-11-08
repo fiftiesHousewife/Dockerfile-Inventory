@@ -19,19 +19,18 @@ class ReportRunTest {
     Path out;
 
     @Test
-    void writesPassesArchetypesTablesDdlAndThePages() throws IOException {
+    void writesPassesArchetypesAsJsonLinesAndThePagesButNoTables() throws IOException {
         new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, EolList.empty(), CatalogueSettings.DEFAULTS,
                 out).run();
 
         JsonNode passes = new ObjectMapper().readTree(out.resolve("passes.json").toFile());
-        JsonNode archetypes = new ObjectMapper().readTree(out.resolve("archetypes.json").toFile());
+        List<JsonNode> archetypes = JsonLines.read(out.resolve("archetypes.jsonl"));
         assertAll(
                 () -> assertThat(passes.path("passes").size()).isEqualTo(4),
                 () -> assertThat(passes.path("k80").asInt()).isEqualTo(2),
-                () -> assertThat(archetypes.path("archetypes").size()).isEqualTo(2),
-                () -> assertThat(read("tables/dockerfiles.csv")).startsWith("blob_sha,"),
-                () -> assertThat(read("tables/ddl.sql"))
-                        .contains("CREATE TABLE dockerfiles").contains("CREATE TABLE bases"),
+                () -> assertThat(archetypes).extracting(a -> a.path("rank").asInt()).containsExactly(1, 2),
+                () -> assertThat(out.resolve("tables")).doesNotExist(),
+                () -> assertThat(out.resolve("archetypes.json")).doesNotExist(),
                 () -> assertThat(read("index.html")).startsWith("<!doctype html>"),
                 () -> assertThat(read("orgs/payments.html")).contains("<h1>payments</h1>"),
                 () -> assertThat(read("archetypes/1.html")).contains("<h1>Archetype 1: "),

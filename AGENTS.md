@@ -62,7 +62,7 @@ lineage/            stage 1b: Artifactory images -> family tree -> links to Dock
                     Fold (effective user, env, labels, with who set each), Gaps, Analysis, Dockerfiles, LineageRates
 report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, bases, tables, linked HTML pages
                     Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, BaseCatalogue, EolList,
-                    Tallies, Figures (per organisation, bundles apart), Tables, Table, Report, ReportRun
+                    Tallies, Figures (per organisation, bundles apart), Report, ReportRun
                     Pages (writes them): SummaryPage, SummarySections, StripSection, OrganisationsSection,
                     AppliesTo (the sentences), ArchetypeTable, ArchetypeRows, ArchetypeName, ArchetypePage,
                     BasesPage, LineagePage, LineageSummary, CountTable, CoverageChart, Svg, Page, Html, Style;
@@ -150,7 +150,7 @@ GHE organisations + repos ──────┴─► discovery ─► manifest.
                                                    │
                                      facts ◄───────┘ ─► facts.jsonl, parse-failures.jsonl, rates.json
 Artifactory REST ───────► lineage ─► images.jsonl, lineage.jsonl, links.jsonl, effective.jsonl, gaps
-                facts + lineage ─► report ─► archetypes.json, tables/*.csv, index.html and pages ─► Oracle
+                facts + lineage ─► report ─► catalogue/dockerfiles.jsonl, archetypes.jsonl, index.html and pages
                 facts + lineage ─► rules  ─► findings.jsonl, tables, samples ─► Oracle; fixes later
                 facts           ─► converter ─► roundtrip.jsonl, coverage.json, builder classes
 ```

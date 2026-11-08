@@ -13,8 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class PagesTest {
 
-    static final Set<String> DATA = Set.of("archetypes.json", "passes.json", "tables/dockerfiles.csv",
-            "tables/locations.csv", "tables/archetypes.csv", "tables/bases.csv", "tables/ddl.sql");
+    static final Set<String> DATA = Set.of("catalogue/dockerfiles.jsonl", "archetypes.jsonl", "passes.json");
     private static final Pattern HREF = Pattern.compile("href=\"([^\"]+)\"");
 
     static Report report() {
@@ -35,7 +34,7 @@ class PagesTest {
     void theSummaryLinksToEveryOtherKindOfPageAndToTheDataFiles() {
         assertThat(Pages.all(report()).get("index.html")).contains("href=\"orgs/payments.html\"",
                 "href=\"archetypes.html\"", "href=\"bases.html\"", "href=\"lineage.html\"",
-                "href=\"tables/locations.csv\"", "href=\"archetypes.json\"", "href=\"tables/ddl.sql\"");
+                "href=\"catalogue/dockerfiles.jsonl\"", "href=\"archetypes.jsonl\"", "href=\"passes.json\"");
     }
 
     @Test

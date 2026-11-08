@@ -40,17 +40,14 @@ final class ReportRun {
         Estate estate = Estate.read(factsDir, discoveryDir, lineageDir);
         List<Group> archetypeGroups = NearDuplicates.of(Passes.signatureGroups(estate));
         Ranking ranking = Archetypes.rank(archetypeGroups, estate);
-        List<BaseRow> bases = BaseCatalogue.of(estate, eol);
         List<PassCount> passes = new ArrayList<>(Passes.exact(estate));
         passes.add(new PassCount("near-duplicate", archetypeGroups.size(), ranking.totalLocations()));
-        List<Table> tables = Tables.of(estate, archetypeGroups, ranking, bases);
 
         write("passes.json", pretty(passesSummary(ranking, passes)));
-        write("archetypes.json", pretty(ranking));
+        write("archetypes.jsonl", ranking.archetypes().stream().map(json::writeValueAsString)
+                .collect(Collectors.joining("\n", "", "\n")));
         CatalogueRun.write(new CatalogueRun.Inputs(factsDir, discoveryDir, lineageDir, converterDir, archetypeGroups),
                 outDir, catalogueSettings);
-        tables.forEach(t -> write("tables/" + t.name() + ".csv", t.csv()));
-        write("tables/ddl.sql", tables.stream().map(Table::ddl).collect(Collectors.joining("\n")));
         Pages.all(Report.of(estate, ranking, passes.subList(0, 3), archetypeGroups.size(), eol,
                 Optional.ofNullable(lineageDir).map(dir -> LineageFiles.read(dir, locations(estate))), discoveryDir))
                 .forEach(this::write);

@@ -26,7 +26,7 @@ final class ArchetypePage {
         Location where = locations.getOrDefault(representative, List.of()).stream().findFirst().orElse(null);
         return "<p class=\"note\">" + plural(row.locations(), "location", "locations") + " in "
                 + plural(row.files(), "file", "files") + ". Rank " + row.archetype().rank()
-                + " in archetypes.json.</p>" + signature(row.archetype().signature())
+                + " in archetypes.jsonl.</p>" + signature(row.archetype().signature())
                 + "<h2>Organisations</h2>" + CountTable.render("Organisation", row.organisations(), Map.of(),
                         Integer.MAX_VALUE)
                 + "<h2>Repositories</h2>" + CountTable.render("Repository", row.repositories(), Map.of(),

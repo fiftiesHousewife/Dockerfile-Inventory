@@ -243,9 +243,8 @@ version, package managers and packages, user kind, ports, entrypoint form, stage
 | File | Contents |
 | --- | --- |
 | `passes.json` | Groups and locations after each pass; k80 and k95, the fewest archetypes covering 80% and 95% of locations |
-| `archetypes.json` | Every archetype by size: its files, signature, a representative file and the repositories using it |
+| `archetypes.jsonl` | One archetype per line, by size: its files, signature, a representative file and the repositories using it |
 | `catalogue/dockerfiles.jsonl` | One line per distinct Dockerfile, described below |
-| `tables/*.csv`, `tables/ddl.sql` | `dockerfiles`, `locations`, `archetypes` and `bases` for loading into Oracle, with the `CREATE TABLE` statements |
 | `index.html` | The summary page, described below; links to the pages below |
 | `orgs/<org>.html` | The same summary for one organisation (the first part of each repository's name) |
 | `archetypes.html`, `archetypes-<n>.html` | Every archetype, ranked, 250 to a page, each named from what it builds |

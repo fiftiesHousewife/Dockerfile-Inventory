@@ -38,7 +38,7 @@ final class About {
                     + "most locations; base families no other organisation uses."),
             Map.entry("Top archetypes", "The largest families of near-identical Dockerfiles, by locations, named "
                     + "by base family, package managers and user. Bundles, templates, unreadable files and bases "
-                    + "set by a variable are counted apart. The full ranking is in archetypes.json."),
+                    + "set by a variable are counted apart. The full ranking is in archetypes.jsonl."),
             Map.entry("Top bases", "The base families Dockerfiles build their final stage FROM, by locations, with "
                     + "how many organisations use each: a family used by many is a candidate to standardise on."),
             Map.entry("Package managers", "Locations whose RUN instructions call each package manager."),
