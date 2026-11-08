@@ -50,6 +50,38 @@ From `report`, which already joins facts, discovery and lineage: `catalogue/dock
 Dockerfile, as above, and nothing else (asked 8 Nov: JSON only; how consumers load it is theirs to decide). The
 README documents every field.
 
+## Reshaped around the hierarchy (asked 8 Nov)
+
+Seeing a first entry, the owner named what matters most: navigating the hierarchy and counting layers, identifying
+parents, knowing when each layer was created, when its Dockerfile last changed and when it was last published as an
+image, and finding the images blocked on unmaintained intermediates. The fields above that serve none of these
+(shell, stop signal, instruction counts, the bundle flag) stay in the entry but no longer lead it.
+
+What each answer needs, and where it comes from:
+
+| Question | Data | Source today |
+| --- | --- | --- |
+| parents, children, path to the root, depth | each image's parent; each image's Dockerfile | lineage (`lineage.jsonl`, `links.jsonl`); without a registry, the inferred links already built |
+| layers: own, inherited, total | the image's layers, and its parent's | lineage (`configs/`: `rootfs`, `history`); without a registry, the layers the Dockerfile declares |
+| when each layer was created | each layer's `created` time and the step that made it | lineage (`configs/`: `history`) |
+| when the Dockerfile last changed | the file's last commit before the scanned one | not collected: discovery has the scanned commit and the repository's last push, not the file's history |
+| when it was last published | the image's last push | lineage (`images.jsonl`: `lastPushed`) |
+| blocked on an unmaintained intermediate | per image, each ancestor that is unmaintained, and so every image under it | lineage (`outdated-bases.jsonl`), plus a definition of unmaintained (question below) |
+
+The entry gains a `hierarchy` part: the chain from this Dockerfile's image to the root (each step its image, its
+Dockerfile when the estate has one, its own layers, its created and last-published times, whether it is
+unmaintained and why), the layer counts, and `blockedBy`: the unmaintained ancestors that hold this image back.
+
+Questions (8 Nov):
+
+5. What makes an intermediate unmaintained: not published for a time (how long), a parent published since it was
+   last built (it has not been rebuilt on its updated base), its repository archived, its base end of life, or
+   several of these?
+6. When a Dockerfile last changed: worth discovery fetching each Dockerfile's last commit date (one more request
+   per repository, through GraphQL), or is the repository's last push enough for now?
+7. The unit: one entry per Dockerfile with its images' hierarchy attached (as now), or one entry per image, each
+   naming its Dockerfile?
+
 ## Questions
 
 1. One record per distinct Dockerfile, its locations listed (and a locations table), or one per location?
