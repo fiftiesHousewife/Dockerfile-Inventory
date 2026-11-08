@@ -1,11 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
+import io.github.fiftieshousewife.dockerfile.model.BaseImage;
+import io.github.fiftieshousewife.dockerfile.model.CommandForm;
+import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.Port;
+import io.github.fiftieshousewife.dockerfile.model.Stage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

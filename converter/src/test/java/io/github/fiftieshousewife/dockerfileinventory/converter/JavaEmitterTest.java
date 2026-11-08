@@ -2,11 +2,11 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PolicyViolation;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
+import io.github.fiftieshousewife.dockerfile.model.BaseImage;
+import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.PolicyViolation;
+import io.github.fiftieshousewife.dockerfile.model.Stage;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -98,7 +98,7 @@ class JavaEmitterTest {
         Stage onStage = new Stage(null, null, "build", List.of());
 
         assertThat(List.of(onBase, onStage)).map(stage -> JavaEmitter.from(stage).toString()).containsExactly(
-                "\n.thenStage(\"build\", new io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage(\"ubi9\", "
+                "\n.thenStage(\"build\", new io.github.fiftieshousewife.dockerfile.model.BaseImage(\"ubi9\", "
                         + "\"9.4\", null))",
                 "\n.thenStageFrom(null, \"build\")");
     }

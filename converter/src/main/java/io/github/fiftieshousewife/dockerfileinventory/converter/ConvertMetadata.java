@@ -1,8 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.CommandForm;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

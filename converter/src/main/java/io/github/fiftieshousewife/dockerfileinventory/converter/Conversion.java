@@ -1,7 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import java.util.List;
 
 record Conversion(Dockerfile model, List<List<List<String>>> comments) {

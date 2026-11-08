@@ -1,6 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import java.util.List;
 import java.util.Optional;

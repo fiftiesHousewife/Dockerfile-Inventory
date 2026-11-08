@@ -3,7 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;

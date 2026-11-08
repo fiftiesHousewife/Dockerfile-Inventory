@@ -2,9 +2,9 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.BaseImage;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Stage;
+import io.github.fiftieshousewife.dockerfile.model.BaseImage;
+import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
+import io.github.fiftieshousewife.dockerfile.model.Stage;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

@@ -77,7 +77,8 @@ rules/              stage 3: detect-only rules over facts, parsed Dockerfiles an
                     one class per rule (S1-S4, R1-R3, H1-H3, I1, I2); RuleSet, RulesRun, DiscoveryFiles,
                     FindingsTable, RuleRates, Samples; renovate/ holds the Renovate preset
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
-dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite
+dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
+                    io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model
                     Dockerfile, Stage, Instruction (records; Copy, Add and CopyHeredoc with of/to and with-methods),
                     RunBody, RunFlag, Port, CommandForm, BaseImage, PackageInstall, PackageManager, OrderedMap;
                     DockerfileRenderer (Target), InstructionParts, DockerQuotes, RunCommands, PackageInstallRenderer

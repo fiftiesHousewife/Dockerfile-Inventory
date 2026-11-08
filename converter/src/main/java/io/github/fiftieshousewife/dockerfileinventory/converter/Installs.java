@@ -1,7 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
+import io.github.fiftieshousewife.dockerfile.model.PackageInstall;
+import io.github.fiftieshousewife.dockerfile.model.PackageManager;
 import io.github.fiftieshousewife.dockerfileinventory.facts.ShellTokeniser;
 import java.util.List;
 import java.util.Map;

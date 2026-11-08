@@ -1,8 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Dockerfile;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag;
+import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.RunFlag;
 import java.util.List;
 import java.util.stream.Stream;
 

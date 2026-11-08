@@ -1,7 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Policy;
+import io.github.fiftieshousewife.dockerfile.model.Policy;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsParser;
 import io.github.fiftieshousewife.dockerfileinventory.facts.ParseResult;
 import java.nio.file.Path;

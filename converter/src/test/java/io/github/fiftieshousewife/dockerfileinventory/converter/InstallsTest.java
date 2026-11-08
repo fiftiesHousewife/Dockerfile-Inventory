@@ -2,8 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
+import io.github.fiftieshousewife.dockerfile.model.PackageInstall;
+import io.github.fiftieshousewife.dockerfile.model.PackageManager;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

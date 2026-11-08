@@ -1,8 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.ImageBuilder;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Policy;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PolicyViolation;
+import io.github.fiftieshousewife.dockerfile.model.ImageBuilder;
+import io.github.fiftieshousewife.dockerfile.model.Policy;
+import io.github.fiftieshousewife.dockerfile.model.PolicyViolation;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

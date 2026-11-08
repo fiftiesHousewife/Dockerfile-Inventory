@@ -3,11 +3,11 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.PackageInstall;
+import io.github.fiftieshousewife.dockerfile.model.PackageManager;
+import io.github.fiftieshousewife.dockerfile.model.RunBody;
+import io.github.fiftieshousewife.dockerfile.model.RunFlag;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

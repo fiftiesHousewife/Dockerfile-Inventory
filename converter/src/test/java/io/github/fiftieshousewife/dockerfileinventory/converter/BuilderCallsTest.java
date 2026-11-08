@@ -2,21 +2,21 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageInstall;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Port;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag;
+import io.github.fiftieshousewife.dockerfile.model.CommandForm;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.OrderedMap;
+import io.github.fiftieshousewife.dockerfile.model.PackageInstall;
+import io.github.fiftieshousewife.dockerfile.model.PackageManager;
+import io.github.fiftieshousewife.dockerfile.model.Port;
+import io.github.fiftieshousewife.dockerfile.model.RunBody;
+import io.github.fiftieshousewife.dockerfile.model.RunFlag;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class BuilderCallsTest {
 
-    private static final String DSL = "io.github.fiftieshousewife.dockerfileinventory.dsl.";
+    private static final String DSL = "io.github.fiftieshousewife.dockerfile.model.";
 
     @Test
     void callWritesEachInstructionAsItsBuilderMethod() {
@@ -25,7 +25,7 @@ class BuilderCallsTest {
                 new Instruction.Raw("VOLUME /d", "VOLUME is not modelled")))
                 .map(instruction -> BuilderCalls.call(instruction).toString())
                 .containsExactly(".arg(\"A\")", ".arg(\"A\", \"1\")",
-                        ".env(io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"
+                        ".env(io.github.fiftieshousewife.dockerfile.model.OrderedMap"
                                 + ".of(\"K\", \"v\"))", ".expose(\"8080\")",
                         ".raw(\"VOLUME /d\", \"VOLUME is not modelled\")");
     }
@@ -110,16 +110,16 @@ class BuilderCallsTest {
                 .map(instruction -> BuilderCalls.call(instruction).toString())
                 .containsExactly(
                         ".entrypoint(java.util.List.of(\"exec app\"), "
-                                + "io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm.SHELL)",
+                                + "io.github.fiftieshousewife.dockerfile.model.CommandForm.SHELL)",
                         ".cmd(java.util.List.of(\"serve\"), "
-                                + "io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm.SHELL)",
+                                + "io.github.fiftieshousewife.dockerfile.model.CommandForm.SHELL)",
                         ".cmd(\"serve\")");
     }
 
     @Test
     void aMapIsWrittenInItsOrder() {
         assertThat(BuilderCalls.map(OrderedMap.of("B", "2", "A", "1")).toString())
-                .isEqualTo("io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"
+                .isEqualTo("io.github.fiftieshousewife.dockerfile.model.OrderedMap"
                         + ".of(\"B\", \"2\", \"A\", \"1\")");
     }
 
@@ -130,9 +130,9 @@ class BuilderCallsTest {
                 new Instruction.Onbuild(new Instruction.User("1001"))))
                 .map(instruction -> BuilderCalls.call(instruction).toString())
                 .containsExactly(".healthcheckNone()",
-                        ".healthcheck(io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"
+                        ".healthcheck(io.github.fiftieshousewife.dockerfile.model.OrderedMap"
                                 + ".of(\"retries\", \"3\"), java.util.List.of(\"true\"), "
-                                + "io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm.SHELL)",
+                                + "io.github.fiftieshousewife.dockerfile.model.CommandForm.SHELL)",
                         ".user(\"1001\").asOnbuild()");
     }
 }

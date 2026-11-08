@@ -1,6 +1,7 @@
 # Publishing a set of libraries: plan
 
-Status: planned 8 Nov; questions answered 8 Nov. Done: step 1, the licence.
+Status: planned 8 Nov; questions answered 8 Nov. Done: step 1, the licence; step 2, `Secrets` in its own module and `dsl` renamed to
+`io.github.fiftieshousewife.dockerfile.model` (the estate round trip unchanged).
 
 ## Why
 

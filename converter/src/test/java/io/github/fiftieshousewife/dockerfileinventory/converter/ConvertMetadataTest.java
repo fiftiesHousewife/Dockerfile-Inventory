@@ -2,9 +2,9 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.CommandForm;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Instruction;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
+import io.github.fiftieshousewife.dockerfile.model.CommandForm;
+import io.github.fiftieshousewife.dockerfile.model.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.RunBody;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

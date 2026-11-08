@@ -2,8 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.Policy;
-import io.github.fiftieshousewife.dockerfileinventory.dsl.PolicyViolation;
+import io.github.fiftieshousewife.dockerfile.model.Policy;
+import io.github.fiftieshousewife.dockerfile.model.PolicyViolation;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;

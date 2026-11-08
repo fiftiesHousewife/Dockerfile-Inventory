@@ -3,13 +3,13 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import io.github.fiftieshousewife.dockerfileinventory.dsl.RunBody;
+import io.github.fiftieshousewife.dockerfile.model.RunBody;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class RecordCallsTest {
 
-    private static final String DSL = "io.github.fiftieshousewife.dockerfileinventory.dsl.";
+    private static final String DSL = "io.github.fiftieshousewife.dockerfile.model.";
 
     @Test
     void aHeredocSaysOnlyWhatDiffersFromEofAndQuoted() {
