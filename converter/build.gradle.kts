@@ -19,6 +19,7 @@ dependencies {
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
     implementation(libs.javapoet)
+    implementation(libs.commons.compress)
 }
 
 application {
