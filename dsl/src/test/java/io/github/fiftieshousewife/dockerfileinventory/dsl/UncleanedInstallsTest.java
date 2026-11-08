@@ -44,4 +44,10 @@ class UncleanedInstallsTest {
     private static Instruction shell(String... commands) {
         return new Instruction.Run(new RunBody.Shell(List.of(commands)));
     }
+
+    @Test
+    void aCleanWithItsFlagsBeforeCleanStillCleans() {
+        assertThat(UncleanedInstalls.uncleaned("yum install -y php && yum -y clean all --enablerepo='*'")).isFalse();
+        assertThat(UncleanedInstalls.uncleaned("dnf install -y git && dnf --setopt=x clean all")).isFalse();
+    }
 }

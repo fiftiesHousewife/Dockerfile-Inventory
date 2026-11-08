@@ -6,3 +6,6 @@ openshift4/ose-operator-registry-rhel9,v4
 ocp/5.0,base-rhel9
 debian,bookworm-slim
 scratch,
+ubi8/ubi-minimal,8
+sclorg/s2i-base-c9s,c9s
+ubi9/python-311,1

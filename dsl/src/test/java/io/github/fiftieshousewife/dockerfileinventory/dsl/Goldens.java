@@ -6,97 +6,41 @@ import java.util.Map;
 
 final class Goldens {
 
-    static final String REGISTRY = "registry.example.com/";
+    static final String REGISTRY = "registry.access.redhat.com/";
     static final BaseImage UBI_MINIMAL = new BaseImage(REGISTRY + "ubi9/ubi-minimal", "9.4",
             "sha256:" + "1".repeat(64));
     static final BaseImage UBI = new BaseImage(REGISTRY + "ubi9/ubi", "9.4", "sha256:" + "2".repeat(64));
-    static final BaseImage GO_TOOLSET = new BaseImage(REGISTRY + "ubi9/go-toolset", "1.22",
-            "sha256:" + "3".repeat(64));
+    static final BaseImage MINIDEB = new BaseImage("docker.io/bitnami/minideb", "bookworm", "sha256:" + "4".repeat(64));
+    static final BaseImage OPERATOR_REGISTRY = new BaseImage(
+            "registry.redhat.io/openshift4/ose-operator-registry-rhel9", "v4.22", "sha256:" + "5".repeat(64));
+    static final BaseImage OCP_BUILDER = new BaseImage("registry.ci.openshift.org/ocp/builder",
+            "rhel-9-golang-1.26-openshift-5.0", "sha256:" + "6".repeat(64));
+    static final BaseImage OCP_BASE = new BaseImage("registry.ci.openshift.org/ocp/5.0", "base-rhel9",
+            "sha256:" + "7".repeat(64));
+    static final BaseImage DEBIAN = new BaseImage("debian", "bookworm-slim", "sha256:" + "8".repeat(64));
+    static final BaseImage SCRATCH = new BaseImage("scratch", null, null);
+    static final BaseImage UBI8_MINIMAL = new BaseImage("registry.access.redhat.com/ubi8/ubi-minimal", "8.1",
+            "sha256:" + "9".repeat(64));
+    static final BaseImage S2I_BASE = new BaseImage("quay.io/sclorg/s2i-base-c9s", "c9s", "sha256:" + "a".repeat(64));
+    static final BaseImage PYTHON_311 = new BaseImage("registry.access.redhat.com/ubi9/python-311", "1-77.1726664316",
+            "sha256:" + "b".repeat(64));
     static final Policy POLICY = Policy.read(Path.of("src/test/resources/golden/allow.csv"));
 
     private Goldens() {
     }
 
-    static final BaseImage MINIDEB = new BaseImage("docker.io/bitnami/minideb", "bookworm", "sha256:" + "4".repeat(64));
-
-    static final BaseImage OPERATOR_REGISTRY = new BaseImage(
-            "registry.redhat.io/openshift4/ose-operator-registry-rhel9", "v4.22", "sha256:" + "5".repeat(64));
-
-    static final BaseImage OCP_BUILDER = new BaseImage("registry.ci.openshift.org/ocp/builder",
-            "rhel-9-golang-1.26-openshift-5.0", "sha256:" + "6".repeat(64));
-    static final BaseImage OCP_BASE = new BaseImage("registry.ci.openshift.org/ocp/5.0", "base-rhel9",
-            "sha256:" + "7".repeat(64));
-
-    static final BaseImage DEBIAN = new BaseImage("debian", "bookworm-slim", "sha256:" + "8".repeat(64));
-
-    static final BaseImage SCRATCH = new BaseImage("scratch", null, null);
-
     static Map<String, ImageBuilder> all() {
-        return Map.of("java-service", javaService(), "node-service", nodeService(), "python-service",
-                pythonService(), "go-multistage", goMultistage(), "bitnami-app", bitnamiApp(), "olm-catalog",
-                olmCatalog(), "go-operator", goOperator(), "php-from-source", phpFromSource(),
-                "rpm-rootfs", rpmRootfs(), "binary-on-ubi", binaryOnUbi());
+        return Map.ofEntries(Map.entry("bitnami-app", bitnamiApp()), Map.entry("olm-catalog", olmCatalog()),
+                Map.entry("go-operator", goOperator()), Map.entry("php-from-source", phpFromSource()),
+                Map.entry("rpm-rootfs", rpmRootfs()), Map.entry("binary-on-ubi", binaryOnUbi()),
+                Map.entry("tool-image", toolImage()), Map.entry("java-on-ubi8", javaOnUbi8()),
+                Map.entry("s2i-php", s2iPhp()), Map.entry("python-on-ubi", pythonOnUbi()));
     }
 
     private static ImageBuilder labelled(ImageBuilder builder) {
         return builder.arg("REVISION").arg("SOURCE")
                 .label("org.opencontainers.image.revision", "${REVISION}")
                 .label("org.opencontainers.image.source", "${SOURCE}");
-    }
-
-    static ImageBuilder javaService() {
-        return labelled(ImageBuilder.finalStage(UBI_MINIMAL))
-                .install("java-21-openjdk-headless", "shadow-utils")
-                .workdir("/opt/app")
-                .copy("target/app.jar", "/opt/app/app.jar")
-                .writablePaths("/opt/app")
-                .expose(8080)
-                .user(1001)
-                .entrypoint("java", "-jar", "/opt/app/app.jar");
-    }
-
-    static ImageBuilder nodeService() {
-        return labelled(ImageBuilder.finalStage(UBI_MINIMAL))
-                .install("nodejs", "npm")
-                .run("npm config set fund false --location=global")
-                .workdir("/opt/app")
-                .copy("package.json", "/opt/app/")
-                .run("npm ci --omit=dev")
-                .copy("dist/", "/opt/app/dist/")
-                .writablePaths("/opt/app")
-                .env("NODE_ENV", "production")
-                .expose(3000)
-                .user(1001)
-                .entrypoint("node", "/opt/app/dist/server.js");
-    }
-
-    static ImageBuilder pythonService() {
-        return labelled(ImageBuilder.finalStage(UBI))
-                .install("python3.11", "python3.11-pip")
-                .workdir("/opt/app")
-                .copy("requirements.txt", "/opt/app/")
-                .run("python3.11 -m pip install --no-cache-dir -r requirements.txt")
-                .copy("src/", "/opt/app/src/")
-                .writablePaths("/opt/app")
-                .env("PYTHONUNBUFFERED", "1")
-                .expose(8000)
-                .user(1001)
-                .entrypoint("python3.11", "-m", "app")
-                .cmd("--port", "8000");
-    }
-
-    static ImageBuilder goMultistage() {
-        return ImageBuilder.stage("build", GO_TOOLSET)
-                .workdir("/src")
-                .copy(".", "/src/")
-                .run("go build -o /src/out/server ./cmd/server")
-                .thenFrom(UBI_MINIMAL)
-                .arg("REVISION").arg("SOURCE")
-                .label("org.opencontainers.image.revision", "${REVISION}")
-                .label("org.opencontainers.image.source", "${SOURCE}")
-                .copyFrom("build", "/src/out/server", "/usr/local/bin/server")
-                .user(1001)
-                .entrypoint("/usr/local/bin/server");
     }
 
     static ImageBuilder bitnamiApp() {
@@ -278,5 +222,100 @@ final class Goldens {
                 .copy(List.of("private-org-peribolos-sync"), "/usr/bin/private-org-peribolos-sync", "0:0", null)
                 .user(1001)
                 .entrypoint("/usr/bin/private-org-peribolos-sync");
+    }
+
+    static ImageBuilder toolImage() {
+        return labelled(ImageBuilder.finalStage(UBI_MINIMAL))
+                .copy(List.of("install-deps.sh"), "/tmp/", "0:0", null)
+                .run("/tmp/install-deps.sh", "rm /tmp/install-deps.sh")
+                .user(1001);
+    }
+
+    static ImageBuilder javaOnUbi8() {
+        return labelled(ImageBuilder.finalStage(UBI8_MINIMAL))
+                .arg("JAVA_PACKAGE", "java-11-openjdk-headless")
+                .arg("RUN_JAVA_VERSION", "1.3.8")
+                .env(OrderedMap.of("LANG", "en_US.UTF-8", "LANGUAGE", "en_US:en"))
+                .install("curl", "ca-certificates", "${JAVA_PACKAGE}")
+                .run("mkdir /deployments",
+                        "curl https://repo1.maven.org/maven2/io/fabric8/run-java-sh/${RUN_JAVA_VERSION}/run-java-sh-"
+                                + "${RUN_JAVA_VERSION}-sh.sh -o /deployments/run-java.sh",
+                        "chmod 550 /deployments/run-java.sh",
+                        "echo \"securerandom.source=file:/dev/urandom\""
+                                + " >> /etc/alternatives/jre/lib/security/java.security")
+                .env("JAVA_OPTIONS",
+                        "-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager")
+                .copy("target/lib/*", "/deployments/lib/")
+                .copy("target/*-runner.jar", "/deployments/app.jar")
+                .writablePaths("/deployments")
+                .expose(8080)
+                .user(1001)
+                .entrypoint("/deployments/run-java.sh");
+    }
+
+    static ImageBuilder s2iPhp() {
+        return labelled(ImageBuilder.finalStage(S2I_BASE))
+                .expose("8080", "8443")
+                .env(OrderedMap.of("PHP_VERSION", "8.0", "PHP_VER_SHORT", "80", "NAME", "php"))
+                .env(OrderedMap.of("SUMMARY", "Platform for building and running PHP $PHP_VERSION applications",
+                        "DESCRIPTION", "PHP $PHP_VERSION available as container is a base platform for building and"
+                                + " running various PHP $PHP_VERSION applications and frameworks."))
+                .label(OrderedMap.of("summary", "${SUMMARY}", "description", "${DESCRIPTION}",
+                        "io.k8s.description", "${DESCRIPTION}",
+                        "io.k8s.display-name", "Apache 2.4 with PHP ${PHP_VERSION}",
+                        "io.openshift.expose-services", "8080:http",
+                        "io.openshift.tags", "builder,${NAME},${NAME}${PHP_VER_SHORT},${NAME}-${PHP_VER_SHORT}",
+                        "io.openshift.s2i.scripts-url", "image:///usr/libexec/s2i",
+                        "io.s2i.scripts-url", "image:///usr/libexec/s2i",
+                        "name", "sclorg/${NAME}-${PHP_VER_SHORT}-c9s", "version", "1"))
+                .arg("INSTALL_PKGS", "php php-fpm php-mysqlnd php-pgsql php-bcmath php-gd php-intl php-ldap"
+                        + " php-mbstring php-pdo php-process php-soap php-opcache php-xml php-gmp php-pecl-apcu"
+                        + " php-pecl-zip mod_ssl hostname")
+                .run("yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS",
+                        "yum reinstall -y tzdata",
+                        "rpm -V $INSTALL_PKGS",
+                        "php -v | grep -qe \"v$PHP_VERSION\\.\"",
+                        "echo \"Found VERSION $PHP_VERSION\"",
+                        "yum -y clean all --enablerepo='*'")
+                .env(OrderedMap.of("PHP_CONTAINER_SCRIPTS_PATH", "/usr/share/container-scripts/php/",
+                        "APP_DATA", "${APP_ROOT}/src", "PHP_DEFAULT_INCLUDE_PATH", "/usr/share/pear",
+                        "PHP_SYSCONF_PATH", "/etc", "PHP_HTTPD_CONF_FILE", "php.conf",
+                        "PHP_FPM_CONF_D_PATH", "/etc/php-fpm.d", "PHP_FPM_CONF_FILE", "www.conf",
+                        "PHP_FPM_RUN_DIR", "/run/php-fpm", "PHP_MAIN_FPM_CONF_FILE", "/etc/php-fpm.conf",
+                        "PHP_FPM_LOG_PATH", "/var/log/php-fpm", "HTTPD_CONFIGURATION_PATH", "${APP_ROOT}/etc/conf.d",
+                        "HTTPD_MAIN_CONF_PATH", "/etc/httpd/conf", "HTTPD_MAIN_CONF_D_PATH", "/etc/httpd/conf.d",
+                        "HTTPD_MODULES_CONF_D_PATH", "/etc/httpd/conf.modules.d", "HTTPD_VAR_RUN", "/var/run/httpd",
+                        "HTTPD_DATA_PATH", "/var/www", "HTTPD_DATA_ORIG_PATH", "/var/www", "HTTPD_VAR_PATH", "/var"))
+                .copy(List.of("./s2i/bin/"), "$STI_SCRIPTS_PATH", "0:0", null)
+                .copy(List.of("./root/"), "/", "0:0", null)
+                .run("/usr/libexec/container-setup", "rpm-file-permissions")
+                .user(1001)
+                .cmd("/usr/libexec/s2i/usage");
+    }
+
+    static ImageBuilder pythonOnUbi() {
+        return labelled(ImageBuilder.finalStage(PYTHON_311))
+                .user(0)
+                .run("dnf remove sqlite3 -y",
+                        "wget https://www.sqlite.org/2023/sqlite-autoconf-3410200.tar.gz",
+                        "tar -xvzf sqlite-autoconf-3410200.tar.gz",
+                        "cd sqlite-autoconf-3410200",
+                        "./configure",
+                        "make",
+                        "make install",
+                        "mv /usr/local/bin/sqlite3 /usr/bin/sqlite3",
+                        "cd ..",
+                        "rm -rf sqlite-autoconf-3410200 sqlite-autoconf-3410200.tar.gz")
+                .env("LD_LIBRARY_PATH", "/usr/local/lib")
+                .workdir("/rag")
+                .copy("requirements.txt", ".")
+                .run("pip install --upgrade pip", "pip install --no-cache-dir --upgrade -r /rag/requirements.txt",
+                        "mkdir -p /rag/models/")
+                .copy(List.of("rag_app.py", "manage_vectordb.py"), ".", null, null)
+                .expose(8501)
+                .env("HF_HUB_CACHE", "/rag/models/")
+                .writablePaths("/rag/models/")
+                .user(1001)
+                .entrypoint("streamlit", "run", "rag_app.py");
     }
 }

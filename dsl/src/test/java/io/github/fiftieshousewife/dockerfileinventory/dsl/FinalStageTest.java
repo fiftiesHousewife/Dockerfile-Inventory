@@ -24,6 +24,16 @@ class FinalStageTest {
     }
 
     @Test
+    void theGroupZeroStepGoesOnlyBeforeTheLastUserWhenTheStageSwitchesUser() {
+        Instruction root = new Instruction.User("0");
+        Instruction build = new Instruction.Run(new RunBody.Shell(List.of("mkdir -p /data")));
+        Instruction app = new Instruction.User("1001");
+
+        assertThat(FinalStage.finished(List.of(root, build, app), "1001", List.of("/data")))
+                .containsExactly(root, build, FinalStage.groupZero(List.of("/data")), app);
+    }
+
+    @Test
     void anOwnedCopyKeepsItsOtherOptions() {
         Instruction copy = new Instruction.Copy(List.of("run.sh"), "/bin/", null, "build", "755", true, true);
 
@@ -41,5 +51,11 @@ class FinalStageTest {
     void groupZeroChangesEveryWritablePathInOneRun() {
         assertThat(FinalStage.groupZero(List.of("/a", "/b"))).isEqualTo(new Instruction.Run(
                 new RunBody.Shell(List.of("chgrp -R 0 /a /b", "chmod -R g=u /a /b"))));
+    }
+
+    @Test
+    void lastUserIsTheIndexOfTheLastUserOrMinusOne() {
+        assertThat(List.of(FinalStage.lastUser(List.of(new Instruction.User("0"), new Instruction.Workdir("/a"), USER)),
+                FinalStage.lastUser(List.of(new Instruction.Workdir("/a"))))).containsExactly(2, -1);
     }
 }

@@ -1,4 +1,4 @@
-FROM registry.example.com/ubi9/ubi:9.4@sha256:2222222222222222222222222222222222222222222222222222222222222222 AS minimal-ubi
+FROM registry.access.redhat.com/ubi9/ubi:9.4@sha256:2222222222222222222222222222222222222222222222222222222222222222 AS minimal-ubi
 RUN dnf update -y --allowerasing \
     && mkdir /image \
     && ln -s usr/bin /image/bin \

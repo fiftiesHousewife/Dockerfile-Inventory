@@ -1,6 +1,6 @@
 # Completing the DSL: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 next.
+Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 next.
 
 The owner asked for the DSL to be made completely ready. It works: an immutable model, one renderer, policy-enforcing
 builders, four goldens passing every rule, and a converter that round-trips 5,149 of the combined estate's 5,250 files
@@ -116,6 +116,25 @@ every golden has its README line, and the acceptance test run over all ten. The 
 
 **Questions.** 1. Which ten: answered 8 Nov, one per family, as above. 2. The base: answered 8 Nov, each family's
 own base approved in the golden policy, pinned.
+
+### S2 as built
+
+Ten goldens in `dsl/src/test/resources/golden/`, one per family, each with its README line (what the archetype is,
+where its representative lives, what the rewrite changed); `GoldenTest` checks each file against its builder and
+that the README describes exactly the goldens there are; `rules`' acceptance test finds nothing in any of them; one
+`allow.csv` serves both. The four hand-picked goldens are gone.
+
+Rewriting real Dockerfiles to the policy found three faults, each fixed test first:
+
+- The group-0 step went before every `USER` in the final stage, so a stage that switched to `USER 0` to build put
+  it before the paths existed (python-on-ubi); it now goes before the last `USER` only.
+- The policy asked `scratch` for a digest, though there is none and rule R1 already exempts it (rpm-rootfs).
+- H1 in the builders missed `yum -y clean all`, a flag before `clean`, as sclorg writes it (s2i-php); rule H1,
+  which reads facts, already accepted it.
+
+One question for the owner, not changed: the policy gives every unowned final-stage `COPY` to the runtime user
+(`--chown=<user>:0`), so scripts copied to `/usr/local/bin` become writable by the process; two goldens own their
+copies by `0:0` explicitly to avoid handing a whole root filesystem or a binary to it.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

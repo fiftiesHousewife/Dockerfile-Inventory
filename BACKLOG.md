@@ -18,8 +18,8 @@ and one line when its gate is met.
   CA bundle, token files, retries, rate-limit waits and pacing) in discovery and lineage, SSO and refusals handled,
   `INVENTORY_MIRROR` for the build, a `Containerfile` for the pod (its first build is the owner's).
 - Active (planned 7 Nov, `docs/plans/dsl-completion.md`): the DSL completed. Done 7 Nov: S1, every instruction
-  typed (the combined estate's 5,150 converted files fully typed, from 92.6%). Next: S2 goldens from the ten largest
-  archetypes, S3 the Java round trip, S4 building and comparing images (Phase 5b).
+  typed (the combined estate's 5,150 converted files fully typed, from 92.6%). Done 8 Nov: S2, ten goldens from real
+  archetypes, one per family. Next: S3 the Java round trip, S4 building and comparing images (Phase 5b).
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Next (planned 7 Nov, `docs/plans/corporate-readiness.md`): running inside a corporate network: proxies, a
@@ -120,8 +120,8 @@ and one line when its gate is met.
   passes the Phase 3 rules with zero findings; builders refuse each invariant breach. Phase 4b (central generator
   repository and PR job) waits on a GHE token with write access.
   - Done: model, package installs, renderer with targets, builders with policy, four goldens; the gate's tests
-    pass; adjacent RUNs are joined in `build()` (H3), 6 Nov. Next: real archetypes as goldens after the first
-    Phase 2 run.
+    pass; adjacent RUNs are joined in `build()` (H3), 6 Nov. Done 8 Nov: ten goldens from real archetypes, one per
+    family (`docs/plans/dsl-completion.md`, S2), replacing the four hand-picked ones.
 
 - Phase 5 — Converter. Plan: `docs/plans/phase-5.md` (questions answered 6 Nov). Gate: round-trip equivalence;
   opt-in per team. Phase 5b (building and comparing images, delivering PRs) needs Buildah and Phase 4b.

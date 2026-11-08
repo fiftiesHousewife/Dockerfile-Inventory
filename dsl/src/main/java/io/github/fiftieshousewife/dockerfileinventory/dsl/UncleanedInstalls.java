@@ -7,7 +7,7 @@ final class UncleanedInstalls {
 
     private static final Pattern RPM_INSTALL = Pattern.compile("\\b(microdnf|dnf|yum)\\s+(-\\S+\\s+)*install\\b");
     private static final Pattern RPM_CLEAN =
-            Pattern.compile("\\b(microdnf|dnf|yum)\\s+clean\\s+all\\b|rm\\s+-rf\\s+/var/cache/(dnf|yum)");
+            Pattern.compile("\\b(microdnf|dnf|yum)\\s+(-\\S+\\s+)*clean\\s+all\\b|rm\\s+-rf\\s+/var/cache/(dnf|yum)");
     private static final Pattern APT_INSTALL = Pattern.compile("\\bapt(-get)?\\s+(-\\S+\\s+)*install\\b");
     private static final Pattern APT_CLEAN = Pattern.compile("rm\\s+-rf\\s+/var/lib/apt/lists");
     private static final Pattern APK_ADD = Pattern.compile("\\bapk\\s+add\\b");
