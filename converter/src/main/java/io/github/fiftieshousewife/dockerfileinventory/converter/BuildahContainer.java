@@ -21,16 +21,29 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     private final Path sources;
     private final Path work;
     private final String arch;
+    private final int timeoutMinutes;
 
-    BuildahContainer(Path sources, Path work, String arch) {
+    BuildahContainer(Path sources, Path work, String arch, int timeoutMinutes) {
         this.sources = sources.toAbsolutePath();
         this.work = work.toAbsolutePath();
         this.arch = arch;
+        this.timeoutMinutes = timeoutMinutes;
+    }
+
+    static int timeoutMinutes(Map<String, String> environment) {
+        String value = environment.get("BUILD_TIMEOUT");
+        if (value == null) {
+            return 10;
+        }
+        if (!value.matches("[1-9][0-9]{0,4}")) {
+            throw new IllegalStateException("BUILD_TIMEOUT must be a positive whole number of minutes, not " + value);
+        }
+        return Integer.parseInt(value);
     }
 
     static BuildahContainer start(Path sources, Path work, Map<String, String> environment) {
         String arch = architecture(Processes.output(List.of("docker", "info", "--format", "{{.Architecture}}")));
-        BuildahContainer container = new BuildahContainer(sources, work, arch);
+        BuildahContainer container = new BuildahContainer(sources, work, arch, timeoutMinutes(environment));
         Processes.logged(List.of("docker", "rm", "-f", NAME), container.work.resolve("docker-rm.log"));
         Processes.output(container.runCommand(environment));
         return container;
@@ -65,14 +78,24 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     }
 
     @Override
-    public boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
+    public BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
         RunFiles.writeFile(work.resolve(EMPTY_SECRET), "");
-        return Processes.logged(buildCommand(dockerfile, context, tag, secrets), log);
+        int exitStatus = Processes.exitStatus(buildCommand(dockerfile, context, tag, secrets), log, Map.of());
+        return BuildOutcome.of(exitStatus, RunFiles.read(log));
+    }
+
+    @Override
+    public void remove(List<String> tags) {
+        tags.forEach(tag -> Processes.logged(removeCommand(tag), work.resolve("remove.log")));
+    }
+
+    List<String> removeCommand(String tag) {
+        return exec("buildah", "rmi", "-f", tag);
     }
 
     List<String> buildCommand(Path dockerfile, Path context, String tag, List<String> secrets) {
-        List<String> command = new ArrayList<>(exec("buildah", "build", "-q", "--format", "docker",
-                "--layers=false"));
+        List<String> command = new ArrayList<>(exec("timeout", Integer.toString(timeoutMinutes * 60), "buildah",
+                "build", "-q", "--format", "docker", "--layers=false"));
         secrets.forEach(id -> command.addAll(List.of("--secret", "id=" + id + ",src=/work/" + EMPTY_SECRET)));
         command.addAll(List.of("-f", inside(dockerfile), "-t", tag, inside(context)));
         return command;

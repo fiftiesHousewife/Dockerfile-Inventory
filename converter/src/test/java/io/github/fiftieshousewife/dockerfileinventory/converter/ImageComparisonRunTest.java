@@ -109,8 +109,9 @@ class ImageComparisonRunTest {
     void aControlThatDoesNotBuildLeavesTheComparisonUncontrolled() {
         FakeBuilder builder = new FakeBuilder((dockerfile, context) -> true) {
             @Override
-            public boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
-                return super.build(dockerfile, context, tag, log, secrets) && !tag.endsWith(":control");
+            public BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
+                BuildOutcome outcome = super.build(dockerfile, context, tag, log, secrets);
+                return tag.endsWith(":control") ? BuildOutcome.FAILED : outcome;
             }
         };
 
@@ -135,21 +136,89 @@ class ImageComparisonRunTest {
         assertThat(result.failure()).isEqualTo("the images could not be read: failed: docker exec tar");
     }
 
+    @Test
+    void anOriginalFailingOtherThanOnItsSourcesIsBuiltOnceAndNotBuiltWithItsReason() {
+        FakeBuilder builder = new FakeBuilder((dockerfile, context) -> false, BuildOutcome.FAILED);
+
+        ImageComparison.Result result = new ImageComparisonRun(builder, work, "arm64")
+                .compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
+
+        assertAll(
+                () -> assertThat(builder.calls).containsExactly("Dockerfile@images/app"),
+                () -> assertThat(result.failure()).isEqualTo(
+                        "the original does not build; see original-build-directory.log"));
+    }
+
+    @Test
+    void anOriginalOverTheTimeLimitSaysItTimedOut() {
+        ImageComparison.Result result = new ImageComparisonRun(new FakeBuilder((dockerfile, context) -> false,
+                BuildOutcome.TIMED_OUT), work, "arm64").compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
+
+        assertThat(result.failure()).isEqualTo(
+                "the original took longer than BUILD_TIMEOUT; see original-build-directory.log");
+    }
+
+    @Test
+    void aRegeneratedBuildOverTheTimeLimitSaysItTimedOut() {
+        FakeBuilder builder = new FakeBuilder(
+                (dockerfile, context) -> !String.valueOf(dockerfile.getFileName()).startsWith("regenerated"),
+                BuildOutcome.TIMED_OUT);
+
+        ImageComparison.Result result = new ImageComparisonRun(builder, work, "arm64")
+                .compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
+
+        assertThat(result.failure()).isEqualTo(
+                "the regenerated Dockerfile took longer than BUILD_TIMEOUT; see regenerated-build.log");
+    }
+
+    @Test
+    void aPairsImagesAreRemovedOnceCompared() {
+        FakeBuilder builder = new FakeBuilder((dockerfile, context) -> true);
+
+        new ImageComparisonRun(builder, work, "arm64").compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
+
+        assertThat(builder.removed).containsExactly("compare/abc:original", "compare/abc:regenerated",
+                "compare/abc:control");
+    }
+
+    @Test
+    void aPairsImagesAreRemovedWhenItIsNotBuilt() {
+        FakeBuilder builder = new FakeBuilder((dockerfile, context) -> false, BuildOutcome.FAILED);
+
+        new ImageComparisonRun(builder, work, "arm64").compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
+
+        assertThat(builder.removed).containsExactly("compare/abc:original", "compare/abc:regenerated",
+                "compare/abc:control");
+    }
+
     private class FakeBuilder implements ImageComparisonRun.Builder {
 
         private final BiPredicate<Path, Path> builds;
+        private final BuildOutcome otherwise;
         private final List<String> calls = new ArrayList<>();
         private final List<List<String>> secretsGiven = new ArrayList<>();
+        private final List<String> removed = new ArrayList<>();
 
         FakeBuilder(BiPredicate<Path, Path> builds) {
             this.builds = builds;
+            this.otherwise = BuildOutcome.MISSING_SOURCE;
+        }
+
+        FakeBuilder(BiPredicate<Path, Path> builds, BuildOutcome otherwise) {
+            this.builds = builds;
+            this.otherwise = otherwise;
         }
 
         @Override
-        public boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
+        public BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
             calls.add(dockerfile.getFileName() + "@" + checkout.relativize(context));
             secretsGiven.add(secrets);
-            return builds.test(dockerfile, context);
+            return builds.test(dockerfile, context) ? BuildOutcome.BUILT : otherwise;
+        }
+
+        @Override
+        public void remove(List<String> tags) {
+            removed.addAll(tags);
         }
 
         @Override

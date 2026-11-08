@@ -370,6 +370,31 @@ a control; `ImageComparisonRun` building the control third, and a control that f
 tool image's list entry is now `ci-tools-standalone`'s `publicize` image (git installed on UBI minimal, its binary
 stubbed), as the largest archetype's script is not executable as committed.
 
+## A faster image round trip (planned 8 Nov; built 8 Nov)
+
+Measured 8 Nov with JFR on a sample and the timestamps of the last full run's logs: the test JVM waits on child
+processes (about 35 CPU samples in 16 s); the 92 minutes of builds were Buildah's, 74 of them one Dockerfile
+(`rhdh-ai-template`'s RAG app, which downloads CUDA libraries) that ran the disk out and was then built again from
+the repository root. Three changes, agreed 8 Nov:
+
+- **A time limit per build**: `BUILD_TIMEOUT` minutes (default 10), enforced inside the Buildah container with
+  `timeout`, so the build stops rather than only the `docker exec` that waits on it; a pair over it is not built,
+  saying so.
+- **Retry only a missing source**: the repository root, then stubs, are tried only when the build failed checking its
+  sources (Buildah's `checking on sources under`); any other failure ends the pair with its reason.
+- **Remove each pair's images** once compared or given up, so the container's storage does not fill.
+
+The outcome of a build is a `BuildOutcome` (built, missing source, timed out, failed), read from the exit status and
+the log.
+
+Tests, in order:
+
+1. `BuildOutcome.of`: exit 0 built; 124 timed out; a failure checking sources a missing source; anything else failed.
+2. `BuildahContainer`: the build command runs Buildah under `timeout`; `BUILD_TIMEOUT` read, defaulted, a bad value
+   refused by name; the removal command.
+3. `ImageComparisonRun`: an original failing other than on its sources is built once and not built with its reason;
+   a timed-out original or regenerated build says it timed out; a pair's images are removed, built or not.
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round

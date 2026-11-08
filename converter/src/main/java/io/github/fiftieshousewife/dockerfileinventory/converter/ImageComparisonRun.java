@@ -12,11 +12,13 @@ final class ImageComparisonRun {
     interface Builder {
 
         // Each secret id is given an empty secret.
-        boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets);
+        BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets);
 
         JsonNode inspect(String tag);
 
         SortedMap<String, FileEntry> files(String tag);
+
+        void remove(List<String> tags);
     }
 
     record Context(Path directory, List<String> stubs) {
@@ -24,6 +26,18 @@ final class ImageComparisonRun {
 
     record Inputs(List<String> sources, List<String> secrets) {
     }
+
+    sealed interface Original {
+
+        record Found(Context context) implements Original {
+        }
+
+        record Refused(String failure) implements Original {
+        }
+    }
+
+    private static final String NEVER_BUILDS = "the original does not build with its directory or the repository"
+            + " root as context, nor on stubs for its missing sources; see original-build-*.log";
 
     private final Builder builder;
     private final Path work;
@@ -36,8 +50,15 @@ final class ImageComparisonRun {
     }
 
     ImageComparison.Result compare(String sha, String original, Path checkout, String path) {
-        Path into = work.resolve(sha);
-        Path regenerated = into.resolve("regenerated.Dockerfile");
+        try {
+            return buildAndCompare(sha, original, checkout, path);
+        } finally {
+            builder.remove(List.of(tag(sha, "original"), tag(sha, "regenerated"), tag(sha, "control")));
+        }
+    }
+
+    ImageComparison.Result buildAndCompare(String sha, String original, Path checkout, String path) {
+        Path regenerated = work.resolve(sha).resolve("regenerated.Dockerfile");
         Inputs inputs;
         try {
             RunFiles.writeFile(regenerated, Regenerated.of(original));
@@ -45,19 +66,25 @@ final class ImageComparisonRun {
         } catch (IllegalArgumentException e) {
             return ImageComparison.notBuilt(sha, "the converter cannot render it: " + e.getMessage());
         }
-        Optional<Context> context = originalContext(sha, checkout, checkout.resolve(path), inputs);
-        if (context.isEmpty()) {
-            return ImageComparison.notBuilt(sha, "the original does not build with its directory or the repository"
-                    + " root as context, nor on stubs for its missing sources; see original-build-*.log");
+        return switch (originalContext(sha, checkout, checkout.resolve(path), inputs)) {
+            case Original.Refused refused -> ImageComparison.notBuilt(sha, refused.failure());
+            case Original.Found found -> regeneratedAndCompared(sha, checkout.resolve(path), regenerated,
+                    found.context(), inputs);
+        };
+    }
+
+    ImageComparison.Result regeneratedAndCompared(String sha, Path dockerfile, Path regenerated, Context context,
+            Inputs inputs) {
+        BuildOutcome outcome = builder.build(regenerated, context.directory(), tag(sha, "regenerated"),
+                work.resolve(sha).resolve("regenerated-build.log"), inputs.secrets());
+        if (outcome != BuildOutcome.BUILT) {
+            return ImageComparison.notBuilt(sha, outcome == BuildOutcome.TIMED_OUT
+                    ? "the regenerated Dockerfile took longer than BUILD_TIMEOUT; see regenerated-build.log"
+                    : "the regenerated Dockerfile does not build where the original does; see regenerated-build.log");
         }
-        if (!builder.build(regenerated, context.get().directory(), tag(sha, "regenerated"),
-                into.resolve("regenerated-build.log"), inputs.secrets())) {
-            return ImageComparison.notBuilt(sha, "the regenerated Dockerfile does not build where the original"
-                    + " does; see regenerated-build.log");
-        }
-        boolean controlled = builder.build(checkout.resolve(path), context.get().directory(), tag(sha, "control"),
-                into.resolve("control-build.log"), inputs.secrets());
-        return compared(sha, context.get().stubs(), controlled);
+        boolean controlled = builder.build(dockerfile, context.directory(), tag(sha, "control"),
+                work.resolve(sha).resolve("control-build.log"), inputs.secrets()) == BuildOutcome.BUILT;
+        return compared(sha, context.stubs(), controlled);
     }
 
     ImageComparison.Result compared(String sha, List<String> stubs, boolean controlled) {
@@ -72,20 +99,36 @@ final class ImageComparisonRun {
         }
     }
 
-    Optional<Context> originalContext(String sha, Path checkout, Path dockerfile, Inputs inputs) {
+    Original originalContext(String sha, Path checkout, Path dockerfile, Inputs inputs) {
         Path directory = dockerfile.toAbsolutePath().getParent();
-        if (original(sha, dockerfile, directory, "directory", inputs)) {
-            return Optional.of(new Context(directory, List.of()));
+        BuildOutcome fromDirectory = original(sha, dockerfile, directory, "directory", inputs);
+        if (fromDirectory != BuildOutcome.MISSING_SOURCE) {
+            return outcomeOf(fromDirectory, new Context(directory, List.of()), "directory");
         }
-        if (original(sha, dockerfile, checkout, "root", inputs)) {
-            return Optional.of(new Context(checkout, List.of()));
+        BuildOutcome fromRoot = original(sha, dockerfile, checkout, "root", inputs);
+        if (fromRoot != BuildOutcome.MISSING_SOURCE) {
+            return outcomeOf(fromRoot, new Context(checkout, List.of()), "root");
         }
         List<String> stubs = Stubs.create(directory, inputs.sources(), arch);
-        return !stubs.isEmpty() && original(sha, dockerfile, directory, "stubbed", inputs)
-                ? Optional.of(new Context(directory, stubs)) : Optional.empty();
+        if (stubs.isEmpty()) {
+            return new Original.Refused(NEVER_BUILDS);
+        }
+        BuildOutcome onStubs = original(sha, dockerfile, directory, "stubbed", inputs);
+        return onStubs == BuildOutcome.MISSING_SOURCE ? new Original.Refused(NEVER_BUILDS)
+                : outcomeOf(onStubs, new Context(directory, stubs), "stubbed");
     }
 
-    private boolean original(String sha, Path dockerfile, Path context, String attempt, Inputs inputs) {
+    static Original outcomeOf(BuildOutcome outcome, Context context, String attempt) {
+        return switch (outcome) {
+            case BUILT -> new Original.Found(context);
+            case TIMED_OUT -> new Original.Refused(
+                    "the original took longer than BUILD_TIMEOUT; see original-build-" + attempt + ".log");
+            case MISSING_SOURCE, FAILED -> new Original.Refused(
+                    "the original does not build; see original-build-" + attempt + ".log");
+        };
+    }
+
+    private BuildOutcome original(String sha, Path dockerfile, Path context, String attempt, Inputs inputs) {
         return builder.build(dockerfile, context, tag(sha, "original"),
                 work.resolve(sha).resolve("original-build-" + attempt + ".log"), inputs.secrets());
     }

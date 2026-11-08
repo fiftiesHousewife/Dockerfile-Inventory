@@ -57,12 +57,16 @@ final class Processes {
     }
 
     static boolean logged(List<String> command, Path log, Map<String, String> environment) {
+        return exitStatus(command, log, environment) == 0;
+    }
+
+    static int exitStatus(List<String> command, Path log, Map<String, String> environment) {
         try {
             RunFiles.createParent(log);
             ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile());
             builder.environment().putAll(environment);
             Process process = builder.start();
-            return process.waitFor() == 0;
+            return process.waitFor();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (InterruptedException e) {

@@ -381,6 +381,7 @@ export IMAGE_ROUND_TRIP_DOCKERFILES=my-dockerfiles.txt   # optional: which Docke
 export GHE_API_URL=... GHE_TOKEN_FILE=...                # optional: where to clone them from, as for discovery
 export REGISTRY_AUTH_FILE=~/auth.json                    # optional: a login for bases behind one
 export REGISTRIES_CONF=~/registries.conf                 # optional: public names pulled through a mirror
+export BUILD_TIMEOUT=10                                  # optional: minutes one build may take (default 10)
 ./gradlew imageRoundTrip                              # where Docker runs: built twice and compared
 ```
 
@@ -392,7 +393,9 @@ path/to/Dockerfile` or a blob SHA (`#` starts a comment); by default the ten in
 `converter/src/test/resources/estate/image-round-trip.txt`, one per family of image. For each, the Dockerfile and
 the converter's rendering of it are built with Buildah from the same context at the commit discovery scanned, and
 the two images compared. The context is the Dockerfile's directory, else the repository root, else its directory
-with the sources CI makes before the build stubbed as empty files in both builds; each secret a `RUN` mounts is
+with the sources CI makes before the build stubbed as empty files in both builds (the next context is tried only
+when a build failed finding a `COPY` or `ADD` source; any other failure, or a build over `BUILD_TIMEOUT`, leaves
+the pair not built, saying why, and each pair's images are removed once it is done); each secret a `RUN` mounts is
 given an empty one. The same image means the same config (labels the builder writes at build time aside) and the
 same files: path, type, mode, owner, link target and content. Timestamps are never compared, nor the content of
 files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`,
