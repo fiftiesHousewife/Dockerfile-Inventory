@@ -366,7 +366,9 @@ originals show it too, a file by its path and a file only in one image by its di
 process ID differ every build). Each result lists the noise it set aside; a control that does not build leaves
 the comparison uncontrolled and says so. Tests, in order: the ignore list (`ConfigDifferences`,
 `FileDifferences`); `Noise` (by field, by path, by directory for files in one image only); `ImageComparison` with
-a control; `ImageComparisonRun` building the control third, and a control that fails.
+a control; `ImageComparisonRun` building the control third, and a control that fails. Built 8 Nov as planned; the
+tool image's list entry is now `ci-tools-standalone`'s `publicize` image (git installed on UBI minimal, its binary
+stubbed), as the largest archetype's script is not executable as committed.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

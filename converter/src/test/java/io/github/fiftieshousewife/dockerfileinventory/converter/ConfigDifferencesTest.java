@@ -21,4 +21,10 @@ class ConfigDifferencesTest {
         assertThat(ConfigDifferences.of(original, regenerated))
                 .containsExactly("label b: (none) became \"2\"", "User: \"1001\" became \"0\"");
     }
+
+    @Test
+    void theBuildContainersHostnameIsNotADifference() {
+        assertThat(ConfigDifferences.of(JSON.readTree("{\"Hostname\": \"d633421eacc7\", \"User\": \"1001\"}"),
+                JSON.readTree("{\"Hostname\": \"b287ef48c7ae\", \"User\": \"1001\"}"))).isEmpty();
+    }
 }

@@ -55,14 +55,18 @@ final class ImageComparisonRun {
             return ImageComparison.notBuilt(sha, "the regenerated Dockerfile does not build where the original"
                     + " does; see regenerated-build.log");
         }
-        return compared(sha, context.get().stubs());
+        boolean controlled = builder.build(checkout.resolve(path), context.get().directory(), tag(sha, "control"),
+                into.resolve("control-build.log"), inputs.secrets());
+        return compared(sha, context.get().stubs(), controlled);
     }
 
-    ImageComparison.Result compared(String sha, List<String> stubs) {
+    ImageComparison.Result compared(String sha, List<String> stubs, boolean controlled) {
         try {
+            Optional<ImageComparison.Control> control = controlled ? Optional.of(new ImageComparison.Control(
+                    builder.inspect(tag(sha, "control")), builder.files(tag(sha, "control")))) : Optional.empty();
             return ImageComparison.compared(sha, builder.inspect(tag(sha, "original")),
                     builder.inspect(tag(sha, "regenerated")), builder.files(tag(sha, "original")),
-                    builder.files(tag(sha, "regenerated")), stubs);
+                    builder.files(tag(sha, "regenerated")), stubs, control);
         } catch (IllegalStateException | UncheckedIOException e) {
             return ImageComparison.notBuilt(sha, "the images could not be read: " + e.getMessage());
         }

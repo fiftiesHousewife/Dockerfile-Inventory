@@ -12,6 +12,8 @@ final class ConfigDifferences {
 
     // Written by the builder at build time, so two builds of one Dockerfile differ in them.
     static final Set<String> BUILD_TIME_LABELS = Set.of("io.buildah.version", "org.opencontainers.image.created");
+    // The build container's name, random each build.
+    static final Set<String> BUILD_TIME_FIELDS = Set.of("Hostname");
     private static final String LABELS = "Labels";
 
     private ConfigDifferences() {
@@ -19,6 +21,7 @@ final class ConfigDifferences {
 
     static List<String> of(JsonNode original, JsonNode regenerated) {
         return names(original, regenerated).stream()
+                .filter(name -> !BUILD_TIME_FIELDS.contains(name))
                 .flatMap(name -> name.equals(LABELS)
                         ? labels(original.path(LABELS), regenerated.path(LABELS))
                         : difference(name + ": ", original.get(name), regenerated.get(name)).stream())

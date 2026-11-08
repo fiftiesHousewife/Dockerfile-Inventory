@@ -1,34 +1,50 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.SortedMap;
+import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
 
 final class ImageComparison {
 
     record Result(String blobSha, boolean built, String failure, boolean same, List<String> config,
-            List<String> files, List<String> stubs) {
+            List<String> files, List<String> stubs, boolean controlled, List<String> noise) {
 
         Result {
             config = List.copyOf(config);
             files = List.copyOf(files);
             stubs = List.copyOf(stubs);
+            noise = List.copyOf(noise);
         }
+    }
+
+    // A second build of the original, to tell build noise from what the conversion changed.
+    record Control(JsonNode inspect, SortedMap<String, FileEntry> files) {
     }
 
     private ImageComparison() {
     }
 
     static Result notBuilt(String sha, String failure) {
-        return new Result(sha, false, failure, false, List.of(), List.of(), List.of());
+        return new Result(sha, false, failure, false, List.of(), List.of(), List.of(), false, List.of());
     }
 
     static Result compared(String sha, JsonNode originalInspect, JsonNode regeneratedInspect,
             SortedMap<String, FileEntry> originalFiles, SortedMap<String, FileEntry> regeneratedFiles,
-            List<String> stubs) {
+            List<String> stubs, Optional<Control> control) {
         List<String> config = ConfigDifferences.of(config(originalInspect), config(regeneratedInspect));
         List<String> files = FileDifferences.of(originalFiles, regeneratedFiles);
-        return new Result(sha, true, null, config.isEmpty() && files.isEmpty(), config, files, stubs);
+        List<String> noise = control.map(c -> Stream.concat(
+                ConfigDifferences.of(config(originalInspect), config(c.inspect())).stream(),
+                FileDifferences.of(originalFiles, c.files()).stream()).toList()).orElse(List.of());
+        Noise filter = Noise.of(noise);
+        List<String> realConfig = filter.removedFrom(config);
+        List<String> realFiles = filter.removedFrom(files);
+        List<String> setAside = Stream.concat(config.stream(), files.stream())
+                .filter(difference -> !realConfig.contains(difference) && !realFiles.contains(difference)).toList();
+        return new Result(sha, true, null, realConfig.isEmpty() && realFiles.isEmpty(), realConfig, realFiles, stubs,
+                control.isPresent(), setAside);
     }
 
     // Docker's config keeps HEALTHCHECK, ONBUILD and SHELL, which the OCI one has no place for.

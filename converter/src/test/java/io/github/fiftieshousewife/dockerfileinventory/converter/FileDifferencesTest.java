@@ -43,6 +43,7 @@ class FileDifferencesTest {
                 () -> assertThat(FileDifferences.volatileContent("/var/lib/dpkg/status")).isTrue(),
                 () -> assertThat(FileDifferences.volatileContent("/etc/ld.so.cache")).isTrue(),
                 () -> assertThat(FileDifferences.volatileContent("/tmp/x")).isTrue(),
+                () -> assertThat(FileDifferences.volatileContent("/etc/machine-id")).isTrue(),
                 () -> assertThat(FileDifferences.volatileContent("/etc/passwd")).isFalse(),
                 () -> assertThat(FileDifferences.volatileContent("/var/lib/rpmx")).isFalse());
     }

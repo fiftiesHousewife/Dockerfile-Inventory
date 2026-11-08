@@ -370,8 +370,11 @@ the two images compared. The context is the Dockerfile's directory, else the rep
 with the sources CI makes before the build stubbed as empty files in both builds; each secret a `RUN` mounts is
 given an empty one. The same image means the same config (labels the builder writes at build time aside) and the
 same files: path, type, mode, owner, link target and content. Timestamps are never compared, nor the content of
-files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`); those are still
-checked to exist with the same mode and owner. The test fails on any pair that built and differs; a pair that did
+files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`,
+`/etc/machine-id`), nor the build container's hostname; those files are still checked to exist with the same mode
+and owner. The original is also built a second time, as a control: a difference the two builds of the original
+show too (a certificate generated at build time, a binary that embeds its build date) is set aside as noise and
+listed, and only what remains counts. The test fails on any pair that built and differs; a pair that did
 not build (a base behind a login, say) is reported, not failed. Images are pulled and built only, never pushed.
 
 | File | Contents |

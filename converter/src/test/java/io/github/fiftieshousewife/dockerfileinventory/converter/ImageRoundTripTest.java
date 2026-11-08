@@ -82,8 +82,10 @@ class ImageRoundTripTest {
 
     private static String summary(ImageComparison.Result result) {
         String outcome = !result.built() ? "not built: " + result.failure()
-                : result.same() ? "same" + (result.stubs().isEmpty() ? "" : ", on stubs " + result.stubs())
-                : "differs: " + result.config() + " " + result.files();
+                : (result.same() ? "same" : "differs: " + result.config() + " " + result.files())
+                        + (result.stubs().isEmpty() ? "" : "; on stubs " + result.stubs())
+                        + (result.controlled() ? "; " + result.noise().size() + " differences set aside as noise"
+                                : "; no control build");
         return result.blobSha().substring(0, 8) + "  " + outcome;
     }
 }

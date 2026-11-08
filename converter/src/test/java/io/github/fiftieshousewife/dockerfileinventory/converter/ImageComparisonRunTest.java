@@ -41,10 +41,10 @@ class ImageComparisonRunTest {
                 .compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
 
         assertAll(
-                () -> assertThat(result).isEqualTo(
-                        new ImageComparison.Result("abc", true, null, true, List.of(), List.of(), List.of())),
+                () -> assertThat(result).isEqualTo(new ImageComparison.Result("abc", true, null, true, List.of(),
+                        List.of(), List.of(), true, List.of())),
                 () -> assertThat(builder.calls).containsExactly("Dockerfile@images/app",
-                        "regenerated.Dockerfile@images/app"));
+                        "regenerated.Dockerfile@images/app", "Dockerfile@images/app"));
     }
 
     @Test
@@ -54,7 +54,7 @@ class ImageComparisonRunTest {
         new ImageComparisonRun(builder, work, "arm64").compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
 
         assertThat(builder.calls).containsExactly("Dockerfile@images/app", "Dockerfile@",
-                "regenerated.Dockerfile@");
+                "regenerated.Dockerfile@", "Dockerfile@");
     }
 
     @Test
@@ -102,7 +102,22 @@ class ImageComparisonRunTest {
         new ImageComparisonRun(builder, work, "arm64").compare("abc",
                 "FROM ubi9\nRUN --mount=type=secret,id=downloads_url make\n", checkout, "images/app/Dockerfile");
 
-        assertThat(builder.secretsGiven).containsExactly(List.of("downloads_url"), List.of("downloads_url"));
+        assertThat(builder.secretsGiven).containsOnly(List.of("downloads_url"));
+    }
+
+    @Test
+    void aControlThatDoesNotBuildLeavesTheComparisonUncontrolled() {
+        FakeBuilder builder = new FakeBuilder((dockerfile, context) -> true) {
+            @Override
+            public boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
+                return super.build(dockerfile, context, tag, log, secrets) && !tag.endsWith(":control");
+            }
+        };
+
+        ImageComparison.Result result = new ImageComparisonRun(builder, work, "arm64")
+                .compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
+
+        assertThat(result.controlled()).isFalse();
     }
 
     @Test
