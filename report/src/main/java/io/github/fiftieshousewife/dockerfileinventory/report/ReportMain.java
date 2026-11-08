@@ -7,7 +7,7 @@ import java.util.Map;
  * The report job's entry point. It takes its settings from the environment, as the OpenShift job sets them:
  * {@code FACTS_DIR}, {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR}, {@code CONVERTER_DIR},
  * {@code EOL_LIST},
- * {@code STALE_AFTER_MONTHS} and {@code LAYER_LIMIT}.
+ * {@code STALE_AFTER_MONTHS}, {@code LAYER_LIMIT} and {@code FOOTPRINTS}.
  */
 public final class ReportMain {
 
@@ -28,8 +28,10 @@ public final class ReportMain {
     }
 
     static CatalogueSettings catalogueSettings(Map<String, String> env) {
+        String footprints = env.get("FOOTPRINTS");
         return new CatalogueSettings(positive(env, "STALE_AFTER_MONTHS", CatalogueSettings.DEFAULTS.staleAfterMonths()),
-                positive(env, "LAYER_LIMIT", CatalogueSettings.DEFAULTS.layerLimit()));
+                positive(env, "LAYER_LIMIT", CatalogueSettings.DEFAULTS.layerLimit()), footprints == null
+                ? FootprintRules.defaults() : FootprintRules.read(Path.of(footprints)).then(FootprintRules.defaults()));
     }
 
     static int positive(Map<String, String> env, String name, int fallback) {

@@ -41,7 +41,7 @@ final class CatalogueRun {
         Map<String, CatalogueEntry> bySha = CatalogueEntries.bySha(parsed);
         List<CatalogueEntry> entries = new ArrayList<>(parsed.stream()
                 .map(entry -> {
-                    Footprint.Found footprint = Footprint.through(entry.blobSha(), bySha, links);
+                    Footprint.Found footprint = Footprint.through(entry.blobSha(), bySha, links, settings.footprints());
                     return entry.placed(new Placement(links.get(entry.blobSha()), footprint,
                             Runtimes.inherited(footprint.through(), bySha),
                             hierarchies.of(entry, bySha, footprint.through(), archived),

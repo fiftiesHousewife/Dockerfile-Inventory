@@ -230,6 +230,7 @@ export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,st
 export CONVERTER_DIR=/data/converter          # optional: the converter's OUT_DIR, for each Dockerfile's round trip
 export STALE_AFTER_MONTHS=12                  # optional: an image unpublished this long is unmaintained
 export LAYER_LIMIT=40                         # optional: an image with more layers is flagged
+export FOOTPRINTS=/data/footprints.csv        # optional: footprint rules tried before the built-in ones
 export OUT_DIR=/data/report
 ./gradlew :report:run
 ```
@@ -290,7 +291,7 @@ what the estate builds. Secret-shaped values, and values under a secret's name, 
 | `build.stages` | Per stage: its base (name, tag, digest, pinned) or the stage it builds on, the stages it copies from, its instructions, `RUN`s, commands, unreadable `RUN`s and layers, every copy with its origin (context, stage, image, URL, heredoc) and `--chown`/`--chmod`, every `chown`/`chgrp`/`chmod`, and unusual steps (`ADD`, `ONBUILD`, `VOLUME`, `RUN --mount`, ...) |
 | `build.packages`, `build.runtimes` | Packages installed (manager, versioned, cleaned in the same `RUN`); Java, Go, Node.js and Python, each `final`, `build` (a build stage only) or `inherited` (from an estate image above it), with its evidence |
 | `links` | The estate Dockerfiles that build its base (`parents`) and build on it (`children`), each from `lineage` or `inferred` with its evidence, and how many deep its chain is |
-| `footprint` | The class of the base at its chain's root: micro, minimal, full, distroless, scratch, alpine, slim or unknown |
+| `footprint` | The class of the base at its chain's root: micro, minimal, full, distroless, scratch, alpine, slim or unknown, by the footprint rules |
 | `hierarchy.layers` | Its own, inherited and total layers, `counted` from its newest registry image or, without one, `declared` by the Dockerfiles; `overLimit` above `LAYER_LIMIT` |
 | `hierarchy.images` | With `LINEAGE_DIR`: each registry image built from it (lineage linked it to this Dockerfile alone, strongly or probably), with its created and last-pushed times, its `chain` to the root (each image's own layers, times and reasons it is unmaintained) and `blockedBy`, the unmaintained images above it; and its `labels`, each with its `source`: `dockerfile` (a `LABEL` in this Dockerfile), `build` (set when this image was built, not by its Dockerfile), `ancestor` or `base` (set above it, named in `setBy`), or `unknown` |
 | `hierarchy.candidateImages` | Registry images lineage could not pin to one Dockerfile (a weak link, or one of several equally likely) that this one may have built; they count nowhere else |
@@ -299,6 +300,11 @@ what the estate builds. Secret-shaped values, and values under a secret's name, 
 | `actions.reach` | What fixing it reaches: the estate Dockerfiles built on it, directly or through others, their repositories and locations, and (with `LINEAGE_DIR`) the registry images built on its images |
 | `actions.conversion` | With `CONVERTER_DIR`: the converter's text round trip, `passed` or `failed` with the first difference; else `not run` |
 | `actions.nearDuplicates` | The other Dockerfiles in its near-duplicate group (the first 50 by blob SHA) and how many there are: candidates for one shared base or template |
+
+The footprint rules are lines of `image,tag,footprint`, tried in order, the first match winning: a pattern without a
+`/` matches the base's name, one with a `/` its path (registry aside), `*` matches any text, and an empty tag pattern
+any tag. The built-in rules are in `report/src/main/resources/footprints.csv`; a `FOOTPRINTS` file's rules come first,
+so an estate can name its own bases, for example `ocp/*,base-rhel*,full`.
 
 An image is unmaintained when it was not rebuilt on its updated base, or was not pushed for `STALE_AFTER_MONTHS`
 before the newest push in the registry (not before today, so a rerun on the same output gives the same answer).

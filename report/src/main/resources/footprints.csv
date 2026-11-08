@@ -1,0 +1,23 @@
+image,tag,footprint
+# Tried in order, the first match winning. A pattern without a slash matches the image's name, one with a slash its
+# path (registry aside); * matches any text; an empty tag pattern matches any tag.
+scratch,,scratch
+*distroless*/*,,distroless
+*distroless*,,distroless
+*micro,,micro
+*minimal*,,minimal
+busybox,,minimal
+alpine,,alpine
+*-alpine,,alpine
+*slim*,,slim
+*,*slim*,slim
+ubi,,full
+ubi8,,full
+ubi9,,full
+ubi10,,full
+debian,,full
+ubuntu,,full
+fedora,,full
+centos,,full
+rockylinux,,full
+almalinux,,full

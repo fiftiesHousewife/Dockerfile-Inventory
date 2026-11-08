@@ -277,6 +277,34 @@ parsed; conversion passed 5,149 and failed 8, as the round trip's committed expe
 others, the most sclorg's `s2i-base-container` `core/Dockerfile.rhel9` (47 Dockerfiles in 23 repositories); 86
 released, 5,071 default branch only; 3,580 with near-duplicate siblings, the largest group 631.
 
+## Slice: registry facts and the footprint list (planned 8 Nov)
+
+Asked 8 Nov: the rest of the action fields, owner aside (`CODEOWNERS` is mostly absent, so unreliable), and the
+settable footprint list.
+
+- **Sizes and architectures**: lineage keeps, per tag, the image's compressed size (its manifest's layers summed) and,
+  for an image index, the architectures it lists; each catalogue image gains `size` and `architectures` (from the
+  index, else its config's).
+- **Cadence**, from what lineage already holds: per image name, its pushes in the year before the newest push and the
+  median days between them, and per image how many days after its parent it was built.
+- **Base lag**: the final base's tag against the newest tag of that image path among Artifactory's tags, compared as
+  versions only between tags of the same shape (`9.4` and `9.6`, not `9.4` and `latest`); `actions.baseLag` names
+  both when the newest is later.
+- **The footprint list**: `image,tag,footprint` rules, tried in order, the first match winning; a pattern without a
+  `/` matches the image's name, one with a `/` its path (registry aside); an empty tag pattern matches any tag. The
+  built-in rules ship as the default list and classify as today; `FOOTPRINTS` names a file whose rules come first.
+
+Tests, in order:
+
+1. `FootprintRules`: the default list read and each of today's cases classified the same; a name pattern, a path
+   pattern, a tag pattern; a `FOOTPRINTS` rule ahead of the defaults; a bad line refused, naming the file and line.
+2. Lineage: `ImageNodes.locate` finds a single manifest's size and an index's architectures; `Inventory` records them
+   on the tag's row; old rows without them still read.
+3. `RegistryImages` and `Hierarchies`: an image's size and architectures, from the index or its config.
+4. `Cadence`: pushes in the year, the median days between them, days after the parent.
+5. `BaseLag`: a newer tag of the same shape; none when the tag is the newest or of another shape.
+6. `CatalogueRun` writing them; `ReportMain` reading `FOOTPRINTS`; README; measured.
+
 ## Tests, in order
 
 One assertion each, several in `assertAll`; Dockerfile fixtures are real files, trimmed.
