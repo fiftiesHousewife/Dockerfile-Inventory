@@ -23,8 +23,11 @@ and one line when its gate is met.
   building and comparing images (Phase 5b), built 8 Nov. Done 8 Nov: the bulk checks as tagged
   JUnit tests (`estateTest`, `imageTest`), the comparison script gone. Done 8 Nov: renamed `roundTrip` and `imageRoundTrip`, their examples and GitHub settable for a corporate estate.
   Next: the owner's first full `./gradlew imageRoundTrip`.
-- Next (asked 8 Nov, `docs/plans/catalogue.md`): a structured catalogue of every Dockerfile for consumers to report
-  on: stages, user, ports, entrypoint, packages, depth, cross-links, as JSON lines and CSV.
+- Next (asked 8 Nov, `docs/plans/openshift-validator.md`): the estate summary as an action plan: a validator that
+  knows what OpenShift (restricted-v2) refuses or breaks, through a platform profile, and turns findings into
+  actions ordered by severity and reach; it reads the catalogue below.
+- Next (asked 8 Nov, `docs/plans/catalogue.md`, questions 1-3 answered): a structured catalogue of every Dockerfile
+  for consumers to report on: stages, user, ports, entrypoint, packages, depth, cross-links, as JSON lines and CSV.
 - Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
   container's entry point aside; to be planned.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from

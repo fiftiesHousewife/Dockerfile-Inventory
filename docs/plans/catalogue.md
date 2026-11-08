@@ -1,6 +1,6 @@
 # The Dockerfile catalogue: plan
 
-Status: planned 8 Nov; questions open.
+Status: planned 8 Nov; questions 1-3 answered 8 Nov; it feeds the OpenShift validator (`openshift-validator.md`).
 
 ## Why
 
@@ -41,6 +41,12 @@ DDL: `dockerfiles.csv`, `locations.csv`, `stages.csv`, `ports.csv`, `packages.cs
    image a Dockerfile's labels say it builds), marked as inferred?
 3. Environment and label values: names only, or values with secret-shaped ones hidden as the report hides them?
 4. In `report` as above, or a stage of its own?
+
+Answers (8 Nov): 1, one record per distinct Dockerfile with its locations listed, and a locations table; 2,
+links from lineage where a registry was read, and otherwise inferred from base names matched to the images other
+Dockerfiles' labels say they build, each inferred link marked with its evidence; 3, environment and label values
+shown, a secret-shaped value or one under a secret's name shown as `(hidden)` with its hash, by the same
+test rule S2 and the report use. 4 waits on the validator's plan, which reads the catalogue.
 
 ## Tests, in order
 
