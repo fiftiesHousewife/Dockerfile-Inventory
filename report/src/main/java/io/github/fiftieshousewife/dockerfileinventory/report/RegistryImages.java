@@ -46,12 +46,16 @@ final class RegistryImages {
             JsonNode config = config(lineageDir, digest);
             images.put(digest, new RegistryImage(digest, rows.stream().map(RegistryImages::name).distinct().toList(),
                     parents.get(digest), links.getOrDefault(digest, UNLINKED).built(),
-                    config.path("rootfs").path("diff_ids").size(), config.path("created").stringValue(null),
+                    layers(config), config.path("created").stringValue(null),
                     newest(rows.stream().map(row -> row.path("lastPushed").stringValue(null)).toList()),
                     newer.get(digest), labels.getOrDefault(digest, Map.of()),
                     links.getOrDefault(digest, UNLINKED).candidates()));
         });
         return images;
+    }
+
+    static Integer layers(JsonNode config) {
+        return config.path("rootfs").isObject() ? config.path("rootfs").path("diff_ids").size() : null;
     }
 
     static Map<String, String> newerBases(Path outdated) {

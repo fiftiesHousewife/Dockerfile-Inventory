@@ -26,7 +26,7 @@ final class Hierarchies {
     record Label(String value, String source, String setBy) {
     }
 
-    record Step(String configDigest, List<String> names, List<String> blobShas, int ownLayers, String created,
+    record Step(String configDigest, List<String> names, List<String> blobShas, Integer ownLayers, String created,
                 String lastPushed, List<String> unmaintained) {
     }
 
@@ -63,7 +63,8 @@ final class Hierarchies {
     }
 
     Optional<RegistryImage> newestImage(String blobSha) {
-        return builtFrom.getOrDefault(blobSha, List.of()).stream().filter(image -> image.lastPushed() != null)
+        return builtFrom.getOrDefault(blobSha, List.of()).stream()
+                .filter(image -> image.lastPushed() != null && ownLayers(image) != null)
                 .max(Comparator.comparing(image -> Instant.parse(image.lastPushed())));
     }
 
@@ -109,7 +110,7 @@ final class Hierarchies {
         for (RegistryImage image = images.get(configDigest); image != null && seen.add(image.configDigest());
                 image = image.parent() == null ? null : images.get(image.parent())) {
             chain.add(new Step(image.configDigest(), image.names(), image.blobShas(),
-                    image.layers() - parentLayers(image), image.created(), image.lastPushed(),
+                    ownLayers(image), image.created(), image.lastPushed(),
                     Unmaintained.reasons(image, newestPush, staleAfterMonths)));
         }
         return chain;
@@ -122,9 +123,17 @@ final class Hierarchies {
                 .anyMatch(step -> own.contains(step.configDigest()))).count();
     }
 
-    int parentLayers(RegistryImage image) {
-        RegistryImage parent = image.parent() == null ? null : images.get(image.parent());
-        return parent == null ? 0 : parent.layers();
+    Integer parentLayers(RegistryImage image) {
+        if (image.parent() == null) {
+            return 0;
+        }
+        RegistryImage parent = images.get(image.parent());
+        return parent == null ? null : parent.layers();
+    }
+
+    Integer ownLayers(RegistryImage image) {
+        Integer inherited = parentLayers(image);
+        return image.layers() == null || inherited == null ? null : image.layers() - inherited;
     }
 
     private Layers limited(int own, int inherited, String counted) {

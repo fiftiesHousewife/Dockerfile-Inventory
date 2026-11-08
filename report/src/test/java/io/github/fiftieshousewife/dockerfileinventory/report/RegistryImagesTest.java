@@ -79,6 +79,11 @@ class RegistryImagesTest {
     }
 
     @Test
+    void anImageWhoseConfigWasNotReadHasUnknownLayers() {
+        assertThat(RegistryImages.layers(json("{}"))).isNull();
+    }
+
+    @Test
     void theRootHasNoParent() {
         assertThat(RegistryImages.read(LINEAGE).get(
                 "sha256:cdc65e3dc1b675127b1e26ef79884f63cae4c46c00a89f0c18cb5c617bec62c8").parent()).isNull();

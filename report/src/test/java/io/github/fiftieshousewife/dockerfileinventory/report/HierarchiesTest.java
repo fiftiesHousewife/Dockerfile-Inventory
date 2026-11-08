@@ -112,6 +112,30 @@ class HierarchiesTest {
     }
 
     @Test
+    void aStepWhoseImageOrParentLayersAreUnknownHasUnknownOwnLayers() {
+        Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
+        RegistryImage base = images.get(S2I_BASE);
+        images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
+                null, base.created(), base.lastPushed(), null, base.labels(), base.candidates()));
+
+        assertThat(hierarchies(images, 40).chain(PYTHON)).extracting(Hierarchies.Step::ownLayers)
+                .containsExactly(null, null, 1, 2);
+    }
+
+    @Test
+    void anImageWithUnknownLayersLeavesTheLayersDeclared() {
+        Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
+        RegistryImage python = images.get(PYTHON);
+        images.put(PYTHON, new RegistryImage(python.configDigest(), python.names(), python.parent(),
+                python.blobShas(), null, python.created(), python.lastPushed(), null, python.labels(),
+                python.candidates()));
+        CatalogueEntry entry = python();
+
+        assertThat(hierarchies(images, 40).of(entry, List.of(entry), Map.of(), Set.of()).layers().counted())
+                .isEqualTo("declared");
+    }
+
+    @Test
     void theRootInheritsNoLayers() {
         Map<String, RegistryImage> images = RegistryImages.read(LINEAGE);
 
