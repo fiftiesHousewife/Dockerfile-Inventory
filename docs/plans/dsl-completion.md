@@ -359,6 +359,15 @@ build date.
 between the original and the regenerated image that the two originals do not also show (a control build, about
 half as much time again)? `Hostname` joins the build-time fields ignored in the config either way.
 
+Answered 8 Nov: both. A short ignore list for the noise every build shows (`Hostname` in the config,
+`/etc/machine-id`'s content), and a control build: the original built a second time from the same context with
+the same secrets, and a difference between the original and the regenerated image set aside as noise when the two
+originals show it too, a file by its path and a file only in one image by its directory (names that carry a
+process ID differ every build). Each result lists the noise it set aside; a control that does not build leaves
+the comparison uncontrolled and says so. Tests, in order: the ignore list (`ConfigDifferences`,
+`FileDifferences`); `Noise` (by field, by path, by directory for files in one image only); `ImageComparison` with
+a control; `ImageComparisonRun` building the control third, and a control that fails.
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
