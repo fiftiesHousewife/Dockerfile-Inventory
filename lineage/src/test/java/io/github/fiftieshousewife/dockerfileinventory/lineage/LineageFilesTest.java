@@ -29,6 +29,16 @@ class LineageFilesTest {
     }
 
     @Test
+    void aRowRecordedBeforeSizesAndArchitecturesReadsWithNeither() throws IOException {
+        Files.createDirectories(dir.resolve("old"));
+        Files.writeString(dir.resolve("old/images.jsonl"), "{\"repository\":\"docker-local\",\"image\":\"team/app\","
+                + "\"tag\":\"1\",\"lastPushed\":null,\"configDigest\":\"c1\",\"skipped\":null,\"skipDetail\":null}\n");
+
+        assertThat(new LineageFiles(dir.resolve("old")).tags()).containsExactly(
+                new TagRow("docker-local", "team/app", "1", null, "c1", null, null));
+    }
+
+    @Test
     void aStoredConfigIsFoundByItsDigestAndAnUnstoredOneIsNot() {
         LineageFiles files = new LineageFiles(dir);
 

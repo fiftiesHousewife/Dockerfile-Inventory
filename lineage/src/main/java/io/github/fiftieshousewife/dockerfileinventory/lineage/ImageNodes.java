@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 import tools.jackson.databind.JsonNode;
@@ -30,7 +31,7 @@ final class ImageNodes {
             return new Resolved.Skipped(Resolved.Reason.SCHEMA_1, reference);
         }
         return manifest.has("manifests") ? throughList(artifactory, repository, image, manifest, reference)
-                : found(manifest);
+                : found(manifest, List.of());
     }
 
     static Location throughList(Artifactory artifactory, String repository, String image, JsonNode list,
@@ -39,13 +40,25 @@ final class ImageNodes {
         if (amd64.isEmpty()) {
             return new Resolved.Skipped(Resolved.Reason.NO_AMD64, reference);
         }
+        List<String> architectures = architectures(list);
         return manifest(artifactory, repository, image, amd64.get())
-                .<Location>map(ImageNodes::found)
+                .<Location>map(manifest -> found(manifest, architectures))
                 .orElseGet(() -> new Resolved.Skipped(Resolved.Reason.GONE, amd64.get()));
     }
 
-    private static Location found(JsonNode manifest) {
-        return new Location.Found(manifest.path("config").path("digest").asString());
+    static Location found(JsonNode manifest, List<String> architectures) {
+        long size = StreamSupport.stream(manifest.path("layers").spliterator(), false)
+                .mapToLong(layer -> layer.path("size").asLong()).sum();
+        return new Location.Found(manifest.path("config").path("digest").asString(), size, architectures);
+    }
+
+    static List<String> architectures(JsonNode list) {
+        return StreamSupport.stream(list.path("manifests").spliterator(), false)
+                .map(m -> m.path("platform"))
+                .filter(platform -> !platform.path("os").asString().equals("unknown"))
+                .map(platform -> platform.path("os").asString() + "/" + platform.path("architecture").asString()
+                        + (platform.path("variant").isString() ? "/" + platform.path("variant").asString() : ""))
+                .toList();
     }
 
     static Resolved node(Artifactory artifactory, String repository, String image, String configDigest) {

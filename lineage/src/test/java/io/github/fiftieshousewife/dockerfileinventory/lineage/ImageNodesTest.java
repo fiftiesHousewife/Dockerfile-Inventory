@@ -1,7 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -19,19 +21,23 @@ class ImageNodesTest {
 
     @Test
     void theAmd64EntryIsTheLinuxAmd64DigestOfAList() {
-        assertThat(ImageNodes.amd64(JSON.readTree(Fixtures.artifactory("manifest-list.json"))))
-                .contains("sha256:" + "1".repeat(64));
-        assertThat(ImageNodes.amd64(JSON.readTree(Fixtures.artifactory("list-arm-only.json")))).isEmpty();
+        assertAll(
+                () -> assertThat(ImageNodes.amd64(JSON.readTree(Fixtures.artifactory("manifest-list.json"))))
+                        .contains("sha256:" + "1".repeat(64)),
+                () -> assertThat(ImageNodes.amd64(JSON.readTree(Fixtures.artifactory("list-arm-only.json"))))
+                        .isEmpty());
     }
 
     @Test
-    void locatingATagGivesItsConfigDigestWithoutFetchingTheConfig() {
+    void locatingATagGivesItsConfigDigestAndLayerSizesWithoutFetchingTheConfig() {
         FakeArtifactory artifactory = new FakeArtifactory()
                 .manifest("docker-local", "team/app", "1.0", DOCKER_MANIFEST, "manifest-image.json");
 
-        assertThat(ImageNodes.locate(artifactory, "docker-local", "team/app", "1.0"))
-                .isEqualTo(new Location.Found(CONFIG_C));
-        assertThat(artifactory.blobCalls).isEmpty();
+        Location located = ImageNodes.locate(artifactory, "docker-local", "team/app", "1.0");
+
+        assertAll(
+                () -> assertThat(located).isEqualTo(new Location.Found(CONFIG_C, 39_000_000L, List.of())),
+                () -> assertThat(artifactory.blobCalls).isEmpty());
     }
 
     @Test
@@ -41,13 +47,14 @@ class ImageNodesTest {
                         "manifest-image.json");
         JsonNode list = JSON.readTree(Fixtures.artifactory("manifest-list.json"));
 
-        assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app", list, "ref"))
-                .isEqualTo(new Location.Found(CONFIG_C));
-        assertThat(ImageNodes.throughList(new FakeArtifactory(), "docker-local", "team/app", list, "ref"))
-                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64)));
-        assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app",
-                JSON.readTree(Fixtures.artifactory("list-arm-only.json")), "ref"))
-                .isEqualTo(new Resolved.Skipped(Resolved.Reason.NO_AMD64, "ref"));
+        assertAll(
+                () -> assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app", list, "ref"))
+                        .isEqualTo(new Location.Found(CONFIG_C, 39_000_000L, List.of("linux/amd64", "linux/arm64"))),
+                () -> assertThat(ImageNodes.throughList(new FakeArtifactory(), "docker-local", "team/app", list,
+                        "ref")).isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64))),
+                () -> assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app",
+                        JSON.readTree(Fixtures.artifactory("list-arm-only.json")), "ref"))
+                        .isEqualTo(new Resolved.Skipped(Resolved.Reason.NO_AMD64, "ref")));
     }
 
     @Test

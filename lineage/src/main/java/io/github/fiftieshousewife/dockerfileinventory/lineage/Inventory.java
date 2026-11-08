@@ -94,7 +94,8 @@ final class Inventory {
         return switch (ImageNodes.locate(artifactory, repository, image, tag)) {
             case Location.Found found -> config(repository, image, found.configDigest())
                     .map(s -> new TagRow(repository, image, tag, pushed, null, s.reason(), s.detail()))
-                    .orElseGet(() -> new TagRow(repository, image, tag, pushed, found.configDigest(), null, null));
+                    .orElseGet(() -> new TagRow(repository, image, tag, pushed, found.configDigest(), null, null,
+                            found.size(), found.architectures()));
             case Resolved.Skipped s -> new TagRow(repository, image, tag, pushed, null, s.reason(), s.detail());
         };
     }

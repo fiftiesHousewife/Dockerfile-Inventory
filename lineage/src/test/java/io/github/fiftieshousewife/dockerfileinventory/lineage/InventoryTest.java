@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
@@ -31,9 +32,11 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 1).run();
 
-        assertThat(files.tags()).containsExactly(new TagRow("docker-local", "team/app", "1.0",
-                Instant.parse("2026-10-02T10:15:00Z"), CONFIG_C, null, null));
-        assertThat(files.config(CONFIG_C)).hasValueSatisfying(text -> assertThat(text).contains("diff_ids"));
+        assertAll(
+                () -> assertThat(files.tags()).containsExactly(new TagRow("docker-local", "team/app", "1.0",
+                        Instant.parse("2026-10-02T10:15:00Z"), CONFIG_C, null, null, 39_000_000L, List.of())),
+                () -> assertThat(files.config(CONFIG_C)).hasValueSatisfying(text -> assertThat(text)
+                        .contains("diff_ids")));
     }
 
     @Test
@@ -122,10 +125,13 @@ class InventoryTest {
                 .blob(CONFIG_C, "config.json");
         Inventory inventory = new Inventory(artifactory, new LineageFiles(out), 1);
 
-        assertThat(inventory.row("docker-local", "team/app", "1.0")).isEqualTo(new TagRow("docker-local", "team/app",
-                "1.0", Instant.parse("2026-10-01T00:00:00Z"), CONFIG_C, null, null));
-        assertThat(inventory.row("docker-local", "team/app", "gone")).isEqualTo(new TagRow("docker-local", "team/app",
-                "gone", null, null, Resolved.Reason.GONE, "docker-local/team/app:gone"));
+        assertAll(
+                () -> assertThat(inventory.row("docker-local", "team/app", "1.0")).isEqualTo(new TagRow("docker-local",
+                        "team/app", "1.0", Instant.parse("2026-10-01T00:00:00Z"), CONFIG_C, null, null, 39_000_000L,
+                        List.of())),
+                () -> assertThat(inventory.row("docker-local", "team/app", "gone")).isEqualTo(new TagRow(
+                        "docker-local", "team/app", "gone", null, null, Resolved.Reason.GONE,
+                        "docker-local/team/app:gone")));
     }
 
     @Test
