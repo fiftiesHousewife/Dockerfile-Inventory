@@ -15,18 +15,14 @@ final class CatalogueEntries {
     private CatalogueEntries() {
     }
 
-    static CatalogueEntry of(JsonNode row, List<CatalogueEntry.Place> places,
-            Map<String, CatalogueEntry.ArchetypeRef> archetypes, EolList eol) {
-        String sha = row.path("blobSha").asString();
-        return new CatalogueEntry(sha, places == null ? List.of() : places, archetypes.get(sha),
-                Estate.metadataOnly(row), image(row), build(row, eol), null, null);
+    static CatalogueEntry of(JsonNode row, List<CatalogueEntry.Place> places) {
+        return new CatalogueEntry(row.path("blobSha").asString(), places == null ? List.of() : places,
+                Estate.metadataOnly(row), image(row), build(row), null, null);
     }
 
-    static CatalogueEntry unparsed(JsonNode failure, List<CatalogueEntry.Place> places,
-            Map<String, CatalogueEntry.ArchetypeRef> archetypes) {
-        String sha = failure.path("blobSha").asString();
-        return new CatalogueEntry(sha, places == null ? List.of() : places, archetypes.get(sha), false, null, null,
-                null, failure.path("message").asString());
+    static CatalogueEntry unparsed(JsonNode failure, List<CatalogueEntry.Place> places) {
+        return new CatalogueEntry(failure.path("blobSha").asString(), places == null ? List.of() : places, false,
+                null, null, null, failure.path("message").asString());
     }
 
     static Map<String, List<CatalogueEntry.Place>> places(Path manifest) {
@@ -48,25 +44,22 @@ final class CatalogueEntries {
                 pairs(config.path("labels")));
     }
 
-    static CatalogueEntry.Build build(JsonNode row, EolList eol) {
+    static CatalogueEntry.Build build(JsonNode row) {
         JsonNode facts = row.path("facts");
         JsonNode stages = row.path("stages");
         return new CatalogueEntry.Build(
-                IntStream.range(0, stages.size()).mapToObj(i -> stage(i, stages.get(i), eol)).toList(),
+                IntStream.range(0, stages.size()).mapToObj(i -> stage(i, stages.get(i))).toList(),
                 packages(facts.path("packageCalls")), strings(facts.path("buildKitFeatures")),
                 row.path("config").path("layers").asInt(), facts.path("runs").asInt(),
                 facts.path("opaqueRuns").asInt(), instructions(row.path("steps")));
     }
 
-    static CatalogueEntry.StageEntry stage(int index, JsonNode stage, EolList eol) {
+    static CatalogueEntry.StageEntry stage(int index, JsonNode stage) {
         JsonNode base = stage.path("base");
-        String name = base.path("name").stringValue(null);
-        String tag = base.path("tag").stringValue(null);
         String digest = base.path("digest").stringValue(null);
-        String status = name == null ? null : eol.lookup(BaseCatalogue.path(new Base(name, tag, digest)), tag)
-                .map(EolList.Entry::status).orElse("unknown");
-        return new CatalogueEntry.StageEntry(index, stage.path("name").stringValue(null), name, tag, digest,
-                digest != null, status, stage.path("fromStage").stringValue(null), strings(stage.path("copiesFrom")));
+        return new CatalogueEntry.StageEntry(index, stage.path("name").stringValue(null),
+                base.path("name").stringValue(null), base.path("tag").stringValue(null), digest, digest != null,
+                stage.path("fromStage").stringValue(null), strings(stage.path("copiesFrom")));
     }
 
     static List<CatalogueEntry.PackageEntry> packages(JsonNode calls) {

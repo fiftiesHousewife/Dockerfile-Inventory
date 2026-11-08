@@ -74,10 +74,9 @@ class CatalogueLinksTest {
 
     @Test
     void aFinalStageBuiltOnAnEarlierOneHasThatStagesBase() {
-        CatalogueEntry entry = new CatalogueEntry("x", List.of(), null, false, APP.image(), new CatalogueEntry.Build(
-                List.of(new CatalogueEntry.StageEntry(0, "base", "ubi9/ubi", "9", null, false, "unknown", null,
-                                List.of()),
-                        new CatalogueEntry.StageEntry(1, null, null, null, null, false, null, "base", List.of())),
+        CatalogueEntry entry = new CatalogueEntry("x", List.of(), false, APP.image(), new CatalogueEntry.Build(
+                List.of(new CatalogueEntry.StageEntry(0, "base", "ubi9/ubi", "9", null, false, null, List.of()),
+                        new CatalogueEntry.StageEntry(1, null, null, null, null, false, "base", List.of())),
                 List.of(), List.of(), 0, 0, 0, Map.of()), null, null);
 
         assertThat(CatalogueLinks.finalBase(entry)).isEqualTo("ubi9/ubi");
@@ -85,11 +84,11 @@ class CatalogueLinksTest {
 
     static CatalogueEntry entry(String sha, String base, Map<String, String> labels) {
         String[] nameAndTag = base.split(":(?=[^/]*$)");
-        return new CatalogueEntry(sha, List.of(), null, false,
+        return new CatalogueEntry(sha, List.of(), false,
                 new CatalogueEntry.Image(null, "ROOT", List.of(), null, null, null, List.of(), null, List.of(), null,
                         Map.of(), labels),
                 new CatalogueEntry.Build(List.of(new CatalogueEntry.StageEntry(0, null, nameAndTag[0],
-                        nameAndTag.length > 1 ? nameAndTag[1] : null, null, false, "unknown", null, List.of())),
+                        nameAndTag.length > 1 ? nameAndTag[1] : null, null, false, null, List.of())),
                         List.of(), List.of(), 0, 0, 0, Map.of()), null, null);
     }
 }

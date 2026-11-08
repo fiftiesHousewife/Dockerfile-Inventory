@@ -14,15 +14,12 @@ class CatalogueEntriesTest {
     private static final Path FIXTURES = Path.of("src/test/resources/fixtures/catalogue");
     private static final String SHA = "3f6d0c1a2b4e5f60718293a4b5c6d7e8f9a0b1c2";
     private static final JsonNode ROW = JsonLines.read(FIXTURES.resolve("facts.jsonl")).getFirst();
-    private static final EolList EOL = EolList.read(Path.of("src/test/resources/fixtures/eol.csv"));
-
     private static CatalogueEntry entry() {
-        return CatalogueEntries.of(ROW, CatalogueEntries.places(FIXTURES.resolve("manifest.jsonl")).get(SHA),
-                Map.of(SHA, new CatalogueEntry.ArchetypeRef(7, "k7")), EOL);
+        return CatalogueEntries.of(ROW, CatalogueEntries.places(FIXTURES.resolve("manifest.jsonl")).get(SHA));
     }
 
     @Test
-    void anEntryNamesItsFileEveryPlaceItLivesAndItsArchetype() {
+    void anEntryNamesItsFileAndEveryPlaceItLives() {
         CatalogueEntry entry = entry();
 
         assertAll(
@@ -31,7 +28,6 @@ class CatalogueEntriesTest {
                         new CatalogueEntry.Place("payments/server", "Dockerfile", "RELEASE", "abc123"),
                         new CatalogueEntry.Place("payments/server-fork", "build/Dockerfile", "DEFAULT_BRANCH",
                                 "def456")),
-                () -> assertThat(entry.archetype()).isEqualTo(new CatalogueEntry.ArchetypeRef(7, "k7")),
                 () -> assertThat(entry.bundle()).isFalse());
     }
 
@@ -56,13 +52,13 @@ class CatalogueEntriesTest {
     }
 
     @Test
-    void eachStageHasItsBasePinnedOrNotWithItsEndOfLifeStatusOrTheStageItBuildsOn() {
+    void eachStageHasItsBasePinnedOrNotOrTheStageItBuildsOn() {
         assertThat(entry().build().stages()).containsExactly(
                 new CatalogueEntry.StageEntry(0, "build", "registry.access.redhat.com/ubi9/go-toolset", "1.22", null,
-                        false, "unknown", null, List.of()),
+                        false, null, List.of()),
                 new CatalogueEntry.StageEntry(1, null, "registry.access.redhat.com/ubi9/ubi-minimal", "9.4",
-                        "sha256:1111111111111111111111111111111111111111111111111111111111111111", true, "supported",
-                        null, List.of("build")));
+                        "sha256:1111111111111111111111111111111111111111111111111111111111111111", true, null,
+                        List.of("build")));
     }
 
     @Test

@@ -42,7 +42,7 @@ final class ReportRun {
 
         write("passes.json", pretty(passesSummary(ranking, passes)));
         write("archetypes.json", pretty(ranking));
-        CatalogueRun.write(factsDir, discoveryDir, lineageDir, eol, CatalogueRun.archetypes(ranking), outDir);
+        CatalogueRun.write(factsDir, discoveryDir, lineageDir, outDir);
         tables.forEach(t -> write("tables/" + t.name() + ".csv", t.csv()));
         write("tables/ddl.sql", tables.stream().map(Table::ddl).collect(Collectors.joining("\n")));
         Pages.all(Report.of(estate, ranking, passes.subList(0, 3), archetypeGroups.size(), eol,

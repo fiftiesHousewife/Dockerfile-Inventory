@@ -6,13 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 // One distinct Dockerfile as the catalogue describes it; its field names are the catalogue's published schema.
-record CatalogueEntry(String blobSha, List<Place> locations, ArchetypeRef archetype, boolean bundle, Image image,
-                      Build build, CatalogueLinks.Links links, String parseError) {
+record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Image image, Build build,
+                      CatalogueLinks.Links links, String parseError) {
 
     record Place(String repository, String path, String scope, String commit) {
-    }
-
-    record ArchetypeRef(int rank, String key) {
     }
 
     record Command(String form, List<String> arguments) {
@@ -36,7 +33,7 @@ record CatalogueEntry(String blobSha, List<Place> locations, ArchetypeRef archet
     }
 
     record StageEntry(int index, String name, String baseName, String baseTag, String baseDigest, boolean pinned,
-                      String eolStatus, String fromStage, List<String> copiesFrom) {
+                      String fromStage, List<String> copiesFrom) {
 
         StageEntry {
             copiesFrom = List.copyOf(copiesFrom);
@@ -62,6 +59,6 @@ record CatalogueEntry(String blobSha, List<Place> locations, ArchetypeRef archet
     }
 
     CatalogueEntry withLinks(CatalogueLinks.Links found) {
-        return new CatalogueEntry(blobSha, locations, archetype, bundle, image, build, found, parseError);
+        return new CatalogueEntry(blobSha, locations, bundle, image, build, found, parseError);
     }
 }
