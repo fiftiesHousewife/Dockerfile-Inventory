@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ class EstateImageTest {
                     location.path("commitSha").asString());
             return run.compare(sha, Files.readString(discovery.resolve("blobs").resolve(sha)), checkout,
                     location.path("path").asString());
-        } catch (IllegalStateException | IOException e) {
+        } catch (IllegalStateException | UncheckedIOException | IOException e) {
             return ImageComparison.notBuilt(sha, "cannot check out: " + e.getMessage());
         }
     }
@@ -74,7 +75,7 @@ class EstateImageTest {
     private static boolean dockerRuns() {
         try {
             return !Processes.output(List.of("docker", "info", "--format", "{{.ServerVersion}}")).isBlank();
-        } catch (IllegalStateException | java.io.UncheckedIOException e) {
+        } catch (IllegalStateException | UncheckedIOException e) {
             return false;
         }
     }

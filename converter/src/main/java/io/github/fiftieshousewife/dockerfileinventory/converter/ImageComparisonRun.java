@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -51,9 +52,13 @@ final class ImageComparisonRun {
             return ImageComparison.notBuilt(sha, "the regenerated Dockerfile does not build where the original"
                     + " does; see regenerated-build.log");
         }
-        return ImageComparison.compared(sha, builder.inspect(tag(sha, "original")),
-                builder.inspect(tag(sha, "regenerated")), builder.files(tag(sha, "original")),
-                builder.files(tag(sha, "regenerated")), context.get().stubs());
+        try {
+            return ImageComparison.compared(sha, builder.inspect(tag(sha, "original")),
+                    builder.inspect(tag(sha, "regenerated")), builder.files(tag(sha, "original")),
+                    builder.files(tag(sha, "regenerated")), context.get().stubs());
+        } catch (IllegalStateException | UncheckedIOException e) {
+            return ImageComparison.notBuilt(sha, "the images could not be read: " + e.getMessage());
+        }
     }
 
     // The Dockerfile's directory, then the repository root, then the directory with CI-made sources stubbed.

@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,7 +22,7 @@ final class TarListing {
 
     static SortedMap<String, FileEntry> of(InputStream tar) {
         SortedMap<String, FileEntry> entries = new TreeMap<>();
-        try (TarArchiveInputStream in = new TarArchiveInputStream(tar)) {
+        try (TarArchiveInputStream in = new TarArchiveInputStream(unclosed(tar))) {
             for (TarArchiveEntry entry = in.getNextEntry(); entry != null; entry = in.getNextEntry()) {
                 entries.put(path(entry.getName()), entry(entry, in, entries));
             }
@@ -60,6 +61,15 @@ final class TarListing {
             return "b";
         }
         return entry.isFIFO() ? "p" : "f";
+    }
+
+    // The caller opened the stream and closes it; closing the tar reader must not.
+    private static InputStream unclosed(InputStream stream) {
+        return new FilterInputStream(stream) {
+            @Override
+            public void close() {
+            }
+        };
     }
 
     static String path(String name) {

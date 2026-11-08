@@ -36,6 +36,25 @@ class TarListingTest {
     }
 
     @Test
+    void theStreamIsLeftOpenForWhoeverOpenedIt() throws IOException {
+        ByteArrayOutputStream tar = new ByteArrayOutputStream();
+        try (TarArchiveOutputStream out = new TarArchiveOutputStream(tar)) {
+            add(out, directory("./", 0755, 0));
+        }
+        boolean[] closed = {false};
+        ByteArrayInputStream in = new ByteArrayInputStream(tar.toByteArray()) {
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+
+        TarListing.of(in);
+
+        assertThat(closed[0]).isFalse();
+    }
+
+    @Test
     void aTarNameBecomesAnAbsolutePathWithoutATrailingSlash() {
         assertAll(
                 () -> assertThat(TarListing.path("./")).isEqualTo("/"),

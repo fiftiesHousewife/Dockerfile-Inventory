@@ -95,7 +95,22 @@ class ImageComparisonRunTest {
         assertThat(result.failure()).isEqualTo("the converter cannot render it: the Dockerfile does not parse");
     }
 
-    private final class FakeBuilder implements ImageComparisonRun.Builder {
+    @Test
+    void imagesThatCannotBeReadAreAResultNotAnEndToTheRun() {
+        FakeBuilder builder = new FakeBuilder((dockerfile, context) -> true) {
+            @Override
+            public SortedMap<String, FileEntry> files(String tag) {
+                throw new IllegalStateException("failed: docker exec tar");
+            }
+        };
+
+        ImageComparison.Result result = new ImageComparisonRun(builder, work, "arm64")
+                .compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
+
+        assertThat(result.failure()).isEqualTo("the images could not be read: failed: docker exec tar");
+    }
+
+    private class FakeBuilder implements ImageComparisonRun.Builder {
 
         private final BiPredicate<Path, Path> builds;
         private final List<String> calls = new ArrayList<>();
