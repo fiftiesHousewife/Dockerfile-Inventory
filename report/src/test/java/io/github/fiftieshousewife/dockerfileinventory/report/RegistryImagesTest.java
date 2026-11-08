@@ -17,6 +17,7 @@ class RegistryImagesTest {
 
     static final Path LINEAGE = Path.of("src/test/resources/fixtures/lineage-chain");
     static final String PYTHON = "sha256:d071ff9a02f8fe8397d15d922610e9b5209e3a944386d1ca27afd0e240b92fb7";
+    static final String NGINX = "sha256:21141cd0cc00c9705217877f7c86efff0a39dbdc75ffb3699d014128c8a80459";
     static final String S2I_BASE = "sha256:bf34d32d7e2f2a462e17e8566513d1ebe89f7e27d992f08d40ad0679b14f9017";
 
     @Test
@@ -54,6 +55,27 @@ class RegistryImagesTest {
     void aSecretLabelValueIsHiddenAsItIsRead() {
         assertThat(RegistryImages.label("build.token", json(
                 "{\"value\":\"abc123\",\"setBy\":{\"kind\":\"Unknown\"}}")).value()).startsWith("(hidden sha256:");
+    }
+
+    @Test
+    void anImageLinkedToSeveralDockerfilesCreditsNoneAndNamesThemAsCandidates() {
+        RegistryImage nginx = RegistryImages.read(LINEAGE).get(NGINX);
+
+        assertAll(
+                () -> assertThat(nginx.blobShas()).isEmpty(),
+                () -> assertThat(nginx.candidates()).hasSize(4));
+    }
+
+    @Test
+    void aWeakLinkIsACandidateOnly() {
+        assertThat(RegistryImages.linked(json("{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"]}")))
+                .isEqualTo(new RegistryImages.Linked(List.of(), List.of("aaa")));
+    }
+
+    @Test
+    void aStrongLinkCreditsEveryDockerfileItNames() {
+        assertThat(RegistryImages.linked(json("{\"tier\":\"STRONG\",\"blobShas\":[\"aaa\"]}")))
+                .isEqualTo(new RegistryImages.Linked(List.of("aaa"), List.of()));
     }
 
     @Test

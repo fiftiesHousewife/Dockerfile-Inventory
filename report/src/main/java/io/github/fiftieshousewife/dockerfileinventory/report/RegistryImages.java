@@ -19,6 +19,16 @@ final class RegistryImages {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
+    record Linked(List<String> built, List<String> candidates) {
+
+        Linked {
+            built = List.copyOf(built);
+            candidates = List.copyOf(candidates);
+        }
+    }
+
+    private static final Linked UNLINKED = new Linked(List.of(), List.of());
+
     private RegistryImages() {
     }
 
@@ -28,17 +38,18 @@ final class RegistryImages {
                 .forEach(row -> tags.computeIfAbsent(row.path("configDigest").asString(), d -> new ArrayList<>())
                         .add(row));
         Map<String, String> parents = parents(lineageDir.resolve("lineage.jsonl"));
-        Map<String, List<String>> blobShas = blobShas(lineageDir.resolve("links.jsonl"));
+        Map<String, Linked> links = links(lineageDir.resolve("links.jsonl"));
         Map<String, String> newer = newerBases(lineageDir.resolve("outdated-bases.jsonl"));
         Map<String, Map<String, ImageLabel>> labels = labels(lineageDir.resolve("effective.jsonl"));
         Map<String, RegistryImage> images = new LinkedHashMap<>();
         tags.forEach((digest, rows) -> {
             JsonNode config = config(lineageDir, digest);
             images.put(digest, new RegistryImage(digest, rows.stream().map(RegistryImages::name).distinct().toList(),
-                    parents.get(digest), blobShas.getOrDefault(digest, List.of()),
+                    parents.get(digest), links.getOrDefault(digest, UNLINKED).built(),
                     config.path("rootfs").path("diff_ids").size(), config.path("created").stringValue(null),
                     newest(rows.stream().map(row -> row.path("lastPushed").stringValue(null)).toList()),
-                    newer.get(digest), labels.getOrDefault(digest, Map.of())));
+                    newer.get(digest), labels.getOrDefault(digest, Map.of()),
+                    links.getOrDefault(digest, UNLINKED).candidates()));
         });
         return images;
     }
@@ -80,11 +91,17 @@ final class RegistryImages {
         return parents;
     }
 
-    private static Map<String, List<String>> blobShas(Path links) {
-        Map<String, List<String>> shas = new HashMap<>();
-        JsonLines.read(links).forEach(row -> shas.put(row.path("configDigest").asString(),
-                row.path("blobShas").valueStream().map(JsonNode::asString).toList()));
-        return shas;
+    static Map<String, Linked> links(Path links) {
+        Map<String, Linked> linked = new HashMap<>();
+        JsonLines.read(links).forEach(row -> linked.put(row.path("configDigest").asString(), linked(row)));
+        return linked;
+    }
+
+    static Linked linked(JsonNode row) {
+        List<String> shas = row.path("blobShas").valueStream().map(JsonNode::asString).toList();
+        String tier = row.path("tier").asString();
+        boolean credited = "STRONG".equals(tier) || "PROBABLE".equals(tier) && shas.size() == 1;
+        return credited ? new Linked(shas, List.of()) : new Linked(List.of(), shas);
     }
 
     private static JsonNode config(Path lineageDir, String digest) {

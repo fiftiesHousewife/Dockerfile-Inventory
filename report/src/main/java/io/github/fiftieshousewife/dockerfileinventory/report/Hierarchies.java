@@ -13,7 +13,7 @@ import java.util.TreeMap;
 
 final class Hierarchies {
 
-    record Hierarchy(Layers layers, List<BuiltImage> images, List<String> unmaintained) {
+    record Hierarchy(Layers layers, List<BuiltImage> images, List<String> candidateImages, List<String> unmaintained) {
     }
 
     record Layers(int own, int inherited, int total, String counted, boolean overLimit) {
@@ -51,7 +51,9 @@ final class Hierarchies {
         List<BuiltImage> built = builtFrom.getOrDefault(entry.blobSha(), List.of()).stream()
                 .sorted(Comparator.comparing(RegistryImage::configDigest))
                 .map(image -> built(image.configDigest(), entry.image().labels().keySet())).toList();
-        return new Hierarchy(layers(entry, entries, links), built,
+        List<String> candidates = images.values().stream().filter(image -> image.candidates().contains(entry.blobSha()))
+                .map(RegistryImage::configDigest).sorted().toList();
+        return new Hierarchy(layers(entry, entries, links), built, candidates,
                 Unmaintained.archived(entry.locations(), archivedRepositories));
     }
 

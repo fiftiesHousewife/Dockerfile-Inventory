@@ -50,6 +50,19 @@ class CatalogueLinksTest {
     }
 
     @Test
+    void anImageLineageCannotPinToOneDockerfileGivesNoLineageLink(@TempDir Path lineage) throws IOException {
+        Files.writeString(lineage.resolve("links.jsonl"), """
+                {"configDigest":"sha256:child","tier":"PROBABLE","blobShas":["ccc","ddd"],"parentMissing":false}
+                {"configDigest":"sha256:parent","tier":"PROBABLE","blobShas":["aaa"],"parentMissing":false}
+                """);
+        Files.writeString(lineage.resolve("lineage.jsonl"), """
+                {"configDigest":"sha256:child","parent":{"kind":"Of","configDigest":"sha256:parent"}}
+                """);
+
+        assertThat(CatalogueLinks.lineage(lineage)).isEmpty();
+    }
+
+    @Test
     void aLinkFromLineageIsKeptWithTheImagesThatShowIt(@TempDir Path lineage) throws IOException {
         Files.writeString(lineage.resolve("links.jsonl"), """
                 {"configDigest":"sha256:child","tier":"PROBABLE","blobShas":["ccc"],"parentMissing":false}

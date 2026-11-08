@@ -50,7 +50,8 @@ class HierarchiesTest {
         Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
         RegistryImage base = images.get(S2I_BASE);
         images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
-                base.layers(), base.created(), base.lastPushed(), "sha256:0b1c", base.labels()));
+                base.layers(), base.created(), base.lastPushed(), "sha256:0b1c", base.labels(),
+                base.candidates()));
 
         assertThat(hierarchies(images, 40).built(PYTHON, Set.of()).blockedBy())
                 .extracting(Hierarchies.Step::configDigest).containsExactly(S2I_BASE);
@@ -95,6 +96,19 @@ class HierarchiesTest {
                 () -> assertThat(hierarchy.images()).extracting(Hierarchies.BuiltImage::configDigest)
                         .containsExactly(PYTHON),
                 () -> assertThat(hierarchy.unmaintained()).containsExactly("every repository holding it is archived"));
+    }
+
+    @Test
+    void anImageThisDockerfileMayHaveBuiltIsACandidateNotBuilt() {
+        CatalogueEntry nginx = withLayers(CatalogueLinksTest.entry("6070555cb3c17f02425e461698624ec091d9ba5b",
+                "quay.io/sclorg/s2i-core-c9s:c9s", Map.of()), 2, List.of());
+
+        Hierarchies.Hierarchy hierarchy = hierarchies(RegistryImages.read(LINEAGE), 40)
+                .of(nginx, List.of(nginx), Map.of(), Set.of());
+
+        assertAll(
+                () -> assertThat(hierarchy.images()).isEmpty(),
+                () -> assertThat(hierarchy.candidateImages()).containsExactly(RegistryImagesTest.NGINX));
     }
 
     @Test

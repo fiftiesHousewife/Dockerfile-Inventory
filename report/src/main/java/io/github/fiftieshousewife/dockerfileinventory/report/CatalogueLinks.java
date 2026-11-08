@@ -52,11 +52,8 @@ final class CatalogueLinks {
 
     static List<Pair> lineage(Path lineageDir) {
         Map<String, List<String>> blobs = new HashMap<>();
-        JsonLines.read(lineageDir.resolve("links.jsonl")).forEach(row -> {
-            List<String> shas = new ArrayList<>();
-            row.path("blobShas").forEach(sha -> shas.add(sha.asString()));
-            blobs.put(row.path("configDigest").asString(), shas);
-        });
+        RegistryImages.links(lineageDir.resolve("links.jsonl")).forEach((digest, linked) ->
+                blobs.put(digest, linked.built()));
         List<Pair> pairs = new ArrayList<>();
         for (JsonNode row : JsonLines.read(lineageDir.resolve("lineage.jsonl"))) {
             String child = row.path("configDigest").asString();

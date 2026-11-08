@@ -12,7 +12,7 @@ import tools.jackson.databind.JsonNode;
 class CatalogueEntriesTest {
 
     private static final Hierarchies.Hierarchy HIERARCHY = new Hierarchies.Hierarchy(
-            new Hierarchies.Layers(3, 0, 3, "declared", false), List.of(), List.of());
+            new Hierarchies.Layers(3, 0, 3, "declared", false), List.of(), List.of(), List.of());
 
     private static final Path FIXTURES = Path.of("src/test/resources/fixtures/catalogue");
     private static final String SHA = "3f6d0c1a2b4e5f60718293a4b5c6d7e8f9a0b1c2";
