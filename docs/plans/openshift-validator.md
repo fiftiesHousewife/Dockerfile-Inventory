@@ -213,3 +213,7 @@ The two profiles give the same verdicts on both estates: P5 (the only difference
 on another check too. By check on the combined estate: P1 2,982 (most inferred), P2 1,142, P3 58, P4 19, P5 3, P6
 369, P8 3,984, P9 303, P10 4. A sample of five per check read right, except P2 on sclorg's images, whose
 `fix-permissions` script does the group-0 work out of the facts' sight.
+
+The report's page (test 6) built 9 Nov: with `VALIDATOR_DIR`, `openshift.html` leads with the verdicts under the
+profile, lists the first 250 actions most urgent first, each linked to its Dockerfile's page, then the actions per
+repository; the summary leads with the same sentence. On OKD: 40,037 links, none broken.

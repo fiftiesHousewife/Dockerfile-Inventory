@@ -36,7 +36,7 @@ and one line when its gate is met.
 - Now: the validator, slice 1 built 9 Nov: the module, both OpenShift profiles, checks P1 to P10 on facts, verdicts,
   actions by urgency and by repository, `action-plan.json`, `actions.jsonl`, `verdicts.jsonl`. Next: the effective
   image from lineage (P1 on an inherited user), reach through bases and archetypes, sclorg's `fix-permissions`
-  seen as a group-0 step, the antipatterns, the report's page, the tagged ratchet test.
+  seen as a group-0 step, the antipatterns, the tagged ratchet test. The report's page built 9 Nov.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

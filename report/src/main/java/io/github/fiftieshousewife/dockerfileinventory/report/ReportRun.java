@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
@@ -19,16 +20,18 @@ final class ReportRun {
     private final Path discoveryDir;
     private final Path lineageDir;
     private final Path converterDir;
+    private final Path validatorDir;
     private final CatalogueSettings catalogueSettings;
     private final Path outDir;
     private final ObjectMapper json = new ObjectMapper();
 
-    ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, Path converterDir,
+    ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, Path converterDir, Path validatorDir,
               CatalogueSettings catalogueSettings, Path outDir) {
         this.factsDir = factsDir;
         this.discoveryDir = discoveryDir;
         this.lineageDir = lineageDir;
         this.converterDir = converterDir;
+        this.validatorDir = validatorDir;
         this.catalogueSettings = catalogueSettings;
         this.outDir = outDir;
     }
@@ -45,8 +48,8 @@ final class ReportRun {
                 .collect(Collectors.joining("\n", "", "\n")));
         CatalogueRun.write(new CatalogueRun.Inputs(factsDir, discoveryDir, lineageDir, converterDir, archetypeGroups),
                 outDir, catalogueSettings);
-        Pages.all(CatalogueView.read(outDir.resolve(CatalogueRun.PATH)), ArchetypeRows.of(ranking, estate))
-                .forEach(this::write);
+        Pages.all(CatalogueView.read(outDir.resolve(CatalogueRun.PATH)), ArchetypeRows.of(ranking, estate),
+                Optional.ofNullable(validatorDir).map(ActionPlanView::read)).forEach(this::write);
     }
 
     static Map<String, Object> passesSummary(Ranking ranking, List<PassCount> passes) {

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,13 +23,24 @@ class PagesTest {
                 linked("a1", "acme/api", List.of(), List.of("b9")),
                 linked("b9", "beta/app", List.of("a1"), List.of()),
                 Entries.unparsed("zz", "beta/broken")));
-        return Pages.all(view, ArchetypeRows.of(ArchetypeRowsTest.RANKING, ArchetypeRowsTest.ESTATE));
+        return Pages.all(view, ArchetypeRows.of(ArchetypeRowsTest.RANKING, ArchetypeRowsTest.ESTATE),
+                Optional.of(ActionPlanPageTest.view(1)));
     }
 
     @Test
     void theSummaryEachOrganisationTheTreesTheBlockedTheArchetypesAndEachDockerfileHaveAPage() {
         assertThat(pages()).containsKeys("index.html", "orgs/acme.html", "orgs/beta.html", "hierarchy.html",
                 "blocked.html", "archetypes.html", "dockerfiles/a1.html", "dockerfiles/b9.html", "dockerfiles/zz.html");
+    }
+
+    @Test
+    void withTheValidatorsPlanTheSummaryLeadsWithItAndLinksToItsPage() {
+        Map<String, String> pages = pages();
+
+        assertAll(
+                () -> assertThat(pages).containsKey("openshift.html"),
+                () -> assertThat(pages.get("index.html")).contains("3 of 5 images would break",
+                        "href=\"openshift.html\""));
     }
 
     @Test

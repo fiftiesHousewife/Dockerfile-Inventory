@@ -20,7 +20,7 @@ class ReportRunTest {
 
     @Test
     void writesPassesArchetypesAsJsonLinesAndThePagesButNoTables() throws IOException {
-        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, CatalogueSettings.DEFAULTS, out).run();
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, null, CatalogueSettings.DEFAULTS, out).run();
 
         JsonNode passes = new ObjectMapper().readTree(out.resolve("passes.json").toFile());
         List<JsonNode> archetypes = JsonLines.read(out.resolve("archetypes.jsonl"));
@@ -39,7 +39,7 @@ class ReportRunTest {
 
     @Test
     void theCatalogueIsWrittenBesideTheReport() {
-        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, CatalogueSettings.DEFAULTS, out).run();
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, null, CatalogueSettings.DEFAULTS, out).run();
 
         assertThat(out.resolve("catalogue/dockerfiles.jsonl")).isNotEmptyFile();
     }

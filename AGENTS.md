@@ -68,7 +68,8 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
                     Hierarchies (chains, layers, blockedBy), CatalogueSettings (LinkRule, FootprintRules),
                     Placement; Actions: ReleaseScope, Reaches, Conversions, Siblings, BaseLags, Cadences, Provenance
                     Pages (writes them, from CatalogueView and ArchetypeRows): OverviewPage (EstateFigures),
-                    HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName;
+                    HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName,
+                    ActionPlanPage (ActionPlanView: the validator's output);
                     Page, Html, Style, About (info text)
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
                     Rule, EffectiveRule, Finding, Subject, ImageView, RuleRun (a failing rule is a finding);

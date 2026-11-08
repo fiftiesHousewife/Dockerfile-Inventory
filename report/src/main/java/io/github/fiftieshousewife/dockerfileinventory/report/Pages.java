@@ -7,6 +7,7 @@ import io.github.fiftieshousewife.dockerfileinventory.report.ArchetypeRows.Row;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -20,19 +21,22 @@ final class Pages {
     private Pages() {
     }
 
-    static Map<String, String> all(CatalogueView view, ArchetypeRows rows) {
+    static Map<String, String> all(CatalogueView view, ArchetypeRows rows, Optional<ActionPlanView> plan) {
         List<CatalogueEntry> entries = view.entries();
         Map<String, List<CatalogueEntry>> byOrganisation = entries.stream()
                 .collect(Collectors.groupingBy(CatalogueView::organisation, TreeMap::new,
                         Collectors.toList()));
         Map<String, String> pages = new LinkedHashMap<>();
-        pages.put("index.html", Page.render("Dockerfile estate", "",
-                OverviewPage.body(EstateFigures.of(entries), List.copyOf(byOrganisation.keySet()), "")));
+        Set<String> catalogued = entries.stream().map(CatalogueEntry::blobSha).collect(Collectors.toSet());
+        pages.put("index.html", Page.render("Dockerfile estate", "", plan.map(p -> ActionPlanPage.lead(p)
+                + "<p><a href=\"openshift.html\">Action plan for OpenShift</a></p>").orElse("")
+                + OverviewPage.body(EstateFigures.of(entries), List.copyOf(byOrganisation.keySet()), "")));
+        plan.ifPresent(p -> pages.put("openshift.html", Page.render("Action plan for OpenShift", "",
+                ActionPlanPage.body(p, catalogued))));
         byOrganisation.forEach((organisation, within) -> pages.put("orgs/" + organisation + ".html",
                 Page.render(organisation, "../", OverviewPage.body(EstateFigures.of(within), List.of(), "../"))));
         pages.put("hierarchy.html", Page.render("Hierarchy", "", HierarchyPage.body(entries)));
         pages.put("blocked.html", Page.render("Blocked", "", BlockedPage.body(entries)));
-        Set<String> catalogued = entries.stream().map(CatalogueEntry::blobSha).collect(Collectors.toSet());
         pages.putAll(ranking(rows, catalogued));
         entries.forEach(entry -> pages.put("dockerfiles/" + entry.blobSha() + ".html", Page.render(
                 entry.locations().getFirst().repository() + "/" + entry.locations().getFirst().path(), "../",
