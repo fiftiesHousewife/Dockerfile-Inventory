@@ -53,6 +53,22 @@ final class RunFiles {
         }
     }
 
+    static void writeFile(Path file, String text) {
+        try {
+            createParent(file);
+            Files.writeString(file, text, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    static void createParent(Path file) throws IOException {
+        Path parent = file.toAbsolutePath().getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+    }
+
     void write(String file, String text) {
         try {
             Path target = outDir.resolve(file);

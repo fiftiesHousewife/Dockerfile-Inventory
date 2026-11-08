@@ -61,4 +61,11 @@ class RunFilesTest {
         assertThat(List.of(RunFiles.read(out.resolve("top.json")),
                 RunFiles.read(out.resolve("generated/images/x/A.java")))).containsExactly("{}", "class A {}");
     }
+
+    @Test
+    void aFileIsWrittenWithTheDirectoriesItNeeds(@TempDir Path root) {
+        RunFiles.writeFile(root.resolve("a/b/c.txt"), "text");
+
+        assertThat(root.resolve("a/b/c.txt")).hasContent("text");
+    }
 }

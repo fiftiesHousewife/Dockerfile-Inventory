@@ -18,7 +18,7 @@ Why it is built the way it is: [the overview](docs/overview.md). The full plan, 
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need the enterprise discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
-| 5. Convert existing Dockerfiles to builders | `converter` | Built, with the Java round trip; image comparison (5b) built, its first run needs Docker |
+| 5. Convert existing Dockerfiles to builders | `converter` | Built, with the Java round trip; image comparison (5b) built as `./gradlew imageTest`, its first run needs Docker |
 
 The Dockerfile parser the pipeline uses is also a library of its own: see [parser/README.md](parser/README.md).
 
@@ -339,20 +339,26 @@ builds the same model and so the same Dockerfile.
 ### Compare the images
 
 ```bash
-scripts/compare-images.sh       # where Docker runs; DISCOVERY_DIR, SHAS, OUT, REGISTRY_AUTH_FILE as its header says
+./gradlew imageTest      # where Docker runs; ESTATE_DISCOVERY_DIR (default out/all/discovery)
 ```
 
-For each chosen Dockerfile (by default the ten golden families' representatives), the Dockerfile and the
-converter's rendering of it are built with Buildah from the same context at the commit discovery scanned, and the
-two images compared. The same image means the same config (labels the builder writes at build time aside) and the
-same files: path, type, mode, owner, link target and content. Timestamps are never compared, nor the content of
-files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`); those are
-still checked to exist with the same mode and owner.
+For each Dockerfile in `converter/src/test/resources/estate/compare-images.txt` (the ten golden families'
+representatives), the Dockerfile and the converter's rendering of it are built with Buildah from the same context
+at the commit discovery scanned, and the two images compared. The context is the Dockerfile's directory, else the
+repository root, else its directory with the sources CI makes before the build (a binary, `target/`) stubbed as
+empty files in both builds. The same image means the same config (labels the builder writes at build time aside)
+and the same files: path, type, mode, owner, link target and content. Timestamps are never compared, nor the content
+of files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`); those are
+still checked to exist with the same mode and owner. The test fails on any pair that built and differs; a pair that
+did not build (a base behind a login, say) is reported, not failed.
 
 | File | Contents |
 | --- | --- |
-| `comparison.jsonl` | Per Dockerfile: built or why not, the same or not, each config and file difference, the paths whose content was ignored |
-| `work/<sha>/` | The regenerated Dockerfile, each build's log, each image's config and file listing |
+| `converter/build/image-comparison/comparison.jsonl` | Per Dockerfile: built or why not, the same or not, each difference, the stubs built on |
+| `converter/build/image-comparison/work/<sha>/` | The regenerated Dockerfile and each build's log |
+
+`./gradlew estateTest` converts the whole estate the same way, without Docker: every instruction typed, the text
+round trip at least its committed count, every passing Dockerfile's class rebuilding it.
 
 ## Contributing
 

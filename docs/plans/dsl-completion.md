@@ -1,6 +1,6 @@
 # Completing the DSL: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4 built 8 Nov, its first run the owner's.
+Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4 built 8 Nov as `./gradlew imageTest`, its first run the owner's.
 
 The owner asked for the DSL to be made completely ready. It works: an immutable model, one renderer, policy-enforcing
 builders, four goldens passing every rule, and a converter that round-trips 5,149 of the combined estate's 5,250 files
@@ -285,6 +285,15 @@ helpers) are their own slice, planned after this one; the container's entry poin
 `Stubs` on a temporary context; `ImageComparisonRun` with a fake `Buildah` (built first try, built from the root,
 built on stubs, not built); `Checkouts` and the real `Buildah` only inside the `images` test; the tags and tasks;
 `EstateConversionTest`.
+
+### Bulk checks as built
+
+As designed. `estateTest` passes on the combined estate in about 30 seconds. `imageTest` replaces
+`scripts/compare-images.sh` and `ImageCompareMain`: the first run of the script (8 Nov) built only s2i-php, read no
+config (Buildah's `--format` has no `json`), and showed why the rest did not build: two bases behind a login, three
+sources made by CI (now stubbed), one context the script's overwritten log hid (now one log per attempt), one
+`apt-get` fetch failure, and one Dockerfile that does not build at its commit. Here (no Docker in the sandbox)
+`imageTest` skips with its reason; everything behind the `Builder` interface is tested with a fake.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

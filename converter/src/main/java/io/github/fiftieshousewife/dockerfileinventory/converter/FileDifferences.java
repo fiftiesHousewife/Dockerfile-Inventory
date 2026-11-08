@@ -16,13 +16,13 @@ final class FileDifferences {
     private FileDifferences() {
     }
 
-    static List<String> of(SortedMap<String, FileListing.Entry> original,
-            SortedMap<String, FileListing.Entry> regenerated) {
+    static List<String> of(SortedMap<String, FileEntry> original,
+            SortedMap<String, FileEntry> regenerated) {
         TreeSet<String> paths = new TreeSet<>(original.keySet());
         paths.addAll(regenerated.keySet());
         return paths.stream().flatMap(path -> {
-            FileListing.Entry before = original.get(path);
-            FileListing.Entry after = regenerated.get(path);
+            FileEntry before = original.get(path);
+            FileEntry after = regenerated.get(path);
             if (before == null || after == null) {
                 return List.of(path + ": only in the " + (before == null ? "regenerated" : "original")).stream();
             }
@@ -30,7 +30,7 @@ final class FileDifferences {
         }).toList();
     }
 
-    static List<String> entry(String path, FileListing.Entry before, FileListing.Entry after) {
+    static List<String> entry(String path, FileEntry before, FileEntry after) {
         List<String> differences = new ArrayList<>();
         attribute(differences, path, "type", before.type(), after.type());
         attribute(differences, path, "mode", before.mode(), after.mode());
