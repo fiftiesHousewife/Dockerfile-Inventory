@@ -128,7 +128,7 @@ symlinks, third-party copies (`vendor/`, `node_modules/`, `third_party/`) and te
 | `blobs/<sha>` | Each distinct Dockerfile's text, stored once however many repositories copy it |
 | `repos.jsonl` | One line per repository per run: outcome (`SCANNED`, `EMPTY`, `TRUNCATED`, `RELEASE_COMMIT_MISSING`, `FAILED`), commit, archived and fork flags, Dockerfile count |
 | `blob-findings.jsonl` | Dockerfiles that could not be stored: binary, too large, or not found |
-| `changes.jsonl` | One line per location: the last commit that changed the Dockerfile up to the scanned commit, and its date; a location missing here is asked for again on the next run |
+| `changes.jsonl` | One line per location: the last commit that changed the Dockerfile up to the scanned commit, and its date, both empty where GitHub has no history for it; a location GitHub refused (an error, counted in the summary) is asked for again on the next run |
 
 Several discovery runs (one per organisation, say) are merged into one estate for the stages after it:
 

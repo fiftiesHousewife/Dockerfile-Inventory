@@ -19,6 +19,7 @@ final class FakeGitHub implements GitHub {
     final List<List<BlobRequest>> blobCalls = new CopyOnWriteArrayList<>();
     final Map<ChangeRequest, LastChange> changes = new LinkedHashMap<>();
     final List<List<ChangeRequest>> changeCalls = new CopyOnWriteArrayList<>();
+    final List<String> failingChanges = new ArrayList<>();
 
     FakeGitHub repository(String org, Repository repository) {
         repositoriesByOrg.computeIfAbsent(org, k -> new ArrayList<>()).add(repository);
@@ -99,6 +100,10 @@ final class FakeGitHub implements GitHub {
     @Override
     public List<LastChange> lastChanges(List<ChangeRequest> requests) {
         changeCalls.add(List.copyOf(requests));
-        return requests.stream().map(changes::get).filter(c -> c != null).toList();
+        if (requests.stream().anyMatch(r -> failingChanges.contains(r.repository()))) {
+            throw new GitHubException("POST graphql returned errors");
+        }
+        return requests.stream().map(r -> changes.getOrDefault(r, new LastChange(r.repository(), r.commitSha(),
+                r.path(), null, null))).toList();
     }
 }

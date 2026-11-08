@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 final class Discovery {
 
     record Summary(int repositories, int skipped, int scanned, int failed, int dockerfiles,
-                   int uniqueBlobs, int fetched, int blobProblems, int lastChanges) {
+                   int uniqueBlobs, int fetched, int blobProblems, int lastChanges, int lastChangeProblems) {
     }
 
     private final GitHub gitHub;
@@ -47,11 +47,12 @@ final class Discovery {
         Set<String> reported = output.reportedBlobs();
         BlobFetch.Fetched fetched = blobFetch.fetch(
                 missing(byBlob.values(), sha -> output.hasBlob(sha) || reported.contains(sha)));
-        int lastChanges = changeFetch.fetch(unchanged(manifest, output.changes().stream()
+        ChangeFetch.Fetched lastChanges = changeFetch.fetch(unchanged(manifest, output.changes().stream()
                 .map(c -> new ChangeRequest(c.repository(), c.commitSha(), c.path())).collect(Collectors.toSet())));
 
         return new Summary(repositories.size(), repositories.size() - todo.size(), results.size() - failed, failed,
-                manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges);
+                manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges.recorded(),
+                lastChanges.problems());
     }
 
     List<Repository> repositories() {

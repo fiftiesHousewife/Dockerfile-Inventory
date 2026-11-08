@@ -37,8 +37,7 @@ final class GraphQlHistory {
     static List<LastChange> read(JsonNode data, List<ChangeRequest> requests) {
         Map<ChangeRequest, Alias> aliases = aliases(byRepositoryAndCommit(requests));
         return aliases.entrySet().stream().map(e -> lastChange(e.getKey(), data.path(e.getValue().repository())
-                .path("object").path(e.getValue().path()).path("nodes").path(0)))
-                .filter(change -> change.changedIn() != null).toList();
+                .path("object").path(e.getValue().path()).path("nodes").path(0))).toList();
     }
 
     static Map<String, List<ChangeRequest>> byRepositoryAndCommit(List<ChangeRequest> requests) {

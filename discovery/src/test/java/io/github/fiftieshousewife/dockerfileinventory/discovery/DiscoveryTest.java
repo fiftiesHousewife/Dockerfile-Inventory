@@ -151,15 +151,16 @@ class DiscoveryTest {
         Discovery.Summary summary = discovery().run();
 
         assertAll(
-                () -> assertThat(summary.lastChanges()).isEqualTo(1),
+                () -> assertThat(summary.lastChanges()).isEqualTo(3),
                 () -> assertThat(new DiscoveryOutput(out).changes()).extracting(LastChange::changedAt)
-                        .containsExactly("2026-03-02T10:11:12Z"));
+                        .containsExactlyInAnyOrder("2026-03-02T10:11:12Z", null, null));
     }
 
     @Test
-    void aSecondRunAsksOnlyForLocationsWithoutALastChange() {
-        gitHub.change(new ChangeRequest("pay/api", A, "Dockerfile"), "c1", "2026-03-02T10:11:12Z");
+    void aSecondRunAsksOnlyForLocationsGitHubRefusedLastTime() {
+        gitHub.failingChanges.add("pay/worker");
         discovery().run();
+        gitHub.failingChanges.clear();
         gitHub.changeCalls.clear();
 
         discovery().run();

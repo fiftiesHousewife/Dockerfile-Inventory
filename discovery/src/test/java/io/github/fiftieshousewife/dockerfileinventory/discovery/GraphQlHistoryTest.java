@@ -35,11 +35,13 @@ class GraphQlHistoryTest {
     }
 
     @Test
-    void readsEachAnsweredLocationsLastChangeAndLeavesOutTheRest() {
+    void readsEachLocationsLastChangeAndAnEmptyOneWhereGitHubHasNone() {
         var data = new ObjectMapper().readTree(RecordedGitHub.fixture("history.json")).path("data");
 
-        assertThat(GraphQlHistory.read(data, List.of(LEDGER, NO_HISTORY, GONE))).containsExactly(new LastChange(
-                "payments/ledger-api", COMMIT, "Dockerfile", "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
-                "2026-03-02T10:11:12Z"));
+        assertThat(GraphQlHistory.read(data, List.of(LEDGER, NO_HISTORY, GONE))).containsExactly(
+                new LastChange("payments/ledger-api", COMMIT, "Dockerfile", "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+                        "2026-03-02T10:11:12Z"),
+                new LastChange("payments/ledger-api", COMMIT, "build/Containerfile", null, null),
+                new LastChange("payments/old", COMMIT, "Dockerfile", null, null));
     }
 }

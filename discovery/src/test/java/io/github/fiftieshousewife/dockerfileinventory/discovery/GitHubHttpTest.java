@@ -138,7 +138,8 @@ class GitHubHttpTest {
                 GraphQlHistoryTest.NO_HISTORY, GraphQlHistoryTest.GONE));
 
         assertAll(
-                () -> assertThat(changes).extracting(LastChange::changedAt).containsExactly("2026-03-02T10:11:12Z"),
+                () -> assertThat(changes).extracting(LastChange::changedAt)
+                        .containsExactly("2026-03-02T10:11:12Z", null, null),
                 () -> assertThat(server.requests).hasSize(1));
     }
 
