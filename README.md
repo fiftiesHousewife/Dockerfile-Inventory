@@ -381,6 +381,9 @@ Metadata-only bundles (`FROM scratch` with no start command) never run as contai
 
 The report shows the plan as a page when given the validator's `OUT_DIR` as `VALIDATOR_DIR`.
 
+`./gradlew validate` runs the validator over a stored estate and compares its counts with those committed in
+`validator/src/test/resources/estate/expected.json` (outside `check`; it skips without the estate).
+
 ## Convert Dockerfiles to builder classes
 
 ```bash

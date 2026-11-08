@@ -1,0 +1,21 @@
+{
+  "images": 4472,
+  "notRunnable": 685,
+  "verdicts": {
+    "breaks": 3590,
+    "drift": 693,
+    "information": 2,
+    "runs": 187
+  },
+  "actionsByCheck": {
+    "P1": 2982,
+    "P2": 1055,
+    "P3": 58,
+    "P4": 19,
+    "P5": 3,
+    "P6": 369,
+    "P8": 3984,
+    "P9": 303,
+    "P10": 4
+  }
+}

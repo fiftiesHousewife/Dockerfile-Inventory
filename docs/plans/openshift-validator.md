@@ -221,3 +221,7 @@ repository; the summary leads with the same sentence. On OKD: 40,037 links, none
 P2 reads sclorg's `fix-permissions <path>` in the final image's `RUN` steps as a recursive group-0 write (9 Nov), and
 leaves a `HOME` in `/tmp` alone: P2 on the combined estate 1,142 -> 1,055, on OKD 366 -> 360; verdicts on the
 combined estate 3,590 break, 693 drift, 2 information, 187 run.
+
+Test 7 built 9 Nov: `./gradlew validate` (tag `validate`) runs the validator over the combined estate's stored facts
+and compares the images judged, the verdicts and the actions per check exactly with
+`validator/src/test/resources/estate/expected.json`, so a change to a check carries its effect in the diff.
