@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 // ONBUILD and SHELL reach the config.
 final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseable {
 
-    static final String IMAGE = "quay.io/buildah/stable:v1.37.0";
+    static final String IMAGE = "quay.io/buildah/stable:v1.43.5";
     private static final String NAME = "inventory-compare";
     private static final String EMPTY_SECRET = "empty-secret";
     private static final ObjectMapper JSON = new ObjectMapper();

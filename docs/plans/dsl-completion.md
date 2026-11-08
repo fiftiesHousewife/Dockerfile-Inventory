@@ -397,7 +397,9 @@ Tests, in order:
 
 Measured 8 Nov after: the default ten in 18 minutes (from about two hours); eight the same once the control build's
 noise is set aside, two not built in their original (bitnami's download step; the OLM catalog's `opm serve
---cache-only`, which exits 1 building its cache on arm64).
+--cache-only`, which exits 1 building its cache on arm64). Then: Buildah 1.37 refused bitnami's `--mount=type=secret,...,env=`,
+so the container moved to Buildah 1.43.5, after which bitnami fails only on the Debian mirror's hash-sum mismatches
+from this network; the catalog stand-in is now `operator-framework-olm`'s file-based catalog, the same.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

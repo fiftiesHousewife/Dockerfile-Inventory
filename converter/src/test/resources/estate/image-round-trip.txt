@@ -5,8 +5,9 @@
 
 # bitnami application image
 bitnami/containers bitnami/notation/1/debian-12/Dockerfile
-# OLM file-based catalog, on the public opm image (the largest archetype's base needs a registry.redhat.io login)
-openshift/network-observability-operator catalog.Dockerfile
+# OLM file-based catalog, on the public opm image (the largest archetype's base needs a registry.redhat.io login;
+# network-observability-operator's pre-built cache step fails on arm64)
+openshift/operator-framework-olm staging/operator-registry/fbc-dir/file-based-catalog.Dockerfile
 # Go operator built in a builder stage, on public UBI images (the largest needs a registry.ci.openshift.org login)
 openshift/aws-load-balancer-operator Dockerfile
 # language runtime built from source (Alpine; the Debian representative's security mirror served bad sums)
