@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.util.regex.Pattern;
 
-// Whether an installed package names its version, by each manager's syntax.
 final class Versions {
 
     private static final Pattern RPM = Pattern.compile(".+-\\d[\\w.+~^]*(-[\\w.+~^]+)?");

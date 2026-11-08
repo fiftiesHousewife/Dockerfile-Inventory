@@ -20,14 +20,17 @@ final class ReportRun {
     private final Path discoveryDir;
     private final Path lineageDir;
     private final EolList eol;
+    private final CatalogueSettings catalogueSettings;
     private final Path outDir;
     private final ObjectMapper json = new ObjectMapper();
 
-    ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, EolList eol, Path outDir) {
+    ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, EolList eol, CatalogueSettings catalogueSettings,
+              Path outDir) {
         this.factsDir = factsDir;
         this.discoveryDir = discoveryDir;
         this.lineageDir = lineageDir;
         this.eol = eol;
+        this.catalogueSettings = catalogueSettings;
         this.outDir = outDir;
     }
 
@@ -42,7 +45,7 @@ final class ReportRun {
 
         write("passes.json", pretty(passesSummary(ranking, passes)));
         write("archetypes.json", pretty(ranking));
-        CatalogueRun.write(factsDir, discoveryDir, lineageDir, outDir);
+        CatalogueRun.write(factsDir, discoveryDir, lineageDir, outDir, catalogueSettings);
         tables.forEach(t -> write("tables/" + t.name() + ".csv", t.csv()));
         write("tables/ddl.sql", tables.stream().map(Table::ddl).collect(Collectors.joining("\n")));
         Pages.all(Report.of(estate, ranking, passes.subList(0, 3), archetypeGroups.size(), eol,

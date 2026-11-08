@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import tools.jackson.databind.JsonNode;
 
-// Which estate Dockerfile builds another's base: from lineage where a registry was read, else inferred from the
-// image a Dockerfile's labels say it builds.
 final class CatalogueLinks {
 
     record Link(String blobSha, String source, String evidence) {

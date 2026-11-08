@@ -1,13 +1,13 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.JsonNode;
@@ -20,27 +20,28 @@ class ReportRunTest {
 
     @Test
     void writesPassesArchetypesTablesDdlAndThePages() throws IOException {
-        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, EolList.empty(), out).run();
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, EolList.empty(), CatalogueSettings.DEFAULTS,
+                out).run();
 
         JsonNode passes = new ObjectMapper().readTree(out.resolve("passes.json").toFile());
         JsonNode archetypes = new ObjectMapper().readTree(out.resolve("archetypes.json").toFile());
-        SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(passes.path("passes").size()).isEqualTo(4);
-            softly.assertThat(passes.path("k80").asInt()).isEqualTo(2);
-            softly.assertThat(archetypes.path("archetypes").size()).isEqualTo(2);
-            softly.assertThat(read("tables/dockerfiles.csv")).startsWith("blob_sha,");
-            softly.assertThat(read("tables/ddl.sql"))
-                    .contains("CREATE TABLE dockerfiles").contains("CREATE TABLE bases");
-            softly.assertThat(read("index.html")).startsWith("<!doctype html>");
-            softly.assertThat(read("orgs/payments.html")).contains("<h1>payments</h1>");
-            softly.assertThat(read("archetypes/1.html")).contains("<h1>Archetype 1: ");
-            softly.assertThat(out.resolve("dashboard.html")).doesNotExist();
-        });
+        assertAll(
+                () -> assertThat(passes.path("passes").size()).isEqualTo(4),
+                () -> assertThat(passes.path("k80").asInt()).isEqualTo(2),
+                () -> assertThat(archetypes.path("archetypes").size()).isEqualTo(2),
+                () -> assertThat(read("tables/dockerfiles.csv")).startsWith("blob_sha,"),
+                () -> assertThat(read("tables/ddl.sql"))
+                        .contains("CREATE TABLE dockerfiles").contains("CREATE TABLE bases"),
+                () -> assertThat(read("index.html")).startsWith("<!doctype html>"),
+                () -> assertThat(read("orgs/payments.html")).contains("<h1>payments</h1>"),
+                () -> assertThat(read("archetypes/1.html")).contains("<h1>Archetype 1: "),
+                () -> assertThat(out.resolve("dashboard.html")).doesNotExist());
     }
 
     @Test
     void theCatalogueIsWrittenBesideTheReport() {
-        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, EolList.empty(), out).run();
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, EolList.empty(), CatalogueSettings.DEFAULTS,
+                out).run();
 
         assertThat(out.resolve("catalogue/dockerfiles.jsonl")).isNotEmptyFile();
     }

@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-// Java, Go, Node.js and Python in a Dockerfile: in a base's name, a package installed or the final image's
-// environment, and whether each reaches the final image or stays in a build stage.
 final class Runtimes {
 
     record Found(String runtime, String where, String evidence) {

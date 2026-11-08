@@ -11,9 +11,13 @@ import tools.jackson.databind.JsonNode;
 
 class CatalogueEntriesTest {
 
+    private static final Hierarchies.Hierarchy HIERARCHY = new Hierarchies.Hierarchy(
+            new Hierarchies.Layers(3, 0, 3, "declared", false), List.of(), List.of());
+
     private static final Path FIXTURES = Path.of("src/test/resources/fixtures/catalogue");
     private static final String SHA = "3f6d0c1a2b4e5f60718293a4b5c6d7e8f9a0b1c2";
     private static final JsonNode ROW = JsonLines.read(FIXTURES.resolve("facts.jsonl")).getFirst();
+
     private static CatalogueEntry entry() {
         return CatalogueEntries.of(ROW, CatalogueEntries.places(FIXTURES.resolve("manifest.jsonl")).get(SHA));
     }
@@ -77,21 +81,22 @@ class CatalogueEntriesTest {
     }
 
     @Test
-    void anEntryCarriesItsLinksAndFootprintOnceTheyAreKnown() {
+    void anEntryCarriesItsLinksFootprintAndHierarchyOnceTheyAreKnown() {
         CatalogueLinks.Links links = new CatalogueLinks.Links(List.of(), List.of(), 0);
         Footprint.Found footprint = new Footprint.Found("minimal", "ubi9/ubi-minimal", List.of());
-        CatalogueEntry placed = entry().placed(links, footprint, List.of());
+        CatalogueEntry placed = entry().placed(links, footprint, List.of(), HIERARCHY);
 
         assertAll(
                 () -> assertThat(placed.links()).isEqualTo(links),
-                () -> assertThat(placed.footprint()).isEqualTo(footprint));
+                () -> assertThat(placed.footprint()).isEqualTo(footprint),
+                () -> assertThat(placed.hierarchy()).isEqualTo(HIERARCHY));
     }
 
     @Test
     void inheritedRuntimesFollowTheEntrysOwn() {
         Runtimes.Found java = new Runtimes.Found("java", "inherited", "from aaa: stage 0 base ubi9/openjdk-21");
         CatalogueEntry placed = entry().placed(new CatalogueLinks.Links(List.of(), List.of(), 0),
-                new Footprint.Found("minimal", "ubi9/ubi-minimal", List.of()), List.of(java));
+                new Footprint.Found("minimal", "ubi9/ubi-minimal", List.of()), List.of(java), HIERARCHY);
 
         assertThat(placed.build().runtimes()).containsExactly(
                 new Runtimes.Found("go", "build", "stage 0 base registry.access.redhat.com/ubi9/go-toolset"), java);

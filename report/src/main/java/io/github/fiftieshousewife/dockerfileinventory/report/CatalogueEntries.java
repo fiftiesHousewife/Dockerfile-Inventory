@@ -17,12 +17,12 @@ final class CatalogueEntries {
 
     static CatalogueEntry of(JsonNode row, List<CatalogueEntry.Place> places) {
         return new CatalogueEntry(row.path("blobSha").asString(), places == null ? List.of() : places,
-                Estate.metadataOnly(row), image(row), build(row), null, null, null);
+                Estate.metadataOnly(row), image(row), build(row), null, null, null, null);
     }
 
     static CatalogueEntry unparsed(JsonNode failure, List<CatalogueEntry.Place> places) {
         return new CatalogueEntry(failure.path("blobSha").asString(), places == null ? List.of() : places, false,
-                null, null, null, null, failure.path("message").asString());
+                null, null, null, null, null, failure.path("message").asString());
     }
 
     static Map<String, List<CatalogueEntry.Place>> places(Path manifest) {

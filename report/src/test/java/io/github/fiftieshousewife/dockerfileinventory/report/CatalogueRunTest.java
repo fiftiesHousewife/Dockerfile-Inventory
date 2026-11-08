@@ -18,7 +18,7 @@ class CatalogueRunTest {
 
     @Test
     void eachDockerfileIsOneJsonLineWithItsImageBuildAndLinks(@TempDir Path out) {
-        CatalogueRun.write(FIXTURES, FIXTURES, null, out);
+        CatalogueRun.write(FIXTURES, FIXTURES, null, out, CatalogueSettings.DEFAULTS);
 
         List<JsonNode> lines = JsonLines.read(out.resolve("catalogue/dockerfiles.jsonl"));
         assertAll(
@@ -37,7 +37,7 @@ class CatalogueRunTest {
         Files.writeString(facts.resolve("parse-failures.jsonl"),
                 "{\"blobSha\":\"" + SHA + "\",\"message\":\"mismatched input\"}\n");
 
-        CatalogueRun.write(facts, FIXTURES, null, out);
+        CatalogueRun.write(facts, FIXTURES, null, out, CatalogueSettings.DEFAULTS);
 
         JsonNode line = JsonLines.read(out.resolve("catalogue/dockerfiles.jsonl")).getFirst();
         assertAll(
@@ -47,7 +47,31 @@ class CatalogueRunTest {
     }
 
     @Test
+    void withoutARegistryAnEntrysLayersAreTheDeclaredOnes(@TempDir Path out) {
+        CatalogueRun.write(FIXTURES, FIXTURES, null, out, CatalogueSettings.DEFAULTS);
+
+        assertThat(JsonLines.read(out.resolve("catalogue/dockerfiles.jsonl")).getFirst()
+                .path("hierarchy").path("layers").path("counted").asString()).isEqualTo("declared");
+    }
+
+    @Test
+    void aDockerfileBuiltIntoARegistryImageCarriesThatImagesChainToTheRoot(@TempDir Path facts, @TempDir Path out)
+            throws IOException {
+        Files.writeString(facts.resolve("facts.jsonl"), Files.readString(FIXTURES.resolve("facts.jsonl"))
+                .replace(SHA, "22461d2436a54f83f08d9410d05897f7562a6c23"));
+
+        CatalogueRun.write(facts, FIXTURES, RegistryImagesTest.LINEAGE, out, CatalogueSettings.DEFAULTS);
+
+        JsonNode image = JsonLines.read(out.resolve("catalogue/dockerfiles.jsonl")).getFirst()
+                .path("hierarchy").path("images").path(0);
+        assertAll(
+                () -> assertThat(image.path("configDigest").asString()).isEqualTo(RegistryImagesTest.PYTHON),
+                () -> assertThat(image.path("chain").size()).isEqualTo(4));
+    }
+
+    @Test
     void aSecretShapedValueThatReachedALineIsHiddenBeforeItIsWritten() {
-        assertThat(CatalogueRun.guarded("{\"note\":\"AKIAABCDEFGHIJKLMNOP\"}")).doesNotContain("AKIA");
+        assertThat(CatalogueRun.hideSecretShapesMissedUpstream("{\"note\":\"AKIAABCDEFGHIJKLMNOP\"}"))
+                .doesNotContain("AKIA");
     }
 }

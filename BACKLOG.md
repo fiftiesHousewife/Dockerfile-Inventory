@@ -23,9 +23,10 @@ and one line when its gate is met.
   building and comparing images (Phase 5b), as the tagged tests `./gradlew roundTrip` and
   `./gradlew imageRoundTrip`, their Dockerfiles, GitHub and registries settable for a corporate estate, no script.
   Next: the owner's full `./gradlew imageRoundTrip` on the default list's buildable examples.
-- Next (asked 8 Nov, `docs/plans/catalogue.md`, questions answered): a structured catalogue of every Dockerfile for
-  consumers to report on: stages, user, ports, entrypoint, packages, depth, cross-links, as JSON lines and CSV;
-  `facts` gains the final image's configuration for it.
+- Now (asked 8 Nov, `docs/plans/catalogue.md`): the catalogue of every Dockerfile, `catalogue/dockerfiles.jsonl`.
+  Built: image, stages, copies, permissions, unusual steps, packages, runtimes (inherited too), links, footprint,
+  hierarchy (layers, chains, unmaintained, `blockedBy`, `LAYER_LIMIT`, `STALE_AFTER_MONTHS`). Next: each
+  Dockerfile's last change (discovery), image labels, the action fields, a measurement on an estate with lineage.
 - Then (asked 8 Nov, `docs/plans/report-from-catalogue.md`): the report rebuilt as a view of the catalogue:
   hierarchy, blocked images, a page per Dockerfile.
 - Then (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action

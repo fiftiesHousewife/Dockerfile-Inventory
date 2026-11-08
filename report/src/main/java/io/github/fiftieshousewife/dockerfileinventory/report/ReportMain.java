@@ -5,7 +5,8 @@ import java.util.Map;
 
 /**
  * The report job's entry point. It takes its settings from the environment, as the OpenShift job sets them:
- * {@code FACTS_DIR}, {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR} and {@code EOL_LIST}.
+ * {@code FACTS_DIR}, {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR}, {@code EOL_LIST},
+ * {@code STALE_AFTER_MONTHS} and {@code LAYER_LIMIT}.
  */
 public final class ReportMain {
 
@@ -20,8 +21,24 @@ public final class ReportMain {
         Path out = Path.of(required(env, "OUT_DIR"));
         new ReportRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
                 lineage == null ? null : Path.of(lineage),
-                eolList == null ? EolList.empty() : EolList.read(Path.of(eolList)), out).run();
+                eolList == null ? EolList.empty() : EolList.read(Path.of(eolList)), catalogueSettings(env), out).run();
         System.out.println("Report written to " + out.resolve("index.html"));
+    }
+
+    static CatalogueSettings catalogueSettings(Map<String, String> env) {
+        return new CatalogueSettings(positive(env, "STALE_AFTER_MONTHS", CatalogueSettings.DEFAULTS.staleAfterMonths()),
+                positive(env, "LAYER_LIMIT", CatalogueSettings.DEFAULTS.layerLimit()));
+    }
+
+    static int positive(Map<String, String> env, String name, int fallback) {
+        String value = env.get(name);
+        if (value == null) {
+            return fallback;
+        }
+        if (!value.matches("[1-9][0-9]{0,8}")) {
+            throw new IllegalStateException(name + " must be a positive whole number, not " + value);
+        }
+        return Integer.parseInt(value);
     }
 
     static String required(Map<String, String> env, String name) {

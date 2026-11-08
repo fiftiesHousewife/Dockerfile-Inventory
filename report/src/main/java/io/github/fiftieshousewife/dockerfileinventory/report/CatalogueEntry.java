@@ -6,9 +6,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// One distinct Dockerfile as the catalogue describes it; its field names are the catalogue's published schema.
+// Field names are the catalogue's published schema.
 record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Image image, Build build,
-                      CatalogueLinks.Links links, Footprint.Found footprint, String parseError) {
+                      CatalogueLinks.Links links, Footprint.Found footprint, Hierarchies.Hierarchy hierarchy,
+                      String parseError) {
 
     record Place(String repository, String path, String scope, String commit) {
     }
@@ -80,12 +81,12 @@ record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Ima
         locations = List.copyOf(locations);
     }
 
-    // Links and footprint need every entry, so they are set once all are built.
-    CatalogueEntry placed(CatalogueLinks.Links found, Footprint.Found reached, List<Runtimes.Found> inherited) {
+    CatalogueEntry placed(CatalogueLinks.Links found, Footprint.Found reached, List<Runtimes.Found> inherited,
+                          Hierarchies.Hierarchy placedIn) {
         List<Runtimes.Found> runtimes = new ArrayList<>(build.runtimes());
         runtimes.addAll(inherited);
         Build placedBuild = new Build(build.stages(), build.packages(), build.buildKitFeatures(), build.layers(),
                 build.runs(), build.opaqueRuns(), build.instructions(), runtimes);
-        return new CatalogueEntry(blobSha, locations, bundle, image, placedBuild, found, reached, parseError);
+        return new CatalogueEntry(blobSha, locations, bundle, image, placedBuild, found, reached, placedIn, parseError);
     }
 }

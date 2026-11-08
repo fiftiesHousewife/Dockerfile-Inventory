@@ -160,9 +160,36 @@ with the validator's plan, whose stage reads the facts and lineage directly).
 Progress (8 Nov): facts records the final image's configuration and, per stage, its counts, copies, permission
 changes and unusual steps; the report writes `catalogue/dockerfiles.jsonl` (no archetype, no end-of-life status),
 each entry with its stages, packages, language runtimes (final, build-only, or inherited from the nearest ancestor
-whose final image has it, with evidence) and links (lineage or inferred) and footprint (its chain root's base class, built in for now; the settable list to come). Still to
-build: the hierarchy part (layers, times, `blockedBy`) and the action fields, which
-need lineage or new discovery data; the layer limit.
+whose final image has it, with evidence), links (lineage or inferred) and footprint (its chain root's base class,
+built in for now; the settable list to come), and its hierarchy (slice below). Still to build: each Dockerfile's
+last change (discovery), image labels, then the action fields; measured on an estate with lineage.
+
+## Slice: the hierarchy (planned 8 Nov; built 8 Nov)
+
+From what lineage and discovery already write; the Dockerfile's last change (new discovery data) is the next slice.
+
+- `RegistryImages` reads the lineage directory into one record per image: its names (`images.jsonl`), parent
+  (`lineage.jsonl`), Dockerfiles (`links.jsonl`), layer count and created time (`configs/`: `rootfs.diff_ids`,
+  `created`), newest push, and the newer base it was not rebuilt on (`outdated-bases.jsonl`).
+- `Unmaintained` gives an image's reasons: not rebuilt on its updated base; not published for `STALE_AFTER_MONTHS`
+  (default 12) before the newest push the registry holds (not the clock, so a rerun on the same output writes the
+  same file); and a Dockerfile's: every repository holding it archived (`repos.jsonl`).
+- `Hierarchy` per entry: each image built from it with its chain to the root (per step the image, its Dockerfiles,
+  own layers, created, last pushed, reasons) and `blockedBy` (the unmaintained steps above it); layers own,
+  inherited and total, counted from the newest image when one exists, else declared (the Dockerfile's own layers,
+  and its inferred estate ancestors' as inherited), flagged above `LAYER_LIMIT` (default 40).
+- `ReportMain` reads the two settings, refusing a value that is not a positive whole number, naming it.
+
+Tests, in order (one assertion each, several in `assertAll`; the lineage fixture is the demo run's output, its
+configs added unedited):
+
+1. `RegistryImages`: an image's names, parent, Dockerfiles, layers, created and last push; the newer base from an
+   outdated row.
+2. `Unmaintained`: not rebuilt on its updated base; stale against the newest push; recent is not stale; a
+   Dockerfile whose repositories are all archived; one archived location of two is not.
+3. `Hierarchy`: an image's chain to the root with each step's own layers; `blockedBy` naming an unmaintained step;
+   layers from the image; declared layers through inferred ancestors; over the limit.
+4. `CatalogueRun` writing `hierarchy` with lineage and without; `ReportMain`'s settings and refusals; README.
 
 ## Tests, in order
 

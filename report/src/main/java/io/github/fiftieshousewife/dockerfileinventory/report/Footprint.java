@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// A base's footprint class by its name (and a "slim" tag); an in-house or product image is "unknown" until the
-// hierarchy reaches a base that has one.
 final class Footprint {
 
     static final String UNKNOWN = "unknown";
@@ -24,7 +22,6 @@ final class Footprint {
     private Footprint() {
     }
 
-    // The root's base names the footprint: an estate image in between only passes it down.
     static Found through(String sha, List<CatalogueEntry> entries, Map<String, CatalogueLinks.Links> links) {
         Map<String, CatalogueEntry> bySha = new HashMap<>();
         entries.forEach(entry -> bySha.put(entry.blobSha(), entry));

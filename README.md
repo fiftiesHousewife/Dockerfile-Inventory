@@ -226,6 +226,8 @@ export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
 export LINEAGE_DIR=/data/lineage              # optional: effective users and the lineage section
 export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate
+export STALE_AFTER_MONTHS=12                  # optional: an image unpublished this long is unmaintained
+export LAYER_LIMIT=40                         # optional: an image with more layers is flagged
 export OUT_DIR=/data/report
 ./gradlew :report:run
 ```
@@ -239,6 +241,7 @@ version, package managers and packages, user kind, ports, entrypoint form, stage
 | --- | --- |
 | `passes.json` | Groups and locations after each pass; k80 and k95, the fewest archetypes covering 80% and 95% of locations |
 | `archetypes.json` | Every archetype by size: its files, signature, a representative file and the repositories using it |
+| `catalogue/dockerfiles.jsonl` | One line per distinct Dockerfile, described below |
 | `tables/*.csv`, `tables/ddl.sql` | `dockerfiles`, `locations`, `archetypes` and `bases` for loading into Oracle, with the `CREATE TABLE` statements |
 | `index.html` | The summary page, described below; links to the pages below |
 | `orgs/<org>.html` | The same summary for one organisation (the first part of each repository's name) |
@@ -271,6 +274,27 @@ templates saved under a Dockerfile's name, and metadata-only bundles (`FROM scra
 The archetype pages leave templates, bundles, unreadable files and bases set by a variable out of the ranking, so
 their count of archetypes covering 80% of locations differs from k80 in `passes.json`, which counts every location.
 Every number has an info marker explaining it.
+
+### The catalogue
+
+`catalogue/dockerfiles.jsonl` describes each distinct Dockerfile (by blob SHA), parsed or not, for reporting on
+what the estate builds. Secret-shaped values, and values under a secret's name, are `(hidden sha256:...)`.
+
+| Field | Contents |
+| --- | --- |
+| `blobSha`, `locations` | The Dockerfile's identity, and every repository, path, scope and commit holding it |
+| `parseError` | Why it did not parse; the fields below are then empty |
+| `image` | The final image as written: user and its kind, ports, entrypoint and command with their form, working directory, volumes, health check, shell, stop signal, environment and labels |
+| `build.stages` | Per stage: its base (name, tag, digest, pinned) or the stage it builds on, the stages it copies from, its instructions, `RUN`s, commands, unreadable `RUN`s and layers, every copy with its origin (context, stage, image, URL, heredoc) and `--chown`/`--chmod`, every `chown`/`chgrp`/`chmod`, and unusual steps (`ADD`, `ONBUILD`, `VOLUME`, `RUN --mount`, ...) |
+| `build.packages`, `build.runtimes` | Packages installed (manager, versioned, cleaned in the same `RUN`); Java, Go, Node.js and Python, each `final`, `build` (a build stage only) or `inherited` (from an estate image above it), with its evidence |
+| `links` | The estate Dockerfiles that build its base (`parents`) and build on it (`children`), each from `lineage` or `inferred` with its evidence, and how many deep its chain is |
+| `footprint` | The class of the base at its chain's root: micro, minimal, full, distroless, scratch, alpine, slim or unknown |
+| `hierarchy.layers` | Its own, inherited and total layers, `counted` from its newest registry image or, without one, `declared` by the Dockerfiles; `overLimit` above `LAYER_LIMIT` |
+| `hierarchy.images` | With `LINEAGE_DIR`: each registry image built from it, with its created and last-pushed times, its `chain` to the root (each image's own layers, times and reasons it is unmaintained) and `blockedBy`, the unmaintained images above it |
+| `hierarchy.unmaintained` | `every repository holding it is archived`, when that is so |
+
+An image is unmaintained when it was not rebuilt on its updated base, or was not pushed for `STALE_AFTER_MONTHS`
+before the newest push in the registry (not before today, so a rerun on the same output gives the same answer).
 
 ## Check the estate against the rules
 
