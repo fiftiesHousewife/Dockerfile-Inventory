@@ -28,6 +28,13 @@ class BuildOutcomeTest {
     }
 
     @Test
+    void aMissingSourceFromAnotherStageIsAFailureNotAMissingSource() {
+        assertThat(BuildOutcome.of(125, "Error: building at STEP \"COPY --from=builder /out/app /app\": checking on"
+                + " sources under \"/var/lib/containers/storage/vfs/dir/4f2a\": copier: stat: \"/out/app\": no such"
+                + " file or directory")).isEqualTo(BuildOutcome.FAILED);
+    }
+
+    @Test
     void anyOtherFailureIsFailed() {
         assertThat(BuildOutcome.of(125, DISK)).isEqualTo(BuildOutcome.FAILED);
     }

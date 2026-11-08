@@ -38,7 +38,8 @@ class BuildahContainerTest {
     void aBuildGivesEachSecretTheEmptyFileAndNamesTheDockerfileAndContextInsideTheContainer() {
         assertThat(container.buildCommand(Path.of("/tmp/compare/src/o/r/abc/Dockerfile"),
                 Path.of("/tmp/compare/src/o/r/abc"), "compare/x:original", List.of("downloads_url")))
-                .containsExactly("docker", "exec", "inventory-compare", "timeout", "600", "buildah", "build", "-q",
+                .containsExactly("docker", "exec", "inventory-compare", "timeout", "-k", "30", "600", "buildah", "build",
+                        "-q",
                         "--format",
                         "docker", "--layers=false", "--secret", "id=downloads_url,src=/work/empty-secret", "-f",
                         "/src/o/r/abc/Dockerfile", "-t", "compare/x:original", "/src/o/r/abc");
@@ -71,6 +72,13 @@ class BuildahContainerTest {
         assertThatIllegalStateException().isThrownBy(() -> BuildahContainer.timeoutMinutes(
                 Map.of("BUILD_TIMEOUT", "ten"))).withMessage(
                 "BUILD_TIMEOUT must be a positive whole number of minutes, not ten");
+    }
+
+    @Test
+    void afterAPairWhatAKilledBuildLeftIsCleared() {
+        assertThat(container.clearingCommands()).containsExactly(
+                List.of("docker", "exec", "inventory-compare", "buildah", "rm", "--all"),
+                List.of("docker", "exec", "inventory-compare", "buildah", "rmi", "--prune"));
     }
 
     @Test

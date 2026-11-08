@@ -87,6 +87,11 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     @Override
     public void remove(List<String> tags) {
         tags.forEach(tag -> Processes.logged(removeCommand(tag), work.resolve("remove.log")));
+        clearingCommands().forEach(command -> Processes.logged(command, work.resolve("remove.log")));
+    }
+
+    List<List<String>> clearingCommands() {
+        return List.of(exec("buildah", "rm", "--all"), exec("buildah", "rmi", "--prune"));
     }
 
     List<String> removeCommand(String tag) {
@@ -94,8 +99,8 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     }
 
     List<String> buildCommand(Path dockerfile, Path context, String tag, List<String> secrets) {
-        List<String> command = new ArrayList<>(exec("timeout", Integer.toString(timeoutMinutes * 60), "buildah",
-                "build", "-q", "--format", "docker", "--layers=false"));
+        List<String> command = new ArrayList<>(exec("timeout", "-k", "30", Integer.toString(timeoutMinutes * 60),
+                "buildah", "build", "-q", "--format", "docker", "--layers=false"));
         secrets.forEach(id -> command.addAll(List.of("--secret", "id=" + id + ",src=/work/" + EMPTY_SECRET)));
         command.addAll(List.of("-f", inside(dockerfile), "-t", tag, inside(context)));
         return command;
