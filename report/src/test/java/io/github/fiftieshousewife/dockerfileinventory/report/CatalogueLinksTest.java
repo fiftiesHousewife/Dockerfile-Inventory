@@ -79,7 +79,7 @@ class CatalogueLinksTest {
                                 0, 0, 0, 0, List.of(), List.of(), List.of()),
                         new CatalogueEntry.StageEntry(1, null, null, null, null, false, "base", List.of(), 0, 0,
                                 0, 0, 0, List.of(), List.of(), List.of())),
-                List.of(), List.of(), 0, 0, 0, Map.of(), List.of()), null, null, null, null);
+                List.of(), List.of(), 0, 0, 0, Map.of(), List.of()), null, null, null, null, null);
 
         assertThat(CatalogueLinks.finalBase(entry)).isEqualTo("ubi9/ubi");
     }
@@ -92,6 +92,6 @@ class CatalogueLinksTest {
                 new CatalogueEntry.Build(List.of(new CatalogueEntry.StageEntry(0, null, nameAndTag[0],
                         nameAndTag.length > 1 ? nameAndTag[1] : null, null, false, null, List.of(), 0, 0, 0, 0, 0,
                         List.of(), List.of(), List.of())),
-                        List.of(), List.of(), 0, 0, 0, Map.of(), List.of()), null, null, null, null);
+                        List.of(), List.of(), 0, 0, 0, Map.of(), List.of()), null, null, null, null, null);
     }
 }

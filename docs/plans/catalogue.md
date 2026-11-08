@@ -246,6 +246,37 @@ Tests, in order:
 3. `Hierarchies`: each source, one at a time, on the Python 3.12 image; a secret label value hidden.
 4. `CatalogueRun` writing them; README.
 
+## Slice: action fields from existing data (planned 8 Nov; built 8 Nov)
+
+Asked 8 Nov: of the action fields, first the four the pipeline already has data for. Each entry gains `actions`:
+
+- `releaseScope`: `released` when any location is at a released commit, `default branch only` when none is, null
+  for a Dockerfile with no locations.
+- `reach`: what a fix to this Dockerfile reaches below it: the estate Dockerfiles built on it, directly or not
+  (through the links), their repositories and locations, and the registry images whose chain passes through an
+  image built from it.
+- `conversion`: the converter's text round trip for this Dockerfile (`passed`, `failed` with its first difference,
+  or `not run`), from `roundtrip.jsonl` when the report is given the converter's output (`CONVERTER_DIR`, optional).
+- `nearDuplicates`: the other Dockerfiles in its near-duplicate group (the report's fourth pass), the first 50 by
+  blob SHA, and how many there are; candidates for one shared base or template.
+
+`CatalogueEntry.placed` takes its growing set of estate-wide parts as one `Placement` record.
+
+Tests, in order:
+
+1. `Placement`: the refactor, the entry tests unchanged in what they check.
+2. `ReleaseScope`: released; default branch only; no locations.
+3. `Reaches`: Dockerfiles below through links, transitively, with their repositories and locations; a cycle not
+   followed; registry images below through an image built from it.
+4. `Conversions`: passed, failed with its difference, not run when absent or without `CONVERTER_DIR`.
+5. `NearDuplicates`: the other members of its group, capped at 50 with the count; alone, none.
+6. `CatalogueRun` writing `actions`; `ReportMain` reading `CONVERTER_DIR`; README; measured on an estate.
+
+Measured 8 Nov on the combined public estate (facts rerun; converter output; no lineage): 5,250 entries, 5,157
+parsed; conversion passed 5,149 and failed 8, as the round trip's committed expectation says; 46 Dockerfiles reach
+others, the most sclorg's `s2i-base-container` `core/Dockerfile.rhel9` (47 Dockerfiles in 23 repositories); 86
+released, 5,071 default branch only; 3,580 with near-duplicate siblings, the largest group 631.
+
 ## Tests, in order
 
 One assertion each, several in `assertAll`; Dockerfile fixtures are real files, trimmed.

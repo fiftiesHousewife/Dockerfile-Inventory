@@ -113,6 +113,13 @@ final class Hierarchies {
         return chain;
     }
 
+    int imagesBelow(String blobSha) {
+        Set<String> own = new HashSet<>();
+        builtFrom.getOrDefault(blobSha, List.of()).forEach(image -> own.add(image.configDigest()));
+        return own.isEmpty() ? 0 : (int) images.keySet().stream().filter(digest -> chain(digest).stream().skip(1)
+                .anyMatch(step -> own.contains(step.configDigest()))).count();
+    }
+
     int parentLayers(RegistryImage image) {
         RegistryImage parent = image.parent() == null ? null : images.get(image.parent());
         return parent == null ? 0 : parent.layers();

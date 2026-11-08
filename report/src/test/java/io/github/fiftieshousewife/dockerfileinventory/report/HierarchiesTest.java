@@ -26,7 +26,7 @@ class HierarchiesTest {
         CatalogueEntry.Build build = entry.build();
         return new CatalogueEntry(entry.blobSha(), places, false, entry.image(), new CatalogueEntry.Build(
                 build.stages(), build.packages(), build.buildKitFeatures(), layers, build.runs(), build.opaqueRuns(),
-                build.instructions(), build.runtimes()), null, null, null, null);
+                build.instructions(), build.runtimes()), null, null, null, null, null);
     }
 
     private static CatalogueEntry python() {

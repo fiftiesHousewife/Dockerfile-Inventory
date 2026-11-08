@@ -9,7 +9,7 @@ import java.util.Map;
 // Field names are the catalogue's published schema.
 record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Image image, Build build,
                       CatalogueLinks.Links links, Footprint.Found footprint, Hierarchies.Hierarchy hierarchy,
-                      String parseError) {
+                      Actions actions, String parseError) {
 
     record Place(String repository, String path, String scope, String commit, String lastChanged,
                  String lastChangedIn) {
@@ -82,12 +82,12 @@ record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Ima
         locations = List.copyOf(locations);
     }
 
-    CatalogueEntry placed(CatalogueLinks.Links found, Footprint.Found reached, List<Runtimes.Found> inherited,
-                          Hierarchies.Hierarchy placedIn) {
+    CatalogueEntry placed(Placement placement) {
         List<Runtimes.Found> runtimes = new ArrayList<>(build.runtimes());
-        runtimes.addAll(inherited);
+        runtimes.addAll(placement.inheritedRuntimes());
         Build placedBuild = new Build(build.stages(), build.packages(), build.buildKitFeatures(), build.layers(),
                 build.runs(), build.opaqueRuns(), build.instructions(), runtimes);
-        return new CatalogueEntry(blobSha, locations, bundle, image, placedBuild, found, reached, placedIn, parseError);
+        return new CatalogueEntry(blobSha, locations, bundle, image, placedBuild, placement.links(),
+                placement.footprint(), placement.hierarchy(), placement.actions(), parseError);
     }
 }

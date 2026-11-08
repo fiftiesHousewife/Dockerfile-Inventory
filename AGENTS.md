@@ -70,7 +70,8 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
                     Health (thresholds), About (info text), HiddenSecrets
                     CatalogueRun (catalogue/dockerfiles.jsonl): CatalogueEntry, CatalogueEntries, CatalogueLinks,
                     Footprint, Runtimes, Versions; RegistryImages (lineage's output per image), Unmaintained,
-                    Hierarchies (chains, layers, blockedBy), CatalogueSettings
+                    Hierarchies (chains, layers, blockedBy), CatalogueSettings, Placement; Actions: ReleaseScope,
+                    Reaches, Conversions, Siblings
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
                     Rule, EffectiveRule, Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
                     one class per rule (S1-S4, R1-R3, H1-H3, I1, I2); RuleSet, RulesRun, DiscoveryFiles,
