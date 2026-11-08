@@ -26,7 +26,7 @@ class GoldenAcceptanceTest {
     void aGoldenDockerfilePassesEveryPerFileRuleButTheReportOnlyI1(Path golden) throws IOException {
         List<Rule> rules = List.of(new UnpinnedBase(), new UncleanedInstall(), new ShellEntrypoint(),
                 new Unparseable(), new SecretValue(), new PipeToShell(), new AdjacentRuns(), new MissingOciLabels(),
-                new UnapprovedBase(BaseList.read(FIXTURES.resolve("allow.csv"))),
+                new UnapprovedBase(BaseList.read(GOLDEN.resolve("allow.csv"))),
                 new EndOfLifeBase(BaseList.read(FIXTURES.resolve("eol.csv"))));
 
         assertThat(new RuleRun(rules).run(List.of(Subjects.of(Files.readString(golden))))).isEmpty();

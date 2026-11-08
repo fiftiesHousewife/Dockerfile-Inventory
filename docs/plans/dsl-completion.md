@@ -80,23 +80,26 @@ representatives first.
 
 ## S2 in detail
 
-**Choosing the ten.** The largest archetypes of the combined estate (`out/all/report/archetypes.json`), setting aside
-what a golden cannot stand for: metadata-only bundles (rank 1), parse failures and templates (ranks 5, 9), a base
-that is only an unresolved build argument (`FROM $BASEIMAGE` with no default: ranks 6, 20) and Windows bases (ranks
-12, 19). That leaves, by size:
+**Choosing the ten.** One golden per family of image, the largest archetype of each family standing for it, from
+the combined estate's archetypes (`out/all/report/archetypes.json`); metadata-only bundles, parse failures,
+templates, bases that are only an unresolved build argument and Windows images set aside:
 
-| Rank | Locations | What it is | Representative's base |
+| Family | Rank | Locations | Representative's final base |
 | --- | --- | --- | --- |
-| 2 | 129 | bitnami application image: download, unpack, non-root | `bitnami/minideb:bookworm` |
-| 3 | 97 | OLM file-based catalog: `opm serve` | `ose-operator-registry-rhel9` |
-| 4 | 84 | OpenShift Go operator, `make` in a builder stage | `ocp/builder` then `ocp/5.0:base-rhel9` |
-| 7 | 55 | Go manager on UBI minimal, numeric user | `ubi9/go-toolset` then `ubi9/ubi-minimal` |
-| 8 | 54 | docker-library PHP built from source | `debian:bookworm-slim` |
-| 10 | 46 | a minimal root filesystem assembled with `rpm --root`, copied onto `scratch` | `ubi9/ubi` then `scratch` |
-| 11 | 45 | one binary added onto UBI minimal | `ubi9/ubi-minimal` |
-| 13 | 43 | kubebuilder Go operator, cache mounts, distroless | `golang` then `distroless/static` |
-| 14 | 40 | docker-library PHP on Alpine | `alpine:3` |
-| 15 | 36 | Go test image writing its own `/etc/passwd` entry | `golang` then `ubi9/ubi-minimal` |
+| bitnami application image (download, unpack, non-root) | 2 | 129 | `bitnami/minideb:bookworm` |
+| OLM file-based catalog (`opm serve`) | 3 | 97 | `openshift4/ose-operator-registry-rhel9` |
+| Go operator built in a builder stage (the other Go and distroless archetypes fold in) | 4 | 84 | `ocp/5.0:base-rhel9` |
+| language runtime built from source (docker-library PHP; Alpine PHP, Tomcat, Python, Postgres fold in) | 8 | 54 | `debian:bookworm-slim` |
+| minimal root filesystem assembled with `rpm --root`, copied onto `scratch` | 10 | 46 | `scratch` |
+| prebuilt binary added onto a base, no build | 11 | 45 | `ubi9/ubi-minimal` |
+| tool image, packages installed by a script | 26 | 23 | `ubi9/ubi-minimal` |
+| Java service on UBI with OpenJDK | 27 | 22 | `ubi8/ubi-minimal` |
+| s2i builder image (sclorg) | 42 | 15 | `sclorg/s2i-base-c9s` |
+| Python application on a UBI language image | 67 | 10 | `ubi9/python-311` |
+
+**The base.** Each golden keeps its family's base, approved in the golden policy and pinned by digest; the rewrite
+changes the user, permissions, cleaning and start form, and keeps the archetype's package manager. One approved
+list, `dsl/src/test/resources/golden/allow.csv`, is read by `Goldens` and by `rules`' acceptance test.
 
 **Each golden.** The representative converted with `ConverterMain`'s builder class as the starting point, then
 rewritten by hand to the policy (approved base pinned by digest, numeric non-root user, group-0 writable paths,
@@ -106,13 +109,13 @@ rank and signature, the representative's blob and repository, and what the rewri
 goldens go. The acceptance test is unchanged: `rules`' `GoldenAcceptanceTest` runs every rule on every golden and
 expects no finding.
 
-**Tests, in order.** For each golden in the order above: its name in `GoldenTest`, failing for want of the builder
+**Tests, in order.** First, with the tests green, the approved list moved to `golden/allow.csv` and read by both
+modules. Then for each golden in the order above: its name in `GoldenTest`, failing for want of the builder
 and the file; the builder; the rendered file committed after reading it against the representative. Then a test that
 every golden has its README line, and the acceptance test run over all ten. The old four are removed last.
 
-**Questions.** 1. The ten above, or another rule for setting archetypes aside? 2. The rewritten base: every golden
-moved onto an approved UBI base (Debian, minideb and Alpine images change package manager and package names), or the
-golden policy's approved list extended with each archetype's own base family, pinned?
+**Questions.** 1. Which ten: answered 8 Nov, one per family, as above. 2. The base: answered 8 Nov, each family's
+own base approved in the golden policy, pinned.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 
