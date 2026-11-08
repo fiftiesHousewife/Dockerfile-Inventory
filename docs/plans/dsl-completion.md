@@ -132,9 +132,9 @@ Rewriting real Dockerfiles to the policy found three faults, each fixed test fir
 - H1 in the builders missed `yum -y clean all`, a flag before `clean`, as sclorg writes it (s2i-php); rule H1,
   which reads facts, already accepted it.
 
-One question for the owner, not changed: the policy gives every unowned final-stage `COPY` to the runtime user
-(`--chown=<user>:0`), so scripts copied to `/usr/local/bin` become writable by the process; two goldens own their
-copies by `0:0` explicitly to avoid handing a whole root filesystem or a binary to it.
+It also raised a question, answered 8 Nov: the builders gave every unowned final-stage `COPY` to the runtime user
+(`--chown=<user>:0`), so scripts copied to `/usr/local/bin` were writable by the process. Unowned copies now go to
+root (`--chown=0:0`); what the process writes to is declared with `writablePaths`.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

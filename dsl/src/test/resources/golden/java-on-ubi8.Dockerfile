@@ -14,8 +14,8 @@ RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 curl ca-certificat
     && chmod 550 /deployments/run-java.sh \
     && echo "securerandom.source=file:/dev/urandom" >> /etc/alternatives/jre/lib/security/java.security
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-COPY --chown=1001:0 target/lib/* /deployments/lib/
-COPY --chown=1001:0 target/*-runner.jar /deployments/app.jar
+COPY --chown=0:0 target/lib/* /deployments/lib/
+COPY --chown=0:0 target/*-runner.jar /deployments/app.jar
 EXPOSE 8080
 RUN chgrp -R 0 /deployments \
     && chmod -R g=u /deployments

@@ -210,23 +210,23 @@ final class Goldens {
                 .label("org.opencontainers.image.source", "${SOURCE}")
                 .label("description", "External Secrets Operator is a Kubernetes operator that integrates external"
                         + " secret management systems")
-                .copy(List.of("/image/"), "/", "0:0", "minimal-ubi")
+                .copyFrom("minimal-ubi", "/image/", "/")
                 .arg("TARGETOS").arg("TARGETARCH")
-                .copy(List.of("bin/external-secrets-${TARGETOS}-${TARGETARCH}"), "/bin/external-secrets", "0:0", null)
+                .copy("bin/external-secrets-${TARGETOS}-${TARGETARCH}", "/bin/external-secrets")
                 .user(65534)
                 .entrypoint("/bin/external-secrets");
     }
 
     static ImageBuilder binaryOnUbi() {
         return labelled(ImageBuilder.finalStage(UBI_MINIMAL))
-                .copy(List.of("private-org-peribolos-sync"), "/usr/bin/private-org-peribolos-sync", "0:0", null)
+                .copy("private-org-peribolos-sync", "/usr/bin/private-org-peribolos-sync")
                 .user(1001)
                 .entrypoint("/usr/bin/private-org-peribolos-sync");
     }
 
     static ImageBuilder toolImage() {
         return labelled(ImageBuilder.finalStage(UBI_MINIMAL))
-                .copy(List.of("install-deps.sh"), "/tmp/", "0:0", null)
+                .copy("install-deps.sh", "/tmp/")
                 .run("/tmp/install-deps.sh", "rm /tmp/install-deps.sh")
                 .user(1001);
     }
@@ -286,8 +286,8 @@ final class Goldens {
                         "HTTPD_MAIN_CONF_PATH", "/etc/httpd/conf", "HTTPD_MAIN_CONF_D_PATH", "/etc/httpd/conf.d",
                         "HTTPD_MODULES_CONF_D_PATH", "/etc/httpd/conf.modules.d", "HTTPD_VAR_RUN", "/var/run/httpd",
                         "HTTPD_DATA_PATH", "/var/www", "HTTPD_DATA_ORIG_PATH", "/var/www", "HTTPD_VAR_PATH", "/var"))
-                .copy(List.of("./s2i/bin/"), "$STI_SCRIPTS_PATH", "0:0", null)
-                .copy(List.of("./root/"), "/", "0:0", null)
+                .copy("./s2i/bin/", "$STI_SCRIPTS_PATH")
+                .copy("./root/", "/")
                 .run("/usr/libexec/container-setup", "rpm-file-permissions")
                 .user(1001)
                 .cmd("/usr/libexec/s2i/usage");

@@ -104,7 +104,7 @@ public final class ImageBuilder extends InstructionBuilder {
 
     Stage finished(Draft draft) {
         List<Instruction> instructions = draft == stages.getLast()
-                ? FinalStage.finished(draft.instructions(), draft.lastUser(), writable)
+                ? FinalStage.finished(draft.instructions(), writable)
                 : draft.instructions();
         return draft.stage(RunMerge.merged(instructions));
     }

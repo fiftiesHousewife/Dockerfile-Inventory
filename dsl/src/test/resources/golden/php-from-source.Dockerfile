@@ -36,7 +36,7 @@ RUN savedAptMark="$(apt-mark showmanual)" \
     && apt-mark auto '.*' > /dev/null \
     && apt-mark manual $savedAptMark > /dev/null \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
-COPY --chown=1001:0 docker-php-source /usr/local/bin/
+COPY --chown=0:0 docker-php-source /usr/local/bin/
 RUN savedAptMark="$(apt-mark showmanual)" \
     && apt-get update \
     && apt-get install -y --no-install-recommends libargon2-dev libcurl4-openssl-dev libonig-dev libreadline-dev libsodium-dev libsqlite3-dev libssl-dev libxml2-dev zlib1g-dev \
@@ -63,7 +63,7 @@ RUN savedAptMark="$(apt-mark showmanual)" \
     && pecl update-channels \
     && rm -rf /tmp/pear ~/.pearrc \
     && php --version
-COPY --chown=1001:0 docker-php-ext-* docker-php-entrypoint /usr/local/bin/
+COPY --chown=0:0 docker-php-ext-* docker-php-entrypoint /usr/local/bin/
 RUN docker-php-ext-enable opcache \
     && docker-php-ext-enable sodium \
     && chgrp -R 0 /var/www/html \

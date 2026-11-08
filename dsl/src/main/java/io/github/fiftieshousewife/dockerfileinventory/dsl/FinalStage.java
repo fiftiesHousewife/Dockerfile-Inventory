@@ -9,13 +9,13 @@ final class FinalStage {
     private FinalStage() {
     }
 
-    static List<Instruction> finished(List<Instruction> instructions, String user, List<String> writable) {
+    static List<Instruction> finished(List<Instruction> instructions, List<String> writable) {
         int lastUser = lastUser(instructions);
         return IntStream.range(0, instructions.size())
                 .boxed()
                 .flatMap(i -> i == lastUser && !writable.isEmpty()
                         ? Stream.of(groupZero(writable), instructions.get(i))
-                        : finished(instructions.get(i), user, writable))
+                        : finished(instructions.get(i)))
                 .toList();
     }
 
@@ -26,10 +26,10 @@ final class FinalStage {
                 .findFirst().orElse(-1);
     }
 
-    static Stream<Instruction> finished(Instruction instruction, String user, List<String> writable) {
+    static Stream<Instruction> finished(Instruction instruction) {
         return switch (instruction) {
             case Instruction.Copy copy when copy.chown() == null -> Stream.of(new Instruction.Copy(copy.sources(),
-                    copy.destination(), user + ":0", copy.fromStage(), copy.chmod(), copy.link(), copy.jsonForm()));
+                    copy.destination(), "0:0", copy.fromStage(), copy.chmod(), copy.link(), copy.jsonForm()));
             default -> Stream.of(instruction);
         };
     }

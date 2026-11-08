@@ -16,11 +16,11 @@ RUN dnf remove sqlite3 -y \
     && rm -rf sqlite-autoconf-3410200 sqlite-autoconf-3410200.tar.gz
 ENV LD_LIBRARY_PATH="/usr/local/lib"
 WORKDIR /rag
-COPY --chown=1001:0 requirements.txt .
+COPY --chown=0:0 requirements.txt .
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir --upgrade -r /rag/requirements.txt \
     && mkdir -p /rag/models/
-COPY --chown=1001:0 rag_app.py manage_vectordb.py .
+COPY --chown=0:0 rag_app.py manage_vectordb.py .
 EXPOSE 8501
 ENV HF_HUB_CACHE="/rag/models/"
 RUN chgrp -R 0 /rag/models/ \

@@ -3,7 +3,7 @@ ARG REVISION
 ARG SOURCE
 LABEL org.opencontainers.image.revision="${REVISION}"
 LABEL org.opencontainers.image.source="${SOURCE}"
-COPY --chown=1001:0 catalog/ /configs
+COPY --chown=0:0 catalog/ /configs
 RUN ["/bin/opm", "serve", "/configs", "--cache-dir=/tmp/cache", "--cache-only"]
 LABEL operators.operatorframework.io.index.configs.v1="/configs"
 RUN chgrp -R 0 /tmp/cache \

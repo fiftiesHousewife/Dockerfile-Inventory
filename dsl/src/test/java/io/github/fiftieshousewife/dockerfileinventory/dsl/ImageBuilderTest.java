@@ -24,7 +24,7 @@ class ImageBuilderTest {
 
         assertThat(text).containsSubsequence(
                 "RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 java-21-openjdk-headless",
-                "COPY --chown=1001:0 app.jar /opt/app/",
+                "COPY --chown=0:0 app.jar /opt/app/",
                 "RUN chgrp -R 0 /opt/app \\\n    && chmod -R g=u /opt/app",
                 "USER 1001",
                 "ENTRYPOINT [\"java\", \"-jar\", \"/opt/app/app.jar\"]");
