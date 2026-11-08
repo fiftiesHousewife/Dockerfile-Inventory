@@ -121,6 +121,26 @@ val verifyBundle by tasks.registering {
     }
 }
 
-tasks.named("check") {
+// The bundle Central takes: the signed files, checksums and POM, without Gradle's maven-metadata files.
+val centralBundleZip by tasks.registering(Zip::class) {
+    group = "publishing"
+    description = "Zips the verified Central bundle; releaseToCentral uploads it."
     dependsOn(verifyBundle)
+    from(central) { exclude("**/maven-metadata.xml*") }
+    archiveFileName.set(base.archivesName.map { "$it-$version-bundle.zip" })
+    destinationDirectory.set(layout.buildDirectory)
+}
+
+tasks.register<CentralReleaseTask>("releaseToCentral") {
+    group = "publishing"
+    description = "Uploads the signed bundle to the Central Portal (published there by hand) and tags the release."
+    bundle.set(centralBundleZip.flatMap { it.archiveFile })
+    signedFiles.set(central)
+    artifact.set(base.archivesName)
+    version.set(provider { project.version.toString() })
+    outputs.upToDateWhen { false }
+}
+
+tasks.named("check") {
+    dependsOn(centralBundleZip)
 }

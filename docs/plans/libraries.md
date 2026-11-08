@@ -4,7 +4,9 @@ Status: planned 8 Nov; questions answered 8 Nov. Done: step 1, the licence; step
 `io.github.fiftieshousewife.dockerfile.model` (the estate round trip unchanged); step 3, `Instruction` split into a record per file; step 4, module names; step 5, Java 21 (both compiled with
 `--release 21` and tested on a 21 runtime, nothing to rewrite); step 6, Javadoc (doclint on as an error for published modules, `-missing`
 aside: a sentence on every type and every method a user calls, none on compact constructors or enum constants);
-step 7, `dockerfile-model`'s bundle verified in `check`.
+step 7, `dockerfile-model`'s bundle verified in `check`; step 9, the release task
+(`releaseToCentral`, its logic tested in build-logic, the bundle zipped in `check`; the script deleted). Step 8, the
+compatibility check, waits for a first release to compare with.
 
 ## Why
 

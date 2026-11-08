@@ -102,8 +102,7 @@ testdata/corpus/    the fixture bank: real Dockerfiles and images that broke som
 scripts/            discover.sh (one organisation with the GitHub CLI's token), combine.sh (several discovery
                     outputs as one estate), lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published
                     images), okd-select.sh (OKD images and their release index), corpus-collect.sh and
-                    corpus-collect-images.sh (the fixture bank from a run), release-parser.sh (the parser to Maven
-                    Central), jcr-diagnose.sh, record-jcr-fixtures.sh
+                    corpus-collect-images.sh (the fixture bank from a run), jcr-diagnose.sh, record-jcr-fixtures.sh
 LICENSE, NOTICE     Apache 2.0 for the project's own code, put in every published jar (a module with its own, as the
                     parser has, ships those instead)
 Containerfile       the image for a pod: every stage's distribution and a jlink'd JRE on UBI 9 minimal;
@@ -196,11 +195,12 @@ and a line in the changed file's header saying what changed. The corpus tests na
 **A new setting.** Read it in the stage's `...Main` from the environment map, give it a default, refuse a bad value
 naming the variable, list it in the README. Network settings belong in `http`'s `HttpSettings`.
 
-**Release the parser.** Set `inventory.parserVersion` in `gradle.properties` (semantic: a change to the public API
-is a major version), commit, then run `scripts/release-parser.sh` with the signing key and the Central Portal token
-in the environment. It uploads a signed bundle that waits in the Portal until it is published there by hand, and
-tags `parser-v<version>`. `./gradlew check` already builds and verifies the same bundle, unsigned, in
-`parser/build/central`.
+**Release a library.** Set its version in `gradle.properties` (`inventory.parserVersion`, `inventory.modelVersion`;
+semantic: a change to the public API is a major version, or a minor one before 1.0), commit, then run
+`./gradlew :parser:releaseToCentral` (or `:dsl:`) with `SIGNING_KEY`, `SIGNING_PASSWORD`, `CENTRAL_TOKEN_USER` and
+`CENTRAL_TOKEN_PASSWORD` in the environment. It refuses on a changed tree, a snapshot or an existing tag, uploads the
+signed bundle to wait in the Portal until it is published there by hand, and tags `<artifact>-v<version>`.
+`./gradlew check` already builds, verifies and zips the same bundle, unsigned, in each library's `build/`.
 
 **Files shared between modules** (`testdata/contracts/`, dsl's goldens) are declared as test inputs in each reading
 module's `build.gradle.kts`, so a change reruns the tests that read them.
