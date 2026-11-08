@@ -52,13 +52,16 @@ class CatalogueEntriesTest {
     }
 
     @Test
-    void eachStageHasItsBasePinnedOrNotOrTheStageItBuildsOn() {
+    void eachStageHasItsBaseItsCountsItsCopiesAndItsPermissionChanges() {
         assertThat(entry().build().stages()).containsExactly(
                 new CatalogueEntry.StageEntry(0, "build", "registry.access.redhat.com/ubi9/go-toolset", "1.22", null,
-                        false, null, List.of()),
+                        false, null, List.of(), 3, 1, 1, 0, 2, List.of(new CatalogueEntry.Copy("COPY", List.of("."),
+                                ".", "context", null, null, null)), List.of()),
                 new CatalogueEntry.StageEntry(1, null, "registry.access.redhat.com/ubi9/ubi-minimal", "9.4",
                         "sha256:1111111111111111111111111111111111111111111111111111111111111111", true, null,
-                        List.of("build")));
+                        List.of("build"), 11, 1, 2, 0, 2, List.of(new CatalogueEntry.Copy("COPY",
+                                List.of("/out/server"), "/usr/local/bin/server", "stage", "build", null, null)),
+                        List.of()));
     }
 
     @Test

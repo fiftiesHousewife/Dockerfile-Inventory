@@ -33,10 +33,28 @@ record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Ima
     }
 
     record StageEntry(int index, String name, String baseName, String baseTag, String baseDigest, boolean pinned,
-                      String fromStage, List<String> copiesFrom) {
+                      String fromStage, List<String> copiesFrom, int instructions, int runs, int commands,
+                      int unreadRuns, int layers, List<Copy> copies, List<Permission> permissions) {
 
         StageEntry {
             copiesFrom = List.copyOf(copiesFrom);
+            copies = List.copyOf(copies);
+            permissions = List.copyOf(permissions);
+        }
+    }
+
+    record Copy(String instruction, List<String> sources, String destination, String origin, String from,
+                String chown, String chmod) {
+
+        Copy {
+            sources = List.copyOf(sources);
+        }
+    }
+
+    record Permission(String command, String setting, List<String> paths, boolean recursive) {
+
+        Permission {
+            paths = List.copyOf(paths);
         }
     }
 
