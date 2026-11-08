@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -34,5 +35,11 @@ class ProcessesTest {
                 in -> new String(in.readAllBytes(), StandardCharsets.UTF_8));
 
         assertThat(read).isEqualTo("tar\n");
+    }
+
+    @Test
+    void aCommandCanBeGivenEnvironmentVariablesOfItsOwn() {
+        assertThat(Processes.output(List.of("printenv", "INVENTORY_TEST"), Map.of("INVENTORY_TEST", "set")))
+                .isEqualTo("set\n");
     }
 }

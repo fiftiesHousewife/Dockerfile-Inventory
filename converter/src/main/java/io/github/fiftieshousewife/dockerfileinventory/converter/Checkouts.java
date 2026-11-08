@@ -3,26 +3,30 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
-// Public GitHub repositories cloned at a commit, kept for the next run and cleaned of anything untracked (the
-// stubs of the last comparison) each time they are used.
+// Repositories cloned at a commit from the CloneSource, kept for the next run and cleaned of anything untracked
+// (the stubs of the last comparison) each time they are used.
 final class Checkouts {
 
     private final Path root;
+    private final CloneSource source;
 
-    Checkouts(Path root) {
+    Checkouts(Path root, CloneSource source) {
         this.root = root;
+        this.source = source;
     }
 
     Path checkout(String repository, String commit) {
         Path directory = root.resolve(repository).resolve(commit);
         String at = directory.toString();
         if (!Files.isDirectory(directory.resolve(".git"))) {
+            Map<String, String> git = source.gitEnvironment();
             Processes.output(List.of("git", "clone", "-q", "--filter=blob:none", "--no-checkout",
-                    "https://github.com/" + repository + ".git", at));
-            Processes.output(List.of("git", "-C", at, "checkout", "-q", commit));
+                    source.url(repository), at), git);
+            Processes.output(List.of("git", "-C", at, "checkout", "-q", commit), git);
             Processes.logged(List.of("git", "-C", at, "submodule", "update", "-q", "--init", "--recursive"),
-                    directory.resolveSibling(commit + "-submodules.log"));
+                    directory.resolveSibling(commit + "-submodules.log"), git);
         }
         Processes.output(List.of("git", "-C", at, "clean", "-q", "-f", "-d", "-x"));
         return directory;

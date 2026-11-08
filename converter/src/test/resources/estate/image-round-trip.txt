@@ -1,0 +1,24 @@
+# The Dockerfiles ./gradlew imageRoundTrip builds by default: one per golden family, its largest archetype's
+# representative on the combined public estate. One per line, "owner/repository path" or a blob SHA; point
+# IMAGE_ROUND_TRIP_DOCKERFILES at a file like this one to build others.
+
+# bitnami application image
+bitnami/containers bitnami/notation/1/debian-12/Dockerfile
+# OLM file-based catalog (its base needs a registry.redhat.io login)
+openshift/cert-manager-operator-release catalogs/v4.22/Containerfile
+# Go operator built in a builder stage (its bases need a registry.ci.openshift.org login)
+openshift/ptp-operator Dockerfile.ocp
+# language runtime built from source (Alpine; the Debian representative's security mirror served bad sums)
+docker-library/php 8.4/alpine3.23/fpm/Dockerfile
+# minimal root file system assembled with rpm --root, copied onto scratch
+openshift/external-secrets Dockerfile.ubi
+# prebuilt binary added onto a base
+openshift/ci-tools images/private-org-peribolos-sync/Dockerfile
+# tool image, packages installed by a script
+konflux-ci/rpm-lockfile-prototype tests/integration/data/success/containerfile-script-packages/Dockerfile
+# Java service on UBI with OpenJDK
+redhat-developer/alizer resources/projectPortTesting/projectQuarkus/src/main/docker/Dockerfile.jvm
+# s2i builder image
+sclorg/s2i-php-container 8.0/Dockerfile.c9s
+# Python application on a UBI language image
+redhat-developer/rhdh-ai-template samples/rag/Containerfile

@@ -3,6 +3,8 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -14,6 +16,7 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
 
     static final String IMAGE = "quay.io/buildah/stable:v1.37.0";
     private static final String NAME = "inventory-compare";
+    private static final String EMPTY_SECRET = "empty-secret";
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final Path sources;
@@ -26,15 +29,31 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
         this.arch = arch;
     }
 
-    static BuildahContainer start(Path sources, Path work) {
+    // REGISTRY_AUTH_FILE (a login for bases such as a corporate mirror's) and REGISTRIES_CONF (public names pulled
+    // through that mirror) are mounted when set. Images are only pulled and built here, never pushed.
+    static BuildahContainer start(Path sources, Path work, Map<String, String> environment) {
         String arch = architecture(Processes.output(List.of("docker", "info", "--format", "{{.Architecture}}")));
         BuildahContainer container = new BuildahContainer(sources, work, arch);
         Processes.logged(List.of("docker", "rm", "-f", NAME), container.work.resolve("docker-rm.log"));
-        Processes.output(List.of("docker", "run", "-d", "--rm", "--privileged", "--platform", "linux/" + arch,
-                "--name", NAME, "-e", "STORAGE_DRIVER=vfs", "-v", container.sources + ":/src",
-                "-v", container.work + ":/work", "-v", "inventory-compare-buildah:/var/lib/containers",
-                IMAGE, "sleep", "infinity"));
+        Processes.output(container.runCommand(environment));
         return container;
+    }
+
+    List<String> runCommand(Map<String, String> environment) {
+        List<String> command = new ArrayList<>(List.of("docker", "run", "-d", "--rm", "--privileged", "--platform",
+                "linux/" + arch, "--name", NAME, "-e", "STORAGE_DRIVER=vfs", "-v", sources + ":/src",
+                "-v", work + ":/work", "-v", "inventory-compare-buildah:/var/lib/containers"));
+        setting(environment, "REGISTRY_AUTH_FILE").ifPresent(auth -> command.addAll(
+                List.of("-v", auth + ":/auth.json:ro", "-e", "REGISTRY_AUTH_FILE=/auth.json")));
+        setting(environment, "REGISTRIES_CONF").ifPresent(conf -> command.addAll(
+                List.of("-v", conf + ":/etc/containers/registries.conf:ro")));
+        command.addAll(List.of(IMAGE, "sleep", "infinity"));
+        return command;
+    }
+
+    private static Optional<String> setting(Map<String, String> environment, String name) {
+        return Optional.ofNullable(environment.get(name)).filter(value -> !value.isBlank())
+                .map(value -> Path.of(value).toAbsolutePath().toString());
     }
 
     static String architecture(String docker) {
@@ -49,9 +68,17 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     }
 
     @Override
-    public boolean build(Path dockerfile, Path context, String tag, Path log) {
-        return Processes.logged(exec("buildah", "build", "-q", "--format", "docker", "--layers=false", "-f",
-                inside(dockerfile), "-t", tag, inside(context)), log);
+    public boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
+        RunFiles.writeFile(work.resolve(EMPTY_SECRET), "");
+        return Processes.logged(buildCommand(dockerfile, context, tag, secrets), log);
+    }
+
+    List<String> buildCommand(Path dockerfile, Path context, String tag, List<String> secrets) {
+        List<String> command = new ArrayList<>(exec("buildah", "build", "-q", "--format", "docker",
+                "--layers=false"));
+        secrets.forEach(id -> command.addAll(List.of("--secret", "id=" + id + ",src=/work/" + EMPTY_SECRET)));
+        command.addAll(List.of("-f", inside(dockerfile), "-t", tag, inside(context)));
+        return command;
     }
 
     @Override

@@ -12,7 +12,8 @@ final class ImageComparisonRun {
 
     interface Builder {
 
-        boolean build(Path dockerfile, Path context, String tag, Path log);
+        // Each secret id is given an empty secret.
+        boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets);
 
         JsonNode inspect(String tag);
 
@@ -20,6 +21,9 @@ final class ImageComparisonRun {
     }
 
     record Context(Path directory, List<String> stubs) {
+    }
+
+    record Inputs(List<String> sources, List<String> secrets) {
     }
 
     private final Builder builder;
@@ -35,20 +39,20 @@ final class ImageComparisonRun {
     ImageComparison.Result compare(String sha, String original, Path checkout, String path) {
         Path into = work.resolve(sha);
         Path regenerated = into.resolve("regenerated.Dockerfile");
-        List<String> sources;
+        Inputs inputs;
         try {
             RunFiles.writeFile(regenerated, Regenerated.of(original));
-            sources = Regenerated.localSources(original);
+            inputs = new Inputs(Regenerated.localSources(original), Regenerated.secretIds(original));
         } catch (IllegalArgumentException e) {
             return ImageComparison.notBuilt(sha, "the converter cannot render it: " + e.getMessage());
         }
-        Optional<Context> context = originalContext(sha, checkout, checkout.resolve(path), sources);
+        Optional<Context> context = originalContext(sha, checkout, checkout.resolve(path), inputs);
         if (context.isEmpty()) {
             return ImageComparison.notBuilt(sha, "the original does not build with its directory or the repository"
                     + " root as context, nor on stubs for its missing sources; see original-build-*.log");
         }
         if (!builder.build(regenerated, context.get().directory(), tag(sha, "regenerated"),
-                into.resolve("regenerated-build.log"))) {
+                into.resolve("regenerated-build.log"), inputs.secrets())) {
             return ImageComparison.notBuilt(sha, "the regenerated Dockerfile does not build where the original"
                     + " does; see regenerated-build.log");
         }
@@ -62,19 +66,22 @@ final class ImageComparisonRun {
     }
 
     // The Dockerfile's directory, then the repository root, then the directory with CI-made sources stubbed.
-    Optional<Context> originalContext(String sha, Path checkout, Path dockerfile, List<String> sources) {
+    Optional<Context> originalContext(String sha, Path checkout, Path dockerfile, Inputs inputs) {
         Path directory = dockerfile.toAbsolutePath().getParent();
-        Path logs = work.resolve(sha);
-        if (builder.build(dockerfile, directory, tag(sha, "original"), logs.resolve("original-build-directory.log"))) {
+        if (original(sha, dockerfile, directory, "directory", inputs)) {
             return Optional.of(new Context(directory, List.of()));
         }
-        if (builder.build(dockerfile, checkout, tag(sha, "original"), logs.resolve("original-build-root.log"))) {
+        if (original(sha, dockerfile, checkout, "root", inputs)) {
             return Optional.of(new Context(checkout, List.of()));
         }
-        List<String> stubs = Stubs.create(directory, sources, arch);
-        return !stubs.isEmpty() && builder.build(dockerfile, directory, tag(sha, "original"),
-                logs.resolve("original-build-stubbed.log"))
+        List<String> stubs = Stubs.create(directory, inputs.sources(), arch);
+        return !stubs.isEmpty() && original(sha, dockerfile, directory, "stubbed", inputs)
                 ? Optional.of(new Context(directory, stubs)) : Optional.empty();
+    }
+
+    private boolean original(String sha, Path dockerfile, Path context, String attempt, Inputs inputs) {
+        return builder.build(dockerfile, context, tag(sha, "original"),
+                work.resolve(sha).resolve("original-build-" + attempt + ".log"), inputs.secrets());
     }
 
     private static String tag(String sha, String which) {

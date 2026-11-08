@@ -32,4 +32,16 @@ class LocalSourcesTest {
                 () -> assertThat(LocalSources.remote("git@github.com:o/r.git")).isTrue(),
                 () -> assertThat(LocalSources.remote("rootfs.tar.gz")).isFalse());
     }
+
+    @Test
+    void theSecretsADockerfileMountsAreTheIdsOfItsSecretMounts() {
+        String dockerfile = """
+                FROM ubi9
+                RUN --mount=type=secret,id=downloads_url,env=URL --mount=type=cache,target=/c make
+                RUN --mount=type=secret,id=token make install
+                """;
+
+        assertThat(LocalSources.secretIds(Convert.of(Parsed.of(dockerfile)).model()))
+                .containsExactly("downloads_url", "token");
+    }
 }

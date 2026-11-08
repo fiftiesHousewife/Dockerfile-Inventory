@@ -20,6 +20,10 @@ final class Regenerated {
         return LocalSources.of(Convert.of(parsed(original)).model());
     }
 
+    static List<String> secretIds(String original) {
+        return LocalSources.secretIds(Convert.of(parsed(original)).model());
+    }
+
     private static Docker.File parsed(String original) {
         if (!(new FactsParser().parse("regenerated", original) instanceof ParseResult.Parsed parsed)) {
             throw new IllegalArgumentException("the Dockerfile does not parse");

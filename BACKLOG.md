@@ -21,7 +21,8 @@ and one line when its gate is met.
   typed (the combined estate's 5,150 converted files fully typed, from 92.6%). Done 8 Nov: S2, ten goldens from real
   archetypes, one per family; S3, the Java round trip (all 5,149 passing Dockerfiles' classes rebuild them). S4,
   building and comparing images (Phase 5b), built 8 Nov. Done 8 Nov: the bulk checks as tagged
-  JUnit tests (`estateTest`, `imageTest`), the comparison script gone. Next: the owner's first `./gradlew imageTest`.
+  JUnit tests (`estateTest`, `imageTest`), the comparison script gone. Done 8 Nov: renamed `roundTrip` and `imageRoundTrip`, their examples and GitHub settable for a corporate estate.
+  Next: the owner's first full `./gradlew imageRoundTrip`.
 - Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
   container's entry point aside; to be planned.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from

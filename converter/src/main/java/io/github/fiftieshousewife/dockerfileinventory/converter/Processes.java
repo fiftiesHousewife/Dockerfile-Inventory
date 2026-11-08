@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 final class Processes {
 
@@ -18,12 +19,22 @@ final class Processes {
     }
 
     static String output(List<String> command) {
-        return streamed(command, output -> new String(output.readAllBytes(), StandardCharsets.UTF_8));
+        return output(command, Map.of());
+    }
+
+    static String output(List<String> command, Map<String, String> environment) {
+        return streamed(command, environment, output -> new String(output.readAllBytes(), StandardCharsets.UTF_8));
     }
 
     static <T> T streamed(List<String> command, Reader<T> reader) {
+        return streamed(command, Map.of(), reader);
+    }
+
+    static <T> T streamed(List<String> command, Map<String, String> environment, Reader<T> reader) {
         try {
-            Process process = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD).start();
+            ProcessBuilder builder = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD);
+            builder.environment().putAll(environment);
+            Process process = builder.start();
             T read;
             try (InputStream output = process.getInputStream()) {
                 read = reader.read(output);
@@ -42,10 +53,15 @@ final class Processes {
     }
 
     static boolean logged(List<String> command, Path log) {
+        return logged(command, log, Map.of());
+    }
+
+    static boolean logged(List<String> command, Path log, Map<String, String> environment) {
         try {
             RunFiles.createParent(log);
-            Process process = new ProcessBuilder(command).redirectErrorStream(true)
-                    .redirectOutput(log.toFile()).start();
+            ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile());
+            builder.environment().putAll(environment);
+            Process process = builder.start();
             return process.waitFor() == 0;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -80,9 +80,9 @@ converter/          stage 5: Dockerfile -> model -> Dockerfile, and Java builder
                     Convert (dispatch), ConvertPairs, ConvertCopy, ConvertAdd, ConvertCommands, ConvertMetadata,
                     Printed, Values, Pairs, Installs; RoundTrip, CanonicalSteps; JavaEmitter, BuilderCalls,
                     RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles; JavaRoundTrip,
-                    InMemoryCompiler; Phase 5b: ImageComparisonRun (Builder; BuildahContainer, Checkouts, Processes),
-                    Regenerated, LocalSources, Stubs, TarListing, FileEntry, ImageComparison, ConfigDifferences,
-                    FileDifferences
+                    InMemoryCompiler; Phase 5b: ImageComparisonRun (Builder; BuildahContainer, Checkouts with
+                    CloneSource, Processes), DockerfileSelection, Regenerated, LocalSources, Stubs, TarListing,
+                    FileEntry, ImageComparison, ConfigDifferences, FileDifferences
 testdata/contracts/ the normal-form contracts between facts and lineage: real Dockerfiles against the history of
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
@@ -106,11 +106,11 @@ Each module's run entry point is its `...Main`; the README lists their settings.
 ./gradlew check                                   # compile with -Werror, tests, JaCoCo, SpotBugs, verifyUpToDate
 ./gradlew check -x verifyUpToDate                 # offline
 ./gradlew :facts:test --tests '*ShellWordsTest'   # one class
-./gradlew estateTest                              # tests tagged estate: the whole estate on disk converted
-./gradlew imageTest                               # tests tagged images: real images built and compared (Docker)
+./gradlew roundTrip                               # tag roundtrip: every Dockerfile of a discovery output converted
+./gradlew imageRoundTrip                          # tag image-roundtrip: chosen Dockerfiles built twice (Docker)
 ```
 
-Bulk checks are JUnit tests tagged `estate` or `images`, never scripts: `test` and `check` leave them out, and each
+Bulk checks are JUnit tests tagged `roundtrip` or `image-roundtrip`, never scripts: `test` and `check` leave them out, and each
 skips with its reason when its input (an estate on disk, Docker) is missing. Their expectations are in
 `converter/src/test/resources/estate/`.
 

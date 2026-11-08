@@ -96,6 +96,16 @@ class ImageComparisonRunTest {
     }
 
     @Test
+    void bothBuildsAreGivenTheSecretsTheDockerfileMounts() {
+        FakeBuilder builder = new FakeBuilder((dockerfile, context) -> true);
+
+        new ImageComparisonRun(builder, work, "arm64").compare("abc",
+                "FROM ubi9\nRUN --mount=type=secret,id=downloads_url make\n", checkout, "images/app/Dockerfile");
+
+        assertThat(builder.secretsGiven).containsExactly(List.of("downloads_url"), List.of("downloads_url"));
+    }
+
+    @Test
     void imagesThatCannotBeReadAreAResultNotAnEndToTheRun() {
         FakeBuilder builder = new FakeBuilder((dockerfile, context) -> true) {
             @Override
@@ -114,14 +124,16 @@ class ImageComparisonRunTest {
 
         private final BiPredicate<Path, Path> builds;
         private final List<String> calls = new ArrayList<>();
+        private final List<List<String>> secretsGiven = new ArrayList<>();
 
         FakeBuilder(BiPredicate<Path, Path> builds) {
             this.builds = builds;
         }
 
         @Override
-        public boolean build(Path dockerfile, Path context, String tag, Path log) {
+        public boolean build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
             calls.add(dockerfile.getFileName() + "@" + checkout.relativize(context));
+            secretsGiven.add(secrets);
             return builds.test(dockerfile, context);
         }
 

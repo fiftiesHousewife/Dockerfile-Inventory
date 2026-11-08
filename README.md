@@ -18,7 +18,7 @@ Why it is built the way it is: [the overview](docs/overview.md). The full plan, 
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need the enterprise discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
-| 5. Convert existing Dockerfiles to builders | `converter` | Built, with the Java round trip; image comparison (5b) built as `./gradlew imageTest`, its first run needs Docker |
+| 5. Convert existing Dockerfiles to builders | `converter` | Built, with the Java round trip; image round trip (5b) built as `./gradlew imageRoundTrip`, its first full run needs Docker |
 
 The Dockerfile parser the pipeline uses is also a library of its own: see [parser/README.md](parser/README.md).
 
@@ -336,29 +336,41 @@ builds the same model and so the same Dockerfile.
 | `roundtrip.jsonl` | Each Dockerfile, whether it passed, and the first difference when not; with the Java round trip, `javaPassed` and `javaDifference` |
 | `coverage.json` | Typed instructions over all instructions per Dockerfile, how often each reason left an instruction untyped, and `javaRoundTrip`: classes that rebuilt their Dockerfile, of those tried |
 
-### Compare the images
+### Round-trip tests on a real estate
+
+Two tests check the converter against real Dockerfiles. Both read a discovery output, so they run as well on an
+enterprise estate as on the public one.
 
 ```bash
-./gradlew imageTest      # where Docker runs; ESTATE_DISCOVERY_DIR (default out/all/discovery)
+export ROUND_TRIP_DISCOVERY_DIR=out/all/discovery     # any discovery output (this is the default)
+./gradlew roundTrip                                   # every Dockerfile in it converted; no Docker needed
+
+export IMAGE_ROUND_TRIP_DOCKERFILES=my-dockerfiles.txt   # optional: which Dockerfiles to build (default below)
+export GHE_API_URL=... GHE_TOKEN_FILE=...                # optional: where to clone them from, as for discovery
+export REGISTRY_AUTH_FILE=~/auth.json                    # optional: a login for bases behind one
+export REGISTRIES_CONF=~/registries.conf                 # optional: public names pulled through a mirror
+./gradlew imageRoundTrip                              # where Docker runs: built twice and compared
 ```
 
-For each Dockerfile in `converter/src/test/resources/estate/compare-images.txt` (the ten golden families'
-representatives), the Dockerfile and the converter's rendering of it are built with Buildah from the same context
-at the commit discovery scanned, and the two images compared. The context is the Dockerfile's directory, else the
-repository root, else its directory with the sources CI makes before the build (a binary, `target/`) stubbed as
-empty files in both builds. The same image means the same config (labels the builder writes at build time aside)
-and the same files: path, type, mode, owner, link target and content. Timestamps are never compared, nor the content
-of files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`); those are
-still checked to exist with the same mode and owner. The test fails on any pair that built and differs; a pair that
-did not build (a base behind a login, say) is reported, not failed.
+`roundTrip` converts every distinct Dockerfile and fails unless every instruction is typed, at least the committed
+number of Dockerfiles pass the text round trip, and every passing Dockerfile's generated class rebuilds it.
+
+`imageRoundTrip` takes the Dockerfiles listed in `IMAGE_ROUND_TRIP_DOCKERFILES`, one per line as `owner/repository
+path/to/Dockerfile` or a blob SHA (`#` starts a comment); by default the ten in
+`converter/src/test/resources/estate/image-round-trip.txt`, one per family of image. For each, the Dockerfile and
+the converter's rendering of it are built with Buildah from the same context at the commit discovery scanned, and
+the two images compared. The context is the Dockerfile's directory, else the repository root, else its directory
+with the sources CI makes before the build stubbed as empty files in both builds; each secret a `RUN` mounts is
+given an empty one. The same image means the same config (labels the builder writes at build time aside) and the
+same files: path, type, mode, owner, link target and content. Timestamps are never compared, nor the content of
+files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`); those are still
+checked to exist with the same mode and owner. The test fails on any pair that built and differs; a pair that did
+not build (a base behind a login, say) is reported, not failed. Images are pulled and built only, never pushed.
 
 | File | Contents |
 | --- | --- |
-| `converter/build/image-comparison/comparison.jsonl` | Per Dockerfile: built or why not, the same or not, each difference, the stubs built on |
-| `converter/build/image-comparison/work/<sha>/` | The regenerated Dockerfile and each build's log |
-
-`./gradlew estateTest` converts the whole estate the same way, without Docker: every instruction typed, the text
-round trip at least its committed count, every passing Dockerfile's class rebuilding it.
+| `converter/build/image-round-trip/comparison.jsonl` | Per Dockerfile: built or why not, the same or not, each difference, the stubs built on |
+| `converter/build/image-round-trip/work/<sha>/` | The regenerated Dockerfile and each build's log |
 
 ## Contributing
 

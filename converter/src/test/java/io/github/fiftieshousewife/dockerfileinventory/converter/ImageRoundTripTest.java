@@ -27,17 +27,22 @@ class ImageRoundTripTest {
     private static final Path OUT = Path.of("build/image-round-trip");
 
     @Test
-    void eachRepresentativesRegeneratedDockerfileBuildsTheSameImageAsTheOriginal() throws IOException {
+    void eachChosenDockerfilesRegeneratedTextBuildsTheSameImageAsTheOriginal() throws IOException {
         Path discovery = Path.of(System.getenv().getOrDefault("ROUND_TRIP_DISCOVERY_DIR", "../out/all/discovery"));
         assumeTrue(Files.isDirectory(discovery.resolve("blobs")), "no estate at " + discovery.toAbsolutePath());
         assumeTrue(dockerRuns(), "Docker is not reachable");
-        Map<String, JsonNode> locations = locations(discovery);
-        List<String> shas = Files.readAllLines(Path.of("src/test/resources/estate/compare-images.txt")).stream()
-                .map(String::strip).filter(line -> !line.isEmpty()).toList();
+        List<JsonNode> manifest = Files.readAllLines(discovery.resolve("manifest.jsonl")).stream()
+                .map(JSON::readTree).toList();
+        Path chosen = Path.of(System.getenv().getOrDefault("IMAGE_ROUND_TRIP_DOCKERFILES",
+                "src/test/resources/estate/image-round-trip.txt"));
+        List<String> shas = DockerfileSelection.shas(Files.readAllLines(chosen), manifest);
+        Map<String, JsonNode> locations = manifest.stream().collect(Collectors.toMap(
+                row -> row.path("blobSha").asString(), Function.identity(), (first, second) -> first));
 
         List<ImageComparison.Result> results = new ArrayList<>();
-        Checkouts checkouts = new Checkouts(OUT.resolve("src"));
-        try (BuildahContainer buildah = BuildahContainer.start(OUT.resolve("src"), OUT.resolve("work"))) {
+        Checkouts checkouts = new Checkouts(OUT.resolve("src"), CloneSource.from(System.getenv()));
+        try (BuildahContainer buildah = BuildahContainer.start(OUT.resolve("src"), OUT.resolve("work"),
+                System.getenv())) {
             ImageComparisonRun run = new ImageComparisonRun(buildah, OUT.resolve("work"), buildah.arch());
             shas.forEach(sha -> results.add(compare(sha, locations.get(sha), discovery, checkouts, run)));
         }
@@ -64,12 +69,6 @@ class ImageRoundTripTest {
         } catch (IllegalStateException | UncheckedIOException | IOException e) {
             return ImageComparison.notBuilt(sha, "cannot check out: " + e.getMessage());
         }
-    }
-
-    private static Map<String, JsonNode> locations(Path discovery) throws IOException {
-        return Files.readAllLines(discovery.resolve("manifest.jsonl")).stream().map(JSON::readTree)
-                .collect(Collectors.toMap(row -> row.path("blobSha").asString(), Function.identity(),
-                        (first, second) -> first));
     }
 
     private static boolean dockerRuns() {

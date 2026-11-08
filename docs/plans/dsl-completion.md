@@ -326,6 +326,13 @@ falls back to a default when its secret is empty builds. The runtime-from-source
 Classes: `CloneSource` (the web host and token from the settings, git's environment), `DockerfileSelection` (the
 file's lines to blob SHAs), `LocalSources.secretIds`; `Processes` gains an environment.
 
+### Round-trip tests as built
+
+As planned, each piece test first: `CloneSource`, `DockerfileSelection`, `LocalSources.secretIds`, the empty
+secrets in `BuildahContainer`'s build command, the registry mounts in its run command, `Processes` with an
+environment. The first `imageRoundTrip`-to-be (8 Nov, 13 minutes) built external-secrets on stubs, then stopped on a
+stream the tar reader closed; fixed, and one pair's failure is now that pair's result.
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
