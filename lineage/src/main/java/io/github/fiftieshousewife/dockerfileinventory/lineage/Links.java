@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,8 +16,8 @@ final class Links {
     private final List<Dockerfile> dockerfiles;
     private final Map<List<Instruction>, List<Dockerfile>> groups;
     private final Map<String, Dockerfile> byBlob;
-    private final Map<String, List<Dockerfile>> byRepository;
     private final Set<String> artifactoryImageNames;
+    private final StepIndex stepIndex;
 
     Links(Collection<Resolved.Node> images, List<Dockerfile> dockerfiles, Set<String> artifactoryImageNames) {
         this.byDigest = images.stream().collect(Collectors.toMap(Resolved.Node::configDigest, Function.identity()));
@@ -24,8 +25,8 @@ final class Links {
         this.groups = dockerfiles.stream().collect(Collectors.groupingBy(Dockerfile::steps));
         this.byBlob = dockerfiles.stream()
                 .collect(Collectors.toMap(Dockerfile::blobSha, Function.identity(), (a, b) -> a));
-        this.byRepository = byRepository(dockerfiles);
         this.artifactoryImageNames = artifactoryImageNames;
+        this.stepIndex = new StepIndex(dockerfiles);
     }
 
     static Map<String, Link> of(Collection<Resolved.Node> images, Map<String, Parent> parents,
@@ -36,13 +37,6 @@ final class Links {
         return linked;
     }
 
-    static Map<String, List<Dockerfile>> byRepository(List<Dockerfile> dockerfiles) {
-        Map<String, List<Dockerfile>> byRepository = new HashMap<>();
-        dockerfiles.forEach(d -> d.repositories()
-                .forEach(r -> byRepository.computeIfAbsent(r, k -> new ArrayList<>()).add(d)));
-        return byRepository;
-    }
-
     Link link(Resolved.Node image, Parent parent) {
         List<Instruction> own = OwnSteps.of(image, Parent.node(parent, byDigest));
         Link link = matched(image, own);
@@ -50,21 +44,8 @@ final class Links {
     }
 
     Link matched(Resolved.Node image, List<Instruction> own) {
-        return SourceLabels.repository(image.config().labels()).map(byRepository::get)
-                .map(inRepository -> labelled(own, inRepository))
-                .orElseGet(() -> unlabelled(own, BasePaths.basePath(image)));
-    }
-
-    // A source label already says where the image came from, and a release pipeline often swaps the base, so any
-    // base will do; but it rules out other repositories, so none aligning is no link.
-    static Link labelled(List<Instruction> own, List<Dockerfile> inRepository) {
-        List<Dockerfile> same = inRepository.stream().filter(d -> d.steps().equals(own)).toList();
-        return same.isEmpty() ? Alignment.best(own, inRepository) : exact(same);
-    }
-
-    Link unlabelled(List<Instruction> own, String basePath) {
         List<Dockerfile> group = groups.get(own);
-        return group != null ? exact(group) : weak(own, basePath);
+        return group != null ? exact(group) : weak(own, BasePaths.basePath(image));
     }
 
     static Link exact(List<Dockerfile> group) {
@@ -72,10 +53,13 @@ final class Links {
         return new Link(tier, group.stream().map(Dockerfile::blobSha).sorted().toList(), false);
     }
 
-    // Without a known base there is no weak link: scoring every Dockerfile in the estate against every image would
-    // cost too much and mean little.
+    // Candidates are the Dockerfiles on the image's base and those sharing one of its rare steps; scoring every
+    // Dockerfile in the estate against every image would cost too much.
     Link weak(List<Instruction> own, String basePath) {
-        return basePath == null ? Link.NONE : Alignment.best(own, BasePaths.on(basePath, dockerfiles));
+        Set<Dockerfile> candidates = new LinkedHashSet<>(basePath == null ? List.of()
+                : BasePaths.on(basePath, dockerfiles));
+        candidates.addAll(stepIndex.candidates(own));
+        return Alignment.best(own, List.copyOf(candidates));
     }
 
     boolean parentMissing(Parent parent, Link link) {

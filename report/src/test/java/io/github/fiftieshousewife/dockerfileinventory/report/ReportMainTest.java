@@ -30,13 +30,13 @@ class ReportMainTest {
     @Test
     void theCatalogueSettingsDefaultToTwelveMonthsAndFortyLayers() {
         assertThat(ReportMain.catalogueSettings(Map.of()))
-                .isEqualTo(new CatalogueSettings(12, 40, FootprintRules.defaults()));
+                .isEqualTo(new CatalogueSettings(12, 40, FootprintRules.defaults(), LinkRule.DEFAULT));
     }
 
     @Test
     void theCatalogueSettingsAreReadFromTheEnvironment() {
         assertThat(ReportMain.catalogueSettings(Map.of("STALE_AFTER_MONTHS", "6", "LAYER_LIMIT", "60")))
-                .isEqualTo(new CatalogueSettings(6, 60, FootprintRules.defaults()));
+                .isEqualTo(new CatalogueSettings(6, 60, FootprintRules.defaults(), LinkRule.DEFAULT));
     }
 
     @Test
@@ -56,5 +56,18 @@ class ReportMainTest {
 
         assertThat(ReportMain.catalogueSettings(Map.of("FOOTPRINTS", file.toString())).footprints()
                 .classify("registry.ci.openshift.org/ocp/5.0:base-rhel9")).isEqualTo("full");
+    }
+
+    @Test
+    void theLinkThresholdAndMarginAreReadFromTheEnvironment() {
+        assertThat(ReportMain.catalogueSettings(Map.of("LINK_THRESHOLD", "0.9", "LINK_MARGIN", "0.1")).linkRule())
+                .isEqualTo(new LinkRule(0.9, 0.1));
+    }
+
+    @Test
+    void aLinkSettingThatIsNotAShareBetweenZeroAndOneIsRefusedByName() {
+        assertThatThrownBy(() -> ReportMain.catalogueSettings(Map.of("LINK_MARGIN", "5")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("LINK_MARGIN must be a number from 0 to 1, not 5");
     }
 }

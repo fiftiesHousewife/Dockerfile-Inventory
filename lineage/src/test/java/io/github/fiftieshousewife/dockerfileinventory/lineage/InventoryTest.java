@@ -34,8 +34,8 @@ class InventoryTest {
 
         assertAll(
                 () -> assertThat(files.tags()).containsExactly(new TagRow("docker-local", "team/app", "1.0",
-                        Instant.parse("2026-10-02T10:15:00Z"), CONFIG_C, null, null, 39_000_000L, List.of(), "1.0", null,
-                        null)),
+                        Instant.parse("2026-10-02T10:15:00Z"), CONFIG_C, null, null, 39_000_000L, List.of(), "1.0",
+                        null, null)),
                 () -> assertThat(files.config(CONFIG_C)).hasValueSatisfying(text -> assertThat(text)
                         .contains("diff_ids")));
     }

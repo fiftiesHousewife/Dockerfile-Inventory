@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 import static io.github.fiftieshousewife.dockerfileinventory.lineage.LinksTest.dockerfile;
 import static io.github.fiftieshousewife.dockerfileinventory.lineage.LinksTest.instruction;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -54,22 +55,38 @@ class AlignmentTest {
         assertThat(Alignment.labelKeys(steps)).containsExactlyInAnyOrder("a", "b", "c");
     }
 
-    @Test
-    void theBestAlignedCandidatesAreAWeakLinkWhenTheyReachTheMinimum() {
-        List<Instruction> own = List.of(instruction("RUN a"), instruction("RUN b"), instruction("RUN c"),
-                instruction("RUN d"), instruction("RUN e"));
+    private static final List<Instruction> OWN = List.of(instruction("RUN a"), instruction("RUN b"),
+            instruction("RUN c"), instruction("RUN d"), instruction("RUN e"));
 
-        assertThat(Alignment.best(own, List.of(
+    @Test
+    void theBestAlignedCandidateIsAWeakLinkCarryingItsScoreAndTheRunnerUps() {
+        assertThat(Alignment.best(OWN, List.of(
                 dockerfile("near", "x", false, "RUN a", "RUN b", "RUN c", "RUN d"),
                 dockerfile("poor", "x", false, "RUN a"))))
-                .isEqualTo(new Link(Link.Tier.WEAK, List.of("near"), false));
+                .isEqualTo(new Link(Link.Tier.WEAK, List.of("near"), false, 0.8, 0.2));
     }
 
     @Test
-    void tiesAreKeptSortedAndAScoreBelowTheMinimumIsNoLink() {
-        assertThat(Alignment.tiedForBest(Map.of("b", 0.9, "a", 0.9, "c", 0.85)))
-                .isEqualTo(new Link(Link.Tier.WEAK, List.of("a", "b"), false));
-        assertThat(Alignment.tiedForBest(Map.of("a", 0.79))).isEqualTo(Link.NONE);
-        assertThat(Alignment.tiedForBest(Map.of())).isEqualTo(Link.NONE);
+    void identicalDockerfilesAreOneCandidateWithNoRunnerUp() {
+        assertThat(Alignment.best(OWN, List.of(
+                dockerfile("near", "x", false, "RUN a", "RUN b", "RUN c", "RUN d"),
+                dockerfile("copy", "x", false, "RUN a", "RUN b", "RUN c", "RUN d"))))
+                .isEqualTo(new Link(Link.Tier.WEAK, List.of("copy", "near"), false, 0.8, null));
+    }
+
+    @Test
+    void differentDockerfilesScoringTheSameAreATieWithNoMargin() {
+        assertThat(Alignment.best(OWN, List.of(
+                dockerfile("abcd", "x", false, "RUN a", "RUN b", "RUN c", "RUN d"),
+                dockerfile("bcde", "x", false, "RUN b", "RUN c", "RUN d", "RUN e"))))
+                .isEqualTo(new Link(Link.Tier.WEAK, List.of("abcd", "bcde"), false, 0.8, 0.8));
+    }
+
+    @Test
+    void aBestScoreBelowTheMinimumOrNoCandidateIsNoLink() {
+        assertAll(
+                () -> assertThat(Alignment.best(OWN, List.of(dockerfile("poor", "x", false, "RUN a"))))
+                        .isEqualTo(Link.NONE),
+                () -> assertThat(Alignment.best(OWN, List.of())).isEqualTo(Link.NONE));
     }
 }

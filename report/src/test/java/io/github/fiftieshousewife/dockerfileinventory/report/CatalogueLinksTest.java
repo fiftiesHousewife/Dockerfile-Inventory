@@ -59,7 +59,7 @@ class CatalogueLinksTest {
                 {"configDigest":"sha256:child","parent":{"kind":"Of","configDigest":"sha256:parent"}}
                 """);
 
-        assertThat(CatalogueLinks.lineage(lineage)).isEmpty();
+        assertThat(CatalogueLinks.lineage(lineage, LinkRule.DEFAULT)).isEmpty();
     }
 
     @Test

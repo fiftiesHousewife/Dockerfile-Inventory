@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,22 +16,18 @@ final class Alignment {
     }
 
     static Link best(List<Instruction> own, List<Dockerfile> candidates) {
-        Map<List<Instruction>, Double> scores = new HashMap<>();
-        Map<String, Double> byBlob = new HashMap<>();
-        candidates.forEach(d -> byBlob.put(d.blobSha(), scores.computeIfAbsent(d.steps(), s -> score(own, s))));
-        return tiedForBest(byBlob);
-    }
-
-    static Link tiedForBest(Map<String, Double> byBlob) {
-        double best = byBlob.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
+        Map<List<Instruction>, Double> scores = new LinkedHashMap<>();
+        candidates.forEach(d -> scores.computeIfAbsent(d.steps(), steps -> score(own, steps)));
+        double best = scores.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
         if (best < MIN) {
             return Link.NONE;
         }
-        return new Link(Link.Tier.WEAK, byBlob.entrySet().stream()
-                .filter(e -> e.getValue() == best)
-                .map(Map.Entry::getKey)
-                .sorted()
-                .toList(), false);
+        Set<List<Instruction>> winners = scores.entrySet().stream().filter(e -> e.getValue() == best)
+                .map(Map.Entry::getKey).collect(Collectors.toSet());
+        Double runnerUp = winners.size() > 1 ? Double.valueOf(best)
+                : scores.values().stream().filter(score -> score < best).max(Double::compare).orElse(null);
+        return new Link(Link.Tier.WEAK, candidates.stream().filter(d -> winners.contains(d.steps()))
+                .map(Dockerfile::blobSha).distinct().sorted().toList(), false, best, runnerUp);
     }
 
     // Build tooling moves, merges and adds labels, so the labels count as one step, matched when the image holds

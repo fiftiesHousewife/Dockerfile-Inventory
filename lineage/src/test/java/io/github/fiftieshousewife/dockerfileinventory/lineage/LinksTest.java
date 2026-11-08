@@ -44,7 +44,7 @@ class LinksTest {
     }
 
     @Test
-    void withNoExactMatchTheGroupsTiedForTheBestPartialAlignmentOnTheSameBaseAreAWeakLink() {
+    void withNoExactMatchTheGroupsTiedForTheBestPartialAlignmentOnAnyBaseAreAWeakLink() {
         Resolved.Node image = image("app", "FROM registry.example.com/team/base:1",
                 "RUN a", "RUN b", "RUN c", "RUN d", "USER 1001");
         List<Dockerfile> dockerfiles = List.of(
@@ -54,7 +54,8 @@ class LinksTest {
                 dockerfile("poor", "team/base", false, "RUN a", "RUN x", "RUN y", "RUN z", "USER 1001"));
 
         assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()))
-                .containsEntry("app", new Link(Link.Tier.WEAK, List.of("near", "near-under-repo-key"), false));
+                .containsEntry("app", new Link(Link.Tier.WEAK, List.of("near", "near-under-repo-key", "other-base"),
+                        false, 0.8, 0.8));
     }
 
     @Test
@@ -80,50 +81,27 @@ class LinksTest {
     }
 
     @Test
-    void aSourceLabelLimitsTheLinkToThatRepositorysDockerfilesWhoseStepsMustStillAlign() {
-        Map<String, String> labels = Map.of("io.openshift.build.source-location", "https://github.com/team/app");
-        Resolved.Node image = labelled("app", labels, "FROM quay.io/elsewhere/base@sha256:1",
-                "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 1001");
-        List<Dockerfile> dockerfiles = List.of(
-                dockerfile("same-steps-elsewhere", "team/base", true,
-                        "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 1001").in("other/copy"),
-                dockerfile("in-repo", "ci/builder", false, "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 0")
-                        .in("team/app"),
-                dockerfile("in-repo-unrelated", "ci/builder", false, "RUN npm ci").in("team/app"));
-
-        assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()))
-                .containsEntry("app", new Link(Link.Tier.WEAK, List.of("in-repo"), false));
-    }
-
-    @Test
-    void aLabelledRepositoryWithNoAligningDockerfileGivesNoLinkAndAnUnscannedOneLinksAsBefore() {
-        Resolved.Node drifted = labelled("drifted",
-                Map.of("org.opencontainers.image.source", "https://github.com/team/app"),
-                "FROM registry.example.com/team/base:1", "RUN make");
-        Resolved.Node unscanned = labelled("unscanned",
-                Map.of("org.opencontainers.image.source", "https://github.com/team/unscanned"),
+    void aSourceLabelDoesNotNarrowTheCandidatesToItsRepository() {
+        Resolved.Node image = labelled("app", Map.of("org.opencontainers.image.source", "https://github.com/team/app"),
                 "FROM registry.example.com/team/base:1", "RUN make");
         List<Dockerfile> dockerfiles = List.of(
                 dockerfile("elsewhere", "team/base", false, "RUN make").in("other/copy"),
                 dockerfile("in-repo", "team/base", false, "RUN npm ci").in("team/app"));
 
-        assertThat(Links.of(List.of(drifted, unscanned),
-                Map.of("drifted", new Parent.Root(), "unscanned", new Parent.Root()), dockerfiles, Set.of()))
-                .containsEntry("drifted", Link.NONE)
-                .containsEntry("unscanned", new Link(Link.Tier.PROBABLE, List.of("elsewhere"), false));
+        assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()))
+                .containsEntry("app", new Link(Link.Tier.PROBABLE, List.of("elsewhere"), false));
     }
 
     @Test
-    void byRepositoryListsEachDockerfileUnderEveryRepositoryThatHoldsIt() {
-        Dockerfile shared = dockerfile("shared", "ubi9", false, "RUN make").in("team/a").in("team/b");
-        Dockerfile own = dockerfile("own", "ubi9", false, "RUN test").in("team/a");
+    void aDockerfileOnAnotherBaseIsFoundByItsStepsWhateverTheImagesLabelSays() {
+        Resolved.Node image = labelled("app",
+                Map.of("io.openshift.build.source-location", "https://github.com/team/app"),
+                "FROM quay.io/elsewhere/base@sha256:1", "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 1001");
+        List<Dockerfile> dockerfiles = List.of(dockerfile("in-repo", "ci/builder", false,
+                "RUN make", "RUN test", "RUN pack", "RUN sign", "USER 0").in("team/app"));
 
-        assertThat(Links.byRepository(List.of(shared, own)))
-                .containsOnlyKeys("team/a", "team/b")
-                .satisfies(byRepository -> {
-                    assertThat(byRepository.get("team/a")).containsExactly(shared, own);
-                    assertThat(byRepository.get("team/b")).containsExactly(shared);
-                });
+        assertThat(Links.of(List.of(image), Map.of("app", new Parent.Root()), dockerfiles, Set.of()))
+                .containsEntry("app", new Link(Link.Tier.WEAK, List.of("in-repo"), false, 0.8, null));
     }
 
     @Test
@@ -135,21 +113,21 @@ class LinksTest {
     }
 
     @Test
-    void aLabelledImagePrefersTheRepositorysDockerfilesWithItsExactSteps() {
-        List<Instruction> own = List.of(instruction("RUN make"));
+    void anImageWithoutABaseInItsHistoryFindsItsDockerfileByItsDistinctiveSteps() {
+        Resolved.Node image = image("proxy", null, "RUN make proxy-agent", "USER 0", "RUN a", "RUN b", "RUN c");
+        List<Dockerfile> dockerfiles = List.of(
+                dockerfile("proxy", "ocp/5.0", false, "RUN make proxy-agent", "USER 0", "RUN a", "RUN b", "RUN c"),
+                dockerfile("other", "ocp/5.0", false, "RUN make other", "USER 0"));
 
-        assertThat(Links.labelled(own, List.of(dockerfile("same", "x", false, "RUN make"),
-                dockerfile("near", "x", false, "RUN make", "RUN test"))))
-                .isEqualTo(new Link(Link.Tier.PROBABLE, List.of("same"), false));
+        assertThat(Links.of(List.of(image), Map.of("proxy", new Parent.Root()), dockerfiles, Set.of()).get("proxy"))
+                .isEqualTo(new Link(Link.Tier.WEAK, List.of("proxy"), false, 5.0 / 6, 1.0 / 6));
     }
 
     @Test
-    void anUnlabelledImageWithoutAnExactGroupOrAKnownBaseHasNoLink() {
+    void anImageSharingNoRareStepAndWithoutAKnownBaseHasNoWeakLink() {
         Links links = new Links(List.of(), List.of(dockerfile("near", "team/base", false, "RUN make")), Set.of());
 
-        assertThat(links.unlabelled(List.of(instruction("RUN make"), instruction("USER 1")), null))
-                .isEqualTo(Link.NONE);
-        assertThat(links.weak(List.of(instruction("RUN make")), null)).isEqualTo(Link.NONE);
+        assertThat(links.weak(List.of(instruction("RUN test")), null)).isEqualTo(Link.NONE);
     }
 
     @Test

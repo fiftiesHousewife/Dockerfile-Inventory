@@ -177,15 +177,17 @@ export CONCURRENCY=16                         # optional: images read at once
 
 Every tag of every image in every local Docker repository is read once (`linux/amd64` only); each image config is
 fetched once however many tags share it. Images are then placed in a family tree by their layers and linked to
-the Dockerfiles whose instructions match their build history; an image whose source label
-(`io.openshift.build.source-location` or `org.opencontainers.image.source`) names a repository is linked only to that
-repository's Dockerfiles. Without `ARTIFACTORY_URL` only the linking runs again, on what `OUT_DIR` already holds.
+the Dockerfiles whose instructions match their build history, from the image's content alone (labels decide nothing):
+an image's own steps are compared with the Dockerfiles built on its base and with those sharing one of its rare steps
+(a step held by 20 Dockerfiles or fewer), which finds a Dockerfile even when a release pipeline recorded no base in the
+image's history or built it on another. Without `ARTIFACTORY_URL` only the linking runs again, on what `OUT_DIR`
+already holds.
 
 | File | Contents |
 | --- | --- |
 | `images.jsonl`, `configs/` | Every tag, with the image config it names or why it was skipped; each config once |
 | `lineage.jsonl` | Each image's parent: another image, none (a root), or several equally likely |
-| `links.jsonl` | Each image's Dockerfiles: `STRONG` (exact, and at a released commit), `PROBABLE` (exact), `WEAK` (close, on the same base), or `NONE`; and whether a root's Dockerfile names a base Artifactory holds |
+| `links.jsonl` | Each image's Dockerfiles: `STRONG` (exact, and at a released commit), `PROBABLE` (exact), `WEAK` (at least 80% of the steps align, with the best `score` and the `runnerUp`'s, the best of Dockerfiles with other steps), or `NONE`; and whether a root's Dockerfile names a base Artifactory holds |
 | `effective.jsonl` | Each image's user, environment, labels, working directory, entrypoint and command, and which image in its chain set each one |
 | `gaps.jsonl` | Images built here that no scanned Dockerfile matches |
 | `external-bases.jsonl` | Unmatched roots: external bases mirrored into Artifactory |
@@ -231,6 +233,8 @@ export CONVERTER_DIR=/data/converter          # optional: the converter's OUT_DI
 export STALE_AFTER_MONTHS=12                  # optional: an image unpublished this long is unmaintained
 export LAYER_LIMIT=40                         # optional: an image with more layers is flagged
 export FOOTPRINTS=/data/footprints.csv        # optional: footprint rules tried before the built-in ones
+export LINK_THRESHOLD=0.8                     # optional: the score a weak link needs to credit an image (0 to 1)
+export LINK_MARGIN=0.05                       # optional: how far it must beat the runner-up (0 to 1)
 export OUT_DIR=/data/report
 ./gradlew :report:run
 ```
@@ -292,8 +296,8 @@ what the estate builds. Secret-shaped values, and values under a secret's name, 
 | `links` | The estate Dockerfiles that build its base (`parents`) and build on it (`children`), each from `lineage` or `inferred` with its evidence, and how many deep its chain is |
 | `footprint` | The class of the base at its chain's root: micro, minimal, full, distroless, scratch, alpine, slim or unknown, by the footprint rules |
 | `hierarchy.layers` | Its own, inherited and total layers, `counted` from its newest registry image or, without one, `declared` by the Dockerfiles; `overLimit` above `LAYER_LIMIT` |
-| `hierarchy.images` | With `LINEAGE_DIR`: each registry image built from it (lineage linked it to this Dockerfile alone, strongly or probably), with its created and last-pushed times, its `chain` to the root (each image's own layers, times and reasons it is unmaintained) and `blockedBy`, the unmaintained images above it; its compressed `size` and `architectures` (an index's, else its config's); its `cadence`: pushes in the year before the registry's newest push, the median days between pushes, and how many days after its parent it was built; its `provenance` (signed, attested, with an SBOM, from cosign's tags beside it); its `usage` (downloads over its tags and the latest download); and its `labels`, each with its `source`: `dockerfile` (a `LABEL` in this Dockerfile), `build` (set when this image was built, not by its Dockerfile), `ancestor` or `base` (set above it, named in `setBy`), or `unknown` |
-| `hierarchy.candidateImages` | Registry images lineage could not pin to one Dockerfile (a weak link, or one of several equally likely) that this one may have built; they count nowhere else |
+| `hierarchy.images` | With `LINEAGE_DIR`: each registry image built from it (lineage linked it to this Dockerfile alone: an exact match, or a weak link to it alone scoring at least `LINK_THRESHOLD` and beating the runner-up by `LINK_MARGIN`), with its created and last-pushed times, its `chain` to the root (each image's own layers, times and reasons it is unmaintained) and `blockedBy`, the unmaintained images above it; its compressed `size` and `architectures` (an index's, else its config's); its `cadence`: pushes in the year before the registry's newest push, the median days between pushes, and how many days after its parent it was built; its `provenance` (signed, attested, with an SBOM, from cosign's tags beside it); its `usage` (downloads over its tags and the latest download); and its `labels`, each with its `source`: `dockerfile` (a `LABEL` in this Dockerfile), `build` (set when this image was built, not by its Dockerfile), `ancestor` or `base` (set above it, named in `setBy`), or `unknown` |
+| `hierarchy.candidateImages` | Registry images lineage could not pin to this Dockerfile alone (several Dockerfiles, a tie, or a weak link below the threshold or within the margin) that this one may have built; they count nowhere else |
 | `hierarchy.unmaintained` | `every repository holding it is archived`, when that is so |
 | `actions.releaseScope` | `released` when any location is at a released commit, else `default branch only` |
 | `actions.reach` | What fixing it reaches: the estate Dockerfiles built on it, directly or through others, their repositories and locations, and (with `LINEAGE_DIR`) the registry images built on its images |

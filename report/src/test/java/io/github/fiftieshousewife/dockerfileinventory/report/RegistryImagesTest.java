@@ -70,13 +70,13 @@ class RegistryImagesTest {
 
     @Test
     void aWeakLinkIsACandidateOnly() {
-        assertThat(RegistryImages.linked(json("{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"]}")))
+        assertThat(RegistryImages.linked(json("{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"]}"), RULE))
                 .isEqualTo(new RegistryImages.Linked(List.of(), List.of("aaa")));
     }
 
     @Test
     void aStrongLinkCreditsEveryDockerfileItNames() {
-        assertThat(RegistryImages.linked(json("{\"tier\":\"STRONG\",\"blobShas\":[\"aaa\"]}")))
+        assertThat(RegistryImages.linked(json("{\"tier\":\"STRONG\",\"blobShas\":[\"aaa\"]}"), RULE))
                 .isEqualTo(new RegistryImages.Linked(List.of("aaa"), List.of()));
     }
 
@@ -181,5 +181,42 @@ class RegistryImagesTest {
     void anImageRecordedWithoutDownloadsHasNoUsage() {
         assertThat(RegistryImages.usage(List.of(json("{\"tag\":\"1\"}"))))
                 .isEqualTo(new RegistryImage.Usage(null, null));
+    }
+
+    private static final LinkRule RULE = new LinkRule(0.8, 0.05);
+
+    @Test
+    void aWeakLinkToOneDockerfileAboveTheThresholdAndClearOfTheRunnerUpIsCredited() {
+        assertThat(RegistryImages.linked(json(
+                "{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"],\"score\":0.9,\"runnerUp\":0.5}"), RULE))
+                .isEqualTo(new RegistryImages.Linked(List.of("aaa"), List.of()));
+    }
+
+    @Test
+    void aWeakLinkWithNoRunnerUpAboveTheThresholdIsCredited() {
+        assertThat(RegistryImages.linked(json(
+                "{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"],\"score\":0.8,\"runnerUp\":null}"), RULE))
+                .isEqualTo(new RegistryImages.Linked(List.of("aaa"), List.of()));
+    }
+
+    @Test
+    void aWeakLinkWithinTheMarginOfItsRunnerUpStaysACandidate() {
+        assertThat(RegistryImages.linked(json(
+                "{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"],\"score\":0.9,\"runnerUp\":0.88}"), RULE))
+                .isEqualTo(new RegistryImages.Linked(List.of(), List.of("aaa")));
+    }
+
+    @Test
+    void aWeakLinkBelowTheThresholdStaysACandidate() {
+        assertThat(RegistryImages.linked(json(
+                "{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"],\"score\":0.85,\"runnerUp\":null}"),
+                new LinkRule(0.9, 0.05))).isEqualTo(new RegistryImages.Linked(List.of(), List.of("aaa")));
+    }
+
+    @Test
+    void aWeakLinkToSeveralDockerfilesStaysCandidates() {
+        assertThat(RegistryImages.linked(json(
+                "{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\",\"bbb\"],\"score\":1.0,\"runnerUp\":null}"), RULE))
+                .isEqualTo(new RegistryImages.Linked(List.of(), List.of("aaa", "bbb")));
     }
 }

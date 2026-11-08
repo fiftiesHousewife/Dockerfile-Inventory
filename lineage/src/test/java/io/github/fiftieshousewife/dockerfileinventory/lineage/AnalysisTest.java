@@ -133,7 +133,7 @@ class AnalysisTest {
     }
 
     @Test
-    void theOkdImageLinksByItsSourceLabelToTheRealDockerfileThatBuiltIt(@TempDir Path real) throws IOException {
+    void theOkdImageLinksByItsStepsToTheRealDockerfileThatBuiltIt(@TempDir Path real) throws IOException {
         LineageFiles files = new LineageFiles(real);
         ObjectNode config = (ObjectNode) JSON.readTree(Fixtures.history("okd-cluster-storage-operator.json"));
         config.putObject("config").putObject("Labels").put("io.openshift.build.source-location",
