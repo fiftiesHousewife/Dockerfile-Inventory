@@ -20,8 +20,10 @@ and one line when its gate is met.
 - Active (planned 7 Nov, `docs/plans/dsl-completion.md`): the DSL completed. Done 7 Nov: S1, every instruction
   typed (the combined estate's 5,150 converted files fully typed, from 92.6%). Done 8 Nov: S2, ten goldens from real
   archetypes, one per family; S3, the Java round trip (all 5,149 passing Dockerfiles' classes rebuild them). S4,
-  building and comparing images (Phase 5b), built 8 Nov. Next: the owner's first run of
-  `scripts/compare-images.sh` on the ten representatives, then whatever differences it finds, test first.
+  building and comparing images (Phase 5b), built 8 Nov. Active: the bulk checks as tagged
+  JUnit tests instead of scripts (`estateTest`, `imageTest`; plan's "Bulk checks"), then the image comparison run.
+- Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
+  container's entry point aside; to be planned.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Next (planned 7 Nov, `docs/plans/corporate-readiness.md`): running inside a corporate network: proxies, a

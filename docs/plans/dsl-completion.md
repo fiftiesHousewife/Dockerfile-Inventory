@@ -249,6 +249,43 @@ image here (no Docker in the sandbox). Its first run, on the ten representatives
 login (`registry.redhat.io`, `registry.ci.openshift.org`) need `REGISTRY_AUTH_FILE`, and bitnami's build reads a
 secret it may refuse to build without; both show as "not built", with the build log beside them.
 
+## Bulk checks as tagged JUnit tests, not scripts
+
+Asked 8 Nov: no Python or shell scripts; the big checks are JUnit tests under a tag. Today the estate numbers come
+from ad-hoc runs and S4's comparison is `scripts/compare-images.sh`; both become tests.
+
+**Tags.** `estate` (needs a discovery directory; `ESTATE_DISCOVERY_DIR`, default `out/all/discovery`) and `images`
+(needs Docker and the network). The convention plugin's `test` excludes both, so `check` stays fast and offline;
+`./gradlew estateTest` and `./gradlew imageTest` run them. A tagged test whose input is missing is skipped with the
+reason (JUnit assumptions), not failed.
+
+**`EstateConversionTest`** (`converter`, `estate`): converts the whole estate with `ConverterRun`, Java round trip
+on, and asserts in one `assertAll`: no raw reason (every instruction typed), the text round trip at least the
+committed count (`estate/expected.json`: 5,149, raised as fixes land, as the corpus ratchet does), the Java pass
+count equal to the text pass count.
+
+**`ImageComparisonTest`** (`converter`, `images`): for each SHA in `estate/compare-images.txt` (the ten golden
+families' representatives), builds and compares as the script did, then asserts that every pair that built is the
+same, naming each difference. The orchestration moves into Java, in `converter`, tested with a fake builder:
+
+- `Checkouts`: each Dockerfile's repository cloned at its commit and cleaned (`git` through `ProcessBuilder`);
+- `Buildah`: one long-lived Buildah container (`docker run -d`, then `docker exec`) for build, inspect, and the
+  image's root filesystem as a tar stream (`buildah mount`, then `tar --numeric-owner`), behind an interface;
+- `TarListing`: the stream to entries (type, mode, owner, group, link target, SHA-256), with Commons Compress,
+  replacing the `find`/`sha256sum` text and `FileListing`;
+- `Stubs`: a context's missing sources (from `LocalSources`) as empty files, written on the host;
+- `ImageComparisonRun`: per SHA the context order (directory, repository root, directory with stubs), both builds,
+  `ImageComparison`, a result per Dockerfile and `comparison.jsonl` under `build/`.
+
+`scripts/compare-images.sh`, its list and `ImageCompareMain`'s render step go; the Gradle task with them. The
+other scripts (discovery, combining, OKD selection, the lineage demo, corpus collection, the parser release, the JCR
+helpers) are their own slice, planned after this one; the container's entry point stays (answered 8 Nov).
+
+**Tests, in order**, one assertion each, several in `assertAll`: `TarListing` on a tar written in the test;
+`Stubs` on a temporary context; `ImageComparisonRun` with a fake `Buildah` (built first try, built from the root,
+built on stubs, not built); `Checkouts` and the real `Buildah` only inside the `images` test; the tags and tasks;
+`EstateConversionTest`.
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
