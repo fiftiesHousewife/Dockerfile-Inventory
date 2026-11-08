@@ -10,8 +10,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -42,6 +44,11 @@ final class RegistryImages {
         Map<String, String> newer = newerBases(lineageDir.resolve("outdated-bases.jsonl"));
         Map<String, Map<String, ImageLabel>> labels = labels(lineageDir.resolve("effective.jsonl"));
         Map<String, RegistryImage> images = new LinkedHashMap<>();
+        Map<String, Set<String>> tagsOfImage = new HashMap<>();
+        // Every tag, resolved or not: a signature's tag is often a manifest lineage skips.
+        JsonLines.read(lineageDir.resolve("images.jsonl")).forEach(row -> tagsOfImage
+                .computeIfAbsent(row.path("image").asString(), image -> new HashSet<>())
+                .add(row.path("tag").asString()));
         tags.forEach((digest, rows) -> {
             JsonNode config = config(lineageDir, digest);
             images.put(digest, new RegistryImage(digest, rows.stream().map(RegistryImages::name).distinct().toList(),
@@ -49,7 +56,8 @@ final class RegistryImages {
                     layers(config), config.path("created").stringValue(null),
                     newest(rows.stream().map(row -> row.path("lastPushed").stringValue(null)).toList()),
                     newer.get(digest), labels.getOrDefault(digest, Map.of()),
-                    links.getOrDefault(digest, UNLINKED).candidates(), size(rows), architectures(rows, config)));
+                    links.getOrDefault(digest, UNLINKED).candidates(), size(rows), architectures(rows, config),
+                    provenance(rows, tagsOfImage), usage(rows)));
         });
         return images;
     }
@@ -74,6 +82,21 @@ final class RegistryImages {
                 .forEach(row -> tags.computeIfAbsent(row.path("image").asString(), image -> new ArrayList<>())
                         .add(row.path("tag").asString()));
         return tags;
+    }
+
+    static Provenance provenance(List<JsonNode> rows, Map<String, Set<String>> tagsOfImage) {
+        List<String> manifestDigests = rows.stream().map(row -> row.path("manifestDigest")).filter(JsonNode::isString)
+                .map(JsonNode::asString).distinct().toList();
+        Set<String> siblings = new HashSet<>();
+        rows.forEach(row -> siblings.addAll(tagsOfImage.getOrDefault(row.path("image").asString(), Set.of())));
+        return Provenance.of(manifestDigests, siblings);
+    }
+
+    static RegistryImage.Usage usage(List<JsonNode> rows) {
+        List<JsonNode> counted = rows.stream().filter(row -> row.path("downloads").isNumber()).toList();
+        return new RegistryImage.Usage(counted.isEmpty() ? null
+                : counted.stream().mapToLong(row -> row.path("downloads").asLong()).sum(),
+                newest(rows.stream().map(row -> row.path("lastDownloaded").stringValue(null)).toList()));
     }
 
     static Long size(List<JsonNode> rows) {

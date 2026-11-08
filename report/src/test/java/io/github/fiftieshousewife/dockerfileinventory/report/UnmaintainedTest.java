@@ -18,7 +18,8 @@ class UnmaintainedTest {
 
     private static RegistryImage pushed(String lastPushed, String newerBase) {
         return new RegistryImage("sha256:d071", List.of("sclorg/s2i-python-container-3-12-c9s:c9s"), "sha256:bf34",
-                List.of(), 5, "2026-11-06T18:18:01Z", lastPushed, newerBase, Map.of(), List.of(), null, List.of());
+                List.of(), 5, "2026-11-06T18:18:01Z", lastPushed, newerBase, Map.of(), List.of(), null, List.of(),
+                new Provenance(false, false, false), new RegistryImage.Usage(null, null));
     }
 
     private static CatalogueEntry.Place in(String repository) {

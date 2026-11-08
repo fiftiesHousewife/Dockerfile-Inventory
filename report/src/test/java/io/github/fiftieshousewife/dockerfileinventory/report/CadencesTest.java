@@ -11,7 +11,8 @@ class CadencesTest {
 
     private static RegistryImage image(String digest, String parent, String created) {
         return new RegistryImage(digest, List.of("team/app:1"), parent, List.of(), 5, created,
-                "2026-11-06T00:00:00Z", null, Map.of(), List.of(), null, List.of());
+                "2026-11-06T00:00:00Z", null, Map.of(), List.of(), null, List.of(),
+                new Provenance(false, false, false), new RegistryImage.Usage(null, null));
     }
 
     private static List<Instant> pushes(String... times) {

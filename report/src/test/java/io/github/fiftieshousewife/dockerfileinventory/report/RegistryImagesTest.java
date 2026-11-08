@@ -168,4 +168,18 @@ class RegistryImagesTest {
     void eachImagePathsTagsAreReadFromTheRegistry() {
         assertThat(RegistryImages.tagsByImage(LINEAGE)).containsEntry("centos/centos", List.of("stream9"));
     }
+
+    @Test
+    void anImagesUsageIsItsTagsDownloadsSummedAndItsLatestDownload() {
+        assertThat(RegistryImages.usage(List.of(
+                json("{\"downloads\":40,\"lastDownloaded\":\"2026-11-01T08:00:00Z\"}"),
+                json("{\"downloads\":2,\"lastDownloaded\":\"2026-11-05T08:00:00Z\"}"))))
+                .isEqualTo(new RegistryImage.Usage(42L, "2026-11-05T08:00:00Z"));
+    }
+
+    @Test
+    void anImageRecordedWithoutDownloadsHasNoUsage() {
+        assertThat(RegistryImages.usage(List.of(json("{\"tag\":\"1\"}"))))
+                .isEqualTo(new RegistryImage.Usage(null, null));
+    }
 }

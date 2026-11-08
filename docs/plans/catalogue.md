@@ -311,7 +311,7 @@ attached any more: every OKD link is WEAK, and since the review an image counts 
 PROBABLE link, so its 30 images are candidates, and sizes and cadence wait for a run whose links are firmer (OKD's
 lineage also predates sizes and architectures being recorded).
 
-## Slice: usage and provenance (planned 8 Nov)
+## Slice: usage and provenance (planned 8 Nov; built 8 Nov)
 
 The last two action fields from the table (asked 8 Nov: "do the rest").
 

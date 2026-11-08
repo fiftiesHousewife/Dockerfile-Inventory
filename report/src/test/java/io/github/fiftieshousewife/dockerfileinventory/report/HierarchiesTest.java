@@ -51,7 +51,8 @@ class HierarchiesTest {
         RegistryImage base = images.get(S2I_BASE);
         images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
                 base.layers(), base.created(), base.lastPushed(), "sha256:0b1c", base.labels(),
-                base.candidates(), base.size(), base.architectures()));
+                base.candidates(), base.size(), base.architectures(),
+                base.provenance(), base.usage()));
 
         assertThat(hierarchies(images, 40).built(PYTHON, Set.of()).blockedBy())
                 .extracting(Hierarchies.Step::configDigest).containsExactly(S2I_BASE);
@@ -118,7 +119,8 @@ class HierarchiesTest {
         RegistryImage base = images.get(S2I_BASE);
         images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
                 null, base.created(), base.lastPushed(), null, base.labels(), base.candidates(), base.size(),
-                base.architectures()));
+                base.architectures(),
+                base.provenance(), base.usage()));
 
         assertThat(hierarchies(images, 40).chain(PYTHON)).extracting(Hierarchies.Step::ownLayers)
                 .containsExactly(null, null, 1, 2);
@@ -130,7 +132,8 @@ class HierarchiesTest {
         RegistryImage python = images.get(PYTHON);
         images.put(PYTHON, new RegistryImage(python.configDigest(), python.names(), python.parent(),
                 python.blobShas(), null, python.created(), python.lastPushed(), null, python.labels(),
-                python.candidates(), python.size(), python.architectures()));
+                python.candidates(), python.size(), python.architectures(),
+                python.provenance(), python.usage()));
         CatalogueEntry entry = python();
 
         assertThat(hierarchies(images, 40).of(entry, Map.of(), List.of(), Set.of()).layers().counted())
@@ -209,13 +212,15 @@ class HierarchiesTest {
         RegistryImage python = images.get(PYTHON);
         images.put(PYTHON, new RegistryImage(python.configDigest(), python.names(), python.parent(),
                 python.blobShas(), python.layers(), python.created(), python.lastPushed(), null, python.labels(),
-                python.candidates(), 39_000_000L, List.of("linux/amd64")));
+                python.candidates(), 39_000_000L, List.of("linux/amd64"), python.provenance(), python.usage()));
 
         Hierarchies.BuiltImage built = hierarchies(images, 40).built(PYTHON, Set.of());
 
         assertAll(
                 () -> assertThat(built.size()).isEqualTo(39_000_000L),
                 () -> assertThat(built.architectures()).containsExactly("linux/amd64"),
-                () -> assertThat(built.cadence().daysAfterParent()).isZero());
+                () -> assertThat(built.cadence().daysAfterParent()).isZero(),
+                () -> assertThat(built.provenance()).isEqualTo(new Provenance(false, false, false)),
+                () -> assertThat(built.usage()).isEqualTo(new RegistryImage.Usage(null, null)));
     }
 }

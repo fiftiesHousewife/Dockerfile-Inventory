@@ -23,7 +23,7 @@ final class Hierarchies {
 
     record BuiltImage(String configDigest, List<String> names, String created, String lastPushed, List<Step> chain,
                       List<Step> blockedBy, Map<String, Label> labels, Long size, List<String> architectures,
-                      Cadences.Cadence cadence) {
+                      Cadences.Cadence cadence, Provenance provenance, RegistryImage.Usage usage) {
     }
 
     record Label(String value, String source, String setBy) {
@@ -104,7 +104,7 @@ final class Hierarchies {
         image.labels().forEach((name, label) -> labels.put(name, label(name, label, configDigest, dockerfileLabels)));
         return new BuiltImage(configDigest, image.names(), image.created(), image.lastPushed(), chain,
                 chain.stream().skip(1).filter(step -> !step.unmaintained().isEmpty()).toList(), labels, image.size(),
-                image.architectures(), cadences.of(configDigest));
+                image.architectures(), cadences.of(configDigest), image.provenance(), image.usage());
     }
 
     static Label label(String name, ImageLabel label, String configDigest, Set<String> dockerfileLabels) {

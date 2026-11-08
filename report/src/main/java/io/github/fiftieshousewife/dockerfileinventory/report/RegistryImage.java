@@ -7,7 +7,12 @@ import java.util.TreeMap;
 
 record RegistryImage(String configDigest, List<String> names, String parent, List<String> blobShas, Integer layers,
                      String created, String lastPushed, String newerBase, Map<String, ImageLabel> labels,
-                     List<String> candidates, Long size, List<String> architectures) {
+                     List<String> candidates, Long size, List<String> architectures,
+                     Provenance provenance, Usage usage) {
+
+    record Usage(Long downloads, String lastDownloaded) {
+    }
+
 
     RegistryImage {
         names = List.copyOf(names);
