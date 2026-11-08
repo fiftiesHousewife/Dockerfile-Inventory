@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.SortedMap;
 import tools.jackson.databind.JsonNode;
 
-// One Dockerfile and the converter's rendering of it, built from the same context and compared.
 final class ImageComparisonRun {
 
     interface Builder {
@@ -56,16 +55,19 @@ final class ImageComparisonRun {
             return ImageComparison.notBuilt(sha, "the regenerated Dockerfile does not build where the original"
                     + " does; see regenerated-build.log");
         }
+        return compared(sha, context.get().stubs());
+    }
+
+    ImageComparison.Result compared(String sha, List<String> stubs) {
         try {
             return ImageComparison.compared(sha, builder.inspect(tag(sha, "original")),
                     builder.inspect(tag(sha, "regenerated")), builder.files(tag(sha, "original")),
-                    builder.files(tag(sha, "regenerated")), context.get().stubs());
+                    builder.files(tag(sha, "regenerated")), stubs);
         } catch (IllegalStateException | UncheckedIOException e) {
             return ImageComparison.notBuilt(sha, "the images could not be read: " + e.getMessage());
         }
     }
 
-    // The Dockerfile's directory, then the repository root, then the directory with CI-made sources stubbed.
     Optional<Context> originalContext(String sha, Path checkout, Path dockerfile, Inputs inputs) {
         Path directory = dockerfile.toAbsolutePath().getParent();
         if (original(sha, dockerfile, directory, "directory", inputs)) {

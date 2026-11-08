@@ -8,8 +8,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-// A build context's missing COPY and ADD sources as empty files, for sources CI makes before the image is built,
-// so the original and the regenerated Dockerfile can both be built on the same inputs.
+// For sources CI makes before an image is built: the original and the regenerated Dockerfile then build on the same
+// inputs.
 final class Stubs {
 
     private Stubs() {

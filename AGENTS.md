@@ -74,11 +74,12 @@ dsl/                stage 4: the Dockerfile model and the one renderer; no OpenR
                     RunBody, RunFlag, Port, CommandForm, BaseImage, PackageInstall, PackageManager, OrderedMap;
                     DockerfileRenderer (Target), InstructionParts, DockerQuotes, RunCommands, PackageInstallRenderer
                     ImageBuilder (the fluent API) over InstructionBuilder, MetadataInstructionBuilder,
-                    FileInstructionBuilder (AddSources); Draft, FinalStage, RunMerge;
+                    FileInstructionBuilder (AddSources), Built, Checks; Draft, FinalStage, RunMerge;
                     Policy, PolicyCheck, UncleanedInstalls, PolicyViolation; Secrets (shared with rules and report)
 converter/          stage 5: Dockerfile -> model -> Dockerfile, and Java builder classes
                     Convert (dispatch), ConvertPairs, ConvertCopy, ConvertAdd, ConvertCommands, ConvertMetadata,
-                    Printed, Values, Pairs, Installs; RoundTrip, CanonicalSteps; JavaEmitter, BuilderCalls,
+                    Printed, Values, Pairs, Installs, Conversion (the model and its comments), Location; RoundTrip,
+                    CanonicalSteps; JavaEmitter, BuilderCalls,
                     RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles; JavaRoundTrip,
                     InMemoryCompiler; Phase 5b: ImageComparisonRun (Builder; BuildahContainer, Checkouts with
                     CloneSource, Processes), DockerfileSelection, Regenerated, LocalSources, Stubs, TarListing,

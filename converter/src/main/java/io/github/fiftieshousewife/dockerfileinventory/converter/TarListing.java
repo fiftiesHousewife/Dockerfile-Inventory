@@ -14,7 +14,6 @@ import java.util.TreeMap;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
-// An image's root file system, streamed as a tar of "." with numeric owners, as entries by absolute path.
 final class TarListing {
 
     private TarListing() {

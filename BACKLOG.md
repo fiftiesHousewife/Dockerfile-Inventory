@@ -19,15 +19,17 @@ and one line when its gate is met.
   `INVENTORY_MIRROR` for the build, a `Containerfile` for the pod (its first build is the owner's).
 - Active (planned 7 Nov, `docs/plans/dsl-completion.md`): the DSL completed. Done 7 Nov: S1, every instruction
   typed (the combined estate's 5,150 converted files fully typed, from 92.6%). Done 8 Nov: S2, ten goldens from real
-  archetypes, one per family; S3, the Java round trip (all 5,149 passing Dockerfiles' classes rebuild them). S4,
-  building and comparing images (Phase 5b), built 8 Nov. Done 8 Nov: the bulk checks as tagged
-  JUnit tests (`estateTest`, `imageTest`), the comparison script gone. Done 8 Nov: renamed `roundTrip` and `imageRoundTrip`, their examples and GitHub settable for a corporate estate.
-  Next: the owner's first full `./gradlew imageRoundTrip`.
-- Next (asked 8 Nov, `docs/plans/openshift-validator.md`): the estate summary as an action plan: a validator that
-  knows what OpenShift (restricted-v2) refuses or breaks, through a platform profile, and turns findings into
-  actions ordered by severity and reach; it reads the catalogue below.
-- Next (asked 8 Nov, `docs/plans/catalogue.md`, questions 1-3 answered): a structured catalogue of every Dockerfile
-  for consumers to report on: stages, user, ports, entrypoint, packages, depth, cross-links, as JSON lines and CSV.
+  archetypes, one per family; S3, the Java round trip (all 5,149 passing Dockerfiles' classes rebuild them); S4,
+  building and comparing images (Phase 5b), as the tagged tests `./gradlew roundTrip` and
+  `./gradlew imageRoundTrip`, their Dockerfiles, GitHub and registries settable for a corporate estate, no script.
+  Next: the owner's full `./gradlew imageRoundTrip` on the default list's buildable examples.
+- Next (asked 8 Nov, `docs/plans/catalogue.md`, questions answered): a structured catalogue of every Dockerfile for
+  consumers to report on: stages, user, ports, entrypoint, packages, depth, cross-links, as JSON lines and CSV;
+  `facts` gains the final image's configuration for it.
+- Then (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
+  plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
+  default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by
+  severity, reach and certainty.
 - Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
   container's entry point aside; to be planned.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from

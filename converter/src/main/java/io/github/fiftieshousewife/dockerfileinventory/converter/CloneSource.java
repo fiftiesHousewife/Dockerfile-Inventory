@@ -8,9 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-// Where repositories are cloned from: the web host behind discovery's GHE_API_URL (any of its forms; github.com
-// when unset), with discovery's token when one is set. The token reaches git through its environment, so it is
-// never on a command line or in a log.
 final class CloneSource {
 
     private static final String DOT_COM = "github.com";
@@ -46,6 +43,7 @@ final class CloneSource {
         return web + "/" + repository + ".git";
     }
 
+    // In git's environment, the token is on no command line and in no log.
     Map<String, String> gitEnvironment() {
         Map<String, String> environment = new LinkedHashMap<>(Map.of("GIT_TERMINAL_PROMPT", "0"));
         token.ifPresent(source -> {

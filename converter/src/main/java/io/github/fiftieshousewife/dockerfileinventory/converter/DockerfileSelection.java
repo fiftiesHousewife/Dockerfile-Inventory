@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import tools.jackson.databind.JsonNode;
 
-// The Dockerfiles the image round trip builds, as a file lists them: one per line, a blob SHA or "owner/repository
-// path/to/Dockerfile", "#" starting a comment; each found in discovery's manifest.
 final class DockerfileSelection {
 
     private static final Pattern SHA = Pattern.compile("[0-9a-f]{40}");

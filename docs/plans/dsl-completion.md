@@ -1,6 +1,9 @@
 # Completing the DSL: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4 built 8 Nov as `./gradlew imageTest`, its first run the owner's.
+Status: planned 7 Nov; questions answered 7 Nov. S1 done 7 Nov (every instruction on the combined estate typed);
+S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4
+built 8 Nov as the tagged test `./gradlew imageRoundTrip` (see "Round-trip tests on any estate"), its full run the
+owner's.
 
 The owner asked for the DSL to be made completely ready. It works: an immutable model, one renderer, policy-enforcing
 builders, four goldens passing every rule, and a converter that round-trips 5,149 of the combined estate's 5,250 files
@@ -197,6 +200,9 @@ while S1 was being built.
 
 ## S4 in detail
 
+Superseded the same day: the script and `ImageCompareMain` below were replaced by tagged JUnit tests ("Bulk checks"
+and "Round-trip tests on any estate"); kept as the record of the first design.
+
 **What is compared.** For each chosen Dockerfile, two images built from the same context at the same commit, minutes
 apart on one machine, so on the same base: the original, and the converter's rendering of it (the faithful
 conversion, not a golden: the rewrite to policy changes the image by design). The first set is the ten golden
@@ -250,6 +256,8 @@ login (`registry.redhat.io`, `registry.ci.openshift.org`) need `REGISTRY_AUTH_FI
 secret it may refuse to build without; both show as "not built", with the build log beside them.
 
 ## Bulk checks as tagged JUnit tests, not scripts
+
+(Named `estateTest` and `imageTest` here; renamed `roundTrip` and `imageRoundTrip` below.)
 
 Asked 8 Nov: no Python or shell scripts; the big checks are JUnit tests under a tag. Today the estate numbers come
 from ad-hoc runs and S4's comparison is `scripts/compare-images.sh`; both become tests.
@@ -332,6 +340,24 @@ As planned, each piece test first: `CloneSource`, `DockerfileSelection`, `LocalS
 secrets in `BuildahContainer`'s build command, the registry mounts in its run command, `Processes` with an
 environment. The first `imageRoundTrip`-to-be (8 Nov, 13 minutes) built external-secrets on stubs, then stopped on a
 stream the tar reader closed; fixed, and one pair's failure is now that pair's result.
+
+### The first full image round trip (8 Nov)
+
+`./gradlew imageRoundTrip` on the owner's machine, the default list as it was then, 1 hour 30 minutes. Five pairs
+built (Alpine PHP, s2i-php, and on stubs rpm-rootfs, the ci-tools binary and alizer's Java service); five did not:
+two bases behind a login and one Dockerfile that fails at its commit (all three since replaced in the list), the
+tool image (its script is not executable as committed; to be replaced), and bitnami (Debian's mirror served a
+package whose sum did not match, as it did for Debian PHP).
+
+Every built pair differed, and every difference is one two builds of the same Dockerfile would also show, not
+the converter's: the build container's `Hostname` in the config; `/etc/machine-id`; files generated at build time
+(Java's `cacerts`, a self-signed `localhost.crt` and its key); caches (`/@System.solv`, systemd's catalog,
+`classes.jsa`); `/tmp/hsperfdata_root/<pid>`, named by a process ID; and PHP's compiled binaries, which embed their
+build date.
+
+**Question.** Rather than ignore each such path by name: build the original twice and count only the differences
+between the original and the regenerated image that the two originals do not also show (a control build, about
+half as much time again)? `Hostname` joins the build-time fields ignored in the config either way.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

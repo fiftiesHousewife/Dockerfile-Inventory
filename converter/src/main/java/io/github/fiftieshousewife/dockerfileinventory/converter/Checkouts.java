@@ -5,8 +5,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-// Repositories cloned at a commit from the CloneSource, kept for the next run and cleaned of anything untracked
-// (the stubs of the last comparison) each time they are used.
 final class Checkouts {
 
     private final Path root;
@@ -28,6 +26,7 @@ final class Checkouts {
             Processes.logged(List.of("git", "-C", at, "submodule", "update", "-q", "--init", "--recursive"),
                     directory.resolveSibling(commit + "-submodules.log"), git);
         }
+        // The last comparison's stubs are untracked files.
         Processes.output(List.of("git", "-C", at, "clean", "-q", "-f", "-d", "-x"));
         return directory;
     }

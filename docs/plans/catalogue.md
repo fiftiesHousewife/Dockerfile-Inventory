@@ -1,6 +1,7 @@
 # The Dockerfile catalogue: plan
 
-Status: planned 8 Nov; questions 1-3 answered 8 Nov; it feeds the OpenShift validator (`openshift-validator.md`).
+Status: planned 8 Nov; questions answered 8 Nov; first of the two to build (the OpenShift validator,
+`openshift-validator.md`, reads the same extended facts).
 
 ## Why
 
@@ -13,26 +14,43 @@ Dockerfile they can load and report on: how deep it is, what it links to, its us
 ## What each Dockerfile's record holds
 
 - **Identity and place**: the blob SHA; every location (repository, path, scope, commit scanned); whether it parsed
-  and why not; its archetype (rank, key) and whether it is a metadata-only bundle or a template.
+  and, if not, why; its archetype (rank, key); whether it is a metadata-only bundle or a template.
 - **Stages**: per stage its name, and its base (name, tag, digest; pinned or not; approved and end-of-life status
   from the lists the rules read) or the earlier stage it builds on; which stages copy from which (`COPY --from`).
-- **The final image as written**: user as written and its kind (root, numeric, named, unset); exposed ports;
-  entrypoint and command with their form; working directory; volumes; health check; shell; stop signal;
-  environment variable names; labels; packages installed (manager, names, pinned, cleaned in the same `RUN`);
-  BuildKit features used (heredocs, mounts, secrets).
-- **Depth**: the layers the Dockerfile adds (each `RUN`, `COPY` and `ADD` of the final image, through earlier
-  stages it builds on), instruction counts by keyword, `RUN`s the shell reader could not read.
-- **Cross-links across the estate**: the Dockerfile that builds this one's base, those built on this one, and how
-  many estate Dockerfiles deep its chain of bases is; from lineage, where a registry was read, the image's real
-  layer count and its effective user, ports and environment with the image that set each.
-- **Findings**: how many of each rule's findings it has (never a secret's value).
+- **The final image as written**: the user as written and its kind (root, numeric, named, unset, unresolved);
+  exposed ports; entrypoint and command with their form; working directory; volumes; health check (its options and
+  command, or `NONE`); shell; stop signal; environment variables and labels with their values; packages installed
+  (manager, names, pinned or not, cleaned in the same `RUN` or not); BuildKit features used (heredocs, mounts,
+  secrets). A value that is secret-shaped, or stands under a secret's name, is `(hidden)` with its SHA-256, by the
+  test rule S2 and the report use; nothing secret is ever written.
+- **Depth**: the layers the Dockerfile adds to its final image (each `RUN`, `COPY` and `ADD` of the final stage
+  and of the earlier stages it builds on by name), its instructions counted by keyword, the `RUN`s the shell reader
+  could not read.
+- **Cross-links across the estate**: the Dockerfile that builds this one's base, the Dockerfiles built on this
+  one, and how many estate Dockerfiles deep its chain of bases is. Each link says where it comes from: `lineage`
+  (a registry was read and the image linked to its Dockerfile) or `inferred`, with its evidence: the base's path
+  (registry and tag aside) equal to the image another Dockerfile names in its `name`,
+  `org.opencontainers.image.ref.name` or `io.k8s.display-name` label, or a final stage built on an earlier stage of
+  another Dockerfile in the same repository. Where lineage exists, also the image's real layer count and its
+  effective user, ports and environment, with the image that set each.
+- **Findings**: how many findings of each rule it has, when the rules' output is given (`RULES_DIR`, optional).
+
+## Where the data comes from
+
+The report reads files only and imports nothing that reads Dockerfiles, so the facts stage provides what the
+catalogue shows. `facts.jsonl` today has the stages' bases, packages, the user's kind, ports, the entrypoint's form
+and the final image's steps; it gains the final image's configuration: working directory, volumes, health check,
+shell, stop signal, entrypoint and command as written, environment variables and labels with values (secret ones
+hidden as above, which makes `facts` depend on `dsl` for `Secrets`; `dsl` depends on nothing), the stage graph,
+and the layer count. A change to `facts.jsonl` moves the corpus ratchet's expectations in the same commit.
 
 ## Output
 
 From `report`, which already joins facts, discovery and lineage, in a new folder `catalogue/`:
 `dockerfiles.jsonl` (one record per Dockerfile, as above) and flat tables for the reporting database, with their
-DDL: `dockerfiles.csv`, `locations.csv`, `stages.csv`, `ports.csv`, `packages.csv`, `environment.csv`,
-`labels.csv`, `links.csv`. The README documents every field.
+DDL beside the report's: `dockerfiles.csv` (one row per Dockerfile, its scalar facts), `locations.csv`,
+`stages.csv`, `ports.csv`, `packages.csv`, `environment.csv`, `labels.csv`, `links.csv` (one row per link, its
+source and evidence). The README documents every field.
 
 ## Questions
 
@@ -42,13 +60,23 @@ DDL: `dockerfiles.csv`, `locations.csv`, `stages.csv`, `ports.csv`, `packages.cs
 3. Environment and label values: names only, or values with secret-shaped ones hidden as the report hides them?
 4. In `report` as above, or a stage of its own?
 
-Answers (8 Nov): 1, one record per distinct Dockerfile with its locations listed, and a locations table; 2,
-links from lineage where a registry was read, and otherwise inferred from base names matched to the images other
-Dockerfiles' labels say they build, each inferred link marked with its evidence; 3, environment and label values
-shown, a secret-shaped value or one under a secret's name shown as `(hidden)` with its hash, by the same
-test rule S2 and the report use. 4, in `report` as planned (answered with the validator's plan, which reads the facts and
-lineage directly).
+Answers (8 Nov): 1, one record per distinct Dockerfile with its locations listed, and a locations table; 2, links
+from lineage where a registry was read, and otherwise inferred, each inferred link marked with its evidence; 3,
+values shown, a secret-shaped value or one under a secret's name `(hidden)` with its hash; 4, in `report` (answered
+with the validator's plan, whose stage reads the facts and lineage directly).
 
 ## Tests, in order
 
-To be written once the questions are answered.
+One assertion each, several in `assertAll`; Dockerfile fixtures are real files, trimmed.
+
+1. `facts`: the final image's configuration (working directory, volumes, health check, shell, stop signal,
+   entrypoint and command), one field at a time, from real fixtures; environment and label values with a secret
+   hidden; the stage graph; the layer count through stages built on by name. The corpus ratchet updated.
+2. `report`: `CatalogueRecord` from one fact line and its locations; secret values never written (the existing
+   `HiddenSecrets` guard over the catalogue's files too).
+3. Links: from lineage's `links.jsonl`; inferred from labels, then from stages, each with its evidence; depth along
+   the chain; a cycle of inferred links refused rather than followed.
+4. The CSV tables and their DDL, one table at a time; `dockerfiles.jsonl`.
+5. `ReportRun` writing `catalogue/`, `RULES_DIR` optional; the README's field list.
+6. Measured on the combined estate: every parsed Dockerfile has a record, every location a row, and the counts in
+   the catalogue agree with `facts/rates.json`.

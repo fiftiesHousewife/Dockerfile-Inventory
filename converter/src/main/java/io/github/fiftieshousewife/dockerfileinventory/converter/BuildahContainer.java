@@ -9,9 +9,8 @@ import java.util.SortedMap;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-// One long-lived Buildah container, run natively (an emulated Buildah cannot re-exec itself for RUN), with the
-// checkouts at /src and the work directory at /work. Builds keep Docker's format, so HEALTHCHECK, ONBUILD and
-// SHELL reach the config.
+// Run natively: an emulated Buildah cannot re-exec itself for RUN. Builds keep Docker's format, so HEALTHCHECK,
+// ONBUILD and SHELL reach the config.
 final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseable {
 
     static final String IMAGE = "quay.io/buildah/stable:v1.37.0";
@@ -29,8 +28,6 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
         this.arch = arch;
     }
 
-    // REGISTRY_AUTH_FILE (a login for bases such as a corporate mirror's) and REGISTRIES_CONF (public names pulled
-    // through that mirror) are mounted when set. Images are only pulled and built here, never pushed.
     static BuildahContainer start(Path sources, Path work, Map<String, String> environment) {
         String arch = architecture(Processes.output(List.of("docker", "info", "--format", "{{.Architecture}}")));
         BuildahContainer container = new BuildahContainer(sources, work, arch);
