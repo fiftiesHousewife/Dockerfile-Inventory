@@ -45,4 +45,17 @@ class RuntimesTest {
                 () -> assertThat(Runtimes.finalStages(List.of(stage(0, "a", "x", null), stage(1, null, "y", null))))
                         .containsExactly(1));
     }
+
+    @Test
+    void aRuntimeInAnAncestorsFinalImageIsInheritedAndNamesTheAncestor() {
+        CatalogueEntry base = CatalogueLinksTest.entry("aaa", "registry.access.redhat.com/ubi9/openjdk-21:1.20",
+                Map.of("name", "acme/java-base"));
+        CatalogueEntry app = CatalogueLinksTest.entry("bbb", "registry.example.com/acme/java-base:1",
+                Map.of("name", "acme/app"));
+        List<CatalogueEntry> entries = List.of(base, app);
+
+        assertThat(Runtimes.inherited("bbb", entries, CatalogueLinks.of(entries, null))).containsExactly(
+                new Runtimes.Found("java", "inherited",
+                        "from aaa: stage 0 base registry.access.redhat.com/ubi9/openjdk-21"));
+    }
 }

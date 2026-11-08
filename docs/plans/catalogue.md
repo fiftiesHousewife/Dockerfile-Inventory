@@ -159,10 +159,10 @@ with the validator's plan, whose stage reads the facts and lineage directly).
 
 Progress (8 Nov): facts records the final image's configuration and, per stage, its counts, copies, permission
 changes and unusual steps; the report writes `catalogue/dockerfiles.jsonl` (no archetype, no end-of-life status),
-each entry with its stages, packages, language runtimes (final or build-only, with evidence) and links (lineage or
-inferred) and footprint (its chain root's base class, built in for now; the settable list to come). Still to
+each entry with its stages, packages, language runtimes (final, build-only, or inherited from the nearest ancestor
+whose final image has it, with evidence) and links (lineage or inferred) and footprint (its chain root's base class, built in for now; the settable list to come). Still to
 build: the hierarchy part (layers, times, `blockedBy`) and the action fields, which
-need lineage or new discovery data; a runtime inherited from an ancestor; the layer limit.
+need lineage or new discovery data; the layer limit.
 
 ## Tests, in order
 

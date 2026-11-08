@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,7 +81,11 @@ record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Ima
     }
 
     // Links and footprint need every entry, so they are set once all are built.
-    CatalogueEntry placed(CatalogueLinks.Links found, Footprint.Found reached) {
-        return new CatalogueEntry(blobSha, locations, bundle, image, build, found, reached, parseError);
+    CatalogueEntry placed(CatalogueLinks.Links found, Footprint.Found reached, List<Runtimes.Found> inherited) {
+        List<Runtimes.Found> runtimes = new ArrayList<>(build.runtimes());
+        runtimes.addAll(inherited);
+        Build placedBuild = new Build(build.stages(), build.packages(), build.buildKitFeatures(), build.layers(),
+                build.runs(), build.opaqueRuns(), build.instructions(), runtimes);
+        return new CatalogueEntry(blobSha, locations, bundle, image, placedBuild, found, reached, parseError);
     }
 }

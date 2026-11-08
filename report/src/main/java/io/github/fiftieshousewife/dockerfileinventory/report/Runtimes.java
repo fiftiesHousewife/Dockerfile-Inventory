@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +55,20 @@ final class Runtimes {
                 add(found, runtime, true, "environment " + name);
             }
         }));
+        return found;
+    }
+
+    static List<Found> inherited(String sha, List<CatalogueEntry> entries, Map<String, CatalogueLinks.Links> links) {
+        Map<String, CatalogueEntry> bySha = new HashMap<>();
+        entries.forEach(entry -> bySha.put(entry.blobSha(), entry));
+        List<Found> found = new ArrayList<>();
+        Footprint.through(sha, entries, links).through().stream().map(bySha::get)
+                .filter(ancestor -> ancestor.build() != null)
+                .forEach(ancestor -> of(ancestor.build().stages(), ancestor.build().packages(),
+                        ancestor.image().environment()).stream().filter(f -> "final".equals(f.where()))
+                        .filter(f -> found.stream().noneMatch(seen -> seen.runtime().equals(f.runtime())))
+                        .forEach(f -> found.add(new Found(f.runtime(), "inherited",
+                                "from " + ancestor.blobSha() + ": " + f.evidence()))));
         return found;
     }
 

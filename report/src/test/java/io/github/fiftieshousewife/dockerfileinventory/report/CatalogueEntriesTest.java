@@ -80,11 +80,21 @@ class CatalogueEntriesTest {
     void anEntryCarriesItsLinksAndFootprintOnceTheyAreKnown() {
         CatalogueLinks.Links links = new CatalogueLinks.Links(List.of(), List.of(), 0);
         Footprint.Found footprint = new Footprint.Found("minimal", "ubi9/ubi-minimal", List.of());
-        CatalogueEntry placed = entry().placed(links, footprint);
+        CatalogueEntry placed = entry().placed(links, footprint, List.of());
 
         assertAll(
                 () -> assertThat(placed.links()).isEqualTo(links),
                 () -> assertThat(placed.footprint()).isEqualTo(footprint));
+    }
+
+    @Test
+    void inheritedRuntimesFollowTheEntrysOwn() {
+        Runtimes.Found java = new Runtimes.Found("java", "inherited", "from aaa: stage 0 base ubi9/openjdk-21");
+        CatalogueEntry placed = entry().placed(new CatalogueLinks.Links(List.of(), List.of(), 0),
+                new Footprint.Found("minimal", "ubi9/ubi-minimal", List.of()), List.of(java));
+
+        assertThat(placed.build().runtimes()).containsExactly(
+                new Runtimes.Found("go", "build", "stage 0 base registry.access.redhat.com/ubi9/go-toolset"), java);
     }
 
     @Test
