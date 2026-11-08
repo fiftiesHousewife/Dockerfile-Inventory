@@ -295,6 +295,32 @@ sources made by CI (now stubbed), one context the script's overwritten log hid (
 `apt-get` fetch failure, and one Dockerfile that does not build at its commit. Here (no Docker in the sandbox)
 `imageTest` skips with its reason; everything behind the `Builder` interface is tested with a fake.
 
+## Round-trip tests on any estate
+
+Asked 8 Nov: name the bulk tests for what they check, and let them take their examples as input, so a corporate
+estate can be pointed at them. Answered: `./gradlew roundTrip` (tag `roundtrip`, `EstateRoundTripTest`: every
+Dockerfile of a discovery output, text and Java round trip) and `./gradlew imageRoundTrip` (tag `image-roundtrip`,
+`ImageRoundTripTest`: chosen Dockerfiles built twice and the images compared). `RoundTripTest` is taken by
+`RoundTrip`'s own test.
+
+**Inputs**, all from the environment, with the public estate as the default:
+
+- `ROUND_TRIP_DISCOVERY_DIR`: any discovery output (default `out/all/discovery`);
+- `IMAGE_ROUND_TRIP_DOCKERFILES`: a file, one Dockerfile per line, as its blob SHA or as `owner/repository
+  path/to/Dockerfile`, looked up in the manifest; `#` starts a comment (default: the ten representatives);
+- `GHE_API_URL` and `GHE_TOKEN` or `GHE_TOKEN_FILE`, as discovery reads them: where the repositories are cloned
+  from (default github.com, no token); the token reaches git through its environment (`GIT_CONFIG_*`), never its
+  command line or a log;
+- `REGISTRY_AUTH_FILE`: an `auth.json` for bases behind a login (a corporate mirror, `registry.redhat.io`),
+  mounted into the Buildah container.
+
+Each `RUN --mount=type=secret` id is given an empty secret in both builds (answered 8 Nov), so a Dockerfile that
+falls back to a default when its secret is empty builds. The runtime-from-source example becomes Alpine PHP (rank
+14, the same family), as Debian's security mirror twice served a package whose sum did not match.
+
+Classes: `CloneSource` (the web host and token from the settings, git's environment), `DockerfileSelection` (the
+file's lines to blob SHAs), `LocalSources.secretIds`; `Processes` gains an environment.
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
