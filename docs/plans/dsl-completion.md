@@ -312,7 +312,12 @@ Dockerfile of a discovery output, text and Java round trip) and `./gradlew image
   from (default github.com, no token); the token reaches git through its environment (`GIT_CONFIG_*`), never its
   command line or a log;
 - `REGISTRY_AUTH_FILE`: an `auth.json` for bases behind a login (a corporate mirror, `registry.redhat.io`),
-  mounted into the Buildah container.
+  mounted into the Buildah container;
+- `REGISTRIES_CONF`: a Buildah `registries.conf`, mounted into the container, so public names (`docker.io/...`,
+  `quay.io/...`) are pulled through a corporate mirror.
+
+Nothing is published: images are pulled and built into the Buildah container's own storage only, as a corporate
+network that allows no pushes to a test registry needs.
 
 Each `RUN --mount=type=secret` id is given an empty secret in both builds (answered 8 Nov), so a Dockerfile that
 falls back to a default when its secret is empty builds. The runtime-from-source example becomes Alpine PHP (rank
