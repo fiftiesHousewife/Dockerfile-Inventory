@@ -1,6 +1,6 @@
 # Completing the DSL: plan
 
-Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4 next.
+Status: planned 7 Nov; questions answered 7 Nov; S1 done 7 Nov (every instruction on the combined estate typed); S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4 built 8 Nov, its first run the owner's.
 
 The owner asked for the DSL to be made completely ready. It works: an immutable model, one renderer, policy-enforcing
 builders, four goldens passing every rule, and a converter that round-trips 5,149 of the combined estate's 5,250 files
@@ -235,6 +235,19 @@ there even when nothing else does: the package databases (`/var/lib/rpm`, `/var/
 `/var/lib/apt`), logs (`/var/log`), caches (`/var/cache`, `/root/.cache`, `/etc/ld.so.cache`), Python bytecode
 (`*.pyc`), `/tmp`. Ignore their content (still compare that they exist, with mode and owner), or compare them too
 and read their differences by hand?
+
+Answered 8 Nov: their content is ignored; that they exist, with type, mode, owner and group, is still compared,
+and the output names the ignored patterns.
+
+### S4 as built
+
+As designed, the Java half test first: `FileListing`, `ConfigDifferences`, `FileDifferences`, `Regenerated`,
+`ImageComparison` (on hand-written fixtures in the script's layout), `ImageCompareMain` (`STEP=render` or
+`compare`), run through Gradle's `:converter:compareImages` so the script uses the project's toolchain.
+`scripts/compare-images.sh` checks its syntax and its summary has been run on the fixtures; it has not built an
+image here (no Docker in the sandbox). Its first run, on the ten representatives, is the owner's: bases behind a
+login (`registry.redhat.io`, `registry.ci.openshift.org`) need `REGISTRY_AUTH_FILE`, and bitnami's build reads a
+secret it may refuse to build without; both show as "not built", with the build log beside them.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

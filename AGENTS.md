@@ -79,7 +79,9 @@ dsl/                stage 4: the Dockerfile model and the one renderer; no OpenR
 converter/          stage 5: Dockerfile -> model -> Dockerfile, and Java builder classes
                     Convert (dispatch), ConvertPairs, ConvertCopy, ConvertAdd, ConvertCommands, ConvertMetadata,
                     Printed, Values, Pairs, Installs; RoundTrip, CanonicalSteps; JavaEmitter, BuilderCalls,
-                    RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles
+                    RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles; JavaRoundTrip,
+                    InMemoryCompiler; ImageCompareMain (Phase 5b) over Regenerated, ImageComparison, FileListing,
+                    ConfigDifferences, FileDifferences
 testdata/contracts/ the normal-form contracts between facts and lineage: real Dockerfiles against the history of
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
@@ -88,7 +90,9 @@ scripts/            discover.sh (one organisation with the GitHub CLI's token), 
                     outputs as one estate), lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published
                     images), okd-select.sh (OKD images and their release index), corpus-collect.sh and
                     corpus-collect-images.sh (the fixture bank from a run), release-parser.sh (the parser to Maven
-                    Central), jcr-diagnose.sh, record-jcr-fixtures.sh
+                    Central), compare-images.sh (Phase 5b: a Dockerfile and its regenerated text built with Buildah
+                    and the images compared; compare-images.txt the ten golden families' representatives),
+                    jcr-diagnose.sh, record-jcr-fixtures.sh
 Containerfile       the image for a pod: every stage's distribution and a jlink'd JRE on UBI 9 minimal;
                     scripts/inventory is its entry point (`inventory <stage>`)
 docs/               overview.md (the problem and the approach), plans/ (one per phase or slice), upstream/

@@ -34,3 +34,13 @@ tasks.test {
 tasks.test {
     inputs.dir("../facts/src/test/resources/fixtures/dockerfiles").withPropertyName("dockerfiles")
 }
+
+// scripts/compare-images.sh runs ImageCompareMain through this task, so it runs on the project's toolchain.
+tasks.register<JavaExec>("compareImages") {
+    group = "application"
+    description = "Renders regenerated Dockerfiles (STEP=render) or compares built images (STEP=compare)"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("io.github.fiftieshousewife.dockerfileinventory.converter.ImageCompareMain")
+    javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+    workingDir = rootProject.projectDir
+}

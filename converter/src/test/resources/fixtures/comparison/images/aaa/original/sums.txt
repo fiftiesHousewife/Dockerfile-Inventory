@@ -1,0 +1,2 @@
+aa11  ./app
+bb22  ./var/log/build.log

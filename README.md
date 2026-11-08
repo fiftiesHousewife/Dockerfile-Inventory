@@ -18,7 +18,7 @@ Why it is built the way it is: [the overview](docs/overview.md). The full plan, 
 | 2. Cluster into archetypes; estate report | `report` | Built; its numbers need the enterprise discovery and facts runs |
 | 3. Quality rules, then fixes through Renovate and OpenRewrite | `rules` | Detection built; fixes wait on reviewed samples |
 | 4. Dockerfile builders and one shared renderer | `dsl` | Library built; the central generator repository waits on a GHE write token |
-| 5. Convert existing Dockerfiles to builders | `converter` | Built; building and comparing images (5b) needs Buildah |
+| 5. Convert existing Dockerfiles to builders | `converter` | Built, with the Java round trip; image comparison (5b) built, its first run needs Docker |
 
 The Dockerfile parser the pipeline uses is also a library of its own: see [parser/README.md](parser/README.md).
 
@@ -335,6 +335,24 @@ builds the same model and so the same Dockerfile.
 | `generated/images/<owner>/<Name>Image.java` | One builder class per opted-in Dockerfile that passed the round trip |
 | `roundtrip.jsonl` | Each Dockerfile, whether it passed, and the first difference when not; with the Java round trip, `javaPassed` and `javaDifference` |
 | `coverage.json` | Typed instructions over all instructions per Dockerfile, how often each reason left an instruction untyped, and `javaRoundTrip`: classes that rebuilt their Dockerfile, of those tried |
+
+### Compare the images
+
+```bash
+scripts/compare-images.sh       # where Docker runs; DISCOVERY_DIR, SHAS, OUT, REGISTRY_AUTH_FILE as its header says
+```
+
+For each chosen Dockerfile (by default the ten golden families' representatives), the Dockerfile and the
+converter's rendering of it are built with Buildah from the same context at the commit discovery scanned, and the
+two images compared. The same image means the same config (labels the builder writes at build time aside) and the
+same files: path, type, mode, owner, link target and content. Timestamps are never compared, nor the content of
+files that record when they were built (package databases, logs, caches, Python bytecode, `/tmp`); those are
+still checked to exist with the same mode and owner.
+
+| File | Contents |
+| --- | --- |
+| `comparison.jsonl` | Per Dockerfile: built or why not, the same or not, each config and file difference, the paths whose content was ignored |
+| `work/<sha>/` | The regenerated Dockerfile, each build's log, each image's config and file listing |
 
 ## Contributing
 
