@@ -162,7 +162,14 @@ changes and unusual steps; the report writes `catalogue/dockerfiles.jsonl` (no a
 each entry with its stages, packages, language runtimes (final, build-only, or inherited from the nearest ancestor
 whose final image has it, with evidence), links (lineage or inferred) and footprint (its chain root's base class,
 built in for now; the settable list to come), its hierarchy, each location's last change and its images' labels (slices
-below). Still to build: the action fields; measured on an estate with lineage.
+below). Still to build: the action fields.
+
+Measured 8 Nov on the OKD estate (facts rerun, lineage of 35 tags): 2,646 entries for 2,646 distinct blobs (67
+unparsed); 30 Dockerfiles carry a registry image, the other 2,549 count declared layers (median 2, 90th
+percentile 6, three over 40); 156 sit only in archived repositories; image labels by source: build 389, unknown 210,
+base 150, dockerfile 58, ancestor 27 (OKD's build adds `com.redhat.component`, `io.openshift.build.*`, `name`,
+`version` to every image; its Dockerfiles set almost none); footprint unknown for 1,284 (the settable list's case);
+no last changes, as that discovery output predates them.
 
 ## Slice: the hierarchy (planned 8 Nov; built 8 Nov)
 
