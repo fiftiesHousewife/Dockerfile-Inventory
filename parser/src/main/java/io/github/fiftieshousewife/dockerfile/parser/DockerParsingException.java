@@ -2,6 +2,7 @@
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: class Javadoc added.
+ * Modified by Dockerfile Inventory, 2026: the line and column of a syntax error.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +27,29 @@ import java.nio.file.Path;
  */
 public class DockerParsingException extends RuntimeException {
     private final Path path;
+    private final int line;
+    private final int column;
 
     public DockerParsingException(Path path, String message, @Nullable Throwable cause) {
+        this(path, 0, -1, message, cause);
+    }
+
+    /** A syntax error at {@code line} (from 1) and {@code column} (from 0), as ANTLR counts them. */
+    public DockerParsingException(Path path, int line, int column, String message, @Nullable Throwable cause) {
         super(message, cause);
         this.path = path;
+        this.line = line;
+        this.column = column;
+    }
+
+    /** The line of the syntax error, from 1; 0 when the failure has no position. */
+    public int getLine() {
+        return line;
+    }
+
+    /** The column of the syntax error, from 0; -1 when the failure has no position. */
+    public int getColumn() {
+        return column;
     }
 
     public Path getPath() {

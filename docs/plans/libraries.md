@@ -8,7 +8,9 @@ step 7, `dockerfile-model`'s bundle verified in `check`; step 9, the release tas
 (`releaseToCentral`, its logic tested in build-logic, the bundle zipped in `check`; the script deleted). Step 8, the
 compatibility check, waits for a first release to compare with. F1, the parser's last real bugs (issues 16, 17):
 the combined estate's parse failures 93 -> 90, all templates, other preprocessors or not Dockerfiles but one broken
-for Docker too; the round trip 5,149 -> 5,152.
+for Docker too; the round trip 5,149 -> 5,152. F2, `DockerParser.parseText(String)`: the tree, or the first syntax error
+with its line and column (`DockerParsingException.getLine`, `getColumn`) instead of one passed silently to a default
+execution context.
 
 ## Why
 

@@ -5,6 +5,7 @@
  * Modified by Dockerfile Inventory, 2026: tests for unrecognised lines (issue 3).
  * Modified by Dockerfile Inventory, 2026: tests for quotes in a command substitution and exec forms that are not JSON
  * (issues 16, 17).
+ * Modified by Dockerfile Inventory, 2026: tests for parseText, which returns the tree or throws the first syntax error.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +31,7 @@ import java.util.List;
 
 import static io.github.fiftieshousewife.dockerfile.parser.Assertions.docker;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
@@ -282,5 +284,25 @@ class DockerParserTest implements RewriteTest {
           () -> assertThat(file.printAll()).isEqualTo(text),
           () -> assertThat(instructions).hasSize(2),
           () -> assertThat(instructions.getFirst()).isInstanceOf(Docker.Run.class));
+    }
+
+    @Test
+    void parseTextReturnsTheTreeThatPrintsBackTheText() {
+        String text = "FROM ubi9 AS build\nRUN make\nFROM ubi9-minimal\nCOPY --from=build /out /app\n";
+
+        Docker.File file = DockerParser.parseText(text);
+
+        assertAll(
+          () -> assertThat(file.getStages()).hasSize(2),
+          () -> assertThat(file.printAll()).isEqualTo(text));
+    }
+
+    @Test
+    void parseTextThrowsTheFirstSyntaxErrorWithItsLineAndColumn() {
+        assertThatThrownBy(() -> DockerParser.parseText("FROM ubi9\nRUNN echo typo\n"))
+          .isInstanceOfSatisfying(DockerParsingException.class, e -> assertAll(
+            () -> assertThat(e.getLine()).isEqualTo(2),
+            () -> assertThat(e.getColumn()).isZero(),
+            () -> assertThat(e.getMessage()).contains("RUNN echo typo")));
     }
 }

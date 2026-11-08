@@ -2,6 +2,7 @@
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: class Javadoc added.
+ * Modified by Dockerfile Inventory, 2026: parseText, the tree of one Dockerfile or its first syntax error.
  * Modified by Dockerfile Inventory, 2026: an unrecognised line is reported as a syntax error (issue 3).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +36,8 @@ import org.openrewrite.tree.ParsingExecutionContextView;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -77,6 +80,25 @@ public class DockerParser implements Parser {
         });
     }
 
+    /**
+     * The tree of one Dockerfile; throws the first syntax error, with its line and column, instead of passing it to an
+     * execution context as {@link #parse(String...)} does.
+     */
+    public static Docker.File parseText(@Language("dockerfile") String dockerfile) {
+        List<Throwable> errors = new ArrayList<>();
+        SourceFile parsed = builder().build().parse(new InMemoryExecutionContext(errors::add), dockerfile)
+                .findFirst().orElseThrow();
+        if (!errors.isEmpty()) {
+            Throwable first = errors.get(0);
+            throw first instanceof DockerParsingException syntax ? syntax
+                    : new DockerParsingException(parsed.getSourcePath(), first.getMessage(), first);
+        }
+        if (!(parsed instanceof Docker.File file)) {
+            throw new DockerParsingException(parsed.getSourcePath(), "the Dockerfile could not be parsed", null);
+        }
+        return file;
+    }
+
     @Override
     public Stream<SourceFile> parse(@Language("dockerfile") String... sources) {
         return parse(new InMemoryExecutionContext(), sources);
@@ -108,7 +130,7 @@ public class DockerParser implements Parser {
         @Override
         public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
                                 int line, int charPositionInLine, String msg, RecognitionException e) {
-            ctx.getOnError().accept(new DockerParsingException(sourcePath, format(
+            ctx.getOnError().accept(new DockerParsingException(sourcePath, line, charPositionInLine, format(
                     "Syntax error in %s at line %d:%d %s.",
                     sourcePath, line, charPositionInLine, msg), e));
         }
