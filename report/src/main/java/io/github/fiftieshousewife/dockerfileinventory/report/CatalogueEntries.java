@@ -62,14 +62,15 @@ final class CatalogueEntries {
                 stage.path("fromStage").stringValue(null), strings(stage.path("copiesFrom")),
                 stage.path("instructions").asInt(), stage.path("runs").asInt(), stage.path("commands").asInt(),
                 stage.path("unreadRuns").asInt(), stage.path("layers").asInt(), copies(stage.path("copies")),
-                permissions(stage.path("permissions")));
+                permissions(stage.path("permissions")), strings(stage.path("unusual")));
     }
 
     static List<CatalogueEntry.Copy> copies(JsonNode copies) {
         List<CatalogueEntry.Copy> list = new ArrayList<>();
         copies.forEach(c -> list.add(new CatalogueEntry.Copy(c.path("instruction").asString(),
                 strings(c.path("sources")), c.path("destination").stringValue(null), c.path("origin").asString(),
-                c.path("from").stringValue(null), c.path("chown").stringValue(null), c.path("chmod").stringValue(null))));
+                c.path("from").stringValue(null), c.path("chown").stringValue(null),
+                c.path("chmod").stringValue(null))));
         return list;
     }
 

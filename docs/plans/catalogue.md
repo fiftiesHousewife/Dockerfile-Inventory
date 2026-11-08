@@ -142,6 +142,7 @@ read as the approved-bases list is. Measured 8 Nov on the combined estate by fin
 | provenance: signed, an SBOM attached, built by a known pipeline | trust and release readiness | new: the registry's signatures and attestations; Konflux labels |
 | architectures | multi-arch readiness | the registry's image indexes, read by lineage |
 | where it runs: internet-facing, privileges asked for | exposure | the deployment manifests, a later slice (as the validator plan) |
+| labels: the Dockerfile's (in the entry today) and the image's, which add what its base and its build set | provenance, ownership and versions as the images carry them | lineage (`configs/`: `config.Labels`); later (asked 8 Nov) |
 
 ## Questions
 

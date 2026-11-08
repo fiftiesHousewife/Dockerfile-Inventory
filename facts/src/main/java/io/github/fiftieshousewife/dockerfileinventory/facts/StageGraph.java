@@ -47,6 +47,7 @@ final class StageGraph {
         private final Set<String> earlier;
         private final List<CopyFact> copies = new ArrayList<>();
         private final List<PermissionChange> permissions = new ArrayList<>();
+        private final List<String> unusual = new ArrayList<>();
         private int instructions;
         private int runs;
         private int commands;
@@ -59,6 +60,7 @@ final class StageGraph {
 
         void accept(String line) {
             instructions++;
+            UnusualSteps.of(line).ifPresent(unusual::add);
             String keyword = line.split("\\s+", 2)[0].toUpperCase(Locale.ROOT);
             switch (keyword) {
                 case "RUN" -> run(script(line));
@@ -89,7 +91,7 @@ final class StageGraph {
         ImageStage stage(String name, BaseImage base, String fromStage) {
             return new ImageStage(name, base, fromStage, copies.stream().filter(c -> c.from() != null)
                     .map(CopyFact::from).distinct().toList(), instructions, runs, commands, unreadRuns, layers,
-                    copies, permissions);
+                    copies, permissions, unusual);
         }
 
         // The RUN's text after its keyword and flags (--mount, --network).
