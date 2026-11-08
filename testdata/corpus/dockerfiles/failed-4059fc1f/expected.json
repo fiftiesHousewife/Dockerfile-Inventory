@@ -5,8 +5,8 @@
     "commit": "15e695e8c60c36ec276e7cf6ebe9caa01f2218ea",
     "blobSha": "4059fc1ff3c254be331b94211b1dc2fdeef41cca"
   },
-  "why": "rewrite-docker rejects it",
-  "parse": "failed",
+  "why": "rewrite-docker rejects it; parses since issues 16 and 17 were fixed",
+  "parse": "parsed",
   "unreadableRuns": 0,
-  "roundTrip": "not-parsed"
+  "roundTrip": "passes"
 }

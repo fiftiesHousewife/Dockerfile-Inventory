@@ -7,12 +7,16 @@
 // Modified by Dockerfile Inventory, 2026: parser directives only before the first instruction (issue 2).
 // Modified by Dockerfile Inventory, 2026: a comment line inside a string spanning lines is part of it (issue 1).
 // Modified by Dockerfile Inventory, 2026: a heredoc's word may be quoted, as in COPY <<'EOF' (issue 14).
+// Modified by Dockerfile Inventory, 2026: a $(...) inside double quotes keeps its own quoting (issue 16).
+// Modified by Dockerfile Inventory, 2026: an exec form that is not a JSON array is shell form, as Docker reads it (issue 17).
 
 lexer grammar DockerLexer;
 
 @lexer::header
 {import java.util.LinkedList;
-import java.util.Queue;}
+import java.util.Queue;
+import java.util.regex.Pattern;
+import org.antlr.v4.runtime.misc.Interval;}
 
 @lexer::members
 {
@@ -27,6 +31,98 @@ import java.util.Queue;}
     private boolean afterHealthcheck = false;
     // Parser directives are read only before the first instruction; after it, # key=value is a comment
     private boolean directivesAllowed = true;
+    // What may come before an exec form's '[' on its line
+    private static final Pattern EXEC_FORM_START = Pattern.compile(
+        "[ \\t]*(ONBUILD[ \\t]+)?(RUN([ \\t]+--\\S+)*|CMD|ENTRYPOINT|HEALTHCHECK([ \\t]+--\\S+)*[ \\t]+CMD)[ \\t]+",
+        Pattern.CASE_INSENSITIVE);
+
+    // Docker reads RUN, CMD and ENTRYPOINT as exec form only when the rest of the line is a JSON array of strings;
+    // otherwise the whole line is shell form.
+    private boolean startsInvalidExecForm() {
+        int bracket = _tokenStartCharIndex;
+        int lineStart = bracket;
+        while (lineStart > 0 && _input.getText(Interval.of(lineStart - 1, lineStart - 1)).charAt(0) != '\n') {
+            lineStart--;
+        }
+        return EXEC_FORM_START.matcher(_input.getText(Interval.of(lineStart, bracket - 1))).matches()
+            && !jsonArrayAhead(bracket);
+    }
+
+    private boolean jsonArrayAhead(int bracket) {
+        int i = skipBlanks(bracket + 1);
+        if (charAt(i) == ']') {
+            return lineEndsAfter(i + 1);
+        }
+        while (true) {
+            if (charAt(i) != '"') {
+                return false;
+            }
+            i++;
+            while (charAt(i) != '"') {
+                if (charAt(i) == '\\') {
+                    i++;
+                }
+                if (charAt(i) == '\n' || charAt(i) == '\r' || charAt(i) == CharStream.EOF) {
+                    return false;
+                }
+                i++;
+            }
+            i = skipBlanks(i + 1);
+            if (charAt(i) == ']') {
+                return lineEndsAfter(i + 1);
+            }
+            if (charAt(i) != ',') {
+                return false;
+            }
+            i = skipBlanks(i + 1);
+        }
+    }
+
+    private boolean lineEndsAfter(int i) {
+        int end = skipBlanks(i);
+        return charAt(end) == '\n' || charAt(end) == '\r' || charAt(end) == CharStream.EOF;
+    }
+
+    // Blanks, and a line continuation with any comment lines after it, as Docker joins them before reading JSON
+    private int skipBlanks(int i) {
+        while (true) {
+            if (charAt(i) == ' ' || charAt(i) == '\t') {
+                i++;
+            } else if (charAt(i) == '\\' && continuationEnd(i + 1) > 0) {
+                i = continuationEnd(i + 1);
+            } else {
+                return i;
+            }
+        }
+    }
+
+    // After a backslash: the index past its newline and any comment lines, or -1 when it does not end the line
+    private int continuationEnd(int i) {
+        while (charAt(i) == ' ' || charAt(i) == '\t') {
+            i++;
+        }
+        if (charAt(i) != '\n' && charAt(i) != '\r') {
+            return -1;
+        }
+        while (charAt(i) == '\n' || charAt(i) == '\r') {
+            i++;
+        }
+        int line = i;
+        while (charAt(line) == ' ' || charAt(line) == '\t') {
+            line++;
+        }
+        if (charAt(line) == '#') {
+            while (charAt(line) != '\n' && charAt(line) != CharStream.EOF) {
+                line++;
+            }
+            return continuationEnd(line);
+        }
+        return i;
+    }
+
+    private int charAt(int i) {
+        return i >= _input.size() ? CharStream.EOF : _input.getText(Interval.of(i, i)).charAt(0);
+    }
 
     @Override
     public Token nextToken() {
@@ -97,6 +193,9 @@ fragment HEREDOC_MARKER : [A-Z_][A-Z0-9_]* | '\'' [A-Z_][A-Z0-9_]* '\'' | '"' [A
 // Supports both backslash (Linux) and backtick (Windows with # escape=`)
 LINE_CONTINUATION : ('\\' | '`') [ \t]* '\r'? '\n' -> channel(HIDDEN);
 
+// An exec form that is not a JSON array: the rest of the line is shell-form text (issue 17)
+INVALID_EXEC_FORM : {startsInvalidExecForm()}? '[' ( INLINE_CONTINUATION | ~[\r\n] )* { atLineStart = false; } -> type(UNQUOTED_TEXT);
+
 // JSON array delimiters (for exec form) - no mode switching, handled in parser
 LBRACKET : '[' { atLineStart = false; };
 RBRACKET : ']' { atLineStart = false; };
@@ -131,7 +230,7 @@ fragment ESCAPED_CHAR : '\\' ~[\r\n];
 // Double-quoted strings support escape sequences, line continuation, and bare newlines
 // Backtick followed by whitespace+newline is continuation; standalone backtick is regular char
 // Bare newlines are allowed (e.g., comment lines inside PowerShell strings don't need trailing backtick)
-DOUBLE_QUOTED_STRING : '"' ( ESCAPE_SEQUENCE | INLINE_CONTINUATION | '`' | [\r\n]+ STRING_COMMENT_LINE* | ~["\\\r\n`] )* '"' { if (!afterHealthcheck) atLineStart = false; };
+DOUBLE_QUOTED_STRING : '"' ( DQ_COMMAND_SUBST | ESCAPE_SEQUENCE | INLINE_CONTINUATION | '`' | [\r\n]+ STRING_COMMENT_LINE* | ~["\\\r\n`] )* '"' { if (!afterHealthcheck) atLineStart = false; };
 // Single-quoted strings in shell are literal - no escape processing inside
 // But they DO support line continuation (backslash or backtick followed by newline)
 // Bare newlines are also allowed for multi-line strings
@@ -143,6 +242,12 @@ fragment INLINE_CONTINUATION : ('\\' | '`') [ \t]* [\r\n]+ STRING_COMMENT_LINE*;
 // A comment line inside a string that spans lines: Docker drops it before the shell reads the string, so a quote in it
 // neither ends nor starts one (issue 1)
 fragment STRING_COMMENT_LINE : [ \t]* '#' ~[\r\n]* [\r\n]+;
+
+// A $(...) inside double quotes: its own quoted parts may hold a double quote (issue 16)
+fragment DQ_COMMAND_SUBST
+    : '$(' ( DQ_COMMAND_SUBST | '\'' ~['\r\n]* '\'' | '"' ( DQ_COMMAND_SUBST | ESCAPE_SEQUENCE | ~["\\\r\n] )* '"'
+           | ESCAPE_SEQUENCE | INLINE_CONTINUATION | '(' ~[()'"\r\n]* ')' | ~[()'"\\\r\n] )* ')'
+    ;
 
 fragment ESCAPE_SEQUENCE
     : '\\' ~[\r\n]   // Backslash followed by any char except newline (includes \n, \t, \\, \", Windows paths like \P)

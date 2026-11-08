@@ -204,3 +204,29 @@ Expected: the legacy form, one variable whose value is `= 0`, as Docker reads it
 Fixed in the fork (the `KEY=value` form is taken only when the `=` is right after the key, tested at the start of the
 pair so the parser's prediction sees it; otherwise the pair is the legacy form). The same holds for `LABEL`.
 
+
+## 16. A `"` in single quotes, in a `$(...)` inside double quotes, ends the string
+
+```dockerfile
+FROM ubi9
+RUN V="$(tr -d '"')" && echo done
+```
+
+Expected: one shell-form `RUN`, as Docker reads it (it does not read quotes in a shell form at all). Actual: a
+syntax error, `token recognition error at: '')"\n'`: the outer string ends at the `"` inside the single quotes. Seen in
+2 `openshift` files (jq and sed filters inside `"$(...)"`).
+Fixed in the fork (a double-quoted string reads a `$(...)` as a unit, with its own single- and double-quoted parts,
+escapes and nested substitutions).
+
+## 17. An exec form that is not a JSON array is a syntax error, where Docker runs it as shell form
+
+```dockerfile
+FROM ubi9
+ENTRYPOINT ["/app", -config", "/etc/app"]
+```
+
+Expected: a shell-form `ENTRYPOINT` whose text is the whole line, as Docker reads any `RUN`, `CMD` or `ENTRYPOINT`
+whose argument is not a valid JSON array of strings. Actual: a syntax error, and because a double-quoted string may
+span lines, the unclosed `"` swallows text to the next quote further down the file. Seen in 1 `openshift` file.
+Fixed in the fork (at a `[` starting such an instruction's argument, the lexer reads ahead over the logical line,
+continuations and comment lines included; if it is not a JSON array of strings, the line is shell-form text).

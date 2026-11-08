@@ -6,7 +6,9 @@ Status: planned 8 Nov; questions answered 8 Nov. Done: step 1, the licence; step
 aside: a sentence on every type and every method a user calls, none on compact constructors or enum constants);
 step 7, `dockerfile-model`'s bundle verified in `check`; step 9, the release task
 (`releaseToCentral`, its logic tested in build-logic, the bundle zipped in `check`; the script deleted). Step 8, the
-compatibility check, waits for a first release to compare with.
+compatibility check, waits for a first release to compare with. F1, the parser's last real bugs (issues 16, 17):
+the combined estate's parse failures 93 -> 90, all templates, other preprocessors or not Dockerfiles but one broken
+for Docker too; the round trip 5,149 -> 5,152.
 
 ## Why
 

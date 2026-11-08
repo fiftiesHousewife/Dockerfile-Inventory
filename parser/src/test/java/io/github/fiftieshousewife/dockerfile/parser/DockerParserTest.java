@@ -3,6 +3,8 @@
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
  * Modified by Dockerfile Inventory, 2026: a test for a line holding only a backslash (issue 7).
  * Modified by Dockerfile Inventory, 2026: tests for unrecognised lines (issue 3).
+ * Modified by Dockerfile Inventory, 2026: tests for quotes in a command substitution and exec forms that are not JSON
+ * (issues 16, 17).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +30,7 @@ import java.util.List;
 
 import static io.github.fiftieshousewife.dockerfile.parser.Assertions.docker;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
  * General integration tests for the Docker parser.
@@ -202,5 +205,82 @@ class DockerParserTest implements RewriteTest {
           .toList();
 
         assertThat(errors).isEmpty();
+    }
+
+    private static Docker.File parsedWithoutErrors(String text, List<Throwable> errors) {
+        return (Docker.File) DockerParser.builder().build()
+          .parse(new InMemoryExecutionContext(errors::add), text)
+          .findFirst().orElseThrow();
+    }
+
+    @Test
+    void aDoubleQuoteInSingleQuotesInACommandSubstitutionDoesNotEndTheOuterString() {
+        List<Throwable> errors = new ArrayList<>();
+        String text = "FROM ubi9\nRUN V=\"$(tr -d '\"')\" && echo done\nUSER 1001\n";
+
+        Docker.File file = parsedWithoutErrors(text, errors);
+
+        var run = (Docker.Run) file.getStages().getFirst().getInstructions().getFirst();
+        assertAll(
+          () -> assertThat(errors).isEmpty(),
+          () -> assertThat(file.printAll()).isEqualTo(text),
+          () -> assertThat(((Docker.ShellForm) run.getCommand()).getArgument().getText())
+            .isEqualTo("V=\"$(tr -d '\"')\" && echo done"));
+    }
+
+    @Test
+    void anExecFormThatIsNotValidJsonIsAShellFormAsDockerReadsIt() {
+        List<Throwable> errors = new ArrayList<>();
+        String text = "FROM ubi9\nENTRYPOINT [\"/app\", -config\", \"/etc/app\"]\nUSER 1001\n";
+
+        Docker.File file = parsedWithoutErrors(text, errors);
+
+        var instructions = file.getStages().getFirst().getInstructions();
+        assertAll(
+          () -> assertThat(errors).isEmpty(),
+          () -> assertThat(file.printAll()).isEqualTo(text),
+          () -> assertThat(((Docker.ShellForm) ((Docker.Entrypoint) instructions.getFirst()).getCommand())
+            .getArgument().getText()).isEqualTo("[\"/app\", -config\", \"/etc/app\"]"),
+          () -> assertThat(instructions.getLast()).isInstanceOf(Docker.User.class));
+    }
+
+    @Test
+    void aValidExecFormWithTrailingSpacesAtTheEndOfTheFileStaysAnExecForm() {
+        List<Throwable> errors = new ArrayList<>();
+
+        Docker.File file = parsedWithoutErrors("FROM ubi9\nCMD [\"python\", \"app.py\"]   ", errors);
+
+        assertAll(
+          () -> assertThat(errors).isEmpty(),
+          () -> assertThat(((Docker.Cmd) file.getStages().getFirst().getInstructions().getFirst()).getCommand())
+            .isInstanceOf(Docker.ExecForm.class));
+    }
+
+    @Test
+    void anExecFormContinuedOverLinesIsStillAnExecForm() {
+        List<Throwable> errors = new ArrayList<>();
+
+        Docker.File file = parsedWithoutErrors("FROM ubi9\nENTRYPOINT [\"/app\", \\\n    # the config\n    \"run\"]\n",
+          errors);
+
+        assertAll(
+          () -> assertThat(errors).isEmpty(),
+          () -> assertThat(((Docker.Entrypoint) file.getStages().getFirst().getInstructions().getFirst())
+            .getCommand()).isInstanceOf(Docker.ExecForm.class));
+    }
+
+    @Test
+    void anInvalidExecFormRunsOnThroughItsContinuations() {
+        List<Throwable> errors = new ArrayList<>();
+        String text = "FROM ubi9\nRUN [ -f /etc/app ] \\\n    && echo found\nUSER 1001\n";
+
+        Docker.File file = parsedWithoutErrors(text, errors);
+
+        var instructions = file.getStages().getFirst().getInstructions();
+        assertAll(
+          () -> assertThat(errors).isEmpty(),
+          () -> assertThat(file.printAll()).isEqualTo(text),
+          () -> assertThat(instructions).hasSize(2),
+          () -> assertThat(instructions.getFirst()).isInstanceOf(Docker.Run.class));
     }
 }
