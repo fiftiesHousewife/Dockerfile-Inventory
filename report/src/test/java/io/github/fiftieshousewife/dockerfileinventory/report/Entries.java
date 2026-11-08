@@ -32,6 +32,14 @@ final class Entries {
                 List.of());
     }
 
+    static CatalogueEntry linked(String sha, String repository, List<String> parents, List<String> children) {
+        CatalogueEntry plain = plain(sha, repository);
+        return new CatalogueEntry(sha, plain.locations(), false, plain.image(), plain.build(),
+                new CatalogueLinks.Links(parents.stream().map(p -> new CatalogueLinks.Link(p, "inferred", "")).toList(),
+                        children.stream().map(c -> new CatalogueLinks.Link(c, "inferred", "")).toList(), 0),
+                plain.footprint(), plain.hierarchy(), null, null);
+    }
+
     static CatalogueEntry unparsed(String sha, String repository) {
         return new CatalogueEntry(sha, List.of(new CatalogueEntry.Place(repository, "Dockerfile", "RELEASED", "c1",
                 null, null)), false, null, null, null, null, null, null, "mismatched input");

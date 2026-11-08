@@ -47,4 +47,10 @@ class HtmlTest {
     void svgNumbersHaveOneDecimalWhateverTheLocale() {
         assertThat(Svg.number(12.345)).isEqualTo("12.3");
     }
+
+    @Test
+    void aShaLinkPointsIntoItsFolderAndShowsTheStartOfTheSha() {
+        assertThat(Html.shaLink("dockerfiles/", "0123456789abcdef")).isEqualTo(
+                "<a href=\"dockerfiles/0123456789abcdef.html\"><code>0123456789ab</code></a>");
+    }
 }

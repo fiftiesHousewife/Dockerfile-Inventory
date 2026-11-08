@@ -48,6 +48,11 @@ final class Html {
                 + "\"></span></span>";
     }
 
+    static String shaLink(String folder, String blobSha) {
+        return "<a href=\"" + folder + escape(blobSha) + ".html\"><code>"
+                + escape(blobSha.substring(0, Math.min(12, blobSha.length()))) + "</code></a>";
+    }
+
     static String plural(int n, String one, String many) {
         return count(n) + " " + (n == 1 ? one : many);
     }

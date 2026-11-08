@@ -59,12 +59,12 @@ first slices remove before they add, each keeping what stays byte for byte.
    one archetype per line, in place of `archetypes.json`. Done 8 Nov. End-of-life is woven through the pages being
    replaced (the health strip, the figures, the bases page), so it leaves with them in step 8.
 2. `CatalogueView`: the catalogue file read back into entries the pages use (counts, chains, blocked, per
-   organisation), with no other input.
+   organisation), with no other input. Done 8 Nov.
 3. Summary page from the view: counts, chain depth and layer distributions, unmaintained by reason and what they
-   block, root / low-port / toolchain shares, footprints, runtimes, unusual steps, unparsed.
-4. Hierarchy page: the trees from each root, each node linking to its Dockerfile's page.
-5. Blocked page: unmaintained intermediates ordered by how many images each holds back.
-6. A page per Dockerfile: locations, stage graph, copies, permissions, per-stage counts, images with their chains.
+   block, root / low-port / toolchain shares, footprints, runtimes, unusual steps, unparsed. Built 8 Nov (`OverviewPage`), written by step 8.
+4. Hierarchy page: the trees from each root, each node linking to its Dockerfile's page. Built 8 Nov.
+5. Blocked page: unmaintained intermediates ordered by how many images each holds back. Built 8 Nov.
+6. A page per Dockerfile: locations, stage graph, copies, permissions, per-stage counts, images with their chains. Built 8 Nov (`DockerfilePage`, `DockerfileSections`).
 7. Organisations: the summary per organisation; the archetypes page linked from the summary.
 8. `ReportRun` writing the pages from the catalogue, the old pages and `EOL_LIST` removed with what only they used;
    README; measured on an estate.
