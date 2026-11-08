@@ -46,11 +46,9 @@ and the layer count. A change to `facts.jsonl` moves the corpus ratchet's expect
 
 ## Output
 
-From `report`, which already joins facts, discovery and lineage, in a new folder `catalogue/`:
-`dockerfiles.jsonl` (one record per Dockerfile, as above) and flat tables for the reporting database, with their
-DDL beside the report's: `dockerfiles.csv` (one row per Dockerfile, its scalar facts), `locations.csv`,
-`stages.csv`, `ports.csv`, `packages.csv`, `environment.csv`, `labels.csv`, `links.csv` (one row per link, its
-source and evidence). The README documents every field.
+From `report`, which already joins facts, discovery and lineage: `catalogue/dockerfiles.jsonl`, one JSON object per
+Dockerfile, as above, and nothing else (asked 8 Nov: JSON only; how consumers load it is theirs to decide). The
+README documents every field.
 
 ## Questions
 
@@ -74,11 +72,10 @@ One assertion each, several in `assertAll`; Dockerfile fixtures are real files, 
 1. `facts`: the final image's configuration (working directory, volumes, health check, shell, stop signal,
    entrypoint and command), one field at a time, from real fixtures; environment and label values with a secret
    hidden; the stage graph; the layer count through stages built on by name. The corpus ratchet updated.
-2. `report`: `CatalogueRecord` from one fact line and its locations; secret values never written (the existing
-   `HiddenSecrets` guard over the catalogue's files too).
-3. Links: from lineage's `links.jsonl`; inferred from labels, then from stages, each with its evidence; depth along
-   the chain; a cycle of inferred links refused rather than followed.
-4. The CSV tables and their DDL, one table at a time; `dockerfiles.jsonl`.
-5. `ReportRun` writing `catalogue/`, `RULES_DIR` optional; the README's field list.
-6. Measured on the combined estate: every parsed Dockerfile has a record, every location a row, and the counts in
-   the catalogue agree with `facts/rates.json`.
+2. `report`: a catalogue entry from one fact line and its locations; a Dockerfile that did not parse as an entry
+   with its locations and why; secret values never written (the secret-shape guard over each line too).
+3. Links: from lineage's `links.jsonl`; inferred from the `name` and `org.opencontainers.image.ref.name` labels,
+   each with its evidence; depth along the chain; a cycle of inferred links not followed.
+4. `ReportRun` writing `catalogue/dockerfiles.jsonl`; the README's field list.
+5. Measured on the combined estate: every distinct Dockerfile has an entry, parsed or not, and the counts agree with
+   `facts/rates.json`.

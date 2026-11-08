@@ -1,0 +1,2 @@
+{"repository":"payments/server","commitSha":"abc123","scope":"RELEASE","path":"Dockerfile","blobSha":"3f6d0c1a2b4e5f60718293a4b5c6d7e8f9a0b1c2"}
+{"repository":"payments/server-fork","commitSha":"def456","scope":"DEFAULT_BRANCH","path":"build/Dockerfile","blobSha":"3f6d0c1a2b4e5f60718293a4b5c6d7e8f9a0b1c2"}

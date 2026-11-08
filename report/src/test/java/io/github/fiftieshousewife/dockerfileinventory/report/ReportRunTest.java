@@ -39,6 +39,13 @@ class ReportRunTest {
     }
 
     @Test
+    void theCatalogueIsWrittenBesideTheReport() {
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, EolList.empty(), out).run();
+
+        assertThat(out.resolve("catalogue/dockerfiles.jsonl")).isNotEmptyFile();
+    }
+
+    @Test
     void passesJsonHoldsTheTotalsBeforeThePasses() {
         List<PassCount> passes = List.of(new PassCount("blob", 1, 2));
 

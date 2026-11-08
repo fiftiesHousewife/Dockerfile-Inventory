@@ -1,0 +1,92 @@
+package io.github.fiftieshousewife.dockerfileinventory.report;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+
+class CatalogueEntriesTest {
+
+    private static final Path FIXTURES = Path.of("src/test/resources/fixtures/catalogue");
+    private static final String SHA = "3f6d0c1a2b4e5f60718293a4b5c6d7e8f9a0b1c2";
+    private static final JsonNode ROW = JsonLines.read(FIXTURES.resolve("facts.jsonl")).getFirst();
+    private static final EolList EOL = EolList.read(Path.of("src/test/resources/fixtures/eol.csv"));
+
+    private static CatalogueEntry entry() {
+        return CatalogueEntries.of(ROW, CatalogueEntries.places(FIXTURES.resolve("manifest.jsonl")).get(SHA),
+                Map.of(SHA, new CatalogueEntry.ArchetypeRef(7, "k7")), EOL);
+    }
+
+    @Test
+    void anEntryNamesItsFileEveryPlaceItLivesAndItsArchetype() {
+        CatalogueEntry entry = entry();
+
+        assertAll(
+                () -> assertThat(entry.blobSha()).isEqualTo(SHA),
+                () -> assertThat(entry.locations()).containsExactly(
+                        new CatalogueEntry.Place("payments/server", "Dockerfile", "RELEASE", "abc123"),
+                        new CatalogueEntry.Place("payments/server-fork", "build/Dockerfile", "DEFAULT_BRANCH",
+                                "def456")),
+                () -> assertThat(entry.archetype()).isEqualTo(new CatalogueEntry.ArchetypeRef(7, "k7")),
+                () -> assertThat(entry.bundle()).isFalse());
+    }
+
+    @Test
+    void theImageIsWhatRunsUserPortsStartConfigurationEnvironmentAndLabels() {
+        CatalogueEntry.Image image = entry().image();
+
+        assertAll(
+                () -> assertThat(image.user()).isEqualTo("1001"),
+                () -> assertThat(image.userKind()).isEqualTo("NUMERIC"),
+                () -> assertThat(image.ports()).containsExactly("8080", "9090/udp"),
+                () -> assertThat(image.entrypoint())
+                        .isEqualTo(new CatalogueEntry.Command("EXEC", List.of("/usr/local/bin/server"))),
+                () -> assertThat(image.cmd()).isEqualTo(new CatalogueEntry.Command("EXEC", List.of("--port", "8080"))),
+                () -> assertThat(image.workdir()).isEqualTo("/opt/app"),
+                () -> assertThat(image.volumes()).containsExactly("/opt/app/data"),
+                () -> assertThat(image.healthcheck()).startsWith("--interval=30s CMD"),
+                () -> assertThat(image.environment()).containsEntry("APP_HOME", "/opt/app"),
+                () -> assertThat(image.environment().get("API_TOKEN")).startsWith("(hidden sha256:"),
+                () -> assertThat(image.labels()).containsExactly(Map.entry("name", "payments/server"),
+                        Map.entry("version", "1.4.2")));
+    }
+
+    @Test
+    void eachStageHasItsBasePinnedOrNotWithItsEndOfLifeStatusOrTheStageItBuildsOn() {
+        assertThat(entry().build().stages()).containsExactly(
+                new CatalogueEntry.StageEntry(0, "build", "registry.access.redhat.com/ubi9/go-toolset", "1.22", null,
+                        false, "unknown", null, List.of()),
+                new CatalogueEntry.StageEntry(1, null, "registry.access.redhat.com/ubi9/ubi-minimal", "9.4",
+                        "sha256:1111111111111111111111111111111111111111111111111111111111111111", true, "supported",
+                        null, List.of("build")));
+    }
+
+    @Test
+    void eachInstalledPackageSaysItsManagerWhetherItIsVersionedAndWhetherItsRunCleaned() {
+        assertThat(entry().build().packages())
+                .containsExactly(new CatalogueEntry.PackageEntry(1, "microdnf", "tzdata-2024a", true, true));
+    }
+
+    @Test
+    void anEntryCarriesItsLinksOnceTheyAreKnown() {
+        CatalogueLinks.Links links = new CatalogueLinks.Links(List.of(), List.of(), 0);
+
+        assertThat(entry().withLinks(links).links()).isEqualTo(links);
+    }
+
+    @Test
+    void theBuildCountsLayersRunsUnreadRunsAndTheFinalImagesInstructions() {
+        CatalogueEntry.Build build = entry().build();
+
+        assertAll(
+                () -> assertThat(build.layers()).isEqualTo(2),
+                () -> assertThat(build.runs()).isEqualTo(2),
+                () -> assertThat(build.opaqueRuns()).isZero(),
+                () -> assertThat(build.instructions()).containsEntry("COPY", 1).containsEntry("ENV", 1)
+                        .containsEntry("HEALTHCHECK", 1));
+    }
+}

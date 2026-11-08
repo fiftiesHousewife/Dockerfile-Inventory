@@ -1,0 +1,67 @@
+package io.github.fiftieshousewife.dockerfileinventory.report;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+// One distinct Dockerfile as the catalogue describes it; its field names are the catalogue's published schema.
+record CatalogueEntry(String blobSha, List<Place> locations, ArchetypeRef archetype, boolean bundle, Image image,
+                      Build build, CatalogueLinks.Links links, String parseError) {
+
+    record Place(String repository, String path, String scope, String commit) {
+    }
+
+    record ArchetypeRef(int rank, String key) {
+    }
+
+    record Command(String form, List<String> arguments) {
+
+        Command {
+            arguments = List.copyOf(arguments);
+        }
+    }
+
+    record Image(String user, String userKind, List<String> ports, Command entrypoint, Command cmd, String workdir,
+                 List<String> volumes, String healthcheck, List<String> shell, String stopSignal,
+                 Map<String, String> environment, Map<String, String> labels) {
+
+        Image {
+            ports = List.copyOf(ports);
+            volumes = List.copyOf(volumes);
+            shell = List.copyOf(shell);
+            environment = Collections.unmodifiableMap(new LinkedHashMap<>(environment));
+            labels = Collections.unmodifiableMap(new LinkedHashMap<>(labels));
+        }
+    }
+
+    record StageEntry(int index, String name, String baseName, String baseTag, String baseDigest, boolean pinned,
+                      String eolStatus, String fromStage, List<String> copiesFrom) {
+
+        StageEntry {
+            copiesFrom = List.copyOf(copiesFrom);
+        }
+    }
+
+    record PackageEntry(int stage, String manager, String name, boolean versioned, boolean cleaned) {
+    }
+
+    record Build(List<StageEntry> stages, List<PackageEntry> packages, List<String> buildKitFeatures, int layers,
+                 int runs, int opaqueRuns, Map<String, Integer> instructions) {
+
+        Build {
+            stages = List.copyOf(stages);
+            packages = List.copyOf(packages);
+            buildKitFeatures = List.copyOf(buildKitFeatures);
+            instructions = Collections.unmodifiableMap(new LinkedHashMap<>(instructions));
+        }
+    }
+
+    CatalogueEntry {
+        locations = List.copyOf(locations);
+    }
+
+    CatalogueEntry withLinks(CatalogueLinks.Links found) {
+        return new CatalogueEntry(blobSha, locations, archetype, bundle, image, build, found, parseError);
+    }
+}

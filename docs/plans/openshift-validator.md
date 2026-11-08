@@ -82,7 +82,7 @@ A `validator` module between `rules` and `report` (answered 8 Nov). It reads `fa
 extensions), lineage's `effective.jsonl` and `links.jsonl` when given, the rules' `findings.jsonl`, discovery's
 manifest, and the profile. Settings: `FACTS_DIR`, `DISCOVERY_DIR`, `RULES_DIR`, `LINEAGE_DIR` (optional), `PROFILE`
 (a shipped profile's name or a file; default `openshift-4-restricted-v2`), `OUT_DIR`. It writes
-`action-plan.json` and `action-plan.csv` (with their DDL) for the reporting database; the report gains a page,
+`action-plan.json`; the report gains a page,
 "Action plan for OpenShift", that leads with how many images would break or drift under the profile, then the
 actions by fix, then by repository.
 
@@ -118,7 +118,7 @@ OpenShift behaviour it predicts.
 3. `Verdict`: per image, breaks, drift, information or runs, from its findings under a profile.
 4. `Actions`: findings to actions (what, where in the chain, reach through bases and archetypes, the DSL's fix),
    ordered by severity, reach and certainty; the by-repository view of the same actions.
-5. `ValidatorRun` writing `action-plan.json` and `action-plan.csv`; `ValidatorMain` reading its settings, `PROFILE`
+5. `ValidatorRun` writing `action-plan.json`; `ValidatorMain` reading its settings, `PROFILE`
    defaulting to v2, a bad value refused by name.
 6. The report's "Action plan for OpenShift" page.
 7. A tagged test (`validate`, run by `./gradlew validate`, as `roundTrip` is) over a real estate, its counts

@@ -1,0 +1,106 @@
+package io.github.fiftieshousewife.dockerfileinventory.report;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.IntStream;
+import tools.jackson.databind.JsonNode;
+
+final class CatalogueEntries {
+
+    private CatalogueEntries() {
+    }
+
+    static CatalogueEntry of(JsonNode row, List<CatalogueEntry.Place> places,
+            Map<String, CatalogueEntry.ArchetypeRef> archetypes, EolList eol) {
+        String sha = row.path("blobSha").asString();
+        return new CatalogueEntry(sha, places == null ? List.of() : places, archetypes.get(sha),
+                Estate.metadataOnly(row), image(row), build(row, eol), null, null);
+    }
+
+    static CatalogueEntry unparsed(JsonNode failure, List<CatalogueEntry.Place> places,
+            Map<String, CatalogueEntry.ArchetypeRef> archetypes) {
+        String sha = failure.path("blobSha").asString();
+        return new CatalogueEntry(sha, places == null ? List.of() : places, archetypes.get(sha), false, null, null,
+                null, failure.path("message").asString());
+    }
+
+    static Map<String, List<CatalogueEntry.Place>> places(Path manifest) {
+        Map<String, List<CatalogueEntry.Place>> places = new HashMap<>();
+        JsonLines.read(manifest).forEach(row -> places.computeIfAbsent(row.path("blobSha").asString(),
+                key -> new ArrayList<>()).add(new CatalogueEntry.Place(row.path("repository").asString(),
+                row.path("path").asString(), row.path("scope").asString(), row.path("commitSha").asString())));
+        return places;
+    }
+
+    static CatalogueEntry.Image image(JsonNode row) {
+        JsonNode facts = row.path("facts");
+        JsonNode config = row.path("config");
+        return new CatalogueEntry.Image(facts.path("finalUser").stringValue(null), facts.path("userKind").asString(),
+                strings(facts.path("exposedPorts")), command(config.path("entrypoint")), command(config.path("cmd")),
+                config.path("workdir").stringValue(null), strings(config.path("volumes")),
+                config.path("healthcheck").stringValue(null), strings(config.path("shell")),
+                config.path("stopSignal").stringValue(null), pairs(config.path("environment")),
+                pairs(config.path("labels")));
+    }
+
+    static CatalogueEntry.Build build(JsonNode row, EolList eol) {
+        JsonNode facts = row.path("facts");
+        JsonNode stages = row.path("stages");
+        return new CatalogueEntry.Build(
+                IntStream.range(0, stages.size()).mapToObj(i -> stage(i, stages.get(i), eol)).toList(),
+                packages(facts.path("packageCalls")), strings(facts.path("buildKitFeatures")),
+                row.path("config").path("layers").asInt(), facts.path("runs").asInt(),
+                facts.path("opaqueRuns").asInt(), instructions(row.path("steps")));
+    }
+
+    static CatalogueEntry.StageEntry stage(int index, JsonNode stage, EolList eol) {
+        JsonNode base = stage.path("base");
+        String name = base.path("name").stringValue(null);
+        String tag = base.path("tag").stringValue(null);
+        String digest = base.path("digest").stringValue(null);
+        String status = name == null ? null : eol.lookup(BaseCatalogue.path(new Base(name, tag, digest)), tag)
+                .map(EolList.Entry::status).orElse("unknown");
+        return new CatalogueEntry.StageEntry(index, stage.path("name").stringValue(null), name, tag, digest,
+                digest != null, status, stage.path("fromStage").stringValue(null), strings(stage.path("copiesFrom")));
+    }
+
+    static List<CatalogueEntry.PackageEntry> packages(JsonNode calls) {
+        List<CatalogueEntry.PackageEntry> packages = new ArrayList<>();
+        calls.forEach(staged -> {
+            JsonNode call = staged.path("call");
+            String manager = call.path("manager").asString();
+            call.path("packages").forEach(name -> packages.add(new CatalogueEntry.PackageEntry(
+                    staged.path("stage").asInt(), manager, name.asString(), Versions.versioned(manager,
+                    name.asString()), call.path("cleanedInSameRun").asBoolean())));
+        });
+        return packages;
+    }
+
+    static Map<String, Integer> instructions(JsonNode steps) {
+        Map<String, Integer> counts = new TreeMap<>();
+        steps.forEach(step -> counts.merge(step.path("keyword").asString(), 1, Integer::sum));
+        return counts;
+    }
+
+    private static CatalogueEntry.Command command(JsonNode command) {
+        return command.isMissingNode() || command.isNull() ? null
+                : new CatalogueEntry.Command(command.path("form").asString(), strings(command.path("arguments")));
+    }
+
+    private static List<String> strings(JsonNode array) {
+        List<String> strings = new ArrayList<>();
+        array.forEach(value -> strings.add(value.asString()));
+        return strings;
+    }
+
+    private static Map<String, String> pairs(JsonNode object) {
+        Map<String, String> pairs = new LinkedHashMap<>();
+        object.propertyNames().forEach(name -> pairs.put(name, object.path(name).asString()));
+        return pairs;
+    }
+}
