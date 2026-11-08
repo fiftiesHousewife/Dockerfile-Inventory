@@ -18,6 +18,7 @@ final class FakeArtifactory implements Artifactory {
     private final Map<String, Instant> pushed = new ConcurrentHashMap<>();
     private final Set<String> refused = ConcurrentHashMap.newKeySet();
     final AtomicInteger manifestCalls = new AtomicInteger();
+    private final Map<String, DownloadStats> stats = new ConcurrentHashMap<>();
     final Map<String, AtomicInteger> blobCalls = new ConcurrentHashMap<>();
 
     FakeArtifactory manifest(String repository, String image, String reference, String mediaType, String fixture) {
@@ -89,6 +90,16 @@ final class FakeArtifactory implements Artifactory {
     @Override
     public Optional<Instant> lastPushed(String repository, String image, String tag) {
         return Optional.ofNullable(pushed.get(key(repository, image, tag)));
+    }
+
+    @Override
+    public Optional<DownloadStats> stats(String repository, String image, String tag) {
+        return Optional.ofNullable(stats.get(key(repository, image, tag)));
+    }
+
+    FakeArtifactory downloads(String repository, String image, String tag, long count, String last) {
+        stats.put(key(repository, image, tag), new DownloadStats(count, Instant.parse(last)));
+        return this;
     }
 
     private static String key(String repository, String image, String reference) {

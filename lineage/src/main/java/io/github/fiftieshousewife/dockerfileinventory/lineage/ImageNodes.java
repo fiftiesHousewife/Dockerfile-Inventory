@@ -22,34 +22,36 @@ final class ImageNodes {
 
     static Location locate(Artifactory artifactory, String repository, String image, String tag) {
         String reference = repository + "/" + image + ":" + tag;
-        Optional<JsonNode> tagged = manifest(artifactory, repository, image, tag);
+        Optional<Manifest> tagged = artifactory.manifest(repository, image, tag);
         if (tagged.isEmpty()) {
             return new Resolved.Skipped(Resolved.Reason.GONE, reference);
         }
-        JsonNode manifest = tagged.get();
+        JsonNode manifest = JSON.readTree(tagged.get().body());
+        String digest = tagged.get().digest();
         if (manifest.path("schemaVersion").asInt() == 1) {
             return new Resolved.Skipped(Resolved.Reason.SCHEMA_1, reference);
         }
-        return manifest.has("manifests") ? throughList(artifactory, repository, image, manifest, reference)
-                : found(manifest, List.of());
+        return manifest.has("manifests") ? throughList(artifactory, repository, image, manifest, digest, reference)
+                : found(manifest, digest, List.of());
     }
 
     static Location throughList(Artifactory artifactory, String repository, String image, JsonNode list,
-                                String reference) {
+                                String listDigest, String reference) {
         Optional<String> amd64 = amd64(list);
         if (amd64.isEmpty()) {
             return new Resolved.Skipped(Resolved.Reason.NO_AMD64, reference);
         }
         List<String> architectures = architectures(list);
         return manifest(artifactory, repository, image, amd64.get())
-                .<Location>map(manifest -> found(manifest, architectures))
+                .<Location>map(manifest -> found(manifest, listDigest, architectures))
                 .orElseGet(() -> new Resolved.Skipped(Resolved.Reason.GONE, amd64.get()));
     }
 
-    static Location found(JsonNode manifest, List<String> architectures) {
+    static Location found(JsonNode manifest, String manifestDigest, List<String> architectures) {
         long size = StreamSupport.stream(manifest.path("layers").spliterator(), false)
                 .mapToLong(layer -> layer.path("size").asLong()).sum();
-        return new Location.Found(manifest.path("config").path("digest").asString(), size, architectures);
+        return new Location.Found(manifest.path("config").path("digest").asString(), manifestDigest, size,
+                architectures);
     }
 
     static List<String> architectures(JsonNode list) {

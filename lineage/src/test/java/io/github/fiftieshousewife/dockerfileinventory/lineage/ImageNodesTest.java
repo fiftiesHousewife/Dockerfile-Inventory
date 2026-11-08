@@ -36,7 +36,7 @@ class ImageNodesTest {
         Location located = ImageNodes.locate(artifactory, "docker-local", "team/app", "1.0");
 
         assertAll(
-                () -> assertThat(located).isEqualTo(new Location.Found(CONFIG_C, 39_000_000L, List.of())),
+                () -> assertThat(located).isEqualTo(new Location.Found(CONFIG_C, "1.0", 39_000_000L, List.of())),
                 () -> assertThat(artifactory.blobCalls).isEmpty());
     }
 
@@ -48,12 +48,14 @@ class ImageNodesTest {
         JsonNode list = JSON.readTree(Fixtures.artifactory("manifest-list.json"));
 
         assertAll(
-                () -> assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app", list, "ref"))
-                        .isEqualTo(new Location.Found(CONFIG_C, 39_000_000L, List.of("linux/amd64", "linux/arm64"))),
+                () -> assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app", list, "sha256:list",
+                        "ref")).isEqualTo(new Location.Found(CONFIG_C, "sha256:list", 39_000_000L,
+                        List.of("linux/amd64", "linux/arm64"))),
                 () -> assertThat(ImageNodes.throughList(new FakeArtifactory(), "docker-local", "team/app", list,
-                        "ref")).isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64))),
+                        "sha256:list", "ref")).isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE,
+                        "sha256:" + "1".repeat(64))),
                 () -> assertThat(ImageNodes.throughList(artifactory, "docker-local", "team/app",
-                        JSON.readTree(Fixtures.artifactory("list-arm-only.json")), "ref"))
+                        JSON.readTree(Fixtures.artifactory("list-arm-only.json")), "sha256:list", "ref"))
                         .isEqualTo(new Resolved.Skipped(Resolved.Reason.NO_AMD64, "ref")));
     }
 

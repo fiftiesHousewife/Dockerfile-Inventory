@@ -1,0 +1,8 @@
+{
+  "uri": "https://artifactory.example.com/artifactory/api/storage/docker-local/team/app/1.0/manifest.json",
+  "downloadCount": 42,
+  "lastDownloaded": 1793908800000,
+  "lastDownloadedBy": "ci-bot",
+  "remoteDownloadCount": 0,
+  "remoteLastDownloaded": 0
+}

@@ -71,6 +71,22 @@ final class ArtifactoryHttp implements Artifactory {
                 .map(HttpResponse::body);
     }
 
+    // A tag holds manifest.json, or list.manifest.json for an index; either's statistics are the tag's.
+    @Override
+    public Optional<DownloadStats> stats(String repository, String image, String tag) {
+        return statsOf(repository, image, tag, "manifest.json")
+                .or(() -> statsOf(repository, image, tag, "list.manifest.json"));
+    }
+
+    private Optional<DownloadStats> statsOf(String repository, String image, String tag, String file) {
+        return client.get("api/storage/%s/%s/%s/%s?stats".formatted(repository, image, tag, file), "application/json")
+                .map(this::parse)
+                .filter(stats -> stats.has("downloadCount"))
+                .map(stats -> new DownloadStats(stats.path("downloadCount").asLong(),
+                        stats.path("lastDownloaded").asLong() > 0
+                                ? Instant.ofEpochMilli(stats.path("lastDownloaded").asLong()) : null));
+    }
+
     @Override
     public Optional<Instant> lastPushed(String repository, String image, String tag) {
         return client.get("api/storage/%s/%s/%s".formatted(repository, image, tag), "application/json")

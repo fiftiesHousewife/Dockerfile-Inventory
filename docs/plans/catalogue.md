@@ -311,6 +311,26 @@ attached any more: every OKD link is WEAK, and since the review an image counts 
 PROBABLE link, so its 30 images are candidates, and sizes and cadence wait for a run whose links are firmer (OKD's
 lineage also predates sizes and architectures being recorded).
 
+## Slice: usage and provenance (planned 8 Nov)
+
+The last two action fields from the table (asked 8 Nov: "do the rest").
+
+- **Provenance**: cosign stores a signature, an attestation and an SBOM as tags beside the image, named
+  `sha256-<manifest digest>.sig`, `.att` and `.sbom`. Lineage keeps each tag's manifest digest (the tagged manifest's
+  or index's, as the signature signs it); each catalogue image says whether it is signed, attested and has an SBOM,
+  from the tags of its image path.
+- **Usage**: Artifactory's storage API gives a tag's download count and last download (`?stats` on its
+  `manifest.json`, or `list.manifest.json` for an index); lineage keeps both on the tag's row, and each catalogue
+  image gains its downloads (summed over its tags) and its last download.
+
+Tests, in order:
+
+1. Lineage: `ImageNodes.locate` gives the tagged manifest's digest; `ArtifactoryHttp.stats` reads a download count
+   and last download (and from `list.manifest.json` when there is no `manifest.json`); `Inventory` records both.
+2. `Provenance`: signed, attested and with an SBOM from the sibling tags; none when there are none.
+3. Usage on each image: downloads summed over its tags, the latest download.
+4. `CatalogueRun` writing them; README.
+
 ## Tests, in order
 
 One assertion each, several in `assertAll`; Dockerfile fixtures are real files, trimmed.

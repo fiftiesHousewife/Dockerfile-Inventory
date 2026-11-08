@@ -17,4 +17,6 @@ interface Artifactory {
     Optional<String> blob(String repository, String image, String digest);
 
     Optional<Instant> lastPushed(String repository, String image, String tag);
+
+    Optional<DownloadStats> stats(String repository, String image, String tag);
 }

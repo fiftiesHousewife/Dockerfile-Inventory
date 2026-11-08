@@ -141,6 +141,24 @@ class ArtifactoryHttpTest {
     }
 
     @Test
+    void aTagsDownloadsAreReadFromItsManifestsStats() {
+        route("/artifactory/api/storage/docker-local/team/app/1.0/manifest.json",
+                exchange -> respond(exchange, 200, "storage-stats.json"));
+
+        assertThat(artifactory.stats("docker-local", "team/app", "1.0"))
+                .contains(new DownloadStats(42, Instant.ofEpochMilli(1_793_908_800_000L)));
+    }
+
+    @Test
+    void anIndexsDownloadsAreReadFromItsListManifest() {
+        route("/artifactory/api/storage/docker-local/team/app/2.0/list.manifest.json",
+                exchange -> respond(exchange, 200, "storage-stats.json"));
+
+        assertThat(artifactory.stats("docker-local", "team/app", "2.0"))
+                .contains(new DownloadStats(42, Instant.ofEpochMilli(1_793_908_800_000L)));
+    }
+
+    @Test
     void aGatewayErrorIsRetried() {
         AtomicInteger calls = new AtomicInteger();
         route("/artifactory/api/repositories", exchange -> {
