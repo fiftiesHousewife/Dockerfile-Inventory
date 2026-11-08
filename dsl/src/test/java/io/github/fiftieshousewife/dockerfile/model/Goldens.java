@@ -182,7 +182,7 @@ final class Goldens {
                         "pecl update-channels",
                         "rm -rf /tmp/pear ~/.pearrc",
                         "php --version")
-                .copy(Instruction.Copy.of("docker-php-ext-*", "docker-php-entrypoint").to("/usr/local/bin/"))
+                .copy(Copy.of("docker-php-ext-*", "docker-php-entrypoint").to("/usr/local/bin/"))
                 .run("docker-php-ext-enable opcache", "docker-php-ext-enable sodium")
                 .writablePaths("/var/www/html")
                 .user(1001)
@@ -311,7 +311,7 @@ final class Goldens {
                 .copy("requirements.txt", ".")
                 .run("pip install --upgrade pip", "pip install --no-cache-dir --upgrade -r /rag/requirements.txt",
                         "mkdir -p /rag/models/")
-                .copy(Instruction.Copy.of("rag_app.py", "manage_vectordb.py").to("."))
+                .copy(Copy.of("rag_app.py", "manage_vectordb.py").to("."))
                 .expose(8501)
                 .env("HF_HUB_CACHE", "/rag/models/")
                 .writablePaths("/rag/models/")

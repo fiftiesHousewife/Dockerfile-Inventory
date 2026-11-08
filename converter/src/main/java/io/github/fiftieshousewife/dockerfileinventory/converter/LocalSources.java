@@ -1,7 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Add;
+import io.github.fiftieshousewife.dockerfile.model.Copy;
+import io.github.fiftieshousewife.dockerfile.model.Run;
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
-import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import io.github.fiftieshousewife.dockerfile.model.RunFlag;
 import java.util.List;
 import java.util.stream.Stream;
@@ -15,8 +17,8 @@ final class LocalSources {
         return model.stages().stream()
                 .flatMap(stage -> stage.instructions().stream())
                 .flatMap(instruction -> switch (instruction) {
-                    case Instruction.Copy copy when copy.fromStage() == null -> copy.sources().stream();
-                    case Instruction.Add add -> add.sources().stream().filter(source -> !remote(source));
+                    case Copy copy when copy.fromStage() == null -> copy.sources().stream();
+                    case Add add -> add.sources().stream().filter(source -> !remote(source));
                     default -> Stream.<String>empty();
                 })
                 .toList();
@@ -26,7 +28,7 @@ final class LocalSources {
         return model.stages().stream()
                 .flatMap(stage -> stage.instructions().stream())
                 .<RunFlag>mapMulti((instruction, flags) -> {
-                    if (instruction instanceof Instruction.Run run) {
+                    if (instruction instanceof Run run) {
                         run.flags().forEach(flags);
                     }
                 })

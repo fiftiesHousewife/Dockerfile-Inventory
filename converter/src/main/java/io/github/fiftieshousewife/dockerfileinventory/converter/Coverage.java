@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Raw;
 import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +38,7 @@ final class Coverage {
         List<Instruction> all = conversion.model().stages().stream()
                 .flatMap(stage -> stage.instructions().stream())
                 .toList();
-        long typed = all.stream().filter(i -> !(i instanceof Instruction.Raw)).count();
+        long typed = all.stream().filter(i -> !(i instanceof Raw)).count();
         return all.isEmpty() ? 1.0 : (double) typed / all.size();
     }
 }

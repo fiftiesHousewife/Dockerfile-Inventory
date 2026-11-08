@@ -9,8 +9,8 @@ class InstructionPartsTest {
 
     @Test
     void aHeredocsDelimiterIsSingleQuotedWhenQuotedAndAnEmptyBodyHasNoLines() {
-        assertThat(List.of(new Instruction.CopyHeredoc("/a", "EOF", true, List.of()),
-                new Instruction.CopyHeredoc("/a", "EOF", false, List.of("x"))))
+        assertThat(List.of(new CopyHeredoc("/a", "EOF", true, List.of()),
+                new CopyHeredoc("/a", "EOF", false, List.of("x"))))
                 .map(InstructionParts::heredoc).containsExactly("COPY <<'EOF' /a\nEOF", "COPY <<EOF /a\nx\nEOF");
     }
 
@@ -40,9 +40,9 @@ class InstructionPartsTest {
 
     @Test
     void copyWritesFromBeforeChownAndLeavesOutWhatIsNotSet() {
-        assertThat(InstructionParts.copy(new Instruction.Copy(List.of("a", "b"), "/d/", null, null)))
+        assertThat(InstructionParts.copy(new Copy(List.of("a", "b"), "/d/", null, null)))
                 .isEqualTo("COPY a b /d/");
-        assertThat(InstructionParts.copy(new Instruction.Copy(List.of("a"), "/d/", "1:0", "build")))
+        assertThat(InstructionParts.copy(new Copy(List.of("a"), "/d/", "1:0", "build")))
                 .isEqualTo("COPY --from=build --chown=1:0 a /d/");
     }
 

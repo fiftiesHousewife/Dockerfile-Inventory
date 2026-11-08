@@ -1,7 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Add;
+import io.github.fiftieshousewife.dockerfile.model.Copy;
+import io.github.fiftieshousewife.dockerfile.model.CopyHeredoc;
 import com.palantir.javapoet.CodeBlock;
-import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import io.github.fiftieshousewife.dockerfile.model.PackageInstall;
 import io.github.fiftieshousewife.dockerfile.model.PackageManager;
 import io.github.fiftieshousewife.dockerfile.model.RunBody;
@@ -11,8 +13,8 @@ final class RecordCalls {
     private RecordCalls() {
     }
 
-    static CodeBlock copy(Instruction.Copy copy) {
-        CodeBlock.Builder code = CodeBlock.builder().add("$T.of($L).to($S)", Instruction.Copy.class,
+    static CodeBlock copy(Copy copy) {
+        CodeBlock.Builder code = CodeBlock.builder().add("$T.of($L).to($S)", Copy.class,
                 BuilderCalls.strings(copy.sources()), copy.destination());
         if (copy.fromStage() != null) {
             code.add(".from($S)", copy.fromStage());
@@ -26,8 +28,8 @@ final class RecordCalls {
         return code.add(copy.link() ? ".linked()" : "").add(copy.jsonForm() ? ".inJsonForm()" : "").build();
     }
 
-    static CodeBlock add(Instruction.Add add) {
-        CodeBlock.Builder code = CodeBlock.builder().add("$T.of($L).to($S)", Instruction.Add.class,
+    static CodeBlock add(Add add) {
+        CodeBlock.Builder code = CodeBlock.builder().add("$T.of($L).to($S)", Add.class,
                 BuilderCalls.strings(add.sources()), add.destination());
         if (add.chown() != null) {
             code.add(".ownedBy($S)", add.chown());
@@ -42,8 +44,8 @@ final class RecordCalls {
                 .add(add.jsonForm() ? ".inJsonForm()" : "").build();
     }
 
-    static CodeBlock copyHeredoc(Instruction.CopyHeredoc heredoc) {
-        return CodeBlock.builder().add("$T.to($S).lines($L)", Instruction.CopyHeredoc.class, heredoc.destination(),
+    static CodeBlock copyHeredoc(CopyHeredoc heredoc) {
+        return CodeBlock.builder().add("$T.to($S).lines($L)", CopyHeredoc.class, heredoc.destination(),
                         BuilderCalls.strings(heredoc.lines()))
                 .add(heredocParts(heredoc.delimiter(), heredoc.quoted())).build();
     }

@@ -12,9 +12,9 @@ class PolicyCheckTest {
     @Test
     void breachesComeUserFirstThenBaseThenEachInstructionInOrder() {
         Draft build = new Draft("build", new BaseImage("alpine", "3.20", null), null);
-        build.add(new Instruction.Raw("RUN apk add git", "copied"));
+        build.add(new Raw("RUN apk add git", "copied"));
         Draft last = new Draft(null, null, "build");
-        last.add(new Instruction.Raw("ENTRYPOINT ./run.sh", "legacy"));
+        last.add(new Raw("ENTRYPOINT ./run.sh", "legacy"));
 
         assertThat(PolicyCheck.breaches(ImageBuilderTest.POLICY, List.of(build, last)))
                 .extracting(PolicyViolation.Breach::rule).containsExactly("S4", "S1", "R1", "H1", "H2");
@@ -58,27 +58,27 @@ class PolicyCheckTest {
 
     @Test
     void instructionReportsAShellFormEntrypointAndAnUncleanedInstall() {
-        assertThat(PolicyCheck.instruction(new Instruction.Raw("RUN yum install -y git", "copied")))
+        assertThat(PolicyCheck.instruction(new Raw("RUN yum install -y git", "copied")))
                 .extracting(PolicyViolation.Breach::rule).containsExactly("H1");
-        assertThat(PolicyCheck.instruction(new Instruction.User("1001"))).isEmpty();
+        assertThat(PolicyCheck.instruction(new User("1001"))).isEmpty();
     }
 
     @Test
     void shellFormEntrypointIsARawEntrypointNotWrittenAsAJsonArray() {
-        assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Raw("ENTRYPOINT ./run.sh", "legacy")))
+        assertThat(PolicyCheck.shellFormEntrypoint(new Raw("ENTRYPOINT ./run.sh", "legacy")))
                 .contains("ENTRYPOINT ./run.sh");
-        assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Raw("ENTRYPOINT  [\"./run.sh\"]", "copied")))
+        assertThat(PolicyCheck.shellFormEntrypoint(new Raw("ENTRYPOINT  [\"./run.sh\"]", "copied")))
                 .isEmpty();
-        assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Raw("CMD ./run.sh", "legacy"))).isEmpty();
-        assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Entrypoint(List.of("./run.sh")))).isEmpty();
+        assertThat(PolicyCheck.shellFormEntrypoint(new Raw("CMD ./run.sh", "legacy"))).isEmpty();
+        assertThat(PolicyCheck.shellFormEntrypoint(new Entrypoint(List.of("./run.sh")))).isEmpty();
     }
 
     @Test
     void aTypedShellFormEntrypointIsOneTooWrittenAsDockerfileText() {
         assertThat(PolicyCheck.shellFormEntrypoint(
-                new Instruction.Entrypoint(List.of("exec java -jar app.jar"), CommandForm.SHELL)))
+                new Entrypoint(List.of("exec java -jar app.jar"), CommandForm.SHELL)))
                 .contains("ENTRYPOINT exec java -jar app.jar");
-        assertThat(PolicyCheck.shellFormEntrypoint(new Instruction.Cmd(List.of("./run.sh"), CommandForm.SHELL)))
+        assertThat(PolicyCheck.shellFormEntrypoint(new Cmd(List.of("./run.sh"), CommandForm.SHELL)))
                 .isEmpty();
     }
 

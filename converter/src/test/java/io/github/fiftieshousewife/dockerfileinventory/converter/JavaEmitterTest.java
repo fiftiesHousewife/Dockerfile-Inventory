@@ -1,10 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.User;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.fiftieshousewife.dockerfile.model.BaseImage;
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
-import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import io.github.fiftieshousewife.dockerfile.model.PolicyViolation;
 import io.github.fiftieshousewife.dockerfile.model.Stage;
 import java.io.IOException;
@@ -105,7 +105,7 @@ class JavaEmitterTest {
 
     @Test
     void stagePutsEachInstructionsCommentsBeforeIt() {
-        Stage stage = new Stage(null, null, "build", List.of(new Instruction.User("1001")));
+        Stage stage = new Stage(null, null, "build", List.of(new User("1001")));
 
         assertThat(JavaEmitter.stage(stage, List.of(List.of("run as", "non-root"))).toString())
                 .isEqualTo("\n.thenStageFrom(null, \"build\")\n// run as\n// non-root\n.user(\"1001\")");

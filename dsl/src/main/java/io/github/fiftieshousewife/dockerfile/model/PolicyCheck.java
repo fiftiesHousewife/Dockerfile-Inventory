@@ -67,9 +67,9 @@ final class PolicyCheck {
 
     static Optional<String> shellFormEntrypoint(Instruction instruction) {
         return switch (instruction) {
-            case Instruction.Raw raw when raw.text().startsWith("ENTRYPOINT")
+            case Raw raw when raw.text().startsWith("ENTRYPOINT")
                     && !raw.text().substring("ENTRYPOINT".length()).strip().startsWith("[") -> Optional.of(raw.text());
-            case Instruction.Entrypoint entrypoint when entrypoint.form() == CommandForm.SHELL ->
+            case Entrypoint entrypoint when entrypoint.form() == CommandForm.SHELL ->
                     Optional.of("ENTRYPOINT " + entrypoint.command().getFirst());
             default -> Optional.empty();
         };

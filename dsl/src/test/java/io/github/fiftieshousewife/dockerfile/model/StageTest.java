@@ -19,7 +19,7 @@ class StageTest {
 
     @Test
     void instructionsAreCopied() {
-        List<Instruction> instructions = new ArrayList<>(List.of(new Instruction.User("1001")));
+        List<Instruction> instructions = new ArrayList<>(List.of(new User("1001")));
 
         assertThat(new Stage(null, UBI, null, instructions).instructions()).isUnmodifiable();
     }

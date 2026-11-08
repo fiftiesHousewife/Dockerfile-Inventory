@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Raw;
+import io.github.fiftieshousewife.dockerfile.model.Run;
 import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import io.github.fiftieshousewife.dockerfile.model.RunBody;
 import io.github.fiftieshousewife.dockerfile.model.RunFlag;
@@ -25,11 +27,11 @@ final class ConvertCommands {
         if (flags.isEmpty()) {
             Docker.Flag unknown = Values.flags(run.getFlags()).stream().filter(flag -> flag(flag).isEmpty())
                     .findFirst().orElseThrow();
-            return new Instruction.Raw(printed, "RUN with flag --" + Values.flagName(unknown));
+            return new Raw(printed, "RUN with flag --" + Values.flagName(unknown));
         }
         return body(run.getCommand())
-                .<Instruction>map(body -> new Instruction.Run(body, flags.get()))
-                .orElseGet(() -> new Instruction.Raw(printed, run.getCommand() instanceof Docker.ExecForm
+                .<Instruction>map(body -> new Run(body, flags.get()))
+                .orElseGet(() -> new Raw(printed, run.getCommand() instanceof Docker.ExecForm
                         ? "RUN in exec form that is not JSON" : "RUN with a heredoc that is not one plain script"));
     }
 

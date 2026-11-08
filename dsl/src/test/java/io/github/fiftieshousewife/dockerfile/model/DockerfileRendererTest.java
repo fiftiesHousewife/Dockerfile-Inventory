@@ -12,22 +12,22 @@ class DockerfileRendererTest {
 
     private static final String DIGEST = "sha256:" + "a".repeat(64);
 
-    static final Dockerfile MODEL = new Dockerfile(List.of(new Instruction.Arg("VERSION", "1.0")), List.of(
+    static final Dockerfile MODEL = new Dockerfile(List.of(new Arg("VERSION", "1.0")), List.of(
             new Stage("build", new BaseImage("registry.example.com/ubi9/ubi", "9.4", DIGEST), null, List.of(
-                    new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.DNF, List.of("make")))),
-                    new Instruction.Run(new RunBody.Shell(List.of("make build"))))),
+                    new Run(new RunBody.Install(new PackageInstall(PackageManager.DNF, List.of("make")))),
+                    new Run(new RunBody.Shell(List.of("make build"))))),
             new Stage(null, new BaseImage("registry.example.com/ubi9/ubi-minimal", "9.4", DIGEST), null, List.of(
-                    new Instruction.Label(ordered("org.opencontainers.image.revision", "${REVISION}",
+                    new Label(ordered("org.opencontainers.image.revision", "${REVISION}",
                             "summary", "say \"hi\"")),
-                    new Instruction.Env(ordered("APP_HOME", "/opt/app")),
-                    new Instruction.Workdir("/opt/app"),
-                    new Instruction.Copy(List.of("/src/out/app"), "/opt/app/", "1001:0", "build"),
-                    new Instruction.Run(new RunBody.Shell(List.of("chgrp -R 0 /opt/app", "chmod -R g=u /opt/app"))),
-                    new Instruction.Expose(List.of(Port.of(8080))),
-                    new Instruction.User("1001"),
-                    new Instruction.Entrypoint(List.of("/opt/app/app", "--config", "/etc/app \"main\".yaml")),
-                    new Instruction.Cmd(List.of("serve")),
-                    new Instruction.Raw("HEALTHCHECK NONE", "not modelled")))));
+                    new Env(ordered("APP_HOME", "/opt/app")),
+                    new Workdir("/opt/app"),
+                    new Copy(List.of("/src/out/app"), "/opt/app/", "1001:0", "build"),
+                    new Run(new RunBody.Shell(List.of("chgrp -R 0 /opt/app", "chmod -R g=u /opt/app"))),
+                    new Expose(List.of(Port.of(8080))),
+                    new User("1001"),
+                    new Entrypoint(List.of("/opt/app/app", "--config", "/etc/app \"main\".yaml")),
+                    new Cmd(List.of("serve")),
+                    new Raw("HEALTHCHECK NONE", "not modelled")))));
 
     @Test
     void everyInstructionRendersAsDockerReadsItWithOneCommandPerLineAndStagesSeparated() {
@@ -59,11 +59,11 @@ class DockerfileRendererTest {
     void shellVolumeStopSignalAndMaintainerRenderAsDockerWritesThem() {
         Dockerfile file = new Dockerfile(List.of(), List.of(new Stage(null, new BaseImage("ubi9", "9.4", null), null,
                 List.of(
-                new Instruction.Maintainer("Jane Doe <jane@example.com>"),
-                new Instruction.Shell(List.of("/bin/bash", "-o", "pipefail", "-c")),
-                new Instruction.Volume(List.of("/data", "/var/log"), true),
-                new Instruction.Volume(List.of("/cache"), false),
-                new Instruction.StopSignal("SIGQUIT")))));
+                new Maintainer("Jane Doe <jane@example.com>"),
+                new Shell(List.of("/bin/bash", "-o", "pipefail", "-c")),
+                new Volume(List.of("/data", "/var/log"), true),
+                new Volume(List.of("/cache"), false),
+                new StopSignal("SIGQUIT")))));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).isEqualTo("""
                 FROM ubi9:9.4
@@ -78,8 +78,8 @@ class DockerfileRendererTest {
     @Test
     void copyOptionsRenderAfterFromAndChownAndAJsonFormCopyKeepsItsForm() {
         Dockerfile file = single(
-                new Instruction.Copy(List.of("run.sh"), "/usr/local/bin/", "1001:0", "build", "755", true, false),
-                new Instruction.Copy(List.of("with space"), "/opt/", null, null, null, false, true));
+                new Copy(List.of("run.sh"), "/usr/local/bin/", "1001:0", "build", "755", true, false),
+                new Copy(List.of("with space"), "/opt/", null, null, null, false, true));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("""
                 COPY --from=build --chown=1001:0 --chmod=755 --link run.sh /usr/local/bin/
@@ -90,8 +90,8 @@ class DockerfileRendererTest {
     @Test
     void aCopyHeredocRendersItsLinesAndIsRefusedUnlessTheTargetAllowsHeredocs() {
         Dockerfile file = single(
-                new Instruction.CopyHeredoc("/etc/app.conf", "EOF", true, List.of("[engine]", "a = 1")),
-                new Instruction.CopyHeredoc("/etc/b.json", "END", false, List.of("{}")));
+                new CopyHeredoc("/etc/app.conf", "EOF", true, List.of("[engine]", "a = 1")),
+                new CopyHeredoc("/etc/b.json", "END", false, List.of("{}")));
 
         assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
                 COPY <<'EOF' /etc/app.conf
@@ -109,9 +109,9 @@ class DockerfileRendererTest {
     @Test
     void anAddRendersItsFlagsBeforeItsPathsInItsForm() {
         Dockerfile file = single(
-                new Instruction.Add(List.of("https://example.com/a.tgz"), "/opt/", "1001:0", "644", "sha256:abc", false,
+                new Add(List.of("https://example.com/a.tgz"), "/opt/", "1001:0", "644", "sha256:abc", false,
                         true, false),
-                new Instruction.Add(List.of("https://github.com/o/r.git"), "/src", null, null, null, true, false,
+                new Add(List.of("https://github.com/o/r.git"), "/src", null, null, null, true, false,
                         true));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("""
@@ -126,11 +126,11 @@ class DockerfileRendererTest {
         options.put("interval", "30s");
         options.put("timeout", "3s");
         Dockerfile file = single(
-                new Instruction.Healthcheck(options, List.of("curl", "-f", "http://localhost/"), CommandForm.EXEC),
-                new Instruction.Healthcheck(Map.of(), List.of("curl -f http://localhost/ || exit 1"),
+                new Healthcheck(options, List.of("curl", "-f", "http://localhost/"), CommandForm.EXEC),
+                new Healthcheck(Map.of(), List.of("curl -f http://localhost/ || exit 1"),
                         CommandForm.SHELL),
-                Instruction.Healthcheck.NONE,
-                new Instruction.Onbuild(new Instruction.Copy(List.of("."), "/app/", null, null)));
+                Healthcheck.NONE,
+                new Onbuild(new Copy(List.of("."), "/app/", null, null)));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("""
                 HEALTHCHECK --interval=30s --timeout=3s CMD ["curl", "-f", "http://localhost/"]
@@ -142,8 +142,8 @@ class DockerfileRendererTest {
 
     @Test
     void aShellFormCmdOrEntrypointIsWrittenAsItsOneString() {
-        Dockerfile file = single(new Instruction.Entrypoint(List.of("exec app --serve"), CommandForm.SHELL),
-                new Instruction.Cmd(List.of("node server.js"), CommandForm.SHELL));
+        Dockerfile file = single(new Entrypoint(List.of("exec app --serve"), CommandForm.SHELL),
+                new Cmd(List.of("node server.js"), CommandForm.SHELL));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT))
                 .endsWith("ENTRYPOINT exec app --serve\nCMD node server.js\n");
@@ -151,14 +151,14 @@ class DockerfileRendererTest {
 
     @Test
     void severalPortsRenderOnOneExposeLineAsWritten() {
-        Dockerfile file = single(new Instruction.Expose(List.of(Port.of(80), new Port("53/udp"), new Port("${PORT}"))));
+        Dockerfile file = single(new Expose(List.of(Port.of(80), new Port("53/udp"), new Port("${PORT}"))));
 
         assertThat(DockerfileRenderer.render(file, Target.DEFAULT)).endsWith("EXPOSE 80 53/udp ${PORT}\n");
     }
 
     @Test
     void aRunsFlagsComeBeforeItsCommandsInTheirOrder() {
-        Dockerfile file = single(new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+        Dockerfile file = single(new Run(new RunBody.Shell(List.of("mvn package")),
                 List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2"), new RunFlag.Network("none"))));
 
         assertThat(DockerfileRenderer.render(file, new Target(false, true)))
@@ -169,8 +169,8 @@ class DockerfileRendererTest {
 
     @Test
     void anExecRunIsAJsonArrayAndAHeredocRunIsItsLinesRefusedUnlessTheTargetAllowsHeredocs() {
-        Dockerfile file = single(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve", "/configs"))),
-                new Instruction.Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))));
+        Dockerfile file = single(new Run(new RunBody.Exec(List.of("/bin/opm", "serve", "/configs"))),
+                new Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))));
 
         assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
                 RUN ["/bin/opm", "serve", "/configs"]
@@ -185,8 +185,8 @@ class DockerfileRendererTest {
 
     @Test
     void aHeredocOrRunMountIsRefusedUnlessTheTargetAllowsIt() {
-        Dockerfile mount = single(new Instruction.Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "cache"));
-        Dockerfile heredoc = single(new Instruction.Raw("RUN <<EOT\nmake\nEOT", "script"));
+        Dockerfile mount = single(new Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "cache"));
+        Dockerfile heredoc = single(new Raw("RUN <<EOT\nmake\nEOT", "script"));
 
         assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(mount, Target.DEFAULT))
                 .withMessageContaining("--mount");
@@ -198,21 +198,21 @@ class DockerfileRendererTest {
 
     @Test
     void anEscapedDollarStaysEscapedSoDockerReadsItLiterally() {
-        Dockerfile label = single(new Instruction.Label(Map.of("INSTALL", "docker run \\$IMAGE")));
+        Dockerfile label = single(new Label(Map.of("INSTALL", "docker run \\$IMAGE")));
 
         assertThat(DockerfileRenderer.render(label, Target.DEFAULT)).contains("INSTALL=\"docker run \\$IMAGE\"");
     }
 
     @Test
     void anExecFormIsJsonSoEveryBackslashIsEscaped() {
-        Dockerfile cmd = single(new Instruction.Cmd(List.of("sh", "-c", "echo \\$HOME")));
+        Dockerfile cmd = single(new Cmd(List.of("sh", "-c", "echo \\$HOME")));
 
         assertThat(DockerfileRenderer.render(cmd, Target.DEFAULT)).contains("[\"sh\", \"-c\", \"echo \\\\$HOME\"]");
     }
 
     @Test
     void anExecFormsControlCharactersAreEscapedSoTheInstructionStaysOnOneLine() {
-        Dockerfile cmd = single(new Instruction.Cmd(List.of("sh", "-c", "echo a\nb\tc\u0001")));
+        Dockerfile cmd = single(new Cmd(List.of("sh", "-c", "echo a\nb\tc\u0001")));
 
         assertThat(DockerfileRenderer.render(cmd, Target.DEFAULT))
                 .contains("CMD [\"sh\", \"-c\", \"echo a\\nb\\tc\\u0001\"]\n");
@@ -220,8 +220,8 @@ class DockerfileRendererTest {
 
     @Test
     void escapedPairsAreKeptAndAnyOtherBackslashIsDoubled() {
-        Dockerfile env = single(new Instruction.Env(Map.of("P", "pre\\\\$HOME")));
-        Dockerfile windows = single(new Instruction.Env(Map.of("W", "C:\\tools\\")));
+        Dockerfile env = single(new Env(Map.of("P", "pre\\\\$HOME")));
+        Dockerfile windows = single(new Env(Map.of("W", "C:\\tools\\")));
 
         assertThat(DockerfileRenderer.render(env, Target.DEFAULT)).contains("P=\"pre\\\\$HOME\"");
         assertThat(DockerfileRenderer.render(windows, Target.DEFAULT)).contains("W=\"C:\\\\tools\\\\\"");
@@ -231,9 +231,9 @@ class DockerfileRendererTest {
     void anInstructionEndingInABackslashIsFollowedByABlankLineSoItIsNotReadAsAContinuation() {
         Dockerfile windows = new Dockerfile(List.of(), List.of(new Stage(null,
                 new BaseImage("mcr.microsoft.com/windows/nanoserver", "ltsc2022", null), null, List.of(
-                        new Instruction.Copy(List.of("C:\\\\Windows\\\\System32\\\\msvcp140.dll"),
+                        new Copy(List.of("C:\\\\Windows\\\\System32\\\\msvcp140.dll"),
                                 "C:\\\\Windows\\\\System32\\\\", null, "builder"),
-                        new Instruction.Env(Map.of("MONGO_VERSION", "8.3.13"))))));
+                        new Env(Map.of("MONGO_VERSION", "8.3.13"))))));
 
         assertThat(DockerfileRenderer.render(windows, Target.DEFAULT))
                 .contains("C:\\\\Windows\\\\System32\\\\\n\nENV MONGO_VERSION=\"8.3.13\"");
@@ -279,7 +279,7 @@ class DockerfileRendererTest {
 
     @Test
     void stageRefusesAnInstructionTheTargetCannotRead() {
-        Stage stage = new Stage(null, null, "build", List.of(new Instruction.Raw("RUN <<EOT\nx\nEOT", "script")));
+        Stage stage = new Stage(null, null, "build", List.of(new Raw("RUN <<EOT\nx\nEOT", "script")));
 
         assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.stage(stage, Target.DEFAULT));
         assertThat(DockerfileRenderer.stage(stage, new Target(true, false))).isEqualTo("FROM build\nRUN <<EOT\nx\nEOT");

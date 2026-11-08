@@ -11,7 +11,7 @@ final class InstructionParts {
     private InstructionParts() {
     }
 
-    static String copy(Instruction.Copy copy) {
+    static String copy(Copy copy) {
         return "COPY" + (copy.fromStage() == null ? "" : " --from=" + copy.fromStage())
                 + (copy.chown() == null ? "" : " --chown=" + copy.chown())
                 + (copy.chmod() == null ? "" : " --chmod=" + copy.chmod())
@@ -19,7 +19,7 @@ final class InstructionParts {
                 + " " + paths(copy.sources(), copy.destination(), copy.jsonForm());
     }
 
-    static String add(Instruction.Add add) {
+    static String add(Add add) {
         return "ADD" + (add.chown() == null ? "" : " --chown=" + add.chown())
                 + (add.chmod() == null ? "" : " --chmod=" + add.chmod())
                 + (add.checksum() == null ? "" : " --checksum=" + add.checksum())
@@ -28,7 +28,7 @@ final class InstructionParts {
                 + " " + paths(add.sources(), add.destination(), add.jsonForm());
     }
 
-    static String healthcheck(Instruction.Healthcheck healthcheck) {
+    static String healthcheck(Healthcheck healthcheck) {
         if (healthcheck.command().isEmpty()) {
             return "HEALTHCHECK NONE";
         }
@@ -51,7 +51,7 @@ final class InstructionParts {
         };
     }
 
-    static String heredoc(Instruction.CopyHeredoc heredoc) {
+    static String heredoc(CopyHeredoc heredoc) {
         return "COPY " + heredoc(heredoc.delimiter(), heredoc.quoted(), heredoc.destination(), heredoc.lines());
     }
 

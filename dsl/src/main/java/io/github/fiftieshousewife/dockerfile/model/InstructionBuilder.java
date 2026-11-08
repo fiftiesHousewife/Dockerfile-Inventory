@@ -17,92 +17,92 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
     }
 
     public ImageBuilder install(PackageManager manager, String... packages) {
-        return add(new Instruction.Run(new RunBody.Install(new PackageInstall(manager, Arrays.asList(packages)))));
+        return add(new Run(new RunBody.Install(new PackageInstall(manager, Arrays.asList(packages)))));
     }
 
     /** An install with its own flags, rendered exactly, so a converted Dockerfile keeps them. */
     public ImageBuilder install(PackageManager manager, List<String> flags, List<String> packages) {
-        return add(new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages))));
+        return add(new Run(new RunBody.Install(new PackageInstall(manager, flags, packages))));
     }
 
     public ImageBuilder run(String... commands) {
-        return add(new Instruction.Run(new RunBody.Shell(Arrays.asList(commands))));
+        return add(new Run(new RunBody.Shell(Arrays.asList(commands))));
     }
 
     /** A {@code RUN} with flags such as a cache mount; the target must allow mounts. */
     public ImageBuilder run(List<RunFlag> flags, String... commands) {
-        return add(new Instruction.Run(new RunBody.Shell(Arrays.asList(commands)), flags));
+        return add(new Run(new RunBody.Shell(Arrays.asList(commands)), flags));
     }
 
     public ImageBuilder runExec(String... arguments) {
-        return add(new Instruction.Run(new RunBody.Exec(Arrays.asList(arguments))));
+        return add(new Run(new RunBody.Exec(Arrays.asList(arguments))));
     }
 
     /** A {@code RUN} as written: its flags and any body (an install, commands, exec form or a heredoc). */
     public ImageBuilder run(List<RunFlag> flags, RunBody body) {
-        return add(new Instruction.Run(body, flags));
+        return add(new Run(body, flags));
     }
 
     /** Declared in the current stage, so its instructions can use it. */
     public ImageBuilder arg(String name) {
-        return add(new Instruction.Arg(name, null));
+        return add(new Arg(name, null));
     }
 
     public ImageBuilder arg(String name, String defaultValue) {
-        return add(new Instruction.Arg(name, defaultValue));
+        return add(new Arg(name, defaultValue));
     }
 
     public ImageBuilder env(String name, String value) {
-        return add(new Instruction.Env(Map.of(name, value)));
+        return add(new Env(Map.of(name, value)));
     }
 
     /** Several pairs in one {@code ENV}, in the map's order. */
     public ImageBuilder env(Map<String, String> values) {
-        return add(new Instruction.Env(values));
+        return add(new Env(values));
     }
 
     /** Several pairs in one {@code LABEL}, in the map's order. */
     public ImageBuilder label(Map<String, String> values) {
-        return add(new Instruction.Label(values));
+        return add(new Label(values));
     }
 
     public ImageBuilder label(String name, String value) {
-        return add(new Instruction.Label(Map.of(name, value)));
+        return add(new Label(Map.of(name, value)));
     }
 
     public ImageBuilder workdir(String path) {
-        return add(new Instruction.Workdir(path));
+        return add(new Workdir(path));
     }
 
     public ImageBuilder user(int uid) {
-        return add(new Instruction.User(Integer.toString(uid)));
+        return add(new User(Integer.toString(uid)));
     }
 
     /** A named user, which S4 refuses; kept so a refusal can say what was asked for. */
     public ImageBuilder user(String user) {
-        return add(new Instruction.User(user));
+        return add(new User(user));
     }
 
     public ImageBuilder entrypoint(String... command) {
-        return add(new Instruction.Entrypoint(Arrays.asList(command)));
+        return add(new Entrypoint(Arrays.asList(command)));
     }
 
     public ImageBuilder cmd(String... command) {
-        return add(new Instruction.Cmd(Arrays.asList(command)));
+        return add(new Cmd(Arrays.asList(command)));
     }
 
     /** An {@code ENTRYPOINT} as written, for the faithful path; shell form is an H2 breach. */
     public ImageBuilder entrypoint(List<String> command, CommandForm form) {
-        return add(new Instruction.Entrypoint(command, form));
+        return add(new Entrypoint(command, form));
     }
 
     /** A {@code CMD} as written, for the faithful path. */
     public ImageBuilder cmd(List<String> command, CommandForm form) {
-        return add(new Instruction.Cmd(command, form));
+        return add(new Cmd(command, form));
     }
 
     /** Text the model cannot type; allowed, but every use is listed in {@link Built#raw}. */
     public ImageBuilder raw(String text, String reason) {
-        return add(new Instruction.Raw(text, reason));
+        return add(new Raw(text, reason));
     }
 }

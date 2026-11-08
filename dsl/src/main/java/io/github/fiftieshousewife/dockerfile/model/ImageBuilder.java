@@ -20,7 +20,7 @@ import java.util.List;
  */
 public final class ImageBuilder extends InstructionBuilder {
 
-    private final List<Instruction.Arg> globalArgs = new ArrayList<>();
+    private final List<Arg> globalArgs = new ArrayList<>();
     private final List<Draft> stages = new ArrayList<>();
     private final List<String> writable = new ArrayList<>();
 
@@ -51,7 +51,7 @@ public final class ImageBuilder extends InstructionBuilder {
 
     /** A build argument before the first {@code FROM}, so any {@code FROM} can use it. */
     public ImageBuilder globalArg(String name, String defaultValue) {
-        globalArgs.add(new Instruction.Arg(name, defaultValue));
+        globalArgs.add(new Arg(name, defaultValue));
         return this;
     }
 
@@ -109,11 +109,11 @@ public final class ImageBuilder extends InstructionBuilder {
         return draft.stage(RunMerge.merged(instructions));
     }
 
-    List<Instruction.Raw> raw() {
+    List<Raw> raw() {
         return stages.stream()
                 .flatMap(stage -> stage.instructions().stream())
-                .<Instruction.Raw>mapMulti((i, raw) -> {
-                    if (i instanceof Instruction.Raw r) {
+                .<Raw>mapMulti((i, raw) -> {
+                    if (i instanceof Raw r) {
                         raw.accept(r);
                     }
                 })

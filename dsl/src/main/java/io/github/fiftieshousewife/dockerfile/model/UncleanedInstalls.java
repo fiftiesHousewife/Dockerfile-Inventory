@@ -22,13 +22,13 @@ final class UncleanedInstalls {
 
     static Optional<String> runText(Instruction instruction) {
         return switch (instruction) {
-            case Instruction.Run run when run.body() instanceof RunBody.Shell shell ->
+            case Run run when run.body() instanceof RunBody.Shell shell ->
                     Optional.of(String.join(" && ", shell.commands()));
-            case Instruction.Run run when run.body() instanceof RunBody.Heredoc heredoc ->
+            case Run run when run.body() instanceof RunBody.Heredoc heredoc ->
                     Optional.of(String.join("\n", heredoc.lines()));
-            case Instruction.Run run when run.body() instanceof RunBody.Exec exec ->
+            case Run run when run.body() instanceof RunBody.Exec exec ->
                     Optional.of(String.join(" ", exec.arguments()));
-            case Instruction.Raw raw when raw.text().startsWith("RUN ") -> Optional.of(raw.text());
+            case Raw raw when raw.text().startsWith("RUN ") -> Optional.of(raw.text());
             default -> Optional.empty();
         };
     }

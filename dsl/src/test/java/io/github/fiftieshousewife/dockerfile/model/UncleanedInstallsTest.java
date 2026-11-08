@@ -16,17 +16,17 @@ class UncleanedInstallsTest {
     @Test
     void runTextReadsShellRunsAndRawRunsOnly() {
         assertThat(UncleanedInstalls.runText(shell("a", "b"))).contains("a && b");
-        assertThat(UncleanedInstalls.runText(new Instruction.Raw("RUN a", "copied"))).contains("RUN a");
-        assertThat(UncleanedInstalls.runText(new Instruction.Raw("HEALTHCHECK NONE", "copied"))).isEmpty();
-        assertThat(UncleanedInstalls.runText(new Instruction.Run(
+        assertThat(UncleanedInstalls.runText(new Raw("RUN a", "copied"))).contains("RUN a");
+        assertThat(UncleanedInstalls.runText(new Raw("HEALTHCHECK NONE", "copied"))).isEmpty();
+        assertThat(UncleanedInstalls.runText(new Run(
                 new RunBody.Install(new PackageInstall(PackageManager.DNF, List.of("git")))))).isEmpty();
     }
 
     @Test
     void runTextReadsAHeredocsLinesAndAnExecRunsArguments() {
-        assertThat(UncleanedInstalls.runText(new Instruction.Run(new RunBody.Heredoc("", "EOF", true,
+        assertThat(UncleanedInstalls.runText(new Run(new RunBody.Heredoc("", "EOF", true,
                 List.of("set -e", "dnf install -y git"))))).contains("set -e\ndnf install -y git");
-        assertThat(UncleanedInstalls.runText(new Instruction.Run(new RunBody.Exec(List.of("apk", "add", "git")))))
+        assertThat(UncleanedInstalls.runText(new Run(new RunBody.Exec(List.of("apk", "add", "git")))))
                 .contains("apk add git");
     }
 
@@ -42,7 +42,7 @@ class UncleanedInstallsTest {
     }
 
     private static Instruction shell(String... commands) {
-        return new Instruction.Run(new RunBody.Shell(List.of(commands)));
+        return new Run(new RunBody.Shell(List.of(commands)));
     }
 
     @Test

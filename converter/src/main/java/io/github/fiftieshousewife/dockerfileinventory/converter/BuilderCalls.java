@@ -1,5 +1,24 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Add;
+import io.github.fiftieshousewife.dockerfile.model.Arg;
+import io.github.fiftieshousewife.dockerfile.model.Cmd;
+import io.github.fiftieshousewife.dockerfile.model.Copy;
+import io.github.fiftieshousewife.dockerfile.model.CopyHeredoc;
+import io.github.fiftieshousewife.dockerfile.model.Entrypoint;
+import io.github.fiftieshousewife.dockerfile.model.Env;
+import io.github.fiftieshousewife.dockerfile.model.Expose;
+import io.github.fiftieshousewife.dockerfile.model.Healthcheck;
+import io.github.fiftieshousewife.dockerfile.model.Label;
+import io.github.fiftieshousewife.dockerfile.model.Maintainer;
+import io.github.fiftieshousewife.dockerfile.model.Onbuild;
+import io.github.fiftieshousewife.dockerfile.model.Raw;
+import io.github.fiftieshousewife.dockerfile.model.Run;
+import io.github.fiftieshousewife.dockerfile.model.Shell;
+import io.github.fiftieshousewife.dockerfile.model.StopSignal;
+import io.github.fiftieshousewife.dockerfile.model.User;
+import io.github.fiftieshousewife.dockerfile.model.Volume;
+import io.github.fiftieshousewife.dockerfile.model.Workdir;
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.CodeBlock;
 import io.github.fiftieshousewife.dockerfile.model.CommandForm;
@@ -22,30 +41,30 @@ final class BuilderCalls {
 
     static CodeBlock call(Instruction instruction) {
         return switch (instruction) {
-            case Instruction.Arg arg -> arg.defaultValue() == null ? CodeBlock.of(".arg($S)", arg.name())
+            case Arg arg -> arg.defaultValue() == null ? CodeBlock.of(".arg($S)", arg.name())
                     : CodeBlock.of(".arg($S, $S)", arg.name(), arg.defaultValue());
-            case Instruction.Env env -> CodeBlock.of(".env($L)", map(env.values()));
-            case Instruction.Label label -> CodeBlock.of(".label($L)", map(label.values()));
-            case Instruction.Run run -> run(run);
-            case Instruction.Copy copy -> copy(copy);
-            case Instruction.Add add -> CodeBlock.of(".add($L)", RecordCalls.add(add));
-            case Instruction.CopyHeredoc heredoc -> CodeBlock.of(".copyHeredoc($L)", RecordCalls.copyHeredoc(heredoc));
-            case Instruction.User user -> CodeBlock.of(".user($S)", user.user());
-            case Instruction.Workdir workdir -> CodeBlock.of(".workdir($S)", workdir.path());
-            case Instruction.Expose expose ->
+            case Env env -> CodeBlock.of(".env($L)", map(env.values()));
+            case Label label -> CodeBlock.of(".label($L)", map(label.values()));
+            case Run run -> run(run);
+            case Copy copy -> copy(copy);
+            case Add add -> CodeBlock.of(".add($L)", RecordCalls.add(add));
+            case CopyHeredoc heredoc -> CodeBlock.of(".copyHeredoc($L)", RecordCalls.copyHeredoc(heredoc));
+            case User user -> CodeBlock.of(".user($S)", user.user());
+            case Workdir workdir -> CodeBlock.of(".workdir($S)", workdir.path());
+            case Expose expose ->
                     CodeBlock.of(".expose($L)", strings(expose.ports().stream().map(Port::spec).toList()));
-            case Instruction.Entrypoint entrypoint -> command("entrypoint", entrypoint.command(), entrypoint.form());
-            case Instruction.Cmd cmd -> command("cmd", cmd.command(), cmd.form());
-            case Instruction.Shell shell -> CodeBlock.of(".shell($L)", strings(shell.command()));
-            case Instruction.Volume volume -> CodeBlock.of(".volume($L, $L)", list(volume.paths()), volume.jsonForm());
-            case Instruction.StopSignal stopSignal -> CodeBlock.of(".stopSignal($S)", stopSignal.signal());
-            case Instruction.Maintainer maintainer -> CodeBlock.of(".maintainer($S)", maintainer.name());
-            case Instruction.Healthcheck healthcheck -> healthcheck.command().isEmpty()
+            case Entrypoint entrypoint -> command("entrypoint", entrypoint.command(), entrypoint.form());
+            case Cmd cmd -> command("cmd", cmd.command(), cmd.form());
+            case Shell shell -> CodeBlock.of(".shell($L)", strings(shell.command()));
+            case Volume volume -> CodeBlock.of(".volume($L, $L)", list(volume.paths()), volume.jsonForm());
+            case StopSignal stopSignal -> CodeBlock.of(".stopSignal($S)", stopSignal.signal());
+            case Maintainer maintainer -> CodeBlock.of(".maintainer($S)", maintainer.name());
+            case Healthcheck healthcheck -> healthcheck.command().isEmpty()
                     ? CodeBlock.of(".healthcheckNone()")
                     : CodeBlock.of(".healthcheck($L, $L, $T.$L)", map(healthcheck.options()),
                             list(healthcheck.command()), CommandForm.class, healthcheck.form().name());
-            case Instruction.Onbuild onbuild -> CodeBlock.of("$L.asOnbuild()", call(onbuild.instruction()));
-            case Instruction.Raw raw -> CodeBlock.of(".raw($S, $S)", raw.text(), raw.reason());
+            case Onbuild onbuild -> CodeBlock.of("$L.asOnbuild()", call(onbuild.instruction()));
+            case Raw raw -> CodeBlock.of(".raw($S, $S)", raw.text(), raw.reason());
         };
     }
 
@@ -54,7 +73,7 @@ final class BuilderCalls {
                 : CodeBlock.of(".$L($L, $T.$L)", method, list(command), CommandForm.class, form.name());
     }
 
-    static CodeBlock run(Instruction.Run run) {
+    static CodeBlock run(Run run) {
         if (!run.flags().isEmpty()) {
             return run.body() instanceof RunBody.Shell shell
                     ? CodeBlock.of(".run($L, $L)", flags(run), strings(shell.commands()))
@@ -70,7 +89,7 @@ final class BuilderCalls {
         };
     }
 
-    static CodeBlock flags(Instruction.Run run) {
+    static CodeBlock flags(Run run) {
         return CodeBlock.of("$T.of($L)", LIST, CodeBlock.join(run.flags().stream().map(BuilderCalls::flag).toList(),
                 ", "));
     }
@@ -83,9 +102,9 @@ final class BuilderCalls {
         };
     }
 
-    static CodeBlock copy(Instruction.Copy copy) {
+    static CodeBlock copy(Copy copy) {
         return copy.sources().size() == 1
-                && copy.equals(Instruction.Copy.of(copy.sources().getFirst()).to(copy.destination()))
+                && copy.equals(Copy.of(copy.sources().getFirst()).to(copy.destination()))
                 ? CodeBlock.of(".copy($S, $S)", copy.sources().getFirst(), copy.destination())
                 : CodeBlock.of(".copy($L)", RecordCalls.copy(copy));
     }

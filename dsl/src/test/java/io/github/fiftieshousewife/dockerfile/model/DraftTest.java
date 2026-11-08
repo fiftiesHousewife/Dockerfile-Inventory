@@ -12,7 +12,7 @@ class DraftTest {
 
     @Test
     void ofKeepsTheStageSoItRoundTrips() {
-        Stage stage = new Stage("app", null, "deps", List.of(new Instruction.Workdir("/app")));
+        Stage stage = new Stage("app", null, "deps", List.of(new Workdir("/app")));
 
         assertThat(Draft.of(stage).stage()).isEqualTo(stage);
     }
@@ -21,10 +21,10 @@ class DraftTest {
     void instructionsIsACopyOfWhatWasAdded() {
         Draft draft = new Draft(null, ALPINE, null);
         List<Instruction> before = draft.instructions();
-        draft.add(new Instruction.Workdir("/app"));
+        draft.add(new Workdir("/app"));
 
         assertThat(before).isEmpty();
-        assertThat(draft.instructions()).containsExactly(new Instruction.Workdir("/app"));
+        assertThat(draft.instructions()).containsExactly(new Workdir("/app"));
     }
 
     @Test
@@ -32,9 +32,9 @@ class DraftTest {
         Draft draft = new Draft(null, ALPINE, null);
         assertThat(draft.lastUser()).isNull();
 
-        draft.add(new Instruction.User("0"));
-        draft.add(new Instruction.Workdir("/app"));
-        draft.add(new Instruction.User("1001"));
+        draft.add(new User("0"));
+        draft.add(new Workdir("/app"));
+        draft.add(new User("1001"));
 
         assertThat(draft.lastUser()).isEqualTo("1001");
     }

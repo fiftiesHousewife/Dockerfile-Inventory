@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Raw;
+import io.github.fiftieshousewife.dockerfile.model.Run;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -18,26 +20,26 @@ class ConvertCommandsTest {
 
     @Test
     void aRunThatIsOneInstallAndItsCleanBecomesAnInstall() {
-        assertThat(ConvertCommands.run(run("RUN apk add --no-cache git"), "printed")).isEqualTo(new Instruction.Run(
+        assertThat(ConvertCommands.run(run("RUN apk add --no-cache git"), "printed")).isEqualTo(new Run(
                 new RunBody.Install(new PackageInstall(PackageManager.APK, List.of("--no-cache"), List.of("git")))));
     }
 
     @Test
     void anyOtherShellFormRunIsShellTextOnOneLine() {
         assertThat(ConvertCommands.run(run("RUN make \\\n    && make install"), "printed"))
-                .isEqualTo(new Instruction.Run(new RunBody.Shell(List.of("make && make install"))));
+                .isEqualTo(new Run(new RunBody.Shell(List.of("make && make install"))));
     }
 
     @Test
     void aRunWithAFlagTheModelLacksOrInExecFormStaysRawAsPrinted() {
         assertThat(ConvertCommands.run(run("RUN --device=/dev/fuse make"), "printed"))
-                .isEqualTo(new Instruction.Raw("printed", "RUN with flag --device"));
+                .isEqualTo(new Raw("printed", "RUN with flag --device"));
         assertThat(List.of(run("RUN [\"grep\", \"\\d+\"]"), run("RUN <<EOF bash\necho hi\nEOF\n"),
                 run("RUN <<-EOF\n\techo hi\nEOF\n")))
                 .map(run -> ConvertCommands.run(run, "printed"))
-                .containsExactly(new Instruction.Raw("printed", "RUN in exec form that is not JSON"),
-                        new Instruction.Raw("printed", "RUN with a heredoc that is not one plain script"),
-                        new Instruction.Raw("printed", "RUN with a heredoc that is not one plain script"));
+                .containsExactly(new Raw("printed", "RUN in exec form that is not JSON"),
+                        new Raw("printed", "RUN with a heredoc that is not one plain script"),
+                        new Raw("printed", "RUN with a heredoc that is not one plain script"));
     }
 
     @Test
@@ -45,10 +47,10 @@ class ConvertCommandsTest {
         assertThat(List.of(run("RUN --mount=type=cache,target=/root/.m2 --network=none mvn package"),
                 run("RUN --mount=type=secret,id=t --security=insecure apk add --no-cache git")))
                 .map(run -> ConvertCommands.run(run, "printed"))
-                .containsExactly(new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+                .containsExactly(new Run(new RunBody.Shell(List.of("mvn package")),
                                 List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2"),
                                         new RunFlag.Network("none"))),
-                        new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.APK,
+                        new Run(new RunBody.Install(new PackageInstall(PackageManager.APK,
                                 List.of("--no-cache"), List.of("git"))),
                                 List.of(RunFlag.Mount.parse("type=secret,id=t"), new RunFlag.Security("insecure"))));
     }
@@ -59,11 +61,11 @@ class ConvertCommandsTest {
                 run("RUN <<EOF\nset -e\nmake\nEOF\n"), run("RUN <<'END'\necho $HOME\nEND\n"),
                 run("RUN cat > /etc/x.conf <<'EOF'\na = 1\nEOF\n")))
                 .map(run -> ConvertCommands.run(run, "printed"))
-                .containsExactly(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve")),
+                .containsExactly(new Run(new RunBody.Exec(List.of("/bin/opm", "serve")),
                                 List.of(new RunFlag.Network("none"))),
-                        new Instruction.Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))),
-                        new Instruction.Run(new RunBody.Heredoc("", "END", true, List.of("echo $HOME"))),
-                        new Instruction.Run(new RunBody.Heredoc("cat > /etc/x.conf", "EOF", true, List.of("a = 1"))));
+                        new Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))),
+                        new Run(new RunBody.Heredoc("", "END", true, List.of("echo $HOME"))),
+                        new Run(new RunBody.Heredoc("cat > /etc/x.conf", "EOF", true, List.of("a = 1"))));
     }
 
     @Test

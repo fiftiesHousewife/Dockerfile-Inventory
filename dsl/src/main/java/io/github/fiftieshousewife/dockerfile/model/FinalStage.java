@@ -22,20 +22,20 @@ final class FinalStage {
     // Before the last USER only: an earlier one (USER 0 to build) comes before the paths exist.
     static int lastUser(List<Instruction> instructions) {
         return IntStream.iterate(instructions.size() - 1, i -> i >= 0, i -> i - 1)
-                .filter(i -> instructions.get(i) instanceof Instruction.User)
+                .filter(i -> instructions.get(i) instanceof User)
                 .findFirst().orElse(-1);
     }
 
     static Stream<Instruction> finished(Instruction instruction) {
         return switch (instruction) {
-            case Instruction.Copy copy when copy.chown() == null -> Stream.of(new Instruction.Copy(copy.sources(),
+            case Copy copy when copy.chown() == null -> Stream.of(new Copy(copy.sources(),
                     copy.destination(), "0:0", copy.fromStage(), copy.chmod(), copy.link(), copy.jsonForm()));
             default -> Stream.of(instruction);
         };
     }
 
-    static Instruction.Run groupZero(List<String> writable) {
+    static Run groupZero(List<String> writable) {
         String paths = String.join(" ", writable);
-        return new Instruction.Run(new RunBody.Shell(List.of("chgrp -R 0 " + paths, "chmod -R g=u " + paths)));
+        return new Run(new RunBody.Shell(List.of("chgrp -R 0 " + paths, "chmod -R g=u " + paths)));
     }
 }

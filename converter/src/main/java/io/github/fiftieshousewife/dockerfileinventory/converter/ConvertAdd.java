@@ -1,5 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Add;
+import io.github.fiftieshousewife.dockerfile.model.Raw;
 import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +21,7 @@ final class ConvertAdd {
 
     static Instruction add(String text) {
         if (HEREDOC.matcher(text.lines().findFirst().orElse("")).find()) {
-            return new Instruction.Raw(text, "ADD with a heredoc");
+            return new Raw(text, "ADD with a heredoc");
         }
         List<String> words = ConvertCopy.words(text);
         List<String> flags = words.stream().takeWhile(word -> word.startsWith("--")).toList();
@@ -27,17 +29,17 @@ final class ConvertAdd {
         Optional<String> unknown = ConvertCopy.unknownFlag(flags, List.of(CHOWN, CHMOD, CHECKSUM),
                 List.of(KEEP_GIT_DIR, LINK));
         if (unknown.isPresent()) {
-            return new Instruction.Raw(text, "ADD with flag " + unknown.get().split("=", 2)[0]);
+            return new Raw(text, "ADD with flag " + unknown.get().split("=", 2)[0]);
         }
         Optional<List<String>> paths = ConvertCopy.paths(written);
         if (paths.isEmpty()) {
-            return new Instruction.Raw(text, "ADD in JSON form that is not JSON");
+            return new Raw(text, "ADD in JSON form that is not JSON");
         }
         if (paths.get().size() < 2) {
-            return new Instruction.Raw(text, "ADD without a source and a destination");
+            return new Raw(text, "ADD without a source and a destination");
         }
         List<String> all = paths.get();
-        return new Instruction.Add(all.subList(0, all.size() - 1), all.getLast(), ConvertCopy.flag(flags, CHOWN),
+        return new Add(all.subList(0, all.size() - 1), all.getLast(), ConvertCopy.flag(flags, CHOWN),
                 ConvertCopy.flag(flags, CHMOD), ConvertCopy.flag(flags, CHECKSUM), flags.contains(KEEP_GIT_DIR),
                 flags.contains(LINK), ConvertCopy.jsonForm(written));
     }

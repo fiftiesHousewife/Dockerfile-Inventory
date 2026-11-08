@@ -33,7 +33,7 @@ final class Draft {
         if (instructions.isEmpty()) {
             throw new IllegalStateException("no instruction to run ONBUILD");
         }
-        instructions.add(new Instruction.Onbuild(instructions.removeLast()));
+        instructions.add(new Onbuild(instructions.removeLast()));
     }
 
     List<Instruction> instructions() {
@@ -50,8 +50,8 @@ final class Draft {
 
     String lastUser() {
         return instructions.stream()
-                .filter(Instruction.User.class::isInstance)
-                .map(i -> ((Instruction.User) i).user())
+                .filter(User.class::isInstance)
+                .map(i -> ((User) i).user())
                 .reduce((first, second) -> second)
                 .orElse(null);
     }

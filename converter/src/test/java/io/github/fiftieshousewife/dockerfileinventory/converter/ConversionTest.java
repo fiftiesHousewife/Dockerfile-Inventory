@@ -1,8 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Raw;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import org.junit.jupiter.api.Test;
 
 class ConversionTest {
@@ -18,7 +18,7 @@ class ConversionTest {
                 """));
 
         assertThat(conversion.raw()).containsExactly(
-                new Instruction.Raw("RUN --device=/dev/fuse make", "RUN with flag --device"),
-                new Instruction.Raw("COPY --exclude=x . /s/", "COPY with flag --exclude"));
+                new Raw("RUN --device=/dev/fuse make", "RUN with flag --device"),
+                new Raw("COPY --exclude=x . /s/", "COPY with flag --exclude"));
     }
 }

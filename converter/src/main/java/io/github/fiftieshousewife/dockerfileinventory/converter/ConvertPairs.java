@@ -1,6 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import io.github.fiftieshousewife.dockerfile.model.Instruction;
+import io.github.fiftieshousewife.dockerfile.model.Arg;
+import io.github.fiftieshousewife.dockerfile.model.Env;
+import io.github.fiftieshousewife.dockerfile.model.Label;
 import io.github.fiftieshousewife.dockerfileinventory.facts.Continuations;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactExtractor;
 import java.util.HashMap;
@@ -15,13 +17,13 @@ final class ConvertPairs {
     }
 
     // Facts' reader says which names have a default; the values are put in the model's form here.
-    static List<Instruction.Arg> args(Docker.Arg arg) {
+    static List<Arg> args(Docker.Arg arg) {
         Map<String, String> declared = FactExtractor.argPairs(arg);
         Map<String, String> values = new HashMap<>();
         values.put(arg.getName().getText(), modelForm(arg.getValue()));
         arg.getAdditionalPairs().forEach(pair -> values.put(pair.getName().getText(), modelForm(pair.getValue())));
         return declared.entrySet().stream()
-                .map(e -> new Instruction.Arg(e.getKey(), e.getValue() == null ? null : values.get(e.getKey())))
+                .map(e -> new Arg(e.getKey(), e.getValue() == null ? null : values.get(e.getKey())))
                 .toList();
     }
 
@@ -29,12 +31,12 @@ final class ConvertPairs {
         return value == null ? "" : Pairs.modelForm(Continuations.removed(Values.text(value)));
     }
 
-    static Instruction.Env env(String printed) {
-        return new Instruction.Env(pairs(afterKeyword(printed)));
+    static Env env(String printed) {
+        return new Env(pairs(afterKeyword(printed)));
     }
 
-    static Instruction.Label label(String printed) {
-        return new Instruction.Label(pairs(afterKeyword(printed)));
+    static Label label(String printed) {
+        return new Label(pairs(afterKeyword(printed)));
     }
 
     static String afterKeyword(String instruction) {

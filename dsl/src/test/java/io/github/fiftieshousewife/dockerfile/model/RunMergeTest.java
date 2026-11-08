@@ -62,7 +62,7 @@ class RunMergeTest {
 
     @Test
     void mergedJoinsOnlyRunsThatFollowEachOther() {
-        Instruction user = new Instruction.User("1001");
+        Instruction user = new User("1001");
 
         assertThat(RunMerge.merged(List.of(shell("a"), shell("b"), user, shell("c"))))
                 .containsExactly(shell("a", "b"), user, shell("c"));
@@ -70,7 +70,7 @@ class RunMergeTest {
 
     @Test
     void aRunWithFlagsIsJoinedToNeitherNeighbour() {
-        Instruction mounted = new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+        Instruction mounted = new Run(new RunBody.Shell(List.of("mvn package")),
                 List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2")));
 
         assertThat(RunMerge.merged(List.of(shell("a"), mounted, shell("b"))))
@@ -79,10 +79,10 @@ class RunMergeTest {
 
     @Test
     void joinableOnlyWithoutFlagsOnEitherAndNoShellStateCarried() {
-        Instruction.Run mounted = new Instruction.Run(new RunBody.Shell(List.of("x")),
+        Run mounted = new Run(new RunBody.Shell(List.of("x")),
                 List.of(new RunFlag.Network("none")));
-        Instruction.Run plain = new Instruction.Run(new RunBody.Shell(List.of("x")));
-        Instruction.Run cd = new Instruction.Run(new RunBody.Shell(List.of("cd /src")));
+        Run plain = new Run(new RunBody.Shell(List.of("x")));
+        Run cd = new Run(new RunBody.Shell(List.of("cd /src")));
 
         assertThat(List.of(RunMerge.joinable(plain, plain), RunMerge.joinable(mounted, plain),
                 RunMerge.joinable(plain, mounted), RunMerge.joinable(cd, plain)))
@@ -91,9 +91,9 @@ class RunMergeTest {
 
     @Test
     void anExecOrHeredocRunIsNeverJoined() {
-        Instruction.Run exec = new Instruction.Run(new RunBody.Exec(List.of("make")));
-        Instruction.Run heredoc = new Instruction.Run(new RunBody.Heredoc("", "EOF", true, List.of("make")));
-        Instruction.Run plain = new Instruction.Run(new RunBody.Shell(List.of("x")));
+        Run exec = new Run(new RunBody.Exec(List.of("make")));
+        Run heredoc = new Run(new RunBody.Heredoc("", "EOF", true, List.of("make")));
+        Run plain = new Run(new RunBody.Shell(List.of("x")));
 
         assertThat(List.of(RunMerge.joinable(exec, plain), RunMerge.joinable(plain, exec),
                 RunMerge.joinable(heredoc, plain), RunMerge.joinable(plain, heredoc)))
@@ -102,7 +102,7 @@ class RunMergeTest {
 
     @Test
     void joinedRendersAnInstallAsItsCommandsFollowedByTheShellCommands() {
-        Instruction.Run install = new Instruction.Run(
+        Run install = new Run(
                 new RunBody.Install(new PackageInstall(PackageManager.APK, List.of("git"))));
 
         assertThat(RunMerge.joined(install, shell("git --version")))
@@ -117,8 +117,8 @@ class RunMergeTest {
         assertThat(RunMerge.changesShellState(shell("echo cd", "make"))).isFalse();
     }
 
-    private static Instruction.Run shell(String... commands) {
-        return new Instruction.Run(new RunBody.Shell(List.of(commands)));
+    private static Run shell(String... commands) {
+        return new Run(new RunBody.Shell(List.of(commands)));
     }
 
     private static String rendered(ImageBuilder builder) {

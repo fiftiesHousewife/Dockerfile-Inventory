@@ -1,9 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Label;
+import io.github.fiftieshousewife.dockerfile.model.User;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
-import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import io.github.fiftieshousewife.dockerfile.model.Stage;
 import io.github.fiftieshousewife.dockerfile.model.Target;
 import java.io.IOException;
@@ -44,7 +45,7 @@ class RoundTripTest {
         Dockerfile dropped = new Dockerfile(List.of(), List.of(new Stage(null, stage.base(), null,
                 List.of(stage.instructions().getFirst()))));
         Dockerfile changed = new Dockerfile(List.of(), List.of(new Stage(null, stage.base(), null,
-                List.of(new Instruction.User("1002"), stage.instructions().get(1)))));
+                List.of(new User("1002"), stage.instructions().get(1)))));
 
         assertThat(RoundTrip.check(original, dropped).difference()).contains("step 2").contains("RUN make");
         assertThat(RoundTrip.check(original, changed).difference()).contains("step 1").contains("1002");
@@ -78,7 +79,7 @@ class RoundTripTest {
 
         assertThat(model).satisfies(
                 m -> assertThat(m.stages().getFirst().instructions())
-                        .containsExactly(new Instruction.Label(Map.of("Version", "1.4", "Release", "8"))),
+                        .containsExactly(new Label(Map.of("Version", "1.4", "Release", "8"))),
                 m -> assertThat(RoundTrip.check(original, m).difference()).isNull());
     }
 

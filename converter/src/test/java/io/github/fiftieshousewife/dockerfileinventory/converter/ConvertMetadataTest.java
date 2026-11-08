@@ -1,5 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Copy;
+import io.github.fiftieshousewife.dockerfile.model.Healthcheck;
+import io.github.fiftieshousewife.dockerfile.model.Onbuild;
+import io.github.fiftieshousewife.dockerfile.model.Raw;
+import io.github.fiftieshousewife.dockerfile.model.Run;
+import io.github.fiftieshousewife.dockerfile.model.Volume;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.fiftieshousewife.dockerfile.model.CommandForm;
@@ -17,7 +23,7 @@ class ConvertMetadataTest {
         List<Instruction> instructions = Convert.of(Parsed.of("FROM ubi9\nSHELL [\"/bin/bash\", \"\\d\"]\n"))
                 .model().stages().getFirst().instructions();
 
-        assertThat(instructions).singleElement().isInstanceOf(Instruction.Raw.class);
+        assertThat(instructions).singleElement().isInstanceOf(Raw.class);
     }
 
     @Test
@@ -25,8 +31,8 @@ class ConvertMetadataTest {
         List<Instruction> instructions = Convert.of(Parsed.of("FROM ubi9\nVOLUME [\"/with space\"]\nVOLUME /a /b\n"))
                 .model().stages().getFirst().instructions();
 
-        assertThat(instructions).containsExactly(new Instruction.Volume(List.of("/with space"), true),
-                new Instruction.Volume(List.of("/a", "/b"), false));
+        assertThat(instructions).containsExactly(new Volume(List.of("/with space"), true),
+                new Volume(List.of("/a", "/b"), false));
     }
 
     @Test
@@ -34,7 +40,7 @@ class ConvertMetadataTest {
         List<Instruction> instructions = Convert.of(Parsed.of("FROM ubi9\nVOLUME \"/test_dir\" '/b' /c\n"))
                 .model().stages().getFirst().instructions();
 
-        assertThat(instructions).containsExactly(new Instruction.Volume(List.of("\"/test_dir\"", "'/b'", "/c"), false));
+        assertThat(instructions).containsExactly(new Volume(List.of("\"/test_dir\"", "'/b'", "/c"), false));
     }
 
     @Test
@@ -51,18 +57,18 @@ class ConvertMetadataTest {
         options.put("interval", "30s");
         options.put("timeout", "3s");
         assertThat(instructions).containsExactly(
-                new Instruction.Healthcheck(options, List.of("curl", "-f", "http://localhost/"), CommandForm.EXEC),
-                new Instruction.Healthcheck(Map.of(), List.of("curl -f http://localhost/ || exit 1"),
+                new Healthcheck(options, List.of("curl", "-f", "http://localhost/"), CommandForm.EXEC),
+                new Healthcheck(Map.of(), List.of("curl -f http://localhost/ || exit 1"),
                         CommandForm.SHELL),
-                Instruction.Healthcheck.NONE);
-        assertThat(((Instruction.Healthcheck) instructions.getFirst()).options().keySet())
+                Healthcheck.NONE);
+        assertThat(((Healthcheck) instructions.getFirst()).options().keySet())
                 .containsExactly("interval", "timeout");
     }
 
     @Test
     void aHealthcheckWithAnOptionDockerLacksStaysRaw() {
         assertThat(Convert.of(Parsed.of("FROM ubi9\nHEALTHCHECK --every=5s CMD true\n")).model().stages().getFirst()
-                .instructions()).singleElement().isInstanceOf(Instruction.Raw.class);
+                .instructions()).singleElement().isInstanceOf(Raw.class);
     }
 
     @Test
@@ -75,8 +81,8 @@ class ConvertMetadataTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Onbuild(new Instruction.Copy(List.of("."), "/app/", null, null)),
-                new Instruction.Onbuild(new Instruction.Run(new RunBody.Shell(List.of("make")))),
-                new Instruction.Raw("ONBUILD COPY --exclude=*.md . /src/", "ONBUILD with COPY with flag --exclude"));
+                new Onbuild(new Copy(List.of("."), "/app/", null, null)),
+                new Onbuild(new Run(new RunBody.Shell(List.of("make")))),
+                new Raw("ONBUILD COPY --exclude=*.md . /src/", "ONBUILD with COPY with flag --exclude"));
     }
 }

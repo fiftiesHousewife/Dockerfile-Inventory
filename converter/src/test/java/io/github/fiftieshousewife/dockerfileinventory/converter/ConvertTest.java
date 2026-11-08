@@ -1,5 +1,21 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Add;
+import io.github.fiftieshousewife.dockerfile.model.Arg;
+import io.github.fiftieshousewife.dockerfile.model.Cmd;
+import io.github.fiftieshousewife.dockerfile.model.Copy;
+import io.github.fiftieshousewife.dockerfile.model.Entrypoint;
+import io.github.fiftieshousewife.dockerfile.model.Env;
+import io.github.fiftieshousewife.dockerfile.model.Expose;
+import io.github.fiftieshousewife.dockerfile.model.Label;
+import io.github.fiftieshousewife.dockerfile.model.Maintainer;
+import io.github.fiftieshousewife.dockerfile.model.Raw;
+import io.github.fiftieshousewife.dockerfile.model.Run;
+import io.github.fiftieshousewife.dockerfile.model.Shell;
+import io.github.fiftieshousewife.dockerfile.model.StopSignal;
+import io.github.fiftieshousewife.dockerfile.model.User;
+import io.github.fiftieshousewife.dockerfile.model.Volume;
+import io.github.fiftieshousewife.dockerfile.model.Workdir;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
@@ -34,7 +50,7 @@ class ConvertTest {
 
         assertThat(conversion.model()).satisfies(
                 model -> assertThat(model.globalArgs())
-                        .containsExactly(new Instruction.Arg("BASE", "ubi9/ubi-minimal")),
+                        .containsExactly(new Arg("BASE", "ubi9/ubi-minimal")),
                 model -> assertThat(model.stages()).extracting(Stage::name, Stage::base, Stage::fromStage)
                         .containsExactly(tuple("build", new BaseImage("registry.example.com/ubi9/ubi", "9.4", DIGEST),
                                         null),
@@ -59,17 +75,17 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Arg("VERSION", "1.0"),
-                new Instruction.Arg("REVISION", null),
-                new Instruction.Env(Map.of("APP_HOME", "/opt/app", "MODE", "prod")),
-                new Instruction.Env(Map.of("LEGACY", "value with spaces")),
-                new Instruction.Label(Map.of("org.opencontainers.image.revision", "$REVISION",
+                new Arg("VERSION", "1.0"),
+                new Arg("REVISION", null),
+                new Env(Map.of("APP_HOME", "/opt/app", "MODE", "prod")),
+                new Env(Map.of("LEGACY", "value with spaces")),
+                new Label(Map.of("org.opencontainers.image.revision", "$REVISION",
                         "summary", "say hi")),
-                new Instruction.Workdir("/opt/app"),
-                new Instruction.User("1001:0"),
-                new Instruction.Expose(List.of(Port.of(8080))),
-                new Instruction.Entrypoint(List.of("java", "-jar", "app.jar")),
-                new Instruction.Cmd(List.of("serve")));
+                new Workdir("/opt/app"),
+                new User("1001:0"),
+                new Expose(List.of(Port.of(8080))),
+                new Entrypoint(List.of("java", "-jar", "app.jar")),
+                new Cmd(List.of("serve")));
     }
 
     @Test
@@ -84,11 +100,11 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Maintainer("Jane Doe <jane@example.com>"),
-                new Instruction.Shell(List.of("/bin/bash", "-o", "pipefail", "-c")),
-                new Instruction.Volume(List.of("/data", "/var/log"), true),
-                new Instruction.Volume(List.of("/cache", "/tmp/x"), false),
-                new Instruction.StopSignal("SIGQUIT"));
+                new Maintainer("Jane Doe <jane@example.com>"),
+                new Shell(List.of("/bin/bash", "-o", "pipefail", "-c")),
+                new Volume(List.of("/data", "/var/log"), true),
+                new Volume(List.of("/cache", "/tmp/x"), false),
+                new StopSignal("SIGQUIT"));
     }
 
     @Test
@@ -114,7 +130,7 @@ class ConvertTest {
                 shell("DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y curl"
                         + " && rm -rf /var/lib/apt/lists/*"),
                 shell("make && make install"),
-                new Instruction.Run(new RunBody.Shell(List.of("mvn package")),
+                new Run(new RunBody.Shell(List.of("mvn package")),
                         List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2"))));
     }
 
@@ -134,16 +150,16 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Copy(List.of("a", "b"), "/dst/", "1001:0", "build"),
-                new Instruction.Copy(List.of("app"), "/opt/", null, null),
-                new Instruction.Raw("COPY --exclude=*.md . /src/", "COPY with flag --exclude"),
-                new Instruction.Add(List.of("app.tar.gz"), "/opt/", null, null, null, false, false, false),
-                new Instruction.Entrypoint(List.of("java -jar app.jar"), CommandForm.SHELL),
-                new Instruction.Cmd(List.of("./start.sh"), CommandForm.SHELL),
-                new Instruction.Raw("EXPOSE ${PORT:-8080}",
+                new Copy(List.of("a", "b"), "/dst/", "1001:0", "build"),
+                new Copy(List.of("app"), "/opt/", null, null),
+                new Raw("COPY --exclude=*.md . /src/", "COPY with flag --exclude"),
+                new Add(List.of("app.tar.gz"), "/opt/", null, null, null, false, false, false),
+                new Entrypoint(List.of("java -jar app.jar"), CommandForm.SHELL),
+                new Cmd(List.of("./start.sh"), CommandForm.SHELL),
+                new Raw("EXPOSE ${PORT:-8080}",
                         "EXPOSE with a port that is not a number, range or variable"),
-                new Instruction.Raw("RUN --device=/dev/fuse make", "RUN with flag --device"),
-                new Instruction.Volume(List.of("/data"), false));
+                new Raw("RUN --device=/dev/fuse make", "RUN with flag --device"),
+                new Volume(List.of("/data"), false));
     }
 
     @Test
@@ -157,8 +173,8 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Env(Map.of("DESCRIPTION", "one two")),
-                new Instruction.Label(Map.of("summary", "three four", "team", "x")));
+                new Env(Map.of("DESCRIPTION", "one two")),
+                new Label(Map.of("summary", "three four", "team", "x")));
     }
 
     @Test
@@ -174,10 +190,10 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Label(Map.of("openshift.io/tags", "database,mariadb",
+                new Label(Map.of("openshift.io/tags", "database,mariadb",
                         "k8s.io/display-name", "MariaDB 5.5")),
-                new Instruction.Label(Map.of("io.k8s.description", "desc", "io.openshift.tags", "builder")),
-                new Instruction.Label(Map.of("maintainer", "Shyam JVS <shyamjvs@google.com>")));
+                new Label(Map.of("io.k8s.description", "desc", "io.openshift.tags", "builder")),
+                new Label(Map.of("maintainer", "Shyam JVS <shyamjvs@google.com>")));
     }
 
     @Test
@@ -188,8 +204,8 @@ class ConvertTest {
                 ENTRYPOINT ["sh", "-c", "update-ca-trust extract && exec \\"$@\\"", "arg0"]
                 """)).model().stages().getFirst().instructions();
 
-        assertThat(instructions).containsExactly(new Instruction.User("${GF_UID}"),
-                new Instruction.Entrypoint(List.of("sh", "-c", "update-ca-trust extract && exec \"$@\"", "arg0")));
+        assertThat(instructions).containsExactly(new User("${GF_UID}"),
+                new Entrypoint(List.of("sh", "-c", "update-ca-trust extract && exec \"$@\"", "arg0")));
     }
 
     @Test
@@ -200,7 +216,7 @@ class ConvertTest {
                 """)).model().stages().getFirst().instructions();
 
         assertThat(instructions).containsExactly(
-                new Instruction.Raw("CMD [\"grep\", \"\\d+\"]", "exec form that is not valid JSON"));
+                new Raw("CMD [\"grep\", \"\\d+\"]", "exec form that is not valid JSON"));
     }
 
     @Test
@@ -214,10 +230,10 @@ class ConvertTest {
                 """)).model();
 
         assertThat(model).satisfies(
-                m -> assertThat(m.globalArgs()).containsExactly(new Instruction.Arg("REG", "quay.io"),
-                        new Instruction.Arg("TAG", "9")),
-                m -> assertThat(m.stages().getFirst().instructions()).startsWith(new Instruction.Arg("UID", "1001"),
-                        new Instruction.Arg("GROUP", null)));
+                m -> assertThat(m.globalArgs()).containsExactly(new Arg("REG", "quay.io"),
+                        new Arg("TAG", "9")),
+                m -> assertThat(m.stages().getFirst().instructions()).startsWith(new Arg("UID", "1001"),
+                        new Arg("GROUP", null)));
     }
 
     @Test
@@ -229,8 +245,8 @@ class ConvertTest {
                 FROM golang:$GOVERSION
                 """)).model();
 
-        assertThat(model.globalArgs()).containsExactly(new Instruction.Arg("GOVERSION", "1.17"),
-                new Instruction.Arg("GO_CHECKSUM", "6bf8"), new Instruction.Arg("DEBIAN_FRONTEND", null));
+        assertThat(model.globalArgs()).containsExactly(new Arg("GOVERSION", "1.17"),
+                new Arg("GO_CHECKSUM", "6bf8"), new Arg("DEBIAN_FRONTEND", null));
     }
 
     @Test
@@ -244,7 +260,7 @@ class ConvertTest {
                 RUN [ "$IS_CI" == "true" ] || ( echo x )
                 """)).model().stages().getFirst().instructions();
 
-        assertThat(instructions.getFirst()).isEqualTo(new Instruction.Env(Map.of("DOTNET_VERSION", "$DOTNET_VERSION")));
+        assertThat(instructions.getFirst()).isEqualTo(new Env(Map.of("DOTNET_VERSION", "$DOTNET_VERSION")));
     }
 
     @Test
@@ -259,7 +275,7 @@ class ConvertTest {
     @Test
     void anInstructionTheModelDoesNotHaveIsRawNamingItsKeywordInCapitals() {
         assertThat(Convert.notModelled("stopsignal SIGTERM"))
-                .isEqualTo(new Instruction.Raw("stopsignal SIGTERM", "STOPSIGNAL is not modelled"));
+                .isEqualTo(new Raw("stopsignal SIGTERM", "STOPSIGNAL is not modelled"));
     }
 
     @Test
@@ -268,7 +284,7 @@ class ConvertTest {
         Docker.User alone = (Docker.User) first("FROM ubi9\nUSER 1001\n");
 
         assertThat(List.of(Convert.user(withGroup), Convert.user(alone)))
-                .containsExactly(new Instruction.User("${UID}:0"), new Instruction.User("1001"));
+                .containsExactly(new User("${UID}:0"), new User("1001"));
     }
 
     @Test
@@ -286,10 +302,10 @@ class ConvertTest {
     }
 
     private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {
-        return new Instruction.Run(new RunBody.Install(new PackageInstall(manager, flags, packages)));
+        return new Run(new RunBody.Install(new PackageInstall(manager, flags, packages)));
     }
 
     private static Instruction shell(String command) {
-        return new Instruction.Run(new RunBody.Shell(List.of(command)));
+        return new Run(new RunBody.Shell(List.of(command)));
     }
 }

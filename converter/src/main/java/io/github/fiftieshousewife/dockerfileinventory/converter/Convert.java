@@ -1,5 +1,15 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Arg;
+import io.github.fiftieshousewife.dockerfile.model.Cmd;
+import io.github.fiftieshousewife.dockerfile.model.Entrypoint;
+import io.github.fiftieshousewife.dockerfile.model.Expose;
+import io.github.fiftieshousewife.dockerfile.model.Maintainer;
+import io.github.fiftieshousewife.dockerfile.model.Onbuild;
+import io.github.fiftieshousewife.dockerfile.model.Raw;
+import io.github.fiftieshousewife.dockerfile.model.StopSignal;
+import io.github.fiftieshousewife.dockerfile.model.User;
+import io.github.fiftieshousewife.dockerfile.model.Workdir;
 import io.github.fiftieshousewife.dockerfile.model.BaseImage;
 import io.github.fiftieshousewife.dockerfile.model.CommandForm;
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
@@ -34,7 +44,7 @@ final class Convert {
     }
 
     Conversion convert() {
-        List<Instruction.Arg> globalArgs = file.getGlobalArgs().stream()
+        List<Arg> globalArgs = file.getGlobalArgs().stream()
                 .flatMap(arg -> ConvertPairs.args(arg).stream())
                 .toList();
         Set<String> earlierStages = new HashSet<>();
@@ -84,54 +94,54 @@ final class Convert {
         return switch (instruction) {
             case Docker.Env env -> ConvertPairs.env(printed.text(env));
             case Docker.Label label -> ConvertPairs.label(printed.text(label));
-            case Docker.Workdir workdir -> new Instruction.Workdir(Values.unquote(Values.text(workdir.getPath())));
+            case Docker.Workdir workdir -> new Workdir(Values.unquote(Values.text(workdir.getPath())));
             case Docker.User user -> user(user);
-            case Docker.Expose expose -> ports(expose).<Instruction>map(Instruction.Expose::new)
-                    .orElseGet(() -> new Instruction.Raw(printed.text(expose),
+            case Docker.Expose expose -> ports(expose).<Instruction>map(Expose::new)
+                    .orElseGet(() -> new Raw(printed.text(expose),
                             "EXPOSE with a port that is not a number, range or variable"));
             case Docker.Run run -> ConvertCommands.run(run, printed.text(run));
             case Docker.Entrypoint entrypoint when entrypoint.getCommand() instanceof Docker.ExecForm exec ->
-                    ConvertCommands.arguments(exec).<Instruction>map(Instruction.Entrypoint::new)
-                            .orElseGet(() -> new Instruction.Raw(printed.text(entrypoint), NOT_JSON));
+                    ConvertCommands.arguments(exec).<Instruction>map(Entrypoint::new)
+                            .orElseGet(() -> new Raw(printed.text(entrypoint), NOT_JSON));
             case Docker.Cmd cmd when cmd.getCommand() instanceof Docker.ExecForm exec ->
-                    ConvertCommands.arguments(exec).<Instruction>map(Instruction.Cmd::new)
-                            .orElseGet(() -> new Instruction.Raw(printed.text(cmd), NOT_JSON));
+                    ConvertCommands.arguments(exec).<Instruction>map(Cmd::new)
+                            .orElseGet(() -> new Raw(printed.text(cmd), NOT_JSON));
             case Docker.Copy copy -> ConvertCopy.copy(printed.text(copy));
             case Docker.Add add -> ConvertAdd.add(printed.text(add));
             case Docker.Entrypoint entrypoint when entrypoint.getCommand() instanceof Docker.ShellForm shell ->
-                    new Instruction.Entrypoint(List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
+                    new Entrypoint(List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
             case Docker.Cmd cmd when cmd.getCommand() instanceof Docker.ShellForm shell ->
-                    new Instruction.Cmd(List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
+                    new Cmd(List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
             case Docker.Shell shell -> ConvertMetadata.shell(shell, printed.text(shell));
             case Docker.Healthcheck healthcheck -> ConvertMetadata.healthcheck(healthcheck, printed.text(healthcheck));
             case Docker.Onbuild onbuild -> onbuild(onbuild);
             case Docker.Volume volume -> ConvertMetadata.volume(volume, printed.text(volume));
-            case Docker.Stopsignal signal -> new Instruction.StopSignal(Values.text(signal.getSignal()).strip());
-            case Docker.Maintainer maintainer -> new Instruction.Maintainer(Values.text(maintainer.getText()).strip());
+            case Docker.Stopsignal signal -> new StopSignal(Values.text(signal.getSignal()).strip());
+            case Docker.Maintainer maintainer -> new Maintainer(Values.text(maintainer.getText()).strip());
             default -> notModelled(printed.text(instruction));
         };
     }
 
     Instruction onbuild(Docker.Onbuild onbuild) {
         Instruction inner = instruction(onbuild.getInstruction());
-        if (inner instanceof Instruction.Raw raw) {
-            return new Instruction.Raw(printed.text(onbuild), "ONBUILD with " + raw.reason());
+        if (inner instanceof Raw raw) {
+            return new Raw(printed.text(onbuild), "ONBUILD with " + raw.reason());
         }
         try {
-            return new Instruction.Onbuild(inner);
+            return new Onbuild(inner);
         } catch (IllegalArgumentException notAllowed) {
-            return new Instruction.Raw(printed.text(onbuild), "ONBUILD with an instruction Docker refuses there");
+            return new Raw(printed.text(onbuild), "ONBUILD with an instruction Docker refuses there");
         }
     }
 
-    static Instruction.Raw notModelled(String text) {
+    static Raw notModelled(String text) {
         String keyword = text.split("\\s", 2)[0].toUpperCase(Locale.ROOT);
-        return new Instruction.Raw(text, keyword + " is not modelled");
+        return new Raw(text, keyword + " is not modelled");
     }
 
-    static Instruction.User user(Docker.User user) {
+    static User user(Docker.User user) {
         Docker.Argument group = user.getGroup();
-        return new Instruction.User(Values.braced(Values.unquote(Values.text(user.getUser())))
+        return new User(Values.braced(Values.unquote(Values.text(user.getUser())))
                 + (group == null ? "" : ":" + Values.braced(Values.unquote(Values.text(group)))));
     }
 

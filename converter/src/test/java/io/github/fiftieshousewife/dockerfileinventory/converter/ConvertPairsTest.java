@@ -1,9 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
+import io.github.fiftieshousewife.dockerfile.model.Arg;
+import io.github.fiftieshousewife.dockerfile.model.Env;
+import io.github.fiftieshousewife.dockerfile.model.Label;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
@@ -15,8 +17,8 @@ class ConvertPairsTest {
         Docker.Arg arg = (Docker.Arg) Parsed.of("FROM ubi9\nARG A=\"x y\" B C='$5'\n")
                 .getStages().getFirst().getInstructions().getFirst();
 
-        assertThat(ConvertPairs.args(arg)).containsExactly(new Instruction.Arg("A", "x y"),
-                new Instruction.Arg("B", null), new Instruction.Arg("C", "\\$5"));
+        assertThat(ConvertPairs.args(arg)).containsExactly(new Arg("A", "x y"),
+                new Arg("B", null), new Arg("C", "\\$5"));
     }
 
     @Test
@@ -39,7 +41,7 @@ class ConvertPairsTest {
 
     @Test
     void envAndLabelAreReadFromTheirPrintedText() {
-        assertThat(ConvertPairs.env("ENV A=1")).isEqualTo(new Instruction.Env(Map.of("A", "1")));
-        assertThat(ConvertPairs.label("LABEL team x")).isEqualTo(new Instruction.Label(Map.of("team", "x")));
+        assertThat(ConvertPairs.env("ENV A=1")).isEqualTo(new Env(Map.of("A", "1")));
+        assertThat(ConvertPairs.label("LABEL team x")).isEqualTo(new Label(Map.of("team", "x")));
     }
 }

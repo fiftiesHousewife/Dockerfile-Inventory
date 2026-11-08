@@ -89,7 +89,7 @@ class ImageBuilderTest {
     void rawUsesAreListedInTheResult() {
         Built built = valid().raw("HEALTHCHECK NONE", "OpenShift probes instead").build(POLICY);
 
-        assertThat(built.raw()).containsExactly(new Instruction.Raw("HEALTHCHECK NONE", "OpenShift probes instead"));
+        assertThat(built.raw()).containsExactly(new Raw("HEALTHCHECK NONE", "OpenShift probes instead"));
     }
 
     @Test
@@ -143,7 +143,7 @@ class ImageBuilderTest {
                 .thenStageFrom("app", "deps")
                 .env(env)
                 .label(Map.of("team", "payments"))
-                .copy(Instruction.Copy.of("a", "b").to("/srv/").ownedBy("app:app").from("deps"))
+                .copy(Copy.of("a", "b").to("/srv/").ownedBy("app:app").from("deps"))
                 .model();
 
         assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).isEqualTo("""
@@ -162,7 +162,7 @@ class ImageBuilderTest {
 
     @Test
     void aCopyCanBeGivenWhole() {
-        Instruction.Copy copy = Instruction.Copy.of("run.sh").to("/bin/").mode("755").linked();
+        Copy copy = Copy.of("run.sh").to("/bin/").mode("755").linked();
 
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).copy(copy).model().stages().getFirst()
                 .instructions()).containsExactly(copy);
@@ -170,19 +170,19 @@ class ImageBuilderTest {
 
     @Test
     void aFileCanBeWrittenFromLinesUnexpandedOrGivenWhole() {
-        Instruction.CopyHeredoc expanding = Instruction.CopyHeredoc.to("/etc/b").lines("$HOME").delimitedBy("END")
+        CopyHeredoc expanding = CopyHeredoc.to("/etc/b").lines("$HOME").delimitedBy("END")
                 .expanding();
 
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).copyHeredoc("/etc/a.conf", List.of("a = 1"))
                 .copyHeredoc(expanding).model().stages().getFirst().instructions())
-                .containsExactly(Instruction.CopyHeredoc.to("/etc/a.conf").lines("a = 1"), expanding);
+                .containsExactly(CopyHeredoc.to("/etc/a.conf").lines("a = 1"), expanding);
     }
 
     @Test
     void addTakesAUrlOrAnArchiveAndRefusesALocalFileForCopy() {
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).add("rootfs.tar.gz", "/").model().stages()
                 .getFirst().instructions())
-                .containsExactly(new Instruction.Add(List.of("rootfs.tar.gz"), "/", null, null, null, false, false,
+                .containsExactly(new Add(List.of("rootfs.tar.gz"), "/", null, null, null, false, false,
                         false));
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).add("app.jar", "/opt/"))
@@ -191,7 +191,7 @@ class ImageBuilderTest {
 
     @Test
     void anAddCanBeGivenWholeAsTheDockerfileWroteItWithoutThePolicysCheck() {
-        Instruction.Add add = Instruction.Add.of("app.jar").to("/opt/").ownedBy("1001").mode("644");
+        Add add = Add.of("app.jar").to("/opt/").ownedBy("1001").mode("644");
 
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).add(add).model().stages().getFirst()
                 .instructions()).containsExactly(add);
@@ -204,8 +204,8 @@ class ImageBuilderTest {
 
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).run(cache, "make").run(cache, install).model()
                 .stages().getFirst().instructions())
-                .containsExactly(new Instruction.Run(new RunBody.Shell(List.of("make")), cache),
-                        new Instruction.Run(install, cache));
+                .containsExactly(new Run(new RunBody.Shell(List.of("make")), cache),
+                        new Run(install, cache));
     }
 
     @Test
@@ -215,8 +215,8 @@ class ImageBuilderTest {
 
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).runExec("/bin/opm", "serve")
                 .run(cache, script).model().stages().getFirst().instructions())
-                .containsExactly(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve"))),
-                        new Instruction.Run(script, cache));
+                .containsExactly(new Run(new RunBody.Exec(List.of("/bin/opm", "serve"))),
+                        new Run(script, cache));
     }
 
     @Test
@@ -224,10 +224,10 @@ class ImageBuilderTest {
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).copy(".", "/app/").asOnbuild()
                 .healthcheck(Map.of("retries", "3"), "curl", "-f", "http://localhost/").healthcheckNone().model()
                 .stages().getFirst().instructions())
-                .containsExactly(new Instruction.Onbuild(new Instruction.Copy(List.of("."), "/app/", null, null)),
-                        new Instruction.Healthcheck(Map.of("retries", "3"), List.of("curl", "-f", "http://localhost/"),
+                .containsExactly(new Onbuild(new Copy(List.of("."), "/app/", null, null)),
+                        new Healthcheck(Map.of("retries", "3"), List.of("curl", "-f", "http://localhost/"),
                                 CommandForm.EXEC),
-                        Instruction.Healthcheck.NONE);
+                        Healthcheck.NONE);
         assertThatIllegalStateException()
                 .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).asOnbuild());
     }
@@ -236,8 +236,8 @@ class ImageBuilderTest {
     void portsCanBeGivenAsDockerWritesThemAndABadOneIsRefused() {
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090).model()
                 .stages().getFirst().instructions())
-                .containsExactly(new Instruction.Expose(List.of(Port.of(8080), new Port("53/udp"))),
-                        new Instruction.Expose(List.of(Port.of(9090))));
+                .containsExactly(new Expose(List.of(Port.of(8080), new Port("53/udp"))),
+                        new Expose(List.of(Port.of(9090))));
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).expose("80/http"));
     }
@@ -261,8 +261,8 @@ class ImageBuilderTest {
         Stage build = builder.model().stages().getFirst();
 
         assertThat(builder.finished(Draft.of(build)).instructions()).containsExactly(
-                new Instruction.Run(new RunBody.Shell(List.of("a", "b"))),
-                new Instruction.Copy(List.of("x"), "/x", null, null));
+                new Run(new RunBody.Shell(List.of("a", "b"))),
+                new Copy(List.of("x"), "/x", null, null));
     }
 
     @Test
@@ -270,7 +270,7 @@ class ImageBuilderTest {
         ImageBuilder builder = ImageBuilder.stage("build", UBI_MINIMAL).raw("ONBUILD RUN x", "one")
                 .thenFrom(UBI_MINIMAL).run("y").raw("HEALTHCHECK NONE", "two");
 
-        assertThat(builder.raw()).extracting(Instruction.Raw::reason).containsExactly("one", "two");
+        assertThat(builder.raw()).extracting(Raw::reason).containsExactly("one", "two");
     }
 
     private static ImageBuilder valid() {

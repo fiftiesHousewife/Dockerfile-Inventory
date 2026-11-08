@@ -79,7 +79,8 @@ rules/              stage 3: detect-only rules over facts, parsed Dockerfiles an
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
                     io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model
-                    Dockerfile, Stage, Instruction (records; Copy, Add and CopyHeredoc with of/to and with-methods),
+                    Dockerfile, Stage, Instruction (sealed) and a record per instruction, one file each (Arg, Env,
+                    Label, Run, Copy, Add, CopyHeredoc, ... Raw; Copy, Add and CopyHeredoc with of/to and with-methods),
                     RunBody, RunFlag, Port, CommandForm, BaseImage, PackageInstall, PackageManager, OrderedMap;
                     DockerfileRenderer (Target), InstructionParts, DockerQuotes, RunCommands, PackageInstallRenderer
                     ImageBuilder (the fluent API) over InstructionBuilder, MetadataInstructionBuilder,
