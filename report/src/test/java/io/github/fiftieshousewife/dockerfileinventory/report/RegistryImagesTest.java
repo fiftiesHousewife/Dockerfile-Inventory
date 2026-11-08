@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -132,5 +133,34 @@ class RegistryImagesTest {
                 () -> assertThat(RegistryImages.newest(Arrays.asList("2026-01-01T00:00:00Z", null,
                         "2026-11-06T18:18:06.098Z"))).isEqualTo("2026-11-06T18:18:06.098Z"),
                 () -> assertThat(RegistryImages.newest(List.of())).isNull());
+    }
+
+    @Test
+    void anImagesSizeIsItsTagsCompressedLayers() {
+        assertThat(RegistryImages.size(List.of(json("{\"size\":39000000}"), json("{\"size\":39000000}"))))
+                .isEqualTo(39_000_000L);
+    }
+
+    @Test
+    void anImageRecordedWithoutASizeHasNone() {
+        assertThat(RegistryImages.size(List.of(json("{\"tag\":\"1\"}")))).isNull();
+    }
+
+    @Test
+    void anIndexsArchitecturesAreTheImages() {
+        assertThat(RegistryImages.architectures(List.of(json("{\"architectures\":[\"linux/amd64\",\"linux/arm64\"]}")),
+                json("{\"os\":\"linux\",\"architecture\":\"amd64\"}"))).containsExactly("linux/amd64", "linux/arm64");
+    }
+
+    @Test
+    void withoutAnIndexTheArchitectureIsTheConfigs() {
+        assertThat(RegistryImages.architectures(List.of(json("{\"architectures\":[]}")),
+                json("{\"os\":\"linux\",\"architecture\":\"arm64\"}"))).containsExactly("linux/arm64");
+    }
+
+    @Test
+    void eachImageNamesPushesAreReadFromItsTags() {
+        assertThat(RegistryImages.pushesByName(LINEAGE)).containsEntry("sclorg/s2i-python-container-3-12-c9s",
+                List.of(Instant.parse("2026-11-06T18:18:06.098Z")));
     }
 }

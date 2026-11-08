@@ -34,7 +34,8 @@ final class CatalogueRun {
                 .toList();
         Map<String, CatalogueLinks.Links> links = CatalogueLinks.of(parsed, lineageDir);
         Hierarchies hierarchies = new Hierarchies(lineageDir == null ? Map.of() : RegistryImages.read(lineageDir),
-                settings.staleAfterMonths(), settings.layerLimit());
+                settings.staleAfterMonths(), settings.layerLimit(),
+                lineageDir == null ? Map.of() : RegistryImages.pushesByName(lineageDir));
         Set<String> archived = Unmaintained.archivedRepositories(inputs.discoveryDir());
         Map<String, Conversions.Conversion> conversions = Conversions.read(inputs.converterDir());
         Map<String, Siblings.Found> siblings = Siblings.of(inputs.nearDuplicates());

@@ -22,7 +22,8 @@ final class Hierarchies {
     }
 
     record BuiltImage(String configDigest, List<String> names, String created, String lastPushed, List<Step> chain,
-                      List<Step> blockedBy, Map<String, Label> labels) {
+                      List<Step> blockedBy, Map<String, Label> labels, Long size, List<String> architectures,
+                      Cadences.Cadence cadence) {
     }
 
     record Label(String value, String source, String setBy) {
@@ -39,13 +40,20 @@ final class Hierarchies {
     private final Instant newestPush;
     private final int staleAfterMonths;
     private final int layerLimit;
+    private final Cadences cadences;
 
     Hierarchies(Map<String, RegistryImage> images, int staleAfterMonths, int layerLimit) {
+        this(images, staleAfterMonths, layerLimit, Map.of());
+    }
+
+    Hierarchies(Map<String, RegistryImage> images, int staleAfterMonths, int layerLimit,
+                Map<String, List<Instant>> pushesByName) {
         this.images = Map.copyOf(images);
         this.staleAfterMonths = staleAfterMonths;
         this.layerLimit = layerLimit;
         String newest = RegistryImages.newestPush(List.copyOf(images.values()));
         this.newestPush = newest == null ? Instant.EPOCH : Instant.parse(newest);
+        this.cadences = new Cadences(images, pushesByName, newestPush);
         images.values().forEach(image -> {
             image.blobShas().forEach(sha -> builtFrom.computeIfAbsent(sha, key -> new ArrayList<>()).add(image));
             image.candidates().forEach(sha -> candidatesOf.computeIfAbsent(sha, key -> new ArrayList<>())
@@ -95,7 +103,8 @@ final class Hierarchies {
         Map<String, Label> labels = new TreeMap<>();
         image.labels().forEach((name, label) -> labels.put(name, label(name, label, configDigest, dockerfileLabels)));
         return new BuiltImage(configDigest, image.names(), image.created(), image.lastPushed(), chain,
-                chain.stream().skip(1).filter(step -> !step.unmaintained().isEmpty()).toList(), labels);
+                chain.stream().skip(1).filter(step -> !step.unmaintained().isEmpty()).toList(), labels, image.size(),
+                image.architectures(), cadences.of(configDigest));
     }
 
     static Label label(String name, ImageLabel label, String configDigest, Set<String> dockerfileLabels) {

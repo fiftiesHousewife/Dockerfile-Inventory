@@ -49,13 +49,34 @@ final class RegistryImages {
                     layers(config), config.path("created").stringValue(null),
                     newest(rows.stream().map(row -> row.path("lastPushed").stringValue(null)).toList()),
                     newer.get(digest), labels.getOrDefault(digest, Map.of()),
-                    links.getOrDefault(digest, UNLINKED).candidates()));
+                    links.getOrDefault(digest, UNLINKED).candidates(), size(rows), architectures(rows, config)));
         });
         return images;
     }
 
     static Integer layers(JsonNode config) {
         return config.path("rootfs").isObject() ? config.path("rootfs").path("diff_ids").size() : null;
+    }
+
+    static Map<String, List<Instant>> pushesByName(Path lineageDir) {
+        Map<String, List<Instant>> pushes = new HashMap<>();
+        JsonLines.read(lineageDir.resolve("images.jsonl")).stream().filter(row -> row.path("lastPushed").isString())
+                .forEach(row -> pushes.computeIfAbsent(row.path("image").asString(), name -> new ArrayList<>())
+                        .add(Instant.parse(row.path("lastPushed").asString())));
+        pushes.values().forEach(list -> list.sort(null));
+        return pushes;
+    }
+
+    static Long size(List<JsonNode> rows) {
+        return rows.stream().map(row -> row.path("size")).filter(JsonNode::isNumber).map(JsonNode::asLong)
+                .findFirst().orElse(null);
+    }
+
+    static List<String> architectures(List<JsonNode> rows, JsonNode config) {
+        List<String> listed = rows.stream().flatMap(row -> row.path("architectures").valueStream())
+                .map(JsonNode::asString).distinct().toList();
+        return !listed.isEmpty() || !config.path("architecture").isString() ? listed
+                : List.of(config.path("os").asString("linux") + "/" + config.path("architecture").asString());
     }
 
     static Map<String, String> newerBases(Path outdated) {

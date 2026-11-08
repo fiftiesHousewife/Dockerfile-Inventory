@@ -51,7 +51,7 @@ class HierarchiesTest {
         RegistryImage base = images.get(S2I_BASE);
         images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
                 base.layers(), base.created(), base.lastPushed(), "sha256:0b1c", base.labels(),
-                base.candidates()));
+                base.candidates(), base.size(), base.architectures()));
 
         assertThat(hierarchies(images, 40).built(PYTHON, Set.of()).blockedBy())
                 .extracting(Hierarchies.Step::configDigest).containsExactly(S2I_BASE);
@@ -117,7 +117,7 @@ class HierarchiesTest {
         Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
         RegistryImage base = images.get(S2I_BASE);
         images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
-                null, base.created(), base.lastPushed(), null, base.labels(), base.candidates()));
+                null, base.created(), base.lastPushed(), null, base.labels(), base.candidates(), base.size(), base.architectures()));
 
         assertThat(hierarchies(images, 40).chain(PYTHON)).extracting(Hierarchies.Step::ownLayers)
                 .containsExactly(null, null, 1, 2);
@@ -129,7 +129,7 @@ class HierarchiesTest {
         RegistryImage python = images.get(PYTHON);
         images.put(PYTHON, new RegistryImage(python.configDigest(), python.names(), python.parent(),
                 python.blobShas(), null, python.created(), python.lastPushed(), null, python.labels(),
-                python.candidates()));
+                python.candidates(), python.size(), python.architectures()));
         CatalogueEntry entry = python();
 
         assertThat(hierarchies(images, 40).of(entry, Map.of(), List.of(), Set.of()).layers().counted())
@@ -200,5 +200,21 @@ class HierarchiesTest {
         assertAll(
                 () -> assertThat(hierarchies.limited(30, 10, "declared").overLimit()).isFalse(),
                 () -> assertThat(hierarchies.limited(30, 11, "declared").overLimit()).isTrue());
+    }
+
+    @Test
+    void aBuiltImageCarriesItsSizeArchitecturesAndCadence() {
+        Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
+        RegistryImage python = images.get(PYTHON);
+        images.put(PYTHON, new RegistryImage(python.configDigest(), python.names(), python.parent(),
+                python.blobShas(), python.layers(), python.created(), python.lastPushed(), null, python.labels(),
+                python.candidates(), 39_000_000L, List.of("linux/amd64")));
+
+        Hierarchies.BuiltImage built = hierarchies(images, 40).built(PYTHON, Set.of());
+
+        assertAll(
+                () -> assertThat(built.size()).isEqualTo(39_000_000L),
+                () -> assertThat(built.architectures()).containsExactly("linux/amd64"),
+                () -> assertThat(built.cadence().daysAfterParent()).isZero());
     }
 }
