@@ -41,6 +41,8 @@ limit and the linking follow the current report's.
    bases page's status column too?
 4. Any page missing from the list above?
 
+Answers (8 Nov): 1, one archetypes page (the families and their sizes), linked from the summary, not leading it.
+
 ## Tests, in order
 
 To be written once the questions are answered.
