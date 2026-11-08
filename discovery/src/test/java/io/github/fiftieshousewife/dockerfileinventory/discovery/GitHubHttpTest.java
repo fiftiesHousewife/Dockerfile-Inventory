@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
@@ -41,10 +42,13 @@ class GitHubHttpTest {
                 exchange.getRequestURI().getQuery().contains("since=0")
                         ? "organizations-page1.json" : "organizations-page2.json"));
 
-        assertThat(gitHub.organizations()).containsExactly("payments", "platform");
-        assertThat(server.requests).containsExactly(
-                "GET /api/v3/organizations?per_page=100&since=0", "GET /api/v3/organizations?per_page=100&since=42");
-        assertThat(server.authorizations).containsOnly("Bearer t0ken");
+        List<String> organizations = gitHub.organizations();
+
+        assertAll(
+                () -> assertThat(organizations).containsExactly("payments", "platform"),
+                () -> assertThat(server.requests).containsExactly("GET /api/v3/organizations?per_page=100&since=0",
+                        "GET /api/v3/organizations?per_page=100&since=42"),
+                () -> assertThat(server.authorizations).containsOnly("Bearer t0ken"));
     }
 
     @Test
@@ -55,11 +59,13 @@ class GitHubHttpTest {
 
         List<Repository> repositories = gitHub.repositories("payments");
 
-        assertThat(repositories).containsExactly(
-                new Repository("payments/ledger-api", "main", "1111111111111111111111111111111111111111",
-                        false, false, "2026-10-30T09:12:00Z"),
-                new Repository("payments/empty", null, null, true, true, null));
-        assertThat(server.graphqlBodies.getFirst()).contains("\"org\":\"payments\"").contains("\"cursor\":null");
+        assertAll(
+                () -> assertThat(repositories).containsExactly(
+                        new Repository("payments/ledger-api", "main", "1111111111111111111111111111111111111111",
+                                false, false, "2026-10-30T09:12:00Z"),
+                        new Repository("payments/empty", null, null, true, true, null)),
+                () -> assertThat(server.graphqlBodies.getFirst()).contains("\"org\":\"payments\"")
+                        .contains("\"cursor\":null"));
     }
 
     @Test
@@ -69,8 +75,12 @@ class GitHubHttpTest {
                 Duration.ofSeconds(10), wait -> { }), "");
         server.routeFixture("/repos/payments/ledger-api/git/trees/abc", "tree.json");
 
-        assertThat(dotCom.tree("payments/ledger-api", "abc", true)).isPresent();
-        assertThat(server.requests).containsExactly("GET /repos/payments/ledger-api/git/trees/abc?recursive=1");
+        var tree = dotCom.tree("payments/ledger-api", "abc", true);
+
+        assertAll(
+                () -> assertThat(tree).isPresent(),
+                () -> assertThat(server.requests)
+                        .containsExactly("GET /repos/payments/ledger-api/git/trees/abc?recursive=1"));
     }
 
     @Test
@@ -79,11 +89,11 @@ class GitHubHttpTest {
 
         Tree tree = gitHub.tree("payments/ledger-api", "abc", true).orElseThrow();
 
-        assertThat(tree).satisfies(
-                t -> assertThat(t.truncated()).isFalse(),
-                t -> assertThat(t.entries()).extracting(Tree.Entry::path, Tree.Entry::mode, Tree.Entry::isBlob)
-                        .containsExactly(tuple("Dockerfile", "100644", true), tuple("src", "040000", false)));
-        assertThat(server.requests).containsExactly("GET " + TREE + "?recursive=1");
+        assertAll(
+                () -> assertThat(tree.truncated()).isFalse(),
+                () -> assertThat(tree.entries()).extracting(Tree.Entry::path, Tree.Entry::mode, Tree.Entry::isBlob)
+                        .containsExactly(tuple("Dockerfile", "100644", true), tuple("src", "040000", false)),
+                () -> assertThat(server.requests).containsExactly("GET " + TREE + "?recursive=1"));
     }
 
     @Test
@@ -103,17 +113,42 @@ class GitHubHttpTest {
                 new BlobRequest("payments/ledger-api", "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"),
                 new BlobRequest("payments/ledger-api", "e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2")));
 
-        assertThat(blobs).containsExactly(new BlobText("d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
-                "FROM ubi9/ubi-minimal\n", false, false));
-        assertThat(server.requests).hasSize(1);
-        assertThat(server.graphqlBodies.getFirst())
-                .contains("repository(owner: \\\"payments\\\", name: \\\"ledger-api\\\")");
+        assertAll(
+                () -> assertThat(blobs).containsExactly(new BlobText("d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+                        "FROM ubi9/ubi-minimal\n", false, false)),
+                () -> assertThat(server.requests).hasSize(1),
+                () -> assertThat(server.graphqlBodies.getFirst())
+                        .contains("repository(owner: \\\"payments\\\", name: \\\"ledger-api\\\")"));
     }
 
     @Test
     void makesNoCallForNoBlobs() {
-        assertThat(gitHub.blobs(List.of())).isEmpty();
-        assertThat(server.requests).isEmpty();
+        List<BlobText> blobs = gitHub.blobs(List.of());
+
+        assertAll(
+                () -> assertThat(blobs).isEmpty(),
+                () -> assertThat(server.requests).isEmpty());
+    }
+
+    @Test
+    void fetchesLastChangesInOneQuery() {
+        server.routeGraphql("history.json");
+
+        List<LastChange> changes = gitHub.lastChanges(List.of(GraphQlHistoryTest.LEDGER,
+                GraphQlHistoryTest.NO_HISTORY, GraphQlHistoryTest.GONE));
+
+        assertAll(
+                () -> assertThat(changes).extracting(LastChange::changedAt).containsExactly("2026-03-02T10:11:12Z"),
+                () -> assertThat(server.requests).hasSize(1));
+    }
+
+    @Test
+    void makesNoCallForNoLastChanges() {
+        List<LastChange> changes = gitHub.lastChanges(List.of());
+
+        assertAll(
+                () -> assertThat(changes).isEmpty(),
+                () -> assertThat(server.requests).isEmpty());
     }
 
     @Test

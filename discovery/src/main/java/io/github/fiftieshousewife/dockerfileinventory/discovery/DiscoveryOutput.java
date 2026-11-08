@@ -16,8 +16,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// Rows are appended as each repository finishes, so a killed run loses at most the repositories in flight and a
-// rerun reads what is there to skip finished work.
+// Appended as work finishes, so a rerun skips what a killed run had finished.
 final class DiscoveryOutput {
 
     record BlobFinding(String sha, String repository, String problem) {
@@ -46,6 +45,14 @@ final class DiscoveryOutput {
         append("blob-findings.jsonl", List.of(finding));
     }
 
+    synchronized void recordChanges(List<LastChange> changes) {
+        append("changes.jsonl", changes);
+    }
+
+    List<LastChange> changes() {
+        return read("changes.jsonl", LastChange.class);
+    }
+
     Set<String> finishedRepositories() {
         return finished(read("repos.jsonl", RepoOutcome.class));
     }
@@ -70,7 +77,7 @@ final class DiscoveryOutput {
         return Files.exists(blobs.resolve(sha));
     }
 
-    // Through a temporary file, so a killed run never leaves half a blob that a rerun would take as stored.
+    // Moved into place whole, so a killed run never leaves half a blob a rerun would take as stored.
     void storeBlob(String sha, String text) {
         try {
             Path temp = Files.createTempFile(blobs, sha, ".part");

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,9 +31,9 @@ class DiscoveryOutputTest {
 
         output.record(new RepoScan.Result(outcome("pay/api", RepoOutcome.Status.SCANNED), List.of(located)));
 
-        assertThat(output).satisfies(
-                o -> assertThat(o.manifest()).containsExactly(located),
-                o -> assertThat(o.finishedRepositories()).containsExactly("pay/api"));
+        assertAll(
+                () -> assertThat(output.manifest()).containsExactly(located),
+                () -> assertThat(output.finishedRepositories()).containsExactly("pay/api"));
     }
 
     @Test
@@ -50,8 +51,19 @@ class DiscoveryOutputTest {
 
         output.storeBlob("d1", "FROM ubi9\n");
 
-        assertThat(output.hasBlob("d1")).isTrue();
-        assertThat(Files.readString(out.resolve("blobs/d1"))).isEqualTo("FROM ubi9\n");
+        assertAll(
+                () -> assertThat(output.hasBlob("d1")).isTrue(),
+                () -> assertThat(Files.readString(out.resolve("blobs/d1"))).isEqualTo("FROM ubi9\n"));
+    }
+
+    @Test
+    void readsBackTheLastChangesItRecorded() {
+        var output = new DiscoveryOutput(out);
+        var change = new LastChange("pay/api", "c1", "Dockerfile", "a1", "2026-03-02T10:11:12Z");
+
+        output.recordChanges(List.of(change));
+
+        assertThat(output.changes()).containsExactly(change);
     }
 
     @Test

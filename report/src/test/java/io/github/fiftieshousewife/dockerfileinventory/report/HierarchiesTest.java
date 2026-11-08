@@ -32,7 +32,7 @@ class HierarchiesTest {
     private static CatalogueEntry python() {
         return withLayers(CatalogueLinksTest.entry(PYTHON_DOCKERFILE, "quay.io/sclorg/s2i-base-c9s:c9s", Map.of()),
                 1, List.of(new CatalogueEntry.Place("sclorg/s2i-python-container", "3.12/Dockerfile.c9s", "release",
-                        "abc")));
+                        "abc", null, null)));
     }
 
     @Test

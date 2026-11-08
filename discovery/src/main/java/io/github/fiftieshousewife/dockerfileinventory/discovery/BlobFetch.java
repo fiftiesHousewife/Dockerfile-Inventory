@@ -30,7 +30,7 @@ final class BlobFetch {
         return batches(requests, BATCH).stream().map(this::fetchBatch).reduce(new Fetched(0, 0), Fetched::plus);
     }
 
-    static List<List<BlobRequest>> batches(List<BlobRequest> requests, int size) {
+    static <T> List<List<T>> batches(List<T> requests, int size) {
         return IntStream.iterate(0, from -> from < requests.size(), from -> from + size)
                 .mapToObj(from -> requests.subList(from, Math.min(from + size, requests.size())))
                 .toList();

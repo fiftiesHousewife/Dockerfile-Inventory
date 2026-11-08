@@ -12,12 +12,13 @@ import java.util.stream.Collectors;
 final class Discovery {
 
     record Summary(int repositories, int skipped, int scanned, int failed, int dockerfiles,
-                   int uniqueBlobs, int fetched, int blobProblems) {
+                   int uniqueBlobs, int fetched, int blobProblems, int lastChanges) {
     }
 
     private final GitHub gitHub;
     private final Scans scans;
     private final BlobFetch blobFetch;
+    private final ChangeFetch changeFetch;
     private final DiscoveryOutput output;
     private final List<String> organizations;
 
@@ -30,6 +31,7 @@ final class Discovery {
         this.gitHub = gitHub;
         this.scans = new Scans(new RepoScan(gitHub, releases), output, concurrency);
         this.blobFetch = new BlobFetch(gitHub, output);
+        this.changeFetch = new ChangeFetch(gitHub, output);
         this.output = output;
         this.organizations = List.copyOf(organizations);
     }
@@ -45,9 +47,11 @@ final class Discovery {
         Set<String> reported = output.reportedBlobs();
         BlobFetch.Fetched fetched = blobFetch.fetch(
                 missing(byBlob.values(), sha -> output.hasBlob(sha) || reported.contains(sha)));
+        int lastChanges = changeFetch.fetch(unchanged(manifest, output.changes().stream()
+                .map(c -> new ChangeRequest(c.repository(), c.commitSha(), c.path())).collect(Collectors.toSet())));
 
         return new Summary(repositories.size(), repositories.size() - todo.size(), results.size() - failed, failed,
-                manifest.size(), byBlob.size(), fetched.stored(), fetched.problems());
+                manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges);
     }
 
     List<Repository> repositories() {
@@ -62,6 +66,11 @@ final class Discovery {
     static Map<String, Located> firstByBlob(List<Located> manifest) {
         return manifest.stream()
                 .collect(Collectors.toMap(Located::blobSha, Function.identity(), (a, b) -> a, LinkedHashMap::new));
+    }
+
+    static List<ChangeRequest> unchanged(List<Located> manifest, Set<ChangeRequest> recorded) {
+        return manifest.stream().map(l -> new ChangeRequest(l.repository(), l.commitSha(), l.path()))
+                .filter(request -> !recorded.contains(request)).distinct().toList();
     }
 
     static List<BlobRequest> missing(Collection<Located> locations, Predicate<String> known) {

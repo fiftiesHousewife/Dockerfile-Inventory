@@ -77,4 +77,12 @@ final class GitHubHttp implements GitHub {
         }
         return GraphQlBlobs.read(requests.graphql(GraphQlBlobs.query(blobs), requests.object()), blobs);
     }
+
+    @Override
+    public List<LastChange> lastChanges(List<ChangeRequest> changes) {
+        if (changes.isEmpty()) {
+            return List.of();
+        }
+        return GraphQlHistory.read(requests.graphql(GraphQlHistory.query(changes), requests.object()), changes);
+    }
 }

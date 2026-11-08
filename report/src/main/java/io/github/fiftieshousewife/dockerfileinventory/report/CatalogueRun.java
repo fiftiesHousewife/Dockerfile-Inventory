@@ -21,7 +21,7 @@ final class CatalogueRun {
 
     static void write(Path factsDir, Path discoveryDir, Path lineageDir, Path outDir, CatalogueSettings settings) {
         Map<String, List<CatalogueEntry.Place>> places =
-                CatalogueEntries.places(discoveryDir.resolve("manifest.jsonl"));
+                CatalogueEntries.places(discoveryDir);
         List<CatalogueEntry> parsed = JsonLines.read(factsDir.resolve("facts.jsonl")).stream()
                 .map(row -> CatalogueEntries.of(row, places.get(row.path("blobSha").asString())))
                 .toList();

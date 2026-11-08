@@ -12,4 +12,6 @@ interface GitHub {
     Optional<Tree> tree(String repository, String sha, boolean recursive);
 
     List<BlobText> blobs(List<BlobRequest> requests);
+
+    List<LastChange> lastChanges(List<ChangeRequest> requests);
 }

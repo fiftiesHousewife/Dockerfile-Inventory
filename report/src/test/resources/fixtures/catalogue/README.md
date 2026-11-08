@@ -6,3 +6,5 @@
 - `facts.jsonl`: the facts stage's row for it, written by `./gradlew :facts:run` on 8 Nov (the secret already
   hidden there), not by hand.
 - `manifest.jsonl`: two locations of the same file, a released one and a fork's default branch.
+- `changes.jsonl`: discovery's last change for the released location, hand-written in its shape; the fork's
+  location has none.

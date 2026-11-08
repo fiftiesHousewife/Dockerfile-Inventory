@@ -4,6 +4,7 @@ import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHu
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.repo;
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.tree;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,11 +36,11 @@ class DiscoveryTest {
     void fetchesACopyPastedDockerfileOnce() throws IOException {
         Discovery.Summary summary = discovery().run();
 
-        assertThat(summary).satisfies(
-                s -> assertThat(s.dockerfiles()).isEqualTo(3),
-                s -> assertThat(s.uniqueBlobs()).isEqualTo(2));
-        assertThat(gitHub.blobCalls).singleElement().satisfies(batch -> assertThat(batch).hasSize(2));
-        assertThat(Files.readString(out.resolve("blobs/same"))).isEqualTo("FROM ubi9-minimal\n");
+        assertAll(
+                () -> assertThat(summary.dockerfiles()).isEqualTo(3),
+                () -> assertThat(summary.uniqueBlobs()).isEqualTo(2),
+                () -> assertThat(gitHub.blobCalls).singleElement().satisfies(batch -> assertThat(batch).hasSize(2)),
+                () -> assertThat(Files.readString(out.resolve("blobs/same"))).isEqualTo("FROM ubi9-minimal\n"));
     }
 
     @Test
@@ -50,9 +51,10 @@ class DiscoveryTest {
 
         Discovery.Summary summary = discovery().run();
 
-        assertThat(summary.skipped()).isEqualTo(2);
-        assertThat(gitHub.treeCalls).isEmpty();
-        assertThat(gitHub.blobCalls).isEmpty();
+        assertAll(
+                () -> assertThat(summary.skipped()).isEqualTo(2),
+                () -> assertThat(gitHub.treeCalls).isEmpty(),
+                () -> assertThat(gitHub.blobCalls).isEmpty());
     }
 
     @Test
@@ -64,8 +66,9 @@ class DiscoveryTest {
 
         discovery().run();
 
-        assertThat(first.failed()).isEqualTo(1);
-        assertThat(gitHub.treeCalls).containsExactly("pay/worker");
+        assertAll(
+                () -> assertThat(first.failed()).isEqualTo(1),
+                () -> assertThat(gitHub.treeCalls).containsExactly("pay/worker"));
     }
 
     @Test
@@ -75,10 +78,11 @@ class DiscoveryTest {
 
         Discovery.Summary summary = discovery().run();
 
-        assertThat(summary.blobProblems()).isEqualTo(2);
-        assertThat(Files.readAllLines(out.resolve("blob-findings.jsonl")))
-                .anySatisfy(line -> assertThat(line).contains("\"binary\""))
-                .anySatisfy(line -> assertThat(line).contains("\"not found\""));
+        assertAll(
+                () -> assertThat(summary.blobProblems()).isEqualTo(2),
+                () -> assertThat(Files.readAllLines(out.resolve("blob-findings.jsonl")))
+                        .anySatisfy(line -> assertThat(line).contains("\"binary\""))
+                        .anySatisfy(line -> assertThat(line).contains("\"not found\"")));
     }
 
     @Test
@@ -101,8 +105,9 @@ class DiscoveryTest {
         Discovery.Summary summary = new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4,
                 List.of("ops")).run();
 
-        assertThat(summary.repositories()).isEqualTo(1);
-        assertThat(gitHub.treeCalls).containsOnly("ops/tools");
+        assertAll(
+                () -> assertThat(summary.repositories()).isEqualTo(1),
+                () -> assertThat(gitHub.treeCalls).containsOnly("ops/tools"));
     }
 
     @Test
@@ -110,9 +115,10 @@ class DiscoveryTest {
         gitHub.repository("ops", repo("ops/tools", A));
         var output = new DiscoveryOutput(out);
 
-        assertThat(new Discovery(gitHub, ReleaseIndex.empty(), output, 1, List.of("ops")).repositories())
-                .extracting(Repository::nameWithOwner).containsExactly("ops/tools");
-        assertThat(new Discovery(gitHub, ReleaseIndex.empty(), output, 1).repositories()).hasSize(3);
+        assertAll(
+                () -> assertThat(new Discovery(gitHub, ReleaseIndex.empty(), output, 1, List.of("ops")).repositories())
+                        .extracting(Repository::nameWithOwner).containsExactly("ops/tools"),
+                () -> assertThat(new Discovery(gitHub, ReleaseIndex.empty(), output, 1).repositories()).hasSize(3));
     }
 
     @Test
@@ -136,6 +142,40 @@ class DiscoveryTest {
 
         assertThat(Discovery.missing(List.of(stored, missing), "same"::equals))
                 .containsExactly(new BlobRequest("pay/worker", "other"));
+    }
+
+    @Test
+    void recordsEachLocationsLastChange() {
+        gitHub.change(new ChangeRequest("pay/api", A, "Dockerfile"), "c1", "2026-03-02T10:11:12Z");
+
+        Discovery.Summary summary = discovery().run();
+
+        assertAll(
+                () -> assertThat(summary.lastChanges()).isEqualTo(1),
+                () -> assertThat(new DiscoveryOutput(out).changes()).extracting(LastChange::changedAt)
+                        .containsExactly("2026-03-02T10:11:12Z"));
+    }
+
+    @Test
+    void aSecondRunAsksOnlyForLocationsWithoutALastChange() {
+        gitHub.change(new ChangeRequest("pay/api", A, "Dockerfile"), "c1", "2026-03-02T10:11:12Z");
+        discovery().run();
+        gitHub.changeCalls.clear();
+
+        discovery().run();
+
+        assertThat(gitHub.changeCalls).singleElement().satisfies(batch -> assertThat(batch).containsExactly(
+                new ChangeRequest("pay/worker", B, "Dockerfile"), new ChangeRequest("pay/worker", B,
+                        "debug/Dockerfile")));
+    }
+
+    @Test
+    void asksForTheLastChangeOfEachLocationNotYetRecorded() {
+        var recorded = new Located("pay/api", A, Scope.RELEASED, "Dockerfile", "same");
+        var unrecorded = new Located("pay/worker", B, Scope.RELEASED, "Dockerfile", "same");
+
+        assertThat(Discovery.unchanged(List.of(recorded, unrecorded), Set.of(new ChangeRequest("pay/api", A,
+                "Dockerfile")))).containsExactly(new ChangeRequest("pay/worker", B, "Dockerfile"));
     }
 
     private Discovery discovery() {

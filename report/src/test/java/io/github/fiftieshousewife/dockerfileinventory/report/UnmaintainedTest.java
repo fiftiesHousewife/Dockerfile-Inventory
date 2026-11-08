@@ -21,7 +21,7 @@ class UnmaintainedTest {
     }
 
     private static CatalogueEntry.Place in(String repository) {
-        return new CatalogueEntry.Place(repository, "Dockerfile", "release", "abc");
+        return new CatalogueEntry.Place(repository, "Dockerfile", "release", "abc", null, null);
     }
 
     @Test

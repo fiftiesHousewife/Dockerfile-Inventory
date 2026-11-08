@@ -161,8 +161,8 @@ Progress (8 Nov): facts records the final image's configuration and, per stage, 
 changes and unusual steps; the report writes `catalogue/dockerfiles.jsonl` (no archetype, no end-of-life status),
 each entry with its stages, packages, language runtimes (final, build-only, or inherited from the nearest ancestor
 whose final image has it, with evidence), links (lineage or inferred) and footprint (its chain root's base class,
-built in for now; the settable list to come), and its hierarchy (slice below). Still to build: each Dockerfile's
-last change (discovery), image labels, then the action fields; measured on an estate with lineage.
+built in for now; the settable list to come), its hierarchy and each location's last change (slices below). Still to
+build: image labels, then the action fields; measured on an estate with lineage.
 
 ## Slice: the hierarchy (planned 8 Nov; built 8 Nov)
 
@@ -190,6 +190,32 @@ configs added unedited):
 3. `Hierarchy`: an image's chain to the root with each step's own layers; `blockedBy` naming an unmaintained step;
    layers from the image; declared layers through inferred ancestors; over the limit.
 4. `CatalogueRun` writing `hierarchy` with lineage and without; `ReportMain`'s settings and refusals; README.
+
+## Slice: each Dockerfile's last change (planned 8 Nov; built 8 Nov)
+
+Answer 6 above: discovery fetches, per location, the last commit that touched the Dockerfile's path up to the
+scanned commit. A date belongs to a location, not a blob (one blob in two repositories changed at different
+times), so it is kept by repository, scanned commit and path, and the catalogue shows it on each location.
+
+- After the scans and the blob fetch, discovery asks for every location without a recorded change, 50 to a GraphQL
+  query across repositories (as blobs are): per repository and commit an aliased `repository { object(oid) { ... on
+  Commit { history(first: 1, path) { nodes { oid committedDate } } } } }`, one `history` per path.
+- Each answer is appended to `changes.jsonl` (`repository`, `commitSha`, `path`, `changedIn`, `changedAt`) as its
+  batch returns, so a killed run resumes; a location GitHub has no answer for is asked again on the next run.
+- The report's catalogue reads `changes.jsonl` beside the manifest: each location gains `lastChanged` and
+  `lastChangedIn`.
+
+Fixtures are hand-written in the shape GitHub documents, as discovery's others are until a scanner token records
+real ones.
+
+Tests, in order:
+
+1. `GraphQlHistory.query`: one aliased field per repository and commit, one `history` per path, names quoted.
+2. `GraphQlHistory.read`: each request's change; a request without an answer left out.
+3. `GitHubHttp.lastChanges`: one query for a batch, read from the fixture; no call for no requests.
+4. `DiscoveryOutput`: changes recorded and read back.
+5. `ChangeFetch`: batches of 50; the answers recorded; the run asks only for locations without a change.
+6. `CatalogueEntries.places`: a location's last change from `changes.jsonl`; none when it is missing; README.
 
 ## Tests, in order
 

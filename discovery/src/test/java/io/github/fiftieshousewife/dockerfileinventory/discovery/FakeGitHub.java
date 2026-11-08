@@ -17,6 +17,8 @@ final class FakeGitHub implements GitHub {
     final List<String> treeCalls = new CopyOnWriteArrayList<>();
     final List<String> treeRequests = new CopyOnWriteArrayList<>();
     final List<List<BlobRequest>> blobCalls = new CopyOnWriteArrayList<>();
+    final Map<ChangeRequest, LastChange> changes = new LinkedHashMap<>();
+    final List<List<ChangeRequest>> changeCalls = new CopyOnWriteArrayList<>();
 
     FakeGitHub repository(String org, Repository repository) {
         repositoriesByOrg.computeIfAbsent(org, k -> new ArrayList<>()).add(repository);
@@ -35,6 +37,12 @@ final class FakeGitHub implements GitHub {
 
     FakeGitHub blob(String sha, String text) {
         blobs.put(sha, new BlobText(sha, text, false, false));
+        return this;
+    }
+
+    FakeGitHub change(ChangeRequest request, String changedIn, String changedAt) {
+        changes.put(request, new LastChange(request.repository(), request.commitSha(), request.path(), changedIn,
+                changedAt));
         return this;
     }
 
@@ -86,5 +94,11 @@ final class FakeGitHub implements GitHub {
     public List<BlobText> blobs(List<BlobRequest> requests) {
         blobCalls.add(List.copyOf(requests));
         return requests.stream().map(r -> blobs.get(r.sha())).filter(b -> b != null).toList();
+    }
+
+    @Override
+    public List<LastChange> lastChanges(List<ChangeRequest> requests) {
+        changeCalls.add(List.copyOf(requests));
+        return requests.stream().map(changes::get).filter(c -> c != null).toList();
     }
 }

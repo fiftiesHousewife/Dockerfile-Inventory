@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.IntStream;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.MissingNode;
 
 final class CatalogueEntries {
 
@@ -25,12 +26,23 @@ final class CatalogueEntries {
                 null, null, null, null, null, failure.path("message").asString());
     }
 
-    static Map<String, List<CatalogueEntry.Place>> places(Path manifest) {
+    static Map<String, List<CatalogueEntry.Place>> places(Path discoveryDir) {
+        Map<String, JsonNode> changes = new HashMap<>();
+        JsonLines.read(discoveryDir.resolve("changes.jsonl")).forEach(row -> changes.put(location(row), row));
         Map<String, List<CatalogueEntry.Place>> places = new HashMap<>();
-        JsonLines.read(manifest).forEach(row -> places.computeIfAbsent(row.path("blobSha").asString(),
-                key -> new ArrayList<>()).add(new CatalogueEntry.Place(row.path("repository").asString(),
-                row.path("path").asString(), row.path("scope").asString(), row.path("commitSha").asString())));
+        JsonLines.read(discoveryDir.resolve("manifest.jsonl")).forEach(row -> {
+            JsonNode change = changes.getOrDefault(location(row), MissingNode.getInstance());
+            places.computeIfAbsent(row.path("blobSha").asString(), key -> new ArrayList<>()).add(
+                    new CatalogueEntry.Place(row.path("repository").asString(), row.path("path").asString(),
+                            row.path("scope").asString(), row.path("commitSha").asString(),
+                            change.path("changedAt").stringValue(null), change.path("changedIn").stringValue(null)));
+        });
         return places;
+    }
+
+    private static String location(JsonNode row) {
+        return row.path("repository").asString() + "@" + row.path("commitSha").asString() + ":"
+                + row.path("path").asString();
     }
 
     static CatalogueEntry.Image image(JsonNode row) {

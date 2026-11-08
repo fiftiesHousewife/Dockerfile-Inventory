@@ -128,6 +128,7 @@ symlinks, third-party copies (`vendor/`, `node_modules/`, `third_party/`) and te
 | `blobs/<sha>` | Each distinct Dockerfile's text, stored once however many repositories copy it |
 | `repos.jsonl` | One line per repository per run: outcome (`SCANNED`, `EMPTY`, `TRUNCATED`, `RELEASE_COMMIT_MISSING`, `FAILED`), commit, archived and fork flags, Dockerfile count |
 | `blob-findings.jsonl` | Dockerfiles that could not be stored: binary, too large, or not found |
+| `changes.jsonl` | One line per location: the last commit that changed the Dockerfile up to the scanned commit, and its date; a location missing here is asked for again on the next run |
 
 Several discovery runs (one per organisation, say) are merged into one estate for the stages after it:
 
@@ -282,7 +283,7 @@ what the estate builds. Secret-shaped values, and values under a secret's name, 
 
 | Field | Contents |
 | --- | --- |
-| `blobSha`, `locations` | The Dockerfile's identity, and every repository, path, scope and commit holding it |
+| `blobSha`, `locations` | The Dockerfile's identity, and every repository, path, scope and commit holding it, each with when the file last changed there (`lastChanged`, `lastChangedIn`) |
 | `parseError` | Why it did not parse; the fields below are then empty |
 | `image` | The final image as written: user and its kind, ports, entrypoint and command with their form, working directory, volumes, health check, shell, stop signal, environment and labels |
 | `build.stages` | Per stage: its base (name, tag, digest, pinned) or the stage it builds on, the stages it copies from, its instructions, `RUN`s, commands, unreadable `RUN`s and layers, every copy with its origin (context, stage, image, URL, heredoc) and `--chown`/`--chmod`, every `chown`/`chgrp`/`chmod`, and unusual steps (`ADD`, `ONBUILD`, `VOLUME`, `RUN --mount`, ...) |

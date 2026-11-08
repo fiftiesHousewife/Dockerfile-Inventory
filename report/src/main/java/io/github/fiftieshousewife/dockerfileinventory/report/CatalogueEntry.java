@@ -11,7 +11,8 @@ record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Ima
                       CatalogueLinks.Links links, Footprint.Found footprint, Hierarchies.Hierarchy hierarchy,
                       String parseError) {
 
-    record Place(String repository, String path, String scope, String commit) {
+    record Place(String repository, String path, String scope, String commit, String lastChanged,
+                 String lastChangedIn) {
     }
 
     record Command(String form, List<String> arguments) {

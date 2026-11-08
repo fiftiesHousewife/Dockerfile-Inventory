@@ -19,7 +19,7 @@ class CatalogueEntriesTest {
     private static final JsonNode ROW = JsonLines.read(FIXTURES.resolve("facts.jsonl")).getFirst();
 
     private static CatalogueEntry entry() {
-        return CatalogueEntries.of(ROW, CatalogueEntries.places(FIXTURES.resolve("manifest.jsonl")).get(SHA));
+        return CatalogueEntries.of(ROW, CatalogueEntries.places(FIXTURES).get(SHA));
     }
 
     @Test
@@ -29,9 +29,10 @@ class CatalogueEntriesTest {
         assertAll(
                 () -> assertThat(entry.blobSha()).isEqualTo(SHA),
                 () -> assertThat(entry.locations()).containsExactly(
-                        new CatalogueEntry.Place("payments/server", "Dockerfile", "RELEASE", "abc123"),
+                        new CatalogueEntry.Place("payments/server", "Dockerfile", "RELEASE", "abc123",
+                                "2026-03-02T10:11:12Z", "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1"),
                         new CatalogueEntry.Place("payments/server-fork", "build/Dockerfile", "DEFAULT_BRANCH",
-                                "def456")),
+                                "def456", null, null)),
                 () -> assertThat(entry.bundle()).isFalse());
     }
 
