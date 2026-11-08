@@ -1,4 +1,4 @@
-// Phase 2: collapse the estate into archetypes, rank them, catalogue bases, and write tables and a dashboard.
+// Phase 2: rank the archetypes, write the catalogue, and the HTML pages drawn from it.
 plugins {
     id("inventory.java")
     application

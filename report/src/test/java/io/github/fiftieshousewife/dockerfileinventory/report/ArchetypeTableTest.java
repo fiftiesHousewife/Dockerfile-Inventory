@@ -11,16 +11,16 @@ class ArchetypeTableTest {
     private static final ArchetypeRows ROWS = ArchetypeRows.of(ArchetypeRowsTest.RANKING, ArchetypeRowsTest.ESTATE);
 
     @Test
-    void aRowLinksItsNameToItsPageByItsRankInArchetypesJson() {
-        assertThat(ArchetypeTable.row(ROWS.rows().getFirst(), 3, Set.of(2), "")).isEqualTo(
-                "<tr><td class=\"num\">1</td><td><a href=\"archetypes/2.html\">ubi-minimal 9 with microdnf (git), "
+    void aRowLinksItsNameToItsFirstCataloguedDockerfilesPage() {
+        assertThat(ArchetypeTable.row(ROWS.rows().getFirst(), 3, Set.of("a1"), "")).isEqualTo(
+                "<tr><td class=\"num\">1</td><td><a href=\"dockerfiles/a1.html\">ubi-minimal 9 with microdnf (git), "
                         + "numeric user</a></td><td class=\"num\">3</td><td>" + Html.meter(1.0) + "</td>"
                         + "<td class=\"num\">1</td><td><span class=\"chip\">acme 3</span></td>"
                         + "<td>acme/api, 66.7%</td></tr>");
     }
 
     @Test
-    void aRowWithoutAPageNamesItsOnlyLocationInstead() {
+    void aRowWithNoCataloguedDockerfileNamesItsFirstLocationInstead() {
         assertThat(ArchetypeTable.row(ROWS.rows().get(2), 3, Set.of(), "../"))
                 .contains("<td>debian 12, no packages, root<br><span class=\"note\">beta/x: Dockerfile</span></td>");
     }

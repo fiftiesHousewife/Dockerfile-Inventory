@@ -6,7 +6,6 @@ import java.util.Map;
 /**
  * The report job's entry point. It takes its settings from the environment, as the OpenShift job sets them:
  * {@code FACTS_DIR}, {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR}, {@code CONVERTER_DIR},
- * {@code EOL_LIST},
  * {@code STALE_AFTER_MONTHS}, {@code LAYER_LIMIT}, {@code FOOTPRINTS}, {@code LINK_THRESHOLD} and
  * {@code LINK_MARGIN}.
  */
@@ -20,11 +19,10 @@ public final class ReportMain {
         Map<String, String> env = System.getenv();
         String lineage = env.get("LINEAGE_DIR");
         String converter = env.get("CONVERTER_DIR");
-        String eolList = env.get("EOL_LIST");
         Path out = Path.of(required(env, "OUT_DIR"));
         new ReportRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
                 lineage == null ? null : Path.of(lineage), converter == null ? null : Path.of(converter),
-                eolList == null ? EolList.empty() : EolList.read(Path.of(eolList)), catalogueSettings(env), out).run();
+                catalogueSettings(env), out).run();
         System.out.println("Report written to " + out.resolve("index.html"));
     }
 

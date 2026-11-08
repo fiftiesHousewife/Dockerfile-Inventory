@@ -23,11 +23,11 @@ class ArchetypeRowsTest {
             11, 3, 4);
 
     static final Estate ESTATE = new Estate(List.of(
-            FiguresTest.ESTATE.dockerfiles().get(0), FiguresTest.ESTATE.dockerfiles().get(1),
-            FiguresTest.ESTATE.dockerfiles().get(2),
-            FiguresTest.file("c1", new Base("scratch", null, null), "ROOT", false, "beta/c"),
-            FiguresTest.file("u1", new Base("${BASE}", null, null), "ROOT", false, "beta/u")),
-            FiguresTest.ESTATE.failures(), List.of(), Map.of());
+            Estates.ESTATE.dockerfiles().get(0), Estates.ESTATE.dockerfiles().get(1),
+            Estates.ESTATE.dockerfiles().get(2),
+            Estates.file("c1", new Base("scratch", null, null), "ROOT", false, "beta/c"),
+            Estates.file("u1", new Base("${BASE}", null, null), "ROOT", false, "beta/u")),
+            Estates.ESTATE.failures(), List.of(), Map.of());
 
     @Test
     void bundlesTemplatesAndUnresolvedBasesLeaveTheRankingWhichIsNumberedAfresh() {
@@ -43,9 +43,9 @@ class ArchetypeRowsTest {
     @Test
     void whatLeftTheRankingIsCountedApartByKind() {
         assertThat(ArchetypeRows.of(RANKING, ESTATE).apart()).containsExactly(
-                Map.entry(ArchetypeName.BUNDLE, new Figures.Apart(1, 4)),
-                Map.entry("template, not a Dockerfile", new Figures.Apart(1, 1)),
-                Map.entry("base set by a variable", new Figures.Apart(1, 1)));
+                Map.entry(ArchetypeName.BUNDLE, new ArchetypeRows.Apart(1, 4)),
+                Map.entry("template, not a Dockerfile", new ArchetypeRows.Apart(1, 1)),
+                Map.entry("base set by a variable", new ArchetypeRows.Apart(1, 1)));
     }
 
     @Test
@@ -54,16 +54,6 @@ class ArchetypeRowsTest {
             assertThat(r.organisations()).containsExactly(Map.entry("acme", 3));
             assertThat(r.repositories()).containsExactly(Map.entry("acme/api", 2), Map.entry("acme/web", 1));
         });
-    }
-
-    @Test
-    void withinAnOrganisationOnlyItsFilesCountAndArchetypesWithoutThemAreLeftOut() {
-        ArchetypeRows beta = ArchetypeRows.of(RANKING, ESTATE.within("beta"));
-
-        assertThat(beta.rows()).extracting(ArchetypeRows.Row::name, ArchetypeRows.Row::files)
-                .containsExactly(tuple("scratch, no packages, root", 1), tuple("debian 12, no packages, root", 1));
-        assertThat(beta.apart()).doesNotContainKey(ArchetypeName.BUNDLE)
-                .containsEntry("template, not a Dockerfile", new Figures.Apart(1, 1));
     }
 
     @Test

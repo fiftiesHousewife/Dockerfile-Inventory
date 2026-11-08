@@ -42,6 +42,7 @@ final class HierarchyPage {
                 .sorted(Comparator.comparing(HierarchyPage::label)).toList();
         String li = "<li><a href=\"dockerfiles/" + escape(entry.blobSha()) + ".html\">"
                 + escape(entry.locations().getFirst().repository()) + "</a> " + escape(rest(entry))
+                + " <span class=\"note\">" + escape(detail(entry)) + "</span>"
                 + (below.isEmpty() ? "" : "<ul>" + below.stream().map(child -> node(child, path))
                         .collect(Collectors.joining()) + "</ul>")
                 + "</li>";
@@ -59,6 +60,15 @@ final class HierarchyPage {
 
     private List<CatalogueEntry> known(List<CatalogueLinks.Link> links) {
         return links.stream().map(link -> bySha.get(link.blobSha())).filter(e -> e != null).distinct().toList();
+    }
+
+    static String detail(CatalogueEntry entry) {
+        int images = entry.hierarchy().images().size();
+        String changed = entry.locations().stream().map(CatalogueEntry.Place::lastChanged).filter(c -> c != null)
+                .max(Comparator.naturalOrder()).map(c -> ", last changed " + c.substring(0, 10)).orElse("");
+        List<String> unmaintained = entry.hierarchy().unmaintained();
+        return entry.hierarchy().layers().total() + " layers, " + images + (images == 1 ? " image" : " images")
+                + changed + (unmaintained.isEmpty() ? "" : ", unmaintained: " + String.join("; ", unmaintained));
     }
 
     static String rest(CatalogueEntry entry) {

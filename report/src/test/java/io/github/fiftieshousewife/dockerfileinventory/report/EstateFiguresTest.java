@@ -83,4 +83,21 @@ class EstateFiguresTest {
         assertThat(List.of(3, 7, 15, 30, 41).stream().map(EstateFigures::layerBand).toList())
                 .containsExactly("1-5", "6-10", "11-20", "21-40", "over 40");
     }
+
+    @Test
+    void theLayerBandsComeInTheirOwnOrder() {
+        assertThat(EstateFigures.bands(List.of(41, 7, 15, 3, 8)).keySet())
+                .containsExactly("1-5", "6-10", "11-20", "over 40");
+    }
+
+    @Test
+    void anImageCreditedToTwoIdenticalDockerfilesCountsOnce() {
+        EstateFigures figures = EstateFigures.of(List.of(
+                entry("aaa", "team/a", "NUMERIC", List.of(), "minimal", 10, 0, List.of(), List.of(), List.of(),
+                        List.of(image("sha256:app"))),
+                entry("bbb", "team/b", "NUMERIC", List.of(), "minimal", 10, 0, List.of(), List.of(), List.of(),
+                        List.of(image("sha256:app")))));
+
+        assertThat(figures.images()).isEqualTo(1);
+    }
 }

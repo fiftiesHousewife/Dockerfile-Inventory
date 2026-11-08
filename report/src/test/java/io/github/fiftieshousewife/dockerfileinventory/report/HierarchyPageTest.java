@@ -50,4 +50,26 @@ class HierarchyPageTest {
 
         assertThat(HierarchyPage.rest(twice)).isEqualTo("Dockerfile (and 1 more)");
     }
+
+    @Test
+    void aNodeSaysHowManyLayersAndImagesItHas() {
+        CatalogueEntry entry = Entries.entry("aaa", "team/a", "NUMERIC", List.of(), "minimal", 12, 0, List.of(),
+                List.of(), List.of(), List.of(Entries.image("sha256:app")));
+
+        assertThat(HierarchyPage.detail(entry)).isEqualTo("12 layers, 1 image");
+    }
+
+    @Test
+    void aNodeSaysWhenItLastChangedAndWhyItIsUnmaintained() {
+        CatalogueEntry plain = Entries.plain("aaa", "team/a");
+        CatalogueEntry entry = new CatalogueEntry("aaa", List.of(
+                new CatalogueEntry.Place("team/a", "Dockerfile", "RELEASED", "c1", "2024-05-01T10:00:00Z", null),
+                new CatalogueEntry.Place("team/a", "b/Dockerfile", "RELEASED", "c1", "2025-03-01T10:00:00Z", null)),
+                false, plain.image(), plain.build(), plain.links(), plain.footprint(),
+                new Hierarchies.Hierarchy(plain.hierarchy().layers(), List.of(), List.of(),
+                        List.of("repository archived")), null, null);
+
+        assertThat(HierarchyPage.detail(entry))
+                .isEqualTo("10 layers, 0 images, last changed 2025-03-01, unmaintained: repository archived");
+    }
 }

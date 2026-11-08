@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
@@ -20,18 +19,16 @@ final class ReportRun {
     private final Path discoveryDir;
     private final Path lineageDir;
     private final Path converterDir;
-    private final EolList eol;
     private final CatalogueSettings catalogueSettings;
     private final Path outDir;
     private final ObjectMapper json = new ObjectMapper();
 
-    ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, Path converterDir, EolList eol,
+    ReportRun(Path factsDir, Path discoveryDir, Path lineageDir, Path converterDir,
               CatalogueSettings catalogueSettings, Path outDir) {
         this.factsDir = factsDir;
         this.discoveryDir = discoveryDir;
         this.lineageDir = lineageDir;
         this.converterDir = converterDir;
-        this.eol = eol;
         this.catalogueSettings = catalogueSettings;
         this.outDir = outDir;
     }
@@ -48,8 +45,7 @@ final class ReportRun {
                 .collect(Collectors.joining("\n", "", "\n")));
         CatalogueRun.write(new CatalogueRun.Inputs(factsDir, discoveryDir, lineageDir, converterDir, archetypeGroups),
                 outDir, catalogueSettings);
-        Pages.all(Report.of(estate, ranking, passes.subList(0, 3), archetypeGroups.size(), eol,
-                Optional.ofNullable(lineageDir).map(dir -> LineageFiles.read(dir, locations(estate))), discoveryDir))
+        Pages.all(CatalogueView.read(outDir.resolve(CatalogueRun.PATH)), ArchetypeRows.of(ranking, estate))
                 .forEach(this::write);
     }
 

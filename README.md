@@ -227,8 +227,7 @@ names, so discovery reads the Dockerfiles that built them. The mirror copies wit
 ```bash
 export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
-export LINEAGE_DIR=/data/lineage              # optional: effective users and the lineage section
-export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate
+export LINEAGE_DIR=/data/lineage              # optional: registry images, their chains and labels
 export CONVERTER_DIR=/data/converter          # optional: the converter's OUT_DIR, for each Dockerfile's round trip
 export STALE_AFTER_MONTHS=12                  # optional: an image unpublished this long is unmaintained
 export LAYER_LIMIT=40                         # optional: an image with more layers is flagged
@@ -251,35 +250,23 @@ version, package managers and packages, user kind, ports, entrypoint form, stage
 | `catalogue/dockerfiles.jsonl` | One line per distinct Dockerfile, described below |
 | `index.html` | The summary page, described below; links to the pages below |
 | `orgs/<org>.html` | The same summary for one organisation (the first part of each repository's name) |
-| `archetypes.html`, `archetypes-<n>.html` | Every archetype, ranked, 250 to a page, each named from what it builds |
-| `archetypes/<rank>.html` | One archetype: its signature, its organisations and repositories, every file and location, and one example Dockerfile with secret values hidden (archetypes with two or more locations) |
-| `bases.html` | Every base, by family |
-| `lineage.html` | With `LINEAGE_DIR`: the family tree, grouped by root, with each image's link and its problems marked |
+| `hierarchy.html` | Every tree of estate Dockerfiles built on one another, from each root down, each node with its total layers, registry images, when it last changed and why it is unmaintained; how many stand alone |
+| `blocked.html` | The unmaintained images in the middle of chains, the one holding back most images first, each with its reasons and the Dockerfiles whose images it holds back |
+| `archetypes.html`, `archetypes-<n>.html` | Every archetype, ranked, 250 to a page, each named from what it builds and linked to the page of one of its Dockerfiles |
+| `dockerfiles/<blobSha>.html` | One Dockerfile's catalogue entry made readable: its locations; the final image; its stages, copies and ownership changes; packages and runtimes; the Dockerfiles above and below it; its registry images with their chains; its actions (release scope, reach, conversion, base lag, near-duplicates); or why it did not parse |
 
-Each page stands alone (styles and charts inside it, no scripts, nothing fetched), linked to the others by relative
-links, so the folder can be copied or served as it is.
+Every page is drawn from `catalogue/dockerfiles.jsonl` (the archetype ranking from the same run), so the pages and
+the catalogue cannot disagree. Each page stands alone (styles inside it, no scripts, nothing fetched), linked to the
+others by relative links, so the folder can be copied or served as it is.
 
-The summary opens with one line each for scope, the four passes and how many files parsed. Two kinds of file are
-counted apart and left out of the user, base and archetype figures, each with the organisations that hold them:
-templates saved under a Dockerfile's name, and metadata-only bundles (`FROM scratch` with no `RUN`, `CMD` or
-`ENTRYPOINT`, as operator bundles are). Then:
-
-- a health strip: six shares, each good, watch or act in words (parse failures good at 1% or less, act above 5%;
-  final user root 10% / 30%; bases pinned by digest 80% / 20%; bases at end of life 0% / 5%; scanned at a released
-  commit 90% / 50%; `RUN`s too complex to read 5% / 15%), or "no data" where there is no end-of-life list or no
-  release index, with the organisation that contributes most under each;
-- the organisations compared, with bars, and a sentence for each where it stands apart: a share that crosses a
-  threshold or sits 20 points from the estate's, a single repository holding half its locations, base families no
-  other organisation uses;
-- the archetype coverage curve and the ten largest archetypes;
-- the top base families, with how many organisations use each; package managers; final user;
-- with `LINEAGE_DIR`, how confidently images are linked to Dockerfiles (strong, weak, none, each explained), and the
-  images on an outdated base and those with no Dockerfile;
-- links to the data files.
+The summary counts the Dockerfiles, registry images, locations and organisations, and how many did not parse; how
+many estate Dockerfiles each stands on and how many layers each carries, with those over `LAYER_LIMIT`; the
+unmaintained images by reason and how many images stand on one; the final images running as root, exposing a port
+below 1024 or shipping a toolchain (a compiler, build tool or `-devel` package in a final stage); the footprints; the
+language runtimes, where each sits; and the unusual steps by kind. It links to the other pages and the data files.
 
 The archetype pages leave templates, bundles, unreadable files and bases set by a variable out of the ranking, so
 their count of archetypes covering 80% of locations differs from k80 in `passes.json`, which counts every location.
-Every number has an info marker explaining it.
 
 ### The catalogue
 

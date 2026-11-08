@@ -61,17 +61,15 @@ lineage/            stage 1b: Artifactory images -> family tree -> links to Dock
                     Links (the run), Alignment (scoring: the best and the runner-up), BasePaths, StepIndex (candidates by
                     rare steps)
                     Fold (effective user, env, labels, with who set each), Gaps, Analysis, Dockerfiles, LineageRates
-report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, bases, tables, linked HTML pages
-                    Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, BaseCatalogue, EolList,
-                    Tallies, Figures (per organisation, bundles apart), Report, ReportRun
-                    Pages (writes them): SummaryPage, SummarySections, StripSection, OrganisationsSection,
-                    AppliesTo (the sentences), ArchetypeTable, ArchetypeRows, ArchetypeName, ArchetypePage,
-                    BasesPage, LineagePage, LineageSummary, CountTable, CoverageChart, Svg, Page, Html, Style;
-                    Health (thresholds), About (info text), HiddenSecrets
+report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, the catalogue, HTML pages from it
+                    Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, Tallies, ReportRun
                     CatalogueRun (catalogue/dockerfiles.jsonl): CatalogueEntry, CatalogueEntries, CatalogueLinks,
                     Footprint, Runtimes, Versions; RegistryImages (lineage's output per image), Unmaintained,
-                    Hierarchies (chains, layers, blockedBy), CatalogueSettings (LinkRule, FootprintRules), Placement; Actions: ReleaseScope,
-                    Reaches, Conversions, Siblings
+                    Hierarchies (chains, layers, blockedBy), CatalogueSettings (LinkRule, FootprintRules),
+                    Placement; Actions: ReleaseScope, Reaches, Conversions, Siblings, BaseLags, Cadences, Provenance
+                    Pages (writes them, from CatalogueView and ArchetypeRows): OverviewPage (EstateFigures),
+                    HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName;
+                    Page, Html, Style, About (info text)
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
                     Rule, EffectiveRule, Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
                     one class per rule (S1-S4, R1-R3, H1-H3, I1, I2); RuleSet, RulesRun, DiscoveryFiles,

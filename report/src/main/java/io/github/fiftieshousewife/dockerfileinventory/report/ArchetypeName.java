@@ -6,6 +6,9 @@ import java.util.Map;
 
 final class ArchetypeName {
 
+    static final String UNRESOLVED_BASE = "unresolved";
+
+
     static final String BUNDLE = "bundle (scratch, metadata only)";
     private static final int PACKAGES_NAMED = 3;
 
@@ -47,7 +50,7 @@ final class ArchetypeName {
         int colon = familyAndMajor.lastIndexOf(':');
         String family = colon < 0 ? familyAndMajor : familyAndMajor.substring(0, colon);
         String major = colon < 0 ? "" : familyAndMajor.substring(colon + 1);
-        String name = family.equals(BaseCatalogue.UNRESOLVED) ? "base set by a variable" : family;
+        String name = family.equals(UNRESOLVED_BASE) ? "base set by a variable" : family;
         return major.isEmpty() ? name : name + " " + major;
     }
 

@@ -133,24 +133,6 @@ class EstateTest {
     }
 
     @Test
-    void theOrganisationsAreThoseOfEveryLocationSorted() {
-        assertThat(Estate.read(FIXTURES, FIXTURES, null).organisations()).containsExactly("payments", "platform");
-    }
-
-    @Test
-    void anEstateWithinAnOrganisationKeepsOnlyItsLocationsAndTheFilesAtThem() {
-        Estate payments = Estate.read(FIXTURES, FIXTURES, null).within("payments");
-
-        assertThat(payments).satisfies(e -> {
-            assertThat(e.dockerfiles()).extracting(Dockerfile::blobSha).containsExactly("blob-a");
-            assertThat(e.dockerfiles().getFirst().locations()).hasSize(2);
-            assertThat(e.failures()).isEmpty();
-            assertThat(e.missing()).isEmpty();
-        });
-        assertThat(Estate.read(FIXTURES, FIXTURES, null).within("platform").failures()).hasSize(1);
-    }
-
-    @Test
     void finalPackagesAreThoseInstalledInTheLastStageOnly() {
         JsonNode facts = JSON.readTree("""
                 {"stageCount":2,"packageCalls":[

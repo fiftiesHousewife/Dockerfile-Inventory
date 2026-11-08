@@ -14,6 +14,9 @@ import tools.jackson.databind.ObjectMapper;
 
 final class CatalogueRun {
 
+    static final String PATH = "catalogue/dockerfiles.jsonl";
+
+
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private CatalogueRun() {
@@ -58,7 +61,7 @@ final class CatalogueRun {
                 CatalogueEntries.unparsed(failure, places.get(failure.path("blobSha").asString()))));
         try {
             Files.createDirectories(outDir.resolve("catalogue"));
-            Files.writeString(outDir.resolve("catalogue/dockerfiles.jsonl"), entries.stream()
+            Files.writeString(outDir.resolve(PATH), entries.stream()
                     .map(entry -> hideSecretShapesMissedUpstream(JSON.writeValueAsString(entry)))
                     .collect(Collectors.joining("\n", "", "\n")));
         } catch (IOException e) {

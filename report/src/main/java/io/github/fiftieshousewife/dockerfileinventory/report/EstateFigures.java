@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +16,7 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
                      int lowPort, int toolchain, Map<String, Integer> footprints, Map<String, Integer> runtimes,
                      Map<String, Integer> unusual, Map<String, Integer> unmaintained, int blockedImages) {
 
+    private static final List<String> BANDS = List.of("1-5", "6-10", "11-20", "21-40", "over 40");
     private static final Pattern TOOLCHAIN = Pattern.compile(
             "gcc|gcc-c\\+\\+|g\\+\\+|make|cmake|git|binutils|build-essential|golang|maven|gradle|.*-devel|.*-dev");
 
@@ -22,10 +24,11 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
         List<CatalogueEntry> parsed = entries.stream().filter(e -> e.parseError() == null).toList();
         List<Hierarchies.BuiltImage> images = parsed.stream().flatMap(e -> e.hierarchy().images().stream()).toList();
         return new EstateFigures(parsed.size(), entries.size() - parsed.size(),
-                entries.stream().mapToInt(e -> e.locations().size()).sum(), images.size(),
+                entries.stream().mapToInt(e -> e.locations().size()).sum(),
+                (int) images.stream().map(Hierarchies.BuiltImage::configDigest).distinct().count(),
                 (int) entries.stream().map(CatalogueView::organisation).distinct().count(),
                 tally(parsed.stream().map(e -> e.links().depth()).toList()),
-                tally(parsed.stream().map(e -> layerBand(e.hierarchy().layers().total())).toList()),
+                bands(parsed.stream().map(e -> e.hierarchy().layers().total()).toList()),
                 (int) parsed.stream().filter(e -> e.hierarchy().layers().overLimit()).count(),
                 (int) parsed.stream().filter(e -> "ROOT".equals(e.image().userKind())).count(),
                 (int) parsed.stream().filter(e -> lowPort(e.image().ports())).count(),
@@ -36,7 +39,8 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
                 tally(parsed.stream().flatMap(e -> e.build().stages().stream()
                         .flatMap(s -> s.unusual().stream()).distinct()).toList()),
                 unmaintained(parsed, images),
-                (int) images.stream().filter(i -> !i.blockedBy().isEmpty()).count());
+                (int) images.stream().filter(i -> !i.blockedBy().isEmpty())
+                        .map(Hierarchies.BuiltImage::configDigest).distinct().count());
     }
 
     static Map<String, Integer> unmaintained(List<CatalogueEntry> parsed, List<Hierarchies.BuiltImage> images) {
@@ -65,6 +69,13 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
         Set<Integer> finals = Set.copyOf(Runtimes.finalStages(build.stages()));
         return build.packages().stream().anyMatch(p -> finals.contains(p.stage())
                 && TOOLCHAIN.matcher(p.name()).matches());
+    }
+
+    static Map<String, Integer> bands(List<Integer> layers) {
+        Map<String, Integer> tally = tally(layers.stream().map(EstateFigures::layerBand).toList());
+        Map<String, Integer> ordered = new LinkedHashMap<>();
+        BANDS.stream().filter(tally::containsKey).forEach(band -> ordered.put(band, tally.get(band)));
+        return ordered;
     }
 
     static String layerBand(int layers) {

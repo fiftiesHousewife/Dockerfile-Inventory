@@ -15,8 +15,8 @@ final class Page {
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
                 "<title>" + escape(title) + "</title><style>" + Style.CSS + "</style></head><body>",
                 "<nav aria-label=\"Report pages\"><a href=\"" + up + "index.html\">Summary</a><a href=\"" + up
-                        + "archetypes.html\">Archetypes</a><a href=\"" + up + "bases.html\">Bases</a><a href=\""
-                        + up + "lineage.html\">Lineage</a></nav>",
+                        + "hierarchy.html\">Hierarchy</a><a href=\"" + up + "blocked.html\">Blocked</a><a href=\""
+                        + up + "archetypes.html\">Archetypes</a></nav>",
                 "<main><h1>" + escape(title) + "</h1>",
                 body,
                 "</main></body></html>", "");

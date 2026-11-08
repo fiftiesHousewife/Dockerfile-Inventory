@@ -30,9 +30,10 @@ and one line when its gate is met.
   (release scope, reach, conversion, near-duplicates), the registry facts (sizes, architectures, cadence, base lag,
   provenance, usage) and the footprint list as rules (`FOOTPRINTS`). Owner from `CODEOWNERS` dropped (asked 8 Nov:
   mostly absent). Later: where each image runs (deployment manifests).
-- Then (asked 8 Nov, `docs/plans/report-from-catalogue.md`): the report rebuilt as a view of the catalogue:
-  hierarchy, blocked images, a page per Dockerfile.
-- Then (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
+- Done 9 Nov (`docs/plans/report-from-catalogue.md`): the report rebuilt as a view of the catalogue: summary and
+  organisations, hierarchy, blocked images, a page per Dockerfile, one archetype ranking; the CSV tables, DDL, bases
+  and lineage pages and `EOL_LIST` gone.
+- Now (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by
   severity, reach and certainty.

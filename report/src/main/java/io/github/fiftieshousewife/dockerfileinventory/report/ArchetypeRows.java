@@ -1,6 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
-import io.github.fiftieshousewife.dockerfileinventory.report.Figures.Apart;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,6 +18,9 @@ record ArchetypeRows(List<Row> rows, Map<String, Apart> apart, int total, int k8
     static final String UNRESOLVED = "base set by a variable";
     private static final List<String> KINDS_APART = List.of(ArchetypeName.BUNDLE,
             ArchetypeName.of(Passes.TEMPLATES), ArchetypeName.of(Passes.PARSE_FAILURES), UNRESOLVED);
+
+    record Apart(int files, int locations) {
+    }
 
     record Row(int rank, Archetype archetype, String name, List<String> blobShas, List<Location> where) {
 
@@ -72,7 +74,7 @@ record ArchetypeRows(List<Row> rows, Map<String, Apart> apart, int total, int k8
         if (signature.equals(Passes.TEMPLATES) || signature.equals(Passes.PARSE_FAILURES)) {
             return ArchetypeName.of(signature);
         }
-        return signature.startsWith(BaseCatalogue.UNRESOLVED + ":") ? UNRESOLVED : null;
+        return signature.startsWith(ArchetypeName.UNRESOLVED_BASE + ":") ? UNRESOLVED : null;
     }
 
     private static void add(Map<String, List<String>> apart, String kind, List<String> blobs) {

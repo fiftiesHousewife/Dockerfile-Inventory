@@ -7,7 +7,7 @@ import static io.github.fiftieshousewife.dockerfileinventory.report.Html.percent
 import static io.github.fiftieshousewife.dockerfileinventory.report.Html.plural;
 
 import io.github.fiftieshousewife.dockerfileinventory.report.ArchetypeRows.Row;
-import io.github.fiftieshousewife.dockerfileinventory.report.Figures.Apart;
+import io.github.fiftieshousewife.dockerfileinventory.report.ArchetypeRows.Apart;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +20,7 @@ final class ArchetypeTable {
     private ArchetypeTable() {
     }
 
-    static String render(List<Row> rows, int from, int to, Set<Integer> pages, String up) {
+    static String render(List<Row> rows, int from, int to, Set<String> pages, String up) {
         int largest = rows.stream().mapToInt(Row::locations).max().orElse(1);
         return "<div class=\"scroll\"><table><tr><th class=\"num\">Rank</th><th>Archetype</th>"
                 + "<th class=\"num\">Locations</th><th></th><th class=\"num\">Files</th><th>Organisations</th>"
@@ -30,7 +30,7 @@ final class ArchetypeTable {
                 + "</table></div>";
     }
 
-    static String row(Row row, int largest, Set<Integer> pages, String up) {
+    static String row(Row row, int largest, Set<String> pages, String up) {
         Map.Entry<String, Integer> repository = row.repositories().entrySet().iterator().next();
         return "<tr><td class=\"num\">" + row.rank() + "</td><td>" + name(row, pages, up) + "</td><td class=\"num\">"
                 + count(row.locations()) + "</td><td>" + meter((double) row.locations() / largest) + "</td>"
@@ -39,15 +39,11 @@ final class ArchetypeTable {
                 + "</td></tr>";
     }
 
-    static String name(Row row, Set<Integer> pages, String up) {
-        int rank = row.archetype().rank();
-        return pages.contains(rank) ? "<a href=\"" + up + page(rank) + "\">" + escape(row.name()) + "</a>"
-                : escape(row.name()) + "<br><span class=\"note\">" + escape(row.where().getFirst().repository()
-                        + ": " + row.where().getFirst().path()) + "</span>";
-    }
-
-    static String page(int rank) {
-        return "archetypes/" + rank + ".html";
+    static String name(Row row, Set<String> pages, String up) {
+        return row.blobShas().stream().filter(pages::contains).findFirst()
+                .map(sha -> "<a href=\"" + up + "dockerfiles/" + escape(sha) + ".html\">" + escape(row.name()) + "</a>")
+                .orElseGet(() -> escape(row.name()) + "<br><span class=\"note\">" + escape(row.where().getFirst().repository()
+                        + ": " + row.where().getFirst().path()) + "</span>");
     }
 
     static String chips(Map<String, Integer> organisations) {

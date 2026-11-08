@@ -1,6 +1,6 @@
 # The report as a view of the catalogue: plan
 
-Status: planned 8 Nov; questions answered 8 Nov. Follows the catalogue (`catalogue.md`).
+Status: planned 8 Nov; questions answered 8 Nov; built 8 to 9 Nov. Follows the catalogue (`catalogue.md`).
 
 ## Why
 
@@ -65,6 +65,17 @@ first slices remove before they add, each keeping what stays byte for byte.
 4. Hierarchy page: the trees from each root, each node linking to its Dockerfile's page. Built 8 Nov.
 5. Blocked page: unmaintained intermediates ordered by how many images each holds back. Built 8 Nov.
 6. A page per Dockerfile: locations, stage graph, copies, permissions, per-stage counts, images with their chains. Built 8 Nov (`DockerfilePage`, `DockerfileSections`).
-7. Organisations: the summary per organisation; the archetypes page linked from the summary.
+7. Organisations: the summary per organisation; the archetypes page linked from the summary. Built 9 Nov: each archetype links to one of its Dockerfiles' pages, which lists its near-duplicates, in place of a page per archetype.
 8. `ReportRun` writing the pages from the catalogue, the old pages and `EOL_LIST` removed with what only they used;
-   README; measured on an estate.
+   README; measured on an estate. Done 9 Nov.
+
+## Measured (9 Nov)
+
+On stored outputs, the facts written with the catalogue's fields and OKD's lineage analysis rerun offline (23 weak
+links, as in `lineage-from-data.md`):
+
+- OKD: 2,646 catalogue entries, 2,646 Dockerfile pages, 1 second; 18 registry images credited, 10 Dockerfiles with
+  candidates; 3 trees, 8 Dockerfiles on another; 39,891 links, none broken.
+- The combined estate (`out/all`, no lineage): 5,250 pages in 3 seconds; 104,096 links, none broken.
+- Read on the way: the layer bands sorted as text, an image credited to identical Dockerfiles counted once per
+  Dockerfile, an unset user shown as "null"; each fixed with a test.

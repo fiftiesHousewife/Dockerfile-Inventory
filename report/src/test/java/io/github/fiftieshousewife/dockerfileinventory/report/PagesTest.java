@@ -1,11 +1,12 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
+import static io.github.fiftieshousewife.dockerfileinventory.report.Entries.linked;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,33 +14,31 @@ import org.junit.jupiter.api.Test;
 
 class PagesTest {
 
-    static final Set<String> DATA = Set.of("catalogue/dockerfiles.jsonl", "archetypes.jsonl", "passes.json");
+    static final Set<String> DATA = Set.copyOf(OverviewPage.DATA);
     private static final Pattern HREF = Pattern.compile("href=\"([^\"]+)\"");
 
-    static Report report() {
-        Estate estate = Estate.read(EstateTest.FIXTURES, EstateTest.FIXTURES, null);
-        List<Group> groups = NearDuplicates.of(Passes.signatureGroups(estate));
-        Ranking ranking = Archetypes.rank(groups, estate);
-        return Report.of(estate, ranking, Passes.exact(estate), groups.size(), EolList.empty(),
-                Optional.of(LineageSummaryTest.OKD), EstateTest.FIXTURES);
+    static Map<String, String> pages() {
+        CatalogueView view = new CatalogueView(List.of(
+                linked("a1", "acme/api", List.of(), List.of("b9")),
+                linked("b9", "beta/app", List.of("a1"), List.of()),
+                Entries.unparsed("zz", "beta/broken")));
+        return Pages.all(view, ArchetypeRows.of(ArchetypeRowsTest.RANKING, ArchetypeRowsTest.ESTATE));
     }
 
     @Test
-    void theSummaryEachOrganisationTheArchetypesTheBasesAndTheLineageEachHaveAPage() {
-        assertThat(Pages.all(report())).containsKeys("index.html", "orgs/payments.html", "orgs/platform.html",
-                "archetypes.html", "archetypes/1.html", "bases.html", "lineage.html");
+    void theSummaryEachOrganisationTheTreesTheBlockedTheArchetypesAndEachDockerfileHaveAPage() {
+        assertThat(pages()).containsKeys("index.html", "orgs/acme.html", "orgs/beta.html", "hierarchy.html",
+                "blocked.html", "archetypes.html", "dockerfiles/a1.html", "dockerfiles/b9.html", "dockerfiles/zz.html");
     }
 
     @Test
-    void theSummaryLinksToEveryOtherKindOfPageAndToTheDataFiles() {
-        assertThat(Pages.all(report()).get("index.html")).contains("href=\"orgs/payments.html\"",
-                "href=\"archetypes.html\"", "href=\"bases.html\"", "href=\"lineage.html\"",
-                "href=\"catalogue/dockerfiles.jsonl\"", "href=\"archetypes.jsonl\"", "href=\"passes.json\"");
+    void anArchetypeLinksToTheDockerfilePageOfOneOfItsFiles() {
+        assertThat(pages().get("archetypes.html")).contains("href=\"dockerfiles/a1.html\"");
     }
 
     @Test
     void everyLinkOnEveryPageResolvesToAPageOrADataFile() {
-        Map<String, String> pages = Pages.all(report());
+        Map<String, String> pages = pages();
         pages.forEach((path, html) -> {
             Matcher links = HREF.matcher(html);
             while (links.find()) {
@@ -52,18 +51,19 @@ class PagesTest {
 
     @Test
     void everyPageStandsAloneWithNoScriptAndNothingFetchedFromOutside() {
-        assertThat(Pages.all(report()).values()).allSatisfy(html -> assertThat(html)
+        assertThat(pages().values()).allSatisfy(html -> assertThat(html)
                 .startsWith("<!doctype html>").contains("<style>")
                 .doesNotContain("<script", "http://", "https://", " src="));
     }
 
     @Test
     void theRankingIsSplitIntoPagesLinkedToEachOther() {
-        assertThat(Pages.rankingPath(1)).isEqualTo("archetypes.html");
-        assertThat(Pages.rankingPath(3)).isEqualTo("archetypes-3.html");
-        assertThat(Pages.pager(2, 700, 250)).isEqualTo("<nav class=\"pager\" aria-label=\"Ranking pages\">"
-                + "<a href=\"archetypes.html\">1 to 250</a><strong>251 to 500</strong>"
-                + "<a href=\"archetypes-3.html\">501 to 700</a></nav>");
-        assertThat(Pages.pager(1, 250, 250)).isEmpty();
+        assertAll(
+                () -> assertThat(Pages.rankingPath(1)).isEqualTo("archetypes.html"),
+                () -> assertThat(Pages.rankingPath(3)).isEqualTo("archetypes-3.html"),
+                () -> assertThat(Pages.pager(2, 700, 250)).isEqualTo(
+                        "<nav class=\"pager\" aria-label=\"Ranking pages\"><a href=\"archetypes.html\">1 to 250</a>"
+                                + "<strong>251 to 500</strong><a href=\"archetypes-3.html\">501 to 700</a></nav>"),
+                () -> assertThat(Pages.pager(1, 250, 250)).isEmpty());
     }
 }

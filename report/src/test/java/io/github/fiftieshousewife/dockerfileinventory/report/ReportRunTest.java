@@ -20,8 +20,7 @@ class ReportRunTest {
 
     @Test
     void writesPassesArchetypesAsJsonLinesAndThePagesButNoTables() throws IOException {
-        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, EolList.empty(), CatalogueSettings.DEFAULTS,
-                out).run();
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, CatalogueSettings.DEFAULTS, out).run();
 
         JsonNode passes = new ObjectMapper().readTree(out.resolve("passes.json").toFile());
         List<JsonNode> archetypes = JsonLines.read(out.resolve("archetypes.jsonl"));
@@ -33,14 +32,14 @@ class ReportRunTest {
                 () -> assertThat(out.resolve("archetypes.json")).doesNotExist(),
                 () -> assertThat(read("index.html")).startsWith("<!doctype html>"),
                 () -> assertThat(read("orgs/payments.html")).contains("<h1>payments</h1>"),
-                () -> assertThat(read("archetypes/1.html")).contains("<h1>Archetype 1: "),
+                () -> assertThat(read("hierarchy.html")).contains("<h1>Hierarchy</h1>"),
+                () -> assertThat(out.resolve("archetypes")).doesNotExist(),
                 () -> assertThat(out.resolve("dashboard.html")).doesNotExist());
     }
 
     @Test
     void theCatalogueIsWrittenBesideTheReport() {
-        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, EolList.empty(), CatalogueSettings.DEFAULTS,
-                out).run();
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, CatalogueSettings.DEFAULTS, out).run();
 
         assertThat(out.resolve("catalogue/dockerfiles.jsonl")).isNotEmptyFile();
     }
