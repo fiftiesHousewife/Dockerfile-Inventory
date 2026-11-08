@@ -35,6 +35,10 @@ and one line when its gate is met.
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by
   severity, reach and certainty.
+- Next (asked 8 Nov, `docs/plans/libraries.md`, questions open): a set of published libraries: the parser and
+  `dsl` (perhaps the converter), each with a licence, a library package name, a module descriptor exporting only its
+  API, a Java release users can take, Javadoc, a compatibility check, a Central bundle, a release task instead of
+  `scripts/release-parser.sh`, docs with tested examples; the owner's Central namespace, token and signing key.
 - Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
   container's entry point aside; to be planned.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
