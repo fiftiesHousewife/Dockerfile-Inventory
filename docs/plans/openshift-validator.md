@@ -1,6 +1,6 @@
 # From estate summary to action plan: an OpenShift validator
 
-Status: planned 8 Nov; questions open.
+Status: planned 8 Nov; questions answered 8 Nov; tests to write.
 
 ## Why
 
@@ -34,11 +34,23 @@ fails or misbehaves: cannot write, cannot bind, killed unclean), *drift* (works,
 with Pod Security Admission `restricted` refuses a non-numeric or root `USER` outright (`runAsNonRoot` needs a
 numeric UID), where OpenShift substitutes its own UID; EKS, AKS and GKE defaults differ again.
 
-## The profile
+## The profiles
 
-Data, not code: `openshift-4-restricted-v2` as the default, a file the estate owner can copy and change (the SCC,
-its UID behaviour, capabilities, the allowed registries, whether ports below 1024 are bindable), read like
+Data, not code: a profile file the estate owner can choose, copy and change (the SCC, its UID behaviour, the
+capabilities it drops, whether privilege escalation is allowed, seccomp, the allowed registries), read like
 `allow.csv` is today. The validator's checks are fixed; the profile decides which apply and how severe each is.
+Two ship (asked 8 Nov), every namespace as OpenShift ships it, no grants:
+
+| | `openshift-4-restricted-v2` (default; OpenShift 4.11 on) | `openshift-4-restricted` (v1; before 4.11, and clusters that kept it) |
+| --- | --- | --- |
+| user | arbitrary UID from the namespace's range, group 0 | the same |
+| capabilities | all dropped; a pod may add back only `NET_BIND_SERVICE` | KILL, MKNOD, SETUID, SETGID dropped; the rest of the runtime's defaults kept |
+| privilege escalation | forbidden (`no_new_privs`): a setuid binary, `sudo` or `su` cannot raise privilege | allowed, but with SETUID and SETGID dropped `sudo` and `su` still fail to switch user |
+| seccomp | `RuntimeDefault` required: a syscall the default profile blocks fails | not required |
+| ports below 1024 | not bindable by the arbitrary UID unless the deployment adds `NET_BIND_SERVICE` | not bindable by a non-root UID either (no ambient capability) |
+
+So most checks agree between the two; they differ in severity for privilege escalation and seccomp, and in the
+action for a low port (v2: move the port, or add `NET_BIND_SERVICE` in the deployment).
 
 ## The action plan
 
@@ -52,7 +64,8 @@ Findings become actions, each naming:
   representative is a template for its copies) and through the images built on the base;
 - **severity** on the profile, so *refused* and *breaks* come first.
 
-Actions are grouped and ordered by severity, then reach. Output from a new stage after `rules`: `action-plan.json`
+Actions are ordered by severity, then reach, and shown two ways (answered 8 Nov): by fix (a base or archetype
+fixed once, with every image it reaches: for the platform team) and by owning repository (for each team's backlog). Output from a new stage, `validator`, after `rules` (answered 8 Nov): `action-plan.json`
 and `action-plan.csv` for the reporting database, and a page in the report, "Action plan for OpenShift", that
 leads with how many images would not start or would break, then the actions.
 
@@ -69,7 +82,25 @@ leads with how many images would not start or would break, then the actions.
 5. Where the catalogue goes (its question 4): the validator reads it, so in `report` as planned, or produced by
    the validator's stage?
 
+Answers (8 Nov): 1, `restricted-v2` with no grants as the default, and `restricted` (v1) as a second profile to
+choose; 2, images first (Dockerfiles and lineage), deployment manifests a later slice, as discovery would have to
+fetch them; 3, both views, by fix and by repository; 4, a `validator` module between `rules` and `report`; 5, the
+catalogue is produced by `report` as planned, and the validator reads facts, lineage and the rules' findings
+directly, so it does not wait on the report.
+
 ## Tests, in order
 
-To be written once the questions are answered; the checks are test-driven from real Dockerfiles in the fixture
-bank, each with the OpenShift behaviour it predicts.
+One assertion each, several in `assertAll`; each check driven from real Dockerfiles in the fixture bank, with the
+OpenShift behaviour it predicts.
+
+1. `Profile`: both shipped profiles read; a copied profile with a field changed; a bad value refused by name.
+2. Each check on facts (and on the effective image where lineage has one), one at a time, in the table's order:
+   arbitrary UID, group-0 writable paths, low ports, privilege escalation, signals to PID 1, registry and pinning,
+   `HEALTHCHECK` and `VOLUME`, the user's name; each with its severity under v2 and under v1.
+3. `Verdict`: per image, refused, breaks, drift or runs, from its findings under a profile.
+4. `Actions`: findings to actions (what, where in the chain, reach through bases and archetypes, the DSL's fix),
+   ordered by severity then reach; the by-repository view of the same actions.
+5. `ValidatorRun` writing `action-plan.json` and `action-plan.csv`; `ValidatorMain` reading `PROFILE` (default
+   v2) and its other settings.
+6. The report's "Action plan for OpenShift" page.
+7. A tagged test (`validate`, as `roundTrip` is) over a real estate, its counts committed as a ratchet.

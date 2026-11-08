@@ -46,7 +46,8 @@ Answers (8 Nov): 1, one record per distinct Dockerfile with its locations listed
 links from lineage where a registry was read, and otherwise inferred from base names matched to the images other
 Dockerfiles' labels say they build, each inferred link marked with its evidence; 3, environment and label values
 shown, a secret-shaped value or one under a secret's name shown as `(hidden)` with its hash, by the same
-test rule S2 and the report use. 4 waits on the validator's plan, which reads the catalogue.
+test rule S2 and the report use. 4, in `report` as planned (answered with the validator's plan, which reads the facts and
+lineage directly).
 
 ## Tests, in order
 
