@@ -7,7 +7,7 @@ import java.util.Map;
 
 // One distinct Dockerfile as the catalogue describes it; its field names are the catalogue's published schema.
 record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Image image, Build build,
-                      CatalogueLinks.Links links, String parseError) {
+                      CatalogueLinks.Links links, Footprint.Found footprint, String parseError) {
 
     record Place(String repository, String path, String scope, String commit) {
     }
@@ -79,7 +79,8 @@ record CatalogueEntry(String blobSha, List<Place> locations, boolean bundle, Ima
         locations = List.copyOf(locations);
     }
 
-    CatalogueEntry withLinks(CatalogueLinks.Links found) {
-        return new CatalogueEntry(blobSha, locations, bundle, image, build, found, parseError);
+    // Links and footprint need every entry, so they are set once all are built.
+    CatalogueEntry placed(CatalogueLinks.Links found, Footprint.Found reached) {
+        return new CatalogueEntry(blobSha, locations, bundle, image, build, found, reached, parseError);
     }
 }

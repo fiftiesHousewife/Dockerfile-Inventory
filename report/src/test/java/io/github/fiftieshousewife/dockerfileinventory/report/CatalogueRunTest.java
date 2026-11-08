@@ -27,6 +27,7 @@ class CatalogueRunTest {
                 () -> assertThat(lines.getFirst().path("image").path("environment").path("API_TOKEN").asString())
                         .startsWith("(hidden sha256:"),
                 () -> assertThat(lines.getFirst().path("links").path("depth").asInt()).isZero(),
+                () -> assertThat(lines.getFirst().path("footprint").path("footprint").asString()).isEqualTo("minimal"),
                 () -> assertThat(lines.getFirst().path("parseError").isNull()).isTrue());
     }
 

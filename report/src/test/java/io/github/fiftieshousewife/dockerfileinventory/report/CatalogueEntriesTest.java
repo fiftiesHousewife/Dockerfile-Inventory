@@ -77,10 +77,14 @@ class CatalogueEntriesTest {
     }
 
     @Test
-    void anEntryCarriesItsLinksOnceTheyAreKnown() {
+    void anEntryCarriesItsLinksAndFootprintOnceTheyAreKnown() {
         CatalogueLinks.Links links = new CatalogueLinks.Links(List.of(), List.of(), 0);
+        Footprint.Found footprint = new Footprint.Found("minimal", "ubi9/ubi-minimal", List.of());
+        CatalogueEntry placed = entry().placed(links, footprint);
 
-        assertThat(entry().withLinks(links).links()).isEqualTo(links);
+        assertAll(
+                () -> assertThat(placed.links()).isEqualTo(links),
+                () -> assertThat(placed.footprint()).isEqualTo(footprint));
     }
 
     @Test

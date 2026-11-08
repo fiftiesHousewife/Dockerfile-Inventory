@@ -26,7 +26,9 @@ final class CatalogueRun {
                 .toList();
         Map<String, CatalogueLinks.Links> links = CatalogueLinks.of(parsed, lineageDir);
         List<CatalogueEntry> entries = new ArrayList<>(parsed.stream()
-                .map(entry -> entry.withLinks(links.get(entry.blobSha()))).toList());
+                .map(entry -> entry.placed(links.get(entry.blobSha()),
+                        Footprint.through(entry.blobSha(), parsed, links)))
+                .toList());
         JsonLines.read(factsDir.resolve("parse-failures.jsonl")).forEach(failure -> entries.add(
                 CatalogueEntries.unparsed(failure, places.get(failure.path("blobSha").asString()))));
         try {
