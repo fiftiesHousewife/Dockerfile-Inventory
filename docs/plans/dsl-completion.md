@@ -195,6 +195,47 @@ class generated, compiled in one in-memory compilation, loaded and run, and ever
 No fault was left for S3 to find: the compiled-class test already caught the one (`Map.ofEntries` losing order)
 while S1 was being built.
 
+## S4 in detail
+
+**What is compared.** For each chosen Dockerfile, two images built from the same context at the same commit, minutes
+apart on one machine, so on the same base: the original, and the converter's rendering of it (the faithful
+conversion, not a golden: the rewrite to policy changes the image by design). The first set is the ten golden
+families' representatives (`scripts/compare-images.txt`, their blob SHAs).
+
+**Same image** (question 5): the image config (user, environment, entrypoint, command, working directory, exposed
+ports, volumes, stop signal, health check, `ONBUILD`, shell, labels without build-time ones such as
+`io.buildah.version` and `org.opencontainers.image.created`) and every file's path, type, mode, owner, group, link
+target and SHA-256 of its content; timestamps are never read.
+
+**The script**, `scripts/compare-images.sh`, run where Docker runs (as `lineage-demo.sh`):
+
+1. for each SHA, its repository, commit and path from discovery's manifest; the repository cloned at that commit;
+2. the regenerated Dockerfile written by the converter (`ImageCompareMain render`) beside the original;
+3. in a Buildah container (native platform, `--format docker` so health checks, `ONBUILD` and `SHELL` are kept): the
+   original built with its directory as context, or the repository root when that fails; the regenerated one with
+   the same context; for each image its config (`buildah inspect`) and its file listing (`find` and `sha256sum` on
+   the mounted root filesystem);
+4. `ImageCompareMain compare` on each pair, writing `comparison.jsonl`: per Dockerfile, built or not, the same or
+   not, and each difference.
+
+**Java**, in `converter`: `FileListing` (the two listing files to entries by path), `ConfigDifferences` (two configs
+to differences, build-time labels ignored), `FileDifferences` (two listings to: only in one, or differing in which
+attributes), `ImageComparison` (a pair of image directories to a result), `Regenerated` (a Dockerfile's text to the
+converter's rendering, for the target its features need), `ImageCompareMain` (`render`, `compare`).
+
+**Tests, in order**, one assertion each, several in `assertAll`: `FileListing` reads entries and joins their sums;
+`ConfigDifferences` finds a changed user, ignores build-time labels, finds an added label; `FileDifferences` finds
+a missing file, a changed mode and a changed content, and ignores what question 7 settles; `Regenerated` renders a
+real Dockerfile, with heredocs when it has them; `ImageComparison` on two fixture directories; `ImageCompareMain`
+writes the line per pair. The script is checked by running it (shellcheck where present); its first real run is
+the owner's, as for the lineage demo.
+
+**Question 7.** Some files hold the time they were built in their content, so two builds minutes apart differ
+there even when nothing else does: the package databases (`/var/lib/rpm`, `/var/lib/dnf`, `/var/lib/dpkg`,
+`/var/lib/apt`), logs (`/var/log`), caches (`/var/cache`, `/root/.cache`, `/etc/ld.so.cache`), Python bytecode
+(`*.pyc`), `/tmp`. Ignore their content (still compare that they exist, with mode and owner), or compare them too
+and read their differences by hand?
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
