@@ -32,6 +32,14 @@ tasks.withType<Test>().configureEach {
     javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libraryRelease)) })
 }
 
+// Javadoc that is wrong (a broken link, bad HTML) fails the build; a missing @param or @return does not, since a
+// record's component names say what its parameters are.
+tasks.withType<Javadoc>().configureEach {
+    val doclet = options as StandardJavadocDocletOptions
+    doclet.addStringOption("Xdoclint:all,-missing", "-quiet")
+    doclet.addBooleanOption("Werror", true)
+}
+
 val central = layout.buildDirectory.dir("central")
 
 publishing {

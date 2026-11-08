@@ -17,6 +17,7 @@ public record Port(String spec) {
         }
     }
 
+    /** One numbered port, TCP by default. */
     public static Port of(int port) {
         return new Port(Integer.toString(port));
     }

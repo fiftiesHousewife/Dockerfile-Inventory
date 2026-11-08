@@ -9,9 +9,11 @@ import java.util.Objects;
  */
 public sealed interface RunBody {
 
+    /** A package install the model reads and checks (H1). */
     record Install(PackageInstall install) implements RunBody {
     }
 
+    /** Shell commands, joined in one shell-form {@code RUN}. */
     record Shell(List<String> commands) implements RunBody {
 
         public Shell {
@@ -22,6 +24,7 @@ public sealed interface RunBody {
         }
     }
 
+    /** An exec-form {@code RUN}, run without a shell. */
     record Exec(List<String> arguments) implements RunBody {
 
         public Exec {
@@ -46,10 +49,12 @@ public sealed interface RunBody {
             return new Heredoc("", "EOF", true, List.of(lines));
         }
 
+        /** The command the heredoc feeds, such as {@code bash}; none runs the lines as a script. */
         public Heredoc command(String command) {
             return new Heredoc(command, delimiter, quoted, lines);
         }
 
+        /** Ends at {@code delimiter} instead of {@code EOF}. */
         public Heredoc delimitedBy(String delimiter) {
             return new Heredoc(command, delimiter, quoted, lines);
         }

@@ -11,6 +11,7 @@ public record Copy(List<String> sources, String destination, String chown, Strin
         Checks.notBlank(destination, "a COPY destination");
     }
 
+    /** Without {@code --chmod} or {@code --link}, in shell form. */
     public Copy(List<String> sources, String destination, String chown, String fromStage) {
         this(sources, destination, chown, fromStage, null, false, false);
     }
@@ -20,22 +21,27 @@ public record Copy(List<String> sources, String destination, String chown, Strin
         return new Sources(List.of(sources));
     }
 
+    /** From an earlier stage or an image, as {@code --from}. */
     public Copy from(String stage) {
         return new Copy(sources, destination, chown, stage, chmod, link, jsonForm);
     }
 
+    /** Owned by {@code user:group}, as {@code --chown}. */
     public Copy ownedBy(String owner) {
         return new Copy(sources, destination, owner, fromStage, chmod, link, jsonForm);
     }
 
+    /** With these permissions, as {@code --chmod}. */
     public Copy mode(String mode) {
         return new Copy(sources, destination, chown, fromStage, mode, link, jsonForm);
     }
 
+    /** In a layer of its own that later layers do not depend on, as {@code --link}. */
     public Copy linked() {
         return new Copy(sources, destination, chown, fromStage, chmod, true, jsonForm);
     }
 
+    /** Written in JSON form, needed when a path has spaces. */
     public Copy inJsonForm() {
         return new Copy(sources, destination, chown, fromStage, chmod, link, true);
     }
@@ -47,6 +53,7 @@ public record Copy(List<String> sources, String destination, String chown, Strin
             sources = List.copyOf(sources);
         }
 
+        /** Copies into {@code destination}; a trailing slash makes it a directory. */
         public Copy to(String destination) {
             return new Copy(sources, destination, null, null);
         }

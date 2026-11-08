@@ -213,6 +213,7 @@ Enforced by tools:
 | --- | --- |
 | No compiler warnings | `javac -Xlint:all -Werror` |
 | No SpotBugs findings at medium confidence | SpotBugs |
+| Published libraries' Javadoc free of errors (broken links, bad HTML) | javadoc `-Xdoclint:all,-missing -Werror` |
 | Line coverage at least 80% per module | JaCoCo |
 | Java 25 (newest LTS); published libraries built for and tested on Java 21 | Gradle toolchain (`inventory.javaRelease`; `inventory.libraryRelease` for modules applying `inventory.published`) |
 | UTF-8, LF, 4-space indent, 120-character lines | `.editorconfig`, `.gitattributes` |

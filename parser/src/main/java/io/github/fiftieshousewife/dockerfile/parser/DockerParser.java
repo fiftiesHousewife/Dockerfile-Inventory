@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: class Javadoc added.
  * Modified by Dockerfile Inventory, 2026: an unrecognised line is reported as a syntax error (issue 3).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +40,9 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
+/**
+ * Parses Dockerfiles into a lossless tree that prints back to the same text; build one with {@link #builder()}.
+ */
 public class DockerParser implements Parser {
     @Override
     public Stream<SourceFile> parseInputs(Iterable<Input> sourceFiles, @Nullable Path relativeTo, ExecutionContext ctx) {

@@ -17,6 +17,7 @@ public record CopyHeredoc(String destination, String delimiter, boolean quoted, 
         return new Destination(destination);
     }
 
+    /** Ends at {@code delimiter} instead of {@code EOF}, for lines that hold {@code EOF}. */
     public CopyHeredoc delimitedBy(String delimiter) {
         return new CopyHeredoc(destination, delimiter, quoted, lines);
     }
@@ -29,6 +30,7 @@ public record CopyHeredoc(String destination, String delimiter, boolean quoted, 
     /** Where the file goes, waiting for its lines. */
     public record Destination(String destination) {
 
+        /** The file's lines. */
         public CopyHeredoc lines(String... lines) {
             return new CopyHeredoc(destination, "EOF", true, List.of(lines));
         }

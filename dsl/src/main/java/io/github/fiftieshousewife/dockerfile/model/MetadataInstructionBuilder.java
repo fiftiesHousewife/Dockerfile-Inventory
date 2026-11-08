@@ -9,6 +9,7 @@ abstract sealed class MetadataInstructionBuilder extends FileInstructionBuilder 
     MetadataInstructionBuilder() {
     }
 
+    /** One TCP port the image listens on. */
     public ImageBuilder expose(int port) {
         return add(new Expose(List.of(Port.of(port))));
     }
@@ -28,10 +29,12 @@ abstract sealed class MetadataInstructionBuilder extends FileInstructionBuilder 
         return add(new Healthcheck(options, command, form));
     }
 
+    /** {@code HEALTHCHECK NONE}: turns off a check inherited from the base. */
     public ImageBuilder healthcheckNone() {
         return add(Healthcheck.NONE);
     }
 
+    /** The shell later shell-form instructions run with. */
     public ImageBuilder shell(String... command) {
         return add(new Shell(List.of(command)));
     }
@@ -41,10 +44,12 @@ abstract sealed class MetadataInstructionBuilder extends FileInstructionBuilder 
         return volume(List.of(paths), true);
     }
 
+    /** A {@code VOLUME} in exec form ({@code ["/data"]}) or as plain words. */
     public ImageBuilder volume(List<String> paths, boolean jsonForm) {
         return add(new Volume(paths, jsonForm));
     }
 
+    /** The signal the runtime sends to stop the container. */
     public ImageBuilder stopSignal(String signal) {
         return add(new StopSignal(signal));
     }

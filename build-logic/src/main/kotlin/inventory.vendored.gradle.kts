@@ -21,7 +21,9 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.withType<Javadoc>().configureEach {
-    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+    if (!project.plugins.hasPlugin("inventory.published")) {
+        (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+    }
 }
 
 tasks.matching { it.name.startsWith("spotbugs") }.configureEach {

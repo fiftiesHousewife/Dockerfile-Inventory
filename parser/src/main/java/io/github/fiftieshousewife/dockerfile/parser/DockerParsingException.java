@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: class Javadoc added.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,9 @@ import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 
+/**
+ * A Dockerfile that could not be parsed, naming the file and where the parser stopped.
+ */
 public class DockerParsingException extends RuntimeException {
     private final Path path;
 

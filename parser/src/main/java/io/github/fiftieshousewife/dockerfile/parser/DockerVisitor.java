@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: class Javadoc added.
  * Modified by Dockerfile Inventory, 2026: ARG's further names are visited (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +24,9 @@ import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Space;
 import org.openrewrite.internal.ListUtils;
 
+/**
+ * Visits each element of a Dockerfile tree; override the methods for the elements of interest.
+ */
 public class DockerVisitor<P> extends TreeVisitor<Docker, P> {
 
     public Space visitSpace(Space space, P p) {

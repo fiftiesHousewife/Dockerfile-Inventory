@@ -1,6 +1,7 @@
 /*
  * Copyright 2026 the original author or authors.
  * Modified by Dockerfile Inventory, 2026: package renamed from org.openrewrite.docker.
+ * Modified by Dockerfile Inventory, 2026: class Javadoc added.
  * Modified by Dockerfile Inventory, 2026: ARG holds several names, each with or without a value (issues 10, 12, 13).
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +36,10 @@ import java.util.UUID;
 
 import static java.util.Collections.emptyList;
 
+/**
+ * A Dockerfile as a lossless tree: every instruction, argument, comment and space, so printing it gives back the
+ * text it was parsed from.
+ */
 public interface Docker extends Tree {
 
     @SuppressWarnings("unchecked")

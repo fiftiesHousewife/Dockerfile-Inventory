@@ -9,6 +9,7 @@ abstract sealed class FileInstructionBuilder permits MetadataInstructionBuilder 
 
     abstract ImageBuilder add(Instruction instruction);
 
+    /** One path from the build context; copies into the final stage are owned by {@code <uid>:0} (S4). */
     public ImageBuilder copy(String source, String destination) {
         return add(new Copy(List.of(source), destination, null, null));
     }
@@ -28,6 +29,7 @@ abstract sealed class FileInstructionBuilder permits MetadataInstructionBuilder 
         return add(heredoc);
     }
 
+    /** One path from an earlier stage, as {@code COPY --from}. */
     public ImageBuilder copyFrom(String stage, String source, String destination) {
         return add(new Copy(List.of(source), destination, null, stage));
     }

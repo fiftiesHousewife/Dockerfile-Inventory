@@ -16,6 +16,7 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
         return install(PackageInstallRenderer.forBase(currentBase()), packages);
     }
 
+    /** Packages with the given manager, cleaned in the same {@code RUN} (H1). */
     public ImageBuilder install(PackageManager manager, String... packages) {
         return add(new Run(new RunBody.Install(new PackageInstall(manager, Arrays.asList(packages)))));
     }
@@ -25,6 +26,7 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
         return add(new Run(new RunBody.Install(new PackageInstall(manager, flags, packages))));
     }
 
+    /** Shell commands in one shell-form {@code RUN}. */
     public ImageBuilder run(String... commands) {
         return add(new Run(new RunBody.Shell(Arrays.asList(commands))));
     }
@@ -34,6 +36,7 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
         return add(new Run(new RunBody.Shell(Arrays.asList(commands)), flags));
     }
 
+    /** A {@code RUN} in exec form, run without a shell. */
     public ImageBuilder runExec(String... arguments) {
         return add(new Run(new RunBody.Exec(Arrays.asList(arguments))));
     }
@@ -48,10 +51,12 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
         return add(new Arg(name, null));
     }
 
+    /** Declared in the current stage, with the value its instructions get when the build gives none. */
     public ImageBuilder arg(String name, String defaultValue) {
         return add(new Arg(name, defaultValue));
     }
 
+    /** One variable, set for later instructions and the running container. */
     public ImageBuilder env(String name, String value) {
         return add(new Env(Map.of(name, value)));
     }
@@ -66,14 +71,17 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
         return add(new Label(values));
     }
 
+    /** One label on the image. */
     public ImageBuilder label(String name, String value) {
         return add(new Label(Map.of(name, value)));
     }
 
+    /** Where later instructions and the running process start. */
     public ImageBuilder workdir(String path) {
         return add(new Workdir(path));
     }
 
+    /** The UID later instructions and the container run as; the final one must not be root (S4). */
     public ImageBuilder user(int uid) {
         return add(new User(Integer.toString(uid)));
     }
@@ -83,10 +91,12 @@ abstract sealed class InstructionBuilder extends MetadataInstructionBuilder perm
         return add(new User(user));
     }
 
+    /** The process the container starts, in exec form so it receives signals (H2). */
     public ImageBuilder entrypoint(String... command) {
         return add(new Entrypoint(Arrays.asList(command)));
     }
 
+    /** The entrypoint's default arguments, or the command when there is none, in exec form. */
     public ImageBuilder cmd(String... command) {
         return add(new Cmd(Arrays.asList(command)));
     }

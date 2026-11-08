@@ -10,6 +10,7 @@ public record Entrypoint(List<String> command, CommandForm form) implements Inst
         Checks.oneStringInShellForm(command, form);
     }
 
+    /** In exec form. */
     public Entrypoint(List<String> command) {
         this(command, CommandForm.EXEC);
     }

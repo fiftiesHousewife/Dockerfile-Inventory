@@ -27,6 +27,7 @@ public final class ImageBuilder extends InstructionBuilder {
     private ImageBuilder() {
     }
 
+    /** A single-stage image on {@code base}, which the policy needs approved and pinned (S1, R1). */
     public static ImageBuilder finalStage(BaseImage base) {
         return create().thenFrom(base);
     }
@@ -67,6 +68,7 @@ public final class ImageBuilder extends InstructionBuilder {
         return this;
     }
 
+    /** Begins the final stage on {@code base}. */
     public ImageBuilder thenFrom(BaseImage base) {
         return thenStage(null, base);
     }

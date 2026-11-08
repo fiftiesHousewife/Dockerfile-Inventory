@@ -13,6 +13,7 @@ import java.util.List;
  */
 public record Policy(List<Approved> approved) {
 
+    /** A base's image path, registry aside, and the tag prefix approved for it. */
     public record Approved(String imagePath, String tagPrefix) {
     }
 
@@ -20,10 +21,12 @@ public record Policy(List<Approved> approved) {
         approved = List.copyOf(approved);
     }
 
+    /** A policy approving these bases. */
     public static Policy of(List<Approved> approved) {
         return new Policy(approved);
     }
 
+    /** Read from an {@code imagePath,tagPrefix} file, its header line optional. */
     public static Policy read(Path csv) {
         try {
             return of(Files.readAllLines(csv).stream()
@@ -40,6 +43,7 @@ public record Policy(List<Approved> approved) {
         return new Approved(fields[0].strip(), fields.length > 1 ? fields[1].strip() : "");
     }
 
+    /** Whether a base matches an approved image path and tag prefix. */
     public boolean approves(BaseImage base) {
         String path = path(base.name());
         String tag = base.tag() == null ? "" : base.tag();
