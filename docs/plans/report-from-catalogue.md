@@ -1,6 +1,6 @@
 # The report as a view of the catalogue: plan
 
-Status: planned 8 Nov; questions open. Follows the catalogue (`catalogue.md`).
+Status: planned 8 Nov; questions answered 8 Nov. Follows the catalogue (`catalogue.md`).
 
 ## Why
 
@@ -44,8 +44,26 @@ limit and the linking follow the current report's.
    bases page's status column too?
 4. Any page missing from the list above?
 
-Answers (8 Nov): 1, one archetypes page (the families and their sizes), linked from the summary, not leading it.
+Answers (8 Nov): 1, one archetypes page (the families and their sizes), linked from the summary, not leading it;
+2, the CSV tables and their DDL go; 3, end-of-life leaves the report (no `EOL_LIST`, no share in the health strip, no
+column on a bases page; rule R2 keeps its own list); 4, the pages as listed. Asked after: collections are JSON Lines,
+one record per line, as the catalogue is, so `archetypes.json` becomes `archetypes.jsonl`; a single summary object
+(`passes.json`) stays JSON.
 
 ## Tests, in order
 
-To be written once the questions are answered.
+One assertion each, several in `assertAll`; the report's pages read only `catalogue/dockerfiles.jsonl`, and the
+first slices remove before they add, each keeping what stays byte for byte.
+
+1. Removal: the CSV tables and `ddl.sql` no longer written (`Tables`, `Table` and their tests go); `EOL_LIST` and the
+   end-of-life share and column gone from the report; `archetypes.jsonl`, one archetype per line, in place of
+   `archetypes.json`.
+2. `CatalogueView`: the catalogue file read back into entries the pages use (counts, chains, blocked, per
+   organisation), with no other input.
+3. Summary page from the view: counts, chain depth and layer distributions, unmaintained by reason and what they
+   block, root / low-port / toolchain shares, footprints, runtimes, unusual steps, unparsed.
+4. Hierarchy page: the trees from each root, each node linking to its Dockerfile's page.
+5. Blocked page: unmaintained intermediates ordered by how many images each holds back.
+6. A page per Dockerfile: locations, stage graph, copies, permissions, per-stage counts, images with their chains.
+7. Organisations: the summary per organisation; the archetypes page linked from the summary.
+8. `ReportRun` writing the pages from the catalogue; README; measured on an estate.
