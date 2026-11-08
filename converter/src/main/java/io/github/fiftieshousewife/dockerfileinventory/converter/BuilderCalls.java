@@ -28,11 +28,8 @@ final class BuilderCalls {
             case Instruction.Label label -> CodeBlock.of(".label($L)", map(label.values()));
             case Instruction.Run run -> run(run);
             case Instruction.Copy copy -> copy(copy);
-            case Instruction.Add add -> CodeBlock.of(".add($L, $S, $S, $S, $S, $L, $L, $L)", list(add.sources()),
-                    add.destination(), add.chown(), add.chmod(), add.checksum(), add.keepGitDir(), add.link(),
-                    add.jsonForm());
-            case Instruction.CopyHeredoc heredoc -> CodeBlock.of(".copyHeredoc($S, $S, $L, $L)", heredoc.destination(),
-                    heredoc.delimiter(), heredoc.quoted(), list(heredoc.lines()));
+            case Instruction.Add add -> CodeBlock.of(".add($L)", RecordCalls.add(add));
+            case Instruction.CopyHeredoc heredoc -> CodeBlock.of(".copyHeredoc($L)", RecordCalls.copyHeredoc(heredoc));
             case Instruction.User user -> CodeBlock.of(".user($S)", user.user());
             case Instruction.Workdir workdir -> CodeBlock.of(".workdir($S)", workdir.path());
             case Instruction.Expose expose ->
@@ -58,15 +55,18 @@ final class BuilderCalls {
     }
 
     static CodeBlock run(Instruction.Run run) {
-        CodeBlock flags = run.flags().isEmpty() ? CodeBlock.of("") : CodeBlock.of("$L, ", flags(run));
+        if (!run.flags().isEmpty()) {
+            return run.body() instanceof RunBody.Shell shell
+                    ? CodeBlock.of(".run($L, $L)", flags(run), strings(shell.commands()))
+                    : CodeBlock.of(".run($L, $L)", flags(run), RecordCalls.body(run.body()));
+        }
         return switch (run.body()) {
-            case RunBody.Install install -> CodeBlock.of(".install($L$T.$L, $L, $L)", flags, PackageManager.class,
+            case RunBody.Install install -> CodeBlock.of(".install($T.$L, $L, $L)", PackageManager.class,
                     install.install().manager().name(), list(install.install().flags()),
                     list(install.install().packages()));
-            case RunBody.Shell shell -> CodeBlock.of(".run($L$L)", flags, strings(shell.commands()));
-            case RunBody.Exec exec -> CodeBlock.of(".runExec($L, $L)", flags(run), strings(exec.arguments()));
-            case RunBody.Heredoc heredoc -> CodeBlock.of(".runHeredoc($L, $S, $S, $L, $L)", flags(run),
-                    heredoc.command(), heredoc.delimiter(), heredoc.quoted(), list(heredoc.lines()));
+            case RunBody.Shell shell -> CodeBlock.of(".run($L)", strings(shell.commands()));
+            case RunBody.Exec exec -> CodeBlock.of(".runExec($L)", strings(exec.arguments()));
+            case RunBody.Heredoc heredoc -> CodeBlock.of(".run($T.of(), $L)", LIST, RecordCalls.body(heredoc));
         };
     }
 
@@ -84,14 +84,13 @@ final class BuilderCalls {
     }
 
     static CodeBlock copy(Instruction.Copy copy) {
-        return copy.chmod() == null && !copy.link() && !copy.jsonForm()
-                ? CodeBlock.of(".copy($L, $S, $S, $S)", list(copy.sources()), copy.destination(), copy.chown(),
-                        copy.fromStage())
-                : CodeBlock.of(".copy($L, $S, $S, $S, $S, $L, $L)", list(copy.sources()), copy.destination(),
-                        copy.chown(), copy.fromStage(), copy.chmod(), copy.link(), copy.jsonForm());
+        return copy.sources().size() == 1
+                && copy.equals(Instruction.Copy.of(copy.sources().getFirst()).to(copy.destination()))
+                ? CodeBlock.of(".copy($S, $S)", copy.sources().getFirst(), copy.destination())
+                : CodeBlock.of(".copy($L)", RecordCalls.copy(copy));
     }
 
-    private static CodeBlock strings(List<String> values) {
+    static CodeBlock strings(List<String> values) {
         return values.stream().map(v -> CodeBlock.of("$S", v)).collect(CodeBlock.joining(", "));
     }
 

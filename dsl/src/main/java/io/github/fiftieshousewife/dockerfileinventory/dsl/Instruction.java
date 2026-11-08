@@ -60,6 +60,43 @@ public sealed interface Instruction {
         public Copy(List<String> sources, String destination, String chown, String fromStage) {
             this(sources, destination, chown, fromStage, null, false, false);
         }
+
+        /** {@code Copy.of("a", "b").to("/dst/")}, then any with-method. */
+        public static Sources of(String... sources) {
+            return new Sources(List.of(sources));
+        }
+
+        public Copy from(String stage) {
+            return new Copy(sources, destination, chown, stage, chmod, link, jsonForm);
+        }
+
+        public Copy ownedBy(String owner) {
+            return new Copy(sources, destination, owner, fromStage, chmod, link, jsonForm);
+        }
+
+        public Copy mode(String mode) {
+            return new Copy(sources, destination, chown, fromStage, mode, link, jsonForm);
+        }
+
+        public Copy linked() {
+            return new Copy(sources, destination, chown, fromStage, chmod, true, jsonForm);
+        }
+
+        public Copy inJsonForm() {
+            return new Copy(sources, destination, chown, fromStage, chmod, link, true);
+        }
+
+        /** What a {@code COPY} copies, waiting for where to. */
+        public record Sources(List<String> sources) {
+
+            public Sources {
+                sources = List.copyOf(sources);
+            }
+
+            public Copy to(String destination) {
+                return new Copy(sources, destination, null, null);
+            }
+        }
     }
 
     /** {@code ADD}: a URL, a Git repository or an archive to unpack; {@code COPY} for anything else. */
@@ -69,6 +106,47 @@ public sealed interface Instruction {
         public Add {
             sources = List.copyOf(Checks.notEmpty(sources, "an ADD source"));
             Checks.notBlank(destination, "an ADD destination");
+        }
+
+        /** {@code Add.of("https://example.com/a.tgz").to("/opt/")}, then any with-method. */
+        public static Sources of(String... sources) {
+            return new Sources(List.of(sources));
+        }
+
+        public Add ownedBy(String owner) {
+            return new Add(sources, destination, owner, chmod, checksum, keepGitDir, link, jsonForm);
+        }
+
+        public Add mode(String mode) {
+            return new Add(sources, destination, chown, mode, checksum, keepGitDir, link, jsonForm);
+        }
+
+        public Add checksum(String digest) {
+            return new Add(sources, destination, chown, chmod, digest, keepGitDir, link, jsonForm);
+        }
+
+        public Add keepingGitDir() {
+            return new Add(sources, destination, chown, chmod, checksum, true, link, jsonForm);
+        }
+
+        public Add linked() {
+            return new Add(sources, destination, chown, chmod, checksum, keepGitDir, true, jsonForm);
+        }
+
+        public Add inJsonForm() {
+            return new Add(sources, destination, chown, chmod, checksum, keepGitDir, link, true);
+        }
+
+        /** What an {@code ADD} fetches, waiting for where to. */
+        public record Sources(List<String> sources) {
+
+            public Sources {
+                sources = List.copyOf(sources);
+            }
+
+            public Add to(String destination) {
+                return new Add(sources, destination, null, null, null, false, false, false);
+            }
         }
     }
 
@@ -80,6 +158,28 @@ public sealed interface Instruction {
             Checks.notBlank(destination, "a COPY destination");
             Checks.notBlank(delimiter, "a heredoc delimiter");
             lines = List.copyOf(lines);
+        }
+
+        /** {@code CopyHeredoc.to("/etc/app.conf").lines("a = 1")}: quoted, under {@code EOF}, unless said otherwise. */
+        public static Destination to(String destination) {
+            return new Destination(destination);
+        }
+
+        public CopyHeredoc delimitedBy(String delimiter) {
+            return new CopyHeredoc(destination, delimiter, quoted, lines);
+        }
+
+        /** Unquoted, so variables in the lines expand. */
+        public CopyHeredoc expanding() {
+            return new CopyHeredoc(destination, delimiter, false, lines);
+        }
+
+        /** Where the file goes, waiting for its lines. */
+        public record Destination(String destination) {
+
+            public CopyHeredoc lines(String... lines) {
+                return new CopyHeredoc(destination, "EOF", true, List.of(lines));
+            }
         }
     }
 

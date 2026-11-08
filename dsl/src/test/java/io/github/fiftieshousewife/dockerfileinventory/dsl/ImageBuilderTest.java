@@ -143,7 +143,7 @@ class ImageBuilderTest {
                 .thenStageFrom("app", "deps")
                 .env(env)
                 .label(Map.of("team", "payments"))
-                .copy(List.of("a", "b"), "/srv/", "app:app", "deps")
+                .copy(Instruction.Copy.of("a", "b").to("/srv/").ownedBy("app:app").from("deps"))
                 .model();
 
         assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).isEqualTo("""
@@ -161,19 +161,21 @@ class ImageBuilderTest {
     }
 
     @Test
-    void aCopyCanBeWrittenWithItsModeLinkAndForm() {
-        assertThat(ImageBuilder.create().thenStage("app", ALPINE)
-                .copy(List.of("run.sh"), "/bin/", null, null, "755", true, true).model().stages().getFirst()
-                .instructions())
-                .containsExactly(new Instruction.Copy(List.of("run.sh"), "/bin/", null, null, "755", true, true));
+    void aCopyCanBeGivenWhole() {
+        Instruction.Copy copy = Instruction.Copy.of("run.sh").to("/bin/").mode("755").linked();
+
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).copy(copy).model().stages().getFirst()
+                .instructions()).containsExactly(copy);
     }
 
     @Test
-    void aFileCanBeWrittenFromLinesUnexpandedOrAsTheDockerfileWroteIt() {
+    void aFileCanBeWrittenFromLinesUnexpandedOrGivenWhole() {
+        Instruction.CopyHeredoc expanding = Instruction.CopyHeredoc.to("/etc/b").lines("$HOME").delimitedBy("END")
+                .expanding();
+
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).copyHeredoc("/etc/a.conf", List.of("a = 1"))
-                .copyHeredoc("/etc/b", "END", false, List.of("$HOME")).model().stages().getFirst().instructions())
-                .containsExactly(new Instruction.CopyHeredoc("/etc/a.conf", "EOF", true, List.of("a = 1")),
-                        new Instruction.CopyHeredoc("/etc/b", "END", false, List.of("$HOME")));
+                .copyHeredoc(expanding).model().stages().getFirst().instructions())
+                .containsExactly(Instruction.CopyHeredoc.to("/etc/a.conf").lines("a = 1"), expanding);
     }
 
     @Test
@@ -188,33 +190,33 @@ class ImageBuilderTest {
     }
 
     @Test
-    void anAddCanBeWrittenAsTheDockerfileWroteIt() {
-        assertThat(ImageBuilder.create().thenStage("app", ALPINE)
-                .add(List.of("app.jar"), "/opt/", "1001", "644", null, false, false, true).model().stages()
-                .getFirst().instructions())
-                .containsExactly(new Instruction.Add(List.of("app.jar"), "/opt/", "1001", "644", null, false, false,
-                        true));
+    void anAddCanBeGivenWholeAsTheDockerfileWroteItWithoutThePolicysCheck() {
+        Instruction.Add add = Instruction.Add.of("app.jar").to("/opt/").ownedBy("1001").mode("644");
+
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).add(add).model().stages().getFirst()
+                .instructions()).containsExactly(add);
     }
 
     @Test
-    void aRunOrAnInstallCanCarryFlags() {
+    void aRunCanCarryFlags() {
         List<RunFlag> cache = List.of(RunFlag.Mount.parse("type=cache,target=/var/cache/apk"));
+        RunBody install = new RunBody.Install(new PackageInstall(PackageManager.APK, List.of(), List.of("git")));
 
-        assertThat(ImageBuilder.create().thenStage("app", ALPINE).run(cache, "make")
-                .install(cache, PackageManager.APK, List.of(), List.of("git")).model().stages().getFirst()
-                .instructions())
+        assertThat(ImageBuilder.create().thenStage("app", ALPINE).run(cache, "make").run(cache, install).model()
+                .stages().getFirst().instructions())
                 .containsExactly(new Instruction.Run(new RunBody.Shell(List.of("make")), cache),
-                        new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.APK, List.of(),
-                                List.of("git"))), cache));
+                        new Instruction.Run(install, cache));
     }
 
     @Test
-    void aRunCanBeInExecFormOrAHeredoc() {
+    void aRunCanBeInExecFormOrGivenItsFlagsAndBody() {
+        List<RunFlag> cache = List.of(RunFlag.Mount.parse("type=cache,target=/c"));
+        RunBody.Heredoc script = RunBody.Heredoc.of("set -e", "make").expanding();
+
         assertThat(ImageBuilder.create().thenStage("app", ALPINE).runExec("/bin/opm", "serve")
-                .runHeredoc(List.of(), "", "EOF", false, List.of("set -e", "make")).model().stages().getFirst()
-                .instructions())
+                .run(cache, script).model().stages().getFirst().instructions())
                 .containsExactly(new Instruction.Run(new RunBody.Exec(List.of("/bin/opm", "serve"))),
-                        new Instruction.Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))));
+                        new Instruction.Run(script, cache));
     }
 
     @Test

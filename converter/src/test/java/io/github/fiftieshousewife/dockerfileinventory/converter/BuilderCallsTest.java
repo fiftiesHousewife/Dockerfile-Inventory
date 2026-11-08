@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 
 class BuilderCallsTest {
 
+    private static final String DSL = "io.github.fiftieshousewife.dockerfileinventory.dsl.";
+
     @Test
     void callWritesEachInstructionAsItsBuilderMethod() {
         assertThat(List.of(new Instruction.Arg("A", null), new Instruction.Arg("A", "1"),
@@ -29,41 +31,60 @@ class BuilderCallsTest {
     }
 
     @Test
-    void aCopyWithOptionsIsWrittenWithThemAndOneWithoutInShort() {
-        assertThat(List.of(new Instruction.Copy(List.of("a"), "/b/", null, "build"),
-                new Instruction.Copy(List.of("a"), "/b/", "1001", null, "755", true, false)))
+    void aCopyWithOnlyASourceAndDestinationIsShortAndAnyOtherIsItsRecordWithWhatIsSet() {
+        assertThat(List.of(new Instruction.Copy(List.of("a"), "/b/", null, null),
+                new Instruction.Copy(List.of("a", "c"), "/b/", "1001", "build", "755", true, true)))
                 .map(instruction -> BuilderCalls.call(instruction).toString())
-                .containsExactly(".copy(java.util.List.of(\"a\"), \"/b/\", null, \"build\")",
-                        ".copy(java.util.List.of(\"a\"), \"/b/\", \"1001\", null, \"755\", true, false)");
+                .containsExactly(".copy(\"a\", \"/b/\")",
+                        ".copy(" + DSL + "Instruction.Copy.of(\"a\", \"c\").to(\"/b/\").from(\"build\")"
+                                + ".ownedBy(\"1001\").mode(\"755\").linked().inJsonForm())");
     }
 
     @Test
-    void aCopyHeredocIsWrittenAsWritten() {
-        assertThat(BuilderCalls.call(new Instruction.CopyHeredoc("/etc/a", "EOF", true, List.of("x = 1"))).toString())
-                .isEqualTo(".copyHeredoc(\"/etc/a\", \"EOF\", true, java.util.List.of(\"x = 1\"))");
+    void aCopyWithNoSourcesIsStillItsRecord() {
+        assertThat(BuilderCalls.copy(new Instruction.Copy(List.of(), "/d/", null, null)).toString())
+                .isEqualTo(".copy(" + DSL + "Instruction.Copy.of().to(\"/d/\"))");
     }
 
     @Test
-    void anAddIsWrittenAsWritten() {
-        assertThat(BuilderCalls.call(new Instruction.Add(List.of("a.tgz"), "/opt/", null, "644", null, false, true,
-                false)).toString())
-                .isEqualTo(".add(java.util.List.of(\"a.tgz\"), \"/opt/\", null, \"644\", null, false, true, false)");
+    void anAddIsItsRecordWithWhatIsSet() {
+        assertThat(List.of(new Instruction.Add(List.of("a.tgz"), "/opt/", null, null, null, false, false, false),
+                new Instruction.Add(List.of("r.git"), "/s", "1", "644", "sha256:ab", true, true, true)))
+                .map(instruction -> BuilderCalls.call(instruction).toString())
+                .containsExactly(".add(" + DSL + "Instruction.Add.of(\"a.tgz\").to(\"/opt/\"))",
+                        ".add(" + DSL + "Instruction.Add.of(\"r.git\").to(\"/s\").ownedBy(\"1\").mode(\"644\")"
+                                + ".checksum(\"sha256:ab\").keepingGitDir().linked().inJsonForm())");
     }
 
     @Test
-    void aRunsFlagsAreWrittenBeforeItsCommandsOrInstall() {
-        List<RunFlag> flags = List.of(RunFlag.Mount.parse("type=cache,target=/c"), new RunFlag.Network("none"));
-        String written = "java.util.List.of(io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag.Mount.parse("
-                + "\"type=cache,target=/c\"), new io.github.fiftieshousewife.dockerfileinventory.dsl.RunFlag.Network("
-                + "\"none\"))";
+    void aCopyHeredocIsItsRecordWithWhatDiffersFromTheDefaults() {
+        assertThat(List.of(new Instruction.CopyHeredoc("/etc/a", "EOF", true, List.of("x = 1")),
+                new Instruction.CopyHeredoc("/etc/b", "END", false, List.of("$X"))))
+                .map(instruction -> BuilderCalls.call(instruction).toString())
+                .containsExactly(".copyHeredoc(" + DSL + "Instruction.CopyHeredoc.to(\"/etc/a\").lines(\"x = 1\"))",
+                        ".copyHeredoc(" + DSL + "Instruction.CopyHeredoc.to(\"/etc/b\").lines(\"$X\")"
+                                + ".delimitedBy(\"END\").expanding())");
+    }
+
+    @Test
+    void aRunIsItsShortMethodWithoutFlagsAndItsFlagsAndBodyWithThem() {
+        List<RunFlag> flags = List.of(new RunFlag.Network("none"));
+        String none = "java.util.List.of(new " + DSL + "RunFlag.Network(\"none\"))";
+        RunBody install = new RunBody.Install(new PackageInstall(PackageManager.APK, List.of(), List.of("git")));
 
         assertThat(List.of(new Instruction.Run(new RunBody.Shell(List.of("make")), flags),
-                new Instruction.Run(new RunBody.Install(new PackageInstall(PackageManager.APK, List.of(),
-                        List.of("git"))), flags)))
+                new Instruction.Run(install, flags),
+                new Instruction.Run(new RunBody.Exec(List.of("make", "all"))),
+                new Instruction.Run(new RunBody.Exec(List.of("make")), flags),
+                new Instruction.Run(new RunBody.Heredoc("bash", "EOF", false, List.of("make")))))
                 .map(instruction -> BuilderCalls.call(instruction).toString())
-                .containsExactly(".run(" + written + ", \"make\")",
-                        ".install(" + written + ", io.github.fiftieshousewife.dockerfileinventory.dsl.PackageManager"
-                                + ".APK, java.util.List.of(), java.util.List.of(\"git\"))");
+                .containsExactly(".run(" + none + ", \"make\")",
+                        ".run(" + none + ", new " + DSL + "RunBody.Install(new " + DSL + "PackageInstall(" + DSL
+                                + "PackageManager.APK, java.util.List.of(), java.util.List.of(\"git\"))))",
+                        ".runExec(\"make\", \"all\")",
+                        ".run(" + none + ", new " + DSL + "RunBody.Exec(java.util.List.of(\"make\")))",
+                        ".run(java.util.List.of(), " + DSL + "RunBody.Heredoc.of(\"make\").command(\"bash\")"
+                                + ".expanding())");
     }
 
     @Test
@@ -100,16 +121,6 @@ class BuilderCallsTest {
         assertThat(BuilderCalls.map(OrderedMap.of("B", "2", "A", "1")).toString())
                 .isEqualTo("io.github.fiftieshousewife.dockerfileinventory.dsl.OrderedMap"
                         + ".of(\"B\", \"2\", \"A\", \"1\")");
-    }
-
-    @Test
-    void anExecOrHeredocRunIsWrittenWithItsFlags() {
-        List<RunFlag> none = List.of();
-        assertThat(List.of(new Instruction.Run(new RunBody.Exec(List.of("make", "all")), none),
-                new Instruction.Run(new RunBody.Heredoc("", "EOF", true, List.of("make")), none)))
-                .map(instruction -> BuilderCalls.call(instruction).toString())
-                .containsExactly(".runExec(java.util.List.of(), \"make\", \"all\")",
-                        ".runHeredoc(java.util.List.of(), \"\", \"EOF\", true, java.util.List.of(\"make\"))");
     }
 
     @Test

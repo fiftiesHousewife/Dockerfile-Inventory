@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -82,6 +83,59 @@ class InstructionTest {
                 .isThrownBy(() -> new Instruction.Entrypoint(List.of(), CommandForm.SHELL));
         assertThat(List.of(new Instruction.Cmd(List.of("serve")).form(),
                 new Instruction.Entrypoint(List.of("app")).form())).containsOnly(CommandForm.EXEC);
+    }
+
+    @Test
+    void aCopyIsItsSourcesThenItsDestinationWithNothingElseSet() {
+        assertThat(Instruction.Copy.of("a", "b").to("/dst/"))
+                .isEqualTo(new Instruction.Copy(List.of("a", "b"), "/dst/", null, null));
+    }
+
+    @Test
+    void eachWithMethodSetsOnlyItsPart() {
+        Instruction.Copy copy = Instruction.Copy.of("run.sh").to("/bin/");
+
+        assertAll(
+                () -> assertThat(copy.from("build").fromStage()).isEqualTo("build"),
+                () -> assertThat(copy.ownedBy("1001:0").chown()).isEqualTo("1001:0"),
+                () -> assertThat(copy.mode("755").chmod()).isEqualTo("755"),
+                () -> assertThat(copy.linked().link()).isTrue(),
+                () -> assertThat(copy.inJsonForm().jsonForm()).isTrue(),
+                () -> assertThat(copy.from("build").mode("755"))
+                        .isEqualTo(
+                                new Instruction.Copy(List.of("run.sh"), "/bin/", null, "build", "755", false, false)));
+    }
+
+    @Test
+    void anAddIsItsSourcesThenItsDestinationWithNothingElseSet() {
+        assertThat(Instruction.Add.of("a.tgz").to("/opt/"))
+                .isEqualTo(new Instruction.Add(List.of("a.tgz"), "/opt/", null, null, null, false, false, false));
+    }
+
+    @Test
+    void eachAddWithMethodSetsOnlyItsPart() {
+        Instruction.Add add = Instruction.Add.of("https://github.com/o/r.git").to("/src");
+
+        assertAll(
+                () -> assertThat(add.ownedBy("1001:0").chown()).isEqualTo("1001:0"),
+                () -> assertThat(add.mode("644").chmod()).isEqualTo("644"),
+                () -> assertThat(add.checksum("sha256:ab").checksum()).isEqualTo("sha256:ab"),
+                () -> assertThat(add.keepingGitDir().keepGitDir()).isTrue(),
+                () -> assertThat(add.linked().link()).isTrue(),
+                () -> assertThat(add.inJsonForm().jsonForm()).isTrue(),
+                () -> assertThat(add.mode("644").linked()).isEqualTo(new Instruction.Add(
+                        List.of("https://github.com/o/r.git"), "/src", null, "644", null, false, true, false)));
+    }
+
+    @Test
+    void aCopyHeredocIsItsDestinationThenItsLinesQuotedUnderEofUnlessSaidOtherwise() {
+        Instruction.CopyHeredoc heredoc = Instruction.CopyHeredoc.to("/etc/a.conf").lines("a = 1", "b = 2");
+
+        assertAll(
+                () -> assertThat(heredoc)
+                        .isEqualTo(new Instruction.CopyHeredoc("/etc/a.conf", "EOF", true, List.of("a = 1", "b = 2"))),
+                () -> assertThat(heredoc.delimitedBy("END").delimiter()).isEqualTo("END"),
+                () -> assertThat(heredoc.expanding().quoted()).isFalse());
     }
 
     @Test

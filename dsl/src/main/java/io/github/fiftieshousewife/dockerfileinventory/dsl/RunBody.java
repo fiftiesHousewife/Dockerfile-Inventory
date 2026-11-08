@@ -40,5 +40,23 @@ public sealed interface RunBody {
             Checks.notBlank(delimiter, "a heredoc delimiter");
             lines = List.copyOf(lines);
         }
+
+        /** A script: quoted, under {@code EOF}, with no command, unless said otherwise. */
+        public static Heredoc of(String... lines) {
+            return new Heredoc("", "EOF", true, List.of(lines));
+        }
+
+        public Heredoc command(String command) {
+            return new Heredoc(command, delimiter, quoted, lines);
+        }
+
+        public Heredoc delimitedBy(String delimiter) {
+            return new Heredoc(command, delimiter, quoted, lines);
+        }
+
+        /** Unquoted, so variables in the lines expand. */
+        public Heredoc expanding() {
+            return new Heredoc(command, delimiter, false, lines);
+        }
     }
 }

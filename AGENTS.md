@@ -70,14 +70,16 @@ rules/              stage 3: detect-only rules over facts, parsed Dockerfiles an
                     one class per rule (S1-S4, R1-R3, H1-H3, I1, I2); RuleSet, RulesRun, DiscoveryFiles,
                     FindingsTable, RuleRates, Samples; renovate/ holds the Renovate preset
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite
-                    Dockerfile, Stage, Instruction, RunBody, BaseImage, PackageInstall, PackageManager;
-                    DockerfileRenderer (Target), DockerQuotes, RunCommands, PackageInstallRenderer
-                    ImageBuilder (the fluent API) over InstructionBuilder, Draft, FinalStage, RunMerge;
+                    Dockerfile, Stage, Instruction (records; Copy, Add and CopyHeredoc with of/to and with-methods),
+                    RunBody, RunFlag, Port, CommandForm, BaseImage, PackageInstall, PackageManager, OrderedMap;
+                    DockerfileRenderer (Target), InstructionParts, DockerQuotes, RunCommands, PackageInstallRenderer
+                    ImageBuilder (the fluent API) over InstructionBuilder, MetadataInstructionBuilder,
+                    FileInstructionBuilder (AddSources); Draft, FinalStage, RunMerge;
                     Policy, PolicyCheck, UncleanedInstalls, PolicyViolation; Secrets (shared with rules and report)
 converter/          stage 5: Dockerfile -> model -> Dockerfile, and Java builder classes
-                    Convert (dispatch), ConvertPairs, ConvertCopy, ConvertCommands, Printed, Values, Pairs, Installs;
-                    RoundTrip, CanonicalSteps; JavaEmitter, ClassNames, GeneratedClasses; ConverterRun, Coverage,
-                    RunFiles
+                    Convert (dispatch), ConvertPairs, ConvertCopy, ConvertAdd, ConvertCommands, ConvertMetadata,
+                    Printed, Values, Pairs, Installs; RoundTrip, CanonicalSteps; JavaEmitter, BuilderCalls,
+                    RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles
 testdata/contracts/ the normal-form contracts between facts and lineage: real Dockerfiles against the history of
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
@@ -203,7 +205,8 @@ By hand, since no tool checks them:
 - **Methods.** Any method with a decision or computation is package-private with its own direct test; `private`
   only for one-line helpers without a branch.
 - **Tests.** One test class per class it tests directly; the method name says what is checked; no comments inside
-  tests; several checks on one result in `satisfies` or `SoftAssertions`; fixtures in `src/test/resources/fixtures/`.
+  tests; one assertion per test, several only inside JUnit's `assertAll` (older tests still use `satisfies` or
+  `SoftAssertions`: convert one when you touch it); fixtures in `src/test/resources/fixtures/`.
 - **Java.** Records for data, sealed interfaces for closed sets, `switch` with patterns, streams over index loops
   (character scanners excepted).
 - **Libraries first.** `java.net.http`, Jackson, OpenRewrite; hand-written code only where nothing standard fits

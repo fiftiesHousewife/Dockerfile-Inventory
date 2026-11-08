@@ -136,6 +136,34 @@ It also raised a question, answered 8 Nov: the builders gave every unowned final
 (`--chown=<user>:0`), so scripts copied to `/usr/local/bin` were writable by the process. Unowned copies now go to
 root (`--chown=0:0`); what the process writes to is declared with `writablePaths`.
 
+## Between S2 and S3: faithful calls without long argument lists
+
+Asked 8 Nov: the faithful builder methods take long positional lists (`copy` with seven arguments, `add` with
+eight, `runHeredoc` with five), and every generated class calls them. Instead, the records with many optional parts
+get a factory and immutable "with" methods, and the builders take the record:
+
+```java
+.copy(Instruction.Copy.of("run.sh").to("/usr/local/bin/").from("build").mode("755").linked())
+.add(Instruction.Add.of("https://example.com/a.tgz").to("/opt/").checksum("sha256:..."))
+.copyHeredoc(Instruction.CopyHeredoc.to("/etc/app.conf").lines("a = 1"))
+.run(List.of(mount), RunBody.Heredoc.of("set -e", "make").command("bash"))
+```
+
+`Copy.of(sources)` and `Add.of(sources)` return the sources alone, which `to(destination)` makes an instruction, so
+a destination cannot be forgotten. With-method names differ from the accessors (`from`, `ownedBy`, `mode`,
+`linked`, `inJsonForm`, `keepingGitDir`; for heredocs `delimitedBy`, `expanding`, `command`). Heredocs default to
+`EOF`, quoted (no expansion). The builders keep their short methods (`copy(src, dest)`, `copyFrom`, `run`,
+`runExec`, `install`); `run(flags, body)` replaces the faithful `install(runFlags, ...)`, `runExec(flags, ...)` and
+`runHeredoc(...)`. `BuilderCalls` writes only what a Dockerfile sets, so most generated calls stay one short line.
+
+As built 8 Nov: as above; the four-argument `copy(sources, destination, chown, fromStage)` went too, and
+`RecordCalls` writes the record expressions for `BuilderCalls`.
+
+Tests, in order, one assertion each (several inside `assertAll`): `Copy.of(...).to(...)` and each with-method;
+the builder's `copy(Copy)`; the same for `Add`, `CopyHeredoc`, `RunBody.Heredoc`; `run(flags, body)`; then
+`BuilderCalls` for each, then the long methods removed, the compiled-class test and the estate's round trip
+unchanged.
+
 ## Tests, in order (S1; S2-S4 after their questions)
 
 1. `Shell`, `Volume`, `StopSignal`, `Maintainer`: model validation, rendering, converter mapping, emitted Java, round
