@@ -38,6 +38,7 @@ class CloneSourceTest {
 
     @Test
     void itSaysWhereItClonesFromButNeverTheToken() {
-        assertThat(CloneSource.from(Map.of("GHE_TOKEN", "t0k"))).hasToString("https://github.com with GHE_TOKEN (variable)");
+        assertThat(CloneSource.from(Map.of("GHE_TOKEN", "t0k")))
+                .hasToString("https://github.com with GHE_TOKEN (variable)");
     }
 }

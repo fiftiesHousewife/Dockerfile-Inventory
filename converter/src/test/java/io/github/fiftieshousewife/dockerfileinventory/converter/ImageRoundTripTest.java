@@ -51,7 +51,8 @@ class ImageRoundTripTest {
         results.forEach(result -> System.out.println(summary(result)));
 
         assertAll(Stream.concat(
-                Stream.<Executable>of(() -> assertThat(results).as("pairs built").anyMatch(ImageComparison.Result::built)),
+                Stream.<Executable>of(() -> assertThat(results).as("pairs built")
+                        .anyMatch(ImageComparison.Result::built)),
                 results.stream().filter(ImageComparison.Result::built).map(result -> () -> assertThat(result.same())
                         .as(result.blobSha() + ": " + result.config() + " " + result.files()).isTrue())));
     }
