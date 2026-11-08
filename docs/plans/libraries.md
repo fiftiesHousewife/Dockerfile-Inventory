@@ -46,6 +46,23 @@ L1 decides L3, L4, L7 and L10; L13 can happen any time before L14.
   that is not published; `Built`'s raw instructions and anything else only the converter needs move to an unexported
   package of the model.
 
+## Functional gaps (asked 8 Nov: does publishing need features too?)
+
+Measured on the combined estate (5,250 Dockerfiles, 93 unparsed): 51 are templates, about 25 use balena's
+`CROSS_BUILD_COPY` preprocessor, a handful are not Dockerfiles (SVG, XML, an editor syntax file) and one is broken for
+Docker too. What a library user would still miss:
+
+- **F1, the parser's last bugs**, before 1.0: an exec-form `CMD [...]` on the last line with no newline (`04ef8555`);
+  shell quoting inside `$(...)` in a `RUN`, as jq filters write it (`4059fc1f`, `7bd844c2`); a `LABEL` value ending
+  in a quote before a continuation (`8a8eb8c4`). Each from its minimal reproduction, as AGENTS.md says.
+- **F2, a plain entry point**: `parse(String)` returning the tree, and a syntax error carrying its line and column,
+  beside OpenRewrite's `Parser` API, which returns a stream of source files to cast.
+- **F3, reading** (answered 8 Nov: a third library): `dockerfile-reader`, Dockerfile text to the model, built on
+  `dockerfile-parser` and `dockerfile-model` from the converter's reading half (`Convert` and its helpers); the
+  model stays dependency-free and the Java builder generation stays internal. First version 0.1.0.
+- **F4, the default render target**: BuildKit's features (heredocs, `RUN --mount`) allowed by default, the older
+  syntax a choice; the one bind-mount round trip that fails today fails on the narrow default.
+
 ## Tests, in order
 
 One assertion each, several in `assertAll`.
@@ -64,7 +81,13 @@ One assertion each, several in `assertAll`.
 9. A Gradle release task replacing `scripts/release-parser.sh`: its dry run in `check` writes both signed (or, without
    a key, unsigned) bundles and names the tags; the upload only with the Portal token in the environment.
 10. Each library's README example compiled and run as a test.
-11. After the owner's Central setup: both released, then used from a project outside this repository on Java 21.
+11. F1: each parser bug from its minimal reproduction, in the parser's `tree` tests; the corpus tests name what turns.
+12. F2: `parse(String)` on a real Dockerfile; a syntax error's line and column.
+13. F3: `dockerfile-reader` as a module (the converter's reading half moved, the converter then built on it, its
+    round trip byte for byte the same), with its descriptor, Java 21, Javadoc, bundle and README example as above.
+14. F4: the default target renders heredocs and `RUN --mount`; the older target still refuses them.
+15. After the owner's Central setup: all three released, then used from a project outside this repository on
+    Java 21.
 
 ## Questions
 
@@ -81,3 +104,4 @@ One assertion each, several in `assertAll`.
 
 Answers (8 Nov): 1, the parser and `dsl`; 2, one version each; 3, Java 21; 4, `dockerfile-model` at 0.1.0, the parser
 at 1.0.0; 5, `dockerfile-model`, package `io.github.fiftieshousewife.dockerfile.model`; 6, split `Instruction` first.
+Asked after (8 Nov): reading published as a third library, `dockerfile-reader` (F3).
