@@ -1,0 +1,7 @@
+Dockerfile Inventory
+Copyright 2026 Pippa Newbold
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The parser module (io.github.fiftieshousewife:dockerfile-parser) is a modified copy of OpenRewrite's rewrite-docker
+8.90.4; its own NOTICE, in parser/NOTICE and in its jar, says what it is and what changed.

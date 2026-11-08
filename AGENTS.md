@@ -100,6 +100,8 @@ scripts/            discover.sh (one organisation with the GitHub CLI's token), 
                     images), okd-select.sh (OKD images and their release index), corpus-collect.sh and
                     corpus-collect-images.sh (the fixture bank from a run), release-parser.sh (the parser to Maven
                     Central), jcr-diagnose.sh, record-jcr-fixtures.sh
+LICENSE, NOTICE     Apache 2.0 for the project's own code, put in every published jar (a module with its own, as the
+                    parser has, ships those instead)
 Containerfile       the image for a pod: every stage's distribution and a jlink'd JRE on UBI 9 minimal;
                     scripts/inventory is its entry point (`inventory <stage>`)
 docs/               overview.md (the problem and the approach), plans/ (one per phase or slice), upstream/

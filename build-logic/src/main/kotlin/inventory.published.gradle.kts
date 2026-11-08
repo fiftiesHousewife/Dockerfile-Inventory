@@ -2,6 +2,8 @@
 // the environment. `check` writes the bundle to build/central (unsigned without a key) and verifies it, so what a
 // release uploads is tested on every build; scripts/release-parser.sh uploads it.
 
+import java.util.zip.ZipFile
+
 plugins {
     `java-library`
     `maven-publish`
@@ -11,6 +13,14 @@ plugins {
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+// A module with its own LICENSE and NOTICE (the parser, a fork) ships those; the others ship the repository's.
+tasks.named<Jar>("jar") {
+    listOf("LICENSE", "NOTICE").forEach { name ->
+        val own = layout.projectDirectory.file(name).asFile
+        from(if (own.isFile) own else rootProject.file(name)) { into("META-INF") }
+    }
 }
 
 val central = layout.buildDirectory.dir("central")
@@ -81,6 +91,11 @@ val verifyBundle by tasks.registering {
         val pom = dir.resolve("$stem.pom").readText()
         listOf("<name>", "<description>", "<url>", "<licenses>", "<developers>", "<scm>").forEach {
             check(pom.contains(it)) { "the POM lacks $it, which Maven Central requires" }
+        }
+        ZipFile(dir.resolve("$stem.jar")).use { jar ->
+            listOf("META-INF/LICENSE", "META-INF/NOTICE").forEach {
+                check(jar.getEntry(it) != null) { "the jar lacks $it" }
+            }
         }
     }
 }

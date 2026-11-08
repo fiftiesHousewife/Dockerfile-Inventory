@@ -19,7 +19,6 @@ publishing.publications.named<MavenPublication>("library") {
 }
 
 tasks.jar {
-    from(files("LICENSE", "NOTICE")) { into("META-INF") }
     manifest {
         attributes(
             "Implementation-Title" to "Dockerfile Parser",

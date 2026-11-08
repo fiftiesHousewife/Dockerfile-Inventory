@@ -1,6 +1,6 @@
 # Publishing a set of libraries: plan
 
-Status: planned 8 Nov; questions answered 8 Nov.
+Status: planned 8 Nov; questions answered 8 Nov. Done: step 1, the licence.
 
 ## Why
 
