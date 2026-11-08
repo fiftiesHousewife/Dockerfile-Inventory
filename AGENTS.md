@@ -133,9 +133,9 @@ Each module's run entry point is its `...Main`; the README lists their settings.
 ./gradlew validate                                # tag validate: the validator's counts on a real estate
 ```
 
-Bulk checks are JUnit tests tagged `roundtrip`, `image-roundtrip` or `validate`, never scripts: `test` and `check` leave them
-out, and each skips with its reason when its input (an estate on disk, Docker) is missing. Their expectations are in
-`converter/src/test/resources/estate/` and `validator/src/test/resources/estate/`.
+Bulk checks are JUnit tests tagged `roundtrip`, `image-roundtrip` or `validate`, never scripts: `test` and `check`
+leave them out, and each skips with its reason when its input (an estate on disk, Docker) is missing. Their
+expectations are in `converter/src/test/resources/estate/` and `validator/src/test/resources/estate/`.
 
 Inside Claude Code's sandbox use `./gradlew-claude` (gitignored; copy it from another checkout if missing): the
 sandbox lets traffic out only through the proxy in `$https_proxy`, which the JVM ignores until the proxy is passed
