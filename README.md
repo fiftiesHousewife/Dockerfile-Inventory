@@ -84,7 +84,7 @@ podman run --rm -e GHE_API_URL -e GHE_TOKEN_FILE=/secrets/ghe-token -v ./out:/wo
     -v ./secrets:/secrets:ro,Z -e OUT_DIR=/work/out/discovery dockerfile-inventory discovery
 ```
 
-`inventory <stage>` runs `discovery`, `facts`, `lineage`, `report`, `rules` or `converter`, with the settings below
+`inventory <stage>` runs `discovery`, `facts`, `lineage`, `report`, `rules`, `validator` or `converter`, with the settings below
 from the environment; `JAVA_OPTS` (default `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`) is passed to Java.
 Mount the token as a file and set `GHE_TOKEN_FILE` or `ARTIFACTORY_TOKEN_FILE`, so a rotated secret is picked up.
 
@@ -338,6 +338,44 @@ its line.
 
 `renovate/dockerfile-estate.json` is a Renovate preset for the central instance: Dockerfile bases pinned by
 digest, base updates grouped into one pull request per repository.
+
+## Judge the images for OpenShift
+
+```bash
+export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
+export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
+export PROFILE=openshift-4-restricted-v2      # optional: a shipped profile's name or a profile file
+export OUT_DIR=/data/validator
+./gradlew :validator:run
+```
+
+The validator reads each Dockerfile's facts as the platform in `PROFILE` would run its image, and says what will
+break, what drifts and what the deployment must supply. Two profiles ship, each describing every namespace as
+OpenShift ships it, with no grants: `openshift-4-restricted-v2` (the default; OpenShift 4.11 and later) and
+`openshift-4-restricted` (before 4.11, and clusters that kept it). A profile is a JSON file: copy one from
+`validator/src/main/resources/profiles/`, change a check's severity (`breaks`, `drift`, `information` or `off`) or list
+the registries the cluster pulls from in `allowedRegistries` (empty: any), and pass its path as `PROFILE`.
+
+| Check | What it finds | Under v2 | Under v1 |
+| --- | --- | --- | --- |
+| P1 | a final user that is root, unset (inferred: it may come from the base) or named; OpenShift runs an arbitrary UID in group 0 | breaks | breaks |
+| P2 | a `VOLUME`, `WORKDIR` or `HOME` never made writable by group 0 in the final stage (inferred: a script may do it) | breaks | breaks |
+| P3 | an exposed port below 1024 | breaks | breaks |
+| P4 | `sudo`, `su`, `gosu` or `su-exec` in the start command, or `sudo` installed in the final image | breaks | breaks |
+| P5 | a setuid bit set in the final stage | breaks | information |
+| P6 | a shell-form `ENTRYPOINT` (or `CMD` without one): the process never receives SIGTERM | breaks | breaks |
+| P7 | a base from a registry off the profile's list | breaks | breaks |
+| P8 | a base not pinned by digest | drift | drift |
+| P9 | a `HEALTHCHECK` (ignored) or a `VOLUME` (a plain directory): the deployment must declare probes and volumes | information | information |
+| P10 | a start command reading the user's name or home (inferred) | information | information |
+
+Metadata-only bundles (`FROM scratch` with no start command) never run as containers and are counted apart.
+
+| File | Contents |
+| --- | --- |
+| `action-plan.json` | The profile, how many images were judged and how many not, the verdicts (`breaks`, `drift`, `information`, `runs`: each image's worst finding), the number of actions, and the actions per repository |
+| `actions.jsonl` | One action per line, most urgent first (severity, then the locations it reaches, then read before inferred): the check, its severity and certainty, what to change, the Dockerfile's blob SHA, the findings behind it and every location |
+| `verdicts.jsonl` | Each judged Dockerfile's verdict |
 
 ## Convert Dockerfiles to builder classes
 

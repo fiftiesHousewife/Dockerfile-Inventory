@@ -1,7 +1,6 @@
 # From estate summary to action plan: an OpenShift validator
 
-Status: planned 8 Nov; questions answered 8 Nov; built after the catalogue (`catalogue.md`), whose extended facts it
-reads.
+Status: planned 8 Nov; questions answered 8 Nov; slice 1 (the module, the profiles, the image checks, verdicts, actions and the run) built 9 Nov.
 
 ## Why
 
@@ -161,3 +160,56 @@ OpenShift behaviour it predicts.
 6. The report's "Action plan for OpenShift" page.
 7. A tagged test (`validate`, run by `./gradlew validate`, as `roundTrip` is) over a real estate, its counts
    committed as a ratchet.
+
+## Slice 1: the module, the profiles and the image checks (9 Nov)
+
+- **A profile is a JSON file**, as every single object the pipeline reads or writes is: its `name`, a sentence
+  saying what it `describes`, the `allowedRegistries` (empty: any) and a `severity` per check (`breaks`, `drift`,
+  `information` or `off`). How OpenShift behaves under it (the arbitrary UID, the capabilities, privilege
+  escalation, seccomp) is what sets those severities, so it is written once, in the shipped profiles and the table
+  below, rather than as fields no check reads. `refused` waits for the deployment manifests.
+- **The checks**, numbered in the order of the table above, on the effective image where lineage has one and
+  otherwise the Dockerfile's facts:
+
+| ID | Check | Certainty | v2 | v1 |
+| --- | --- | --- | --- | --- |
+| P1 | final user root, unset or named | read | breaks | breaks |
+| P2 | a path written at run time (`VOLUME`, `WORKDIR`, a directory its steps create) with no group-0 step over it | inferred | breaks | breaks |
+| P3 | an exposed port below 1024 | read | breaks | breaks |
+| P4 | `sudo`, `su` or `gosu` in the start command, or `sudo` installed | read | breaks | breaks |
+| P5 | a setuid or setgid bit set (`chmod u+s`, `g+s`, `4755`) | read | breaks | information |
+| P6 | a shell-form `ENTRYPOINT` or `CMD` | read | breaks | breaks |
+| P7 | a base from a registry not on the profile's list | read | breaks | breaks |
+| P8 | a base not pinned by digest | read | drift | drift |
+| P9 | `HEALTHCHECK` or `VOLUME` | read | information | information |
+| P10 | a start command reading the user's name or home (`whoami`, `$USER`, `$HOME`, `~`) | inferred | information | information |
+
+  Under v1, `sudo`, `su` and `gosu` still fail (SETUID and SETGID are dropped), but another setuid binary still
+  gains what the bounding set allows, so P5 alone differs.
+
+Tests, in order: `Profile` (both shipped profiles read; a copied one with a severity changed; an unknown check, a bad
+severity or a missing field refused by name); then P1 to P10 one at a time, each on real lines from the fixture bank;
+then the verdict, the actions, the run and the page as above.
+
+Found on the way:
+
+- The outputs follow the pipeline's rule for collections: `actions.jsonl` (one action per line, most urgent first)
+  and `verdicts.jsonl` beside the single summary object `action-plan.json`, which counts the actions per
+  repository; the by-repository view is the same actions read through each one's locations.
+- A finding's certainty can depend on the image: P1 on a user the Dockerfile never sets is inferred, since the base
+  may set one. The effective image from lineage turns those into read findings; that is the next slice.
+- Metadata-only bundles (`FROM scratch`, no start command) never run as containers; they are counted apart rather
+  than judged (676 of the combined estate's P1 findings were bundles).
+- RULES_DIR and LINEAGE_DIR wait for the slices that read them (the antipatterns, the effective image).
+
+Measured (9 Nov, stored facts with the catalogue's fields), each in about a second:
+
+| | judged | not runnable | breaks | drift | information | runs | actions |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OKD | 2,440 | 139 | 1,992 | 357 | 2 | 89 | 4,610 |
+| combined estate | 4,472 | 685 | 3,641 | 642 | 2 | 187 | 8,864 |
+
+The two profiles give the same verdicts on both estates: P5 (the only difference) finds three images, each breaking
+on another check too. By check on the combined estate: P1 2,982 (most inferred), P2 1,142, P3 58, P4 19, P5 3, P6
+369, P8 3,984, P9 303, P10 4. A sample of five per check read right, except P2 on sclorg's images, whose
+`fix-permissions` script does the group-0 work out of the facts' sight.

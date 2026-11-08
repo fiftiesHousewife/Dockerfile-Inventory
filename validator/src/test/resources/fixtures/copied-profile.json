@@ -1,0 +1,9 @@
+{
+  "name": "acme-openshift",
+  "describes": "Acme's clusters: restricted-v2, pulling only from Acme's registry.",
+  "allowedRegistries": ["registry.acme.example"],
+  "severity": {
+    "P1": "breaks", "P2": "breaks", "P3": "breaks", "P4": "breaks", "P5": "breaks",
+    "P6": "breaks", "P7": "breaks", "P8": "breaks", "P9": "information", "P10": "information"
+  }
+}

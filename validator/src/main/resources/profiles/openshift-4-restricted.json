@@ -1,0 +1,9 @@
+{
+  "name": "openshift-4-restricted",
+  "describes": "OpenShift 4 before 4.11, and clusters that kept it: the restricted SCC runs an arbitrary UID in group 0 and drops KILL, MKNOD, SETUID and SETGID, but allows privilege escalation and requires no seccomp profile.",
+  "allowedRegistries": [],
+  "severity": {
+    "P1": "breaks", "P2": "breaks", "P3": "breaks", "P4": "breaks",
+    "P5": "information", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information"
+  }
+}

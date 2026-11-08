@@ -74,6 +74,11 @@ rules/              stage 3: detect-only rules over facts, parsed Dockerfiles an
                     Rule, EffectiveRule, Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
                     one class per rule (S1-S4, R1-R3, H1-H3, I1, I2); RuleSet, RulesRun, DiscoveryFiles,
                     RuleRates, Samples; renovate/ holds the Renovate preset
+validator/          stage 3c: facts -> each image judged through a platform profile -> actions
+                    Profile (profiles/*.json: severities per check, allowed registries), Check, Severity, Certainty;
+                    Subject (a facts line as the checks read it), PlatformCheck: FinalUser (P1), WritablePaths,
+                    LowPorts, UserSwitch, SetuidBits, ShellStart, BaseRegistry, UnpinnedBase, DeploymentHints,
+                    UserIdentity (P10); Validation, Finding, Verdict; Actions, Action, Location; ValidatorRun
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
                     io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model
