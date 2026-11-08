@@ -55,7 +55,8 @@ README documents every field.
 Seeing a first entry, the owner named what matters most: navigating the hierarchy and counting layers, identifying
 parents, knowing when each layer was created, when its Dockerfile last changed and when it was last published as an
 image, and finding the images blocked on unmaintained intermediates. The fields above that serve none of these
-(shell, stop signal, instruction counts, the bundle flag) stay in the entry but no longer lead it.
+(shell, stop signal, instruction counts, the bundle flag) stay in the entry but no longer lead it; a base's
+end-of-life status leaves it (asked 8 Nov: not useful).
 
 What each answer needs, and where it comes from:
 
