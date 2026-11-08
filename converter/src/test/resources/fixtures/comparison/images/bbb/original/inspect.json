@@ -1,0 +1,1 @@
+{"Type": "buildah 0.0.1", "FromImage": "compare/bbb:original", "OCIv1": {"config": {"User": "ignored"}}, "Docker": {"config": {"User": "1001", "Entrypoint": ["app"]}}}

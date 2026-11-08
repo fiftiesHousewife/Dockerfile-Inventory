@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 public final class ImageCompareMain {
 
     record Line(String blobSha, boolean built, String failure, boolean same, List<String> config, List<String> files,
-            List<String> ignoredContent) {
+            List<String> stubs, List<String> ignoredContent) {
     }
 
     enum Step { RENDER, COMPARE }
@@ -49,6 +49,8 @@ public final class ImageCompareMain {
             String original = RunFiles.read(discovery.resolve("blobs").resolve(sha));
             try {
                 write(work.resolve(sha).resolve("regenerated.Dockerfile"), Regenerated.of(original));
+                write(work.resolve(sha).resolve("sources.txt"), Regenerated.localSources(original).stream()
+                        .map(source -> source + "\n").collect(Collectors.joining()));
             } catch (IllegalArgumentException e) {
                 write(work.resolve(sha).resolve("failure.txt"), "the converter cannot render it: " + e.getMessage());
             }
@@ -60,7 +62,8 @@ public final class ImageCompareMain {
                 FileDifferences.VOLATILE_FILES.stream()).toList();
         try (Stream<Path> pairs = Files.list(work)) {
             return pairs.filter(Files::isDirectory).sorted().map(ImageComparison::of)
-                    .map(r -> new Line(r.blobSha(), r.built(), r.failure(), r.same(), r.config(), r.files(), ignored))
+                    .map(r -> new Line(r.blobSha(), r.built(), r.failure(), r.same(), r.config(), r.files(), r.stubs(),
+                            ignored))
                     .map(JSON::writeValueAsString)
                     .collect(Collectors.joining("\n", "", "\n"));
         } catch (IOException e) {

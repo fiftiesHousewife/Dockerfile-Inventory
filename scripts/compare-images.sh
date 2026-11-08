@@ -7,7 +7,9 @@
 #   1. renders each chosen Dockerfile through the converter (the faithful conversion, not a golden)
 #   2. clones each Dockerfile's repository at the scanned commit
 #   3. in a Buildah container: builds the original, with its directory as context or else the repository root,
-#      then the regenerated Dockerfile with the same context, and lists each image's config and files
+#      or, when neither builds because a COPY or ADD source is made by CI rather than kept in the repository,
+#      with those sources stubbed as empty files in its directory; then the regenerated Dockerfile with the same
+#      context and stubs; and lists each image's config and files
 #   4. compares each pair: comparison.jsonl, one line per Dockerfile
 #
 # Usage, from the repository root, where Docker runs:
@@ -57,6 +59,8 @@ grep -v '^[[:space:]]*$' "$SHAS" | while read -r sha; do
         git -C "$dir" checkout -q "$commit"
         git -C "$dir" submodule update -q --init --recursive || true
     fi
+    git -C "$dir" clean -q -f -d -x
+
 done
 
 step "3. Build both with Buildah and list each image"
@@ -67,7 +71,7 @@ set -uo pipefail
 list() {
     local image=$1 into=$2 container mount
     mkdir -p "$into"
-    buildah inspect --type image --format '{{json .Docker.Config}}' "$image" > "$into/config.json"
+    buildah inspect --type image "$image" > "$into/inspect.json"
     container=$(buildah from -q "$image")
     mount=$(buildah mount "$container")
     (cd "$mount" && find . -xdev -printf '%y\t%m\t%U\t%G\t%p\t%l\n' > "$into/files.txt" \
@@ -78,6 +82,27 @@ list() {
 build() {
     buildah build -q --format docker --layers=false -f "$1" -t "$2" "$3" > "/work/$4.log" 2>&1
 }
+arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+# Each COPY or ADD source the context lacks, as an empty file (or a directory for a source ending in /), its
+# build arguments as Buildah sets them and each * as "stub"; listed in stubs.txt.
+stub() {
+    local context=$1 work=$2 source path
+    : > "$work/stubs.txt"
+    while IFS= read -r source; do
+        [[ -n $source ]] || continue
+        path=${source//'${TARGETOS}'/linux}; path=${path//'$TARGETOS'/linux}
+        path=${path//'${TARGETARCH}'/$arch}; path=${path//'$TARGETARCH'/$arch}
+        path=${path#/}
+        compgen -G "$context/$path" > /dev/null && continue
+        path=${path//\*/stub}
+        if [[ $path == */ ]]; then
+            mkdir -p "$context/$path" && : > "$context/${path}stub"
+        else
+            mkdir -p "$(dirname "$context/$path")" && : > "$context/$path"
+        fi
+        echo "$path" >> "$work/stubs.txt"
+    done < "$work/sources.txt"
+}
 for work in /work/work/*/; do
     sha=$(basename "$work")
     [[ -f $work/failure.txt ]] && { echo "-- $sha: $(cat "$work/failure.txt")"; continue; }
@@ -86,11 +111,18 @@ for work in /work/work/*/; do
     original=$root/$path
     context=$(dirname "$original")
     echo "-- $sha: $repo $path"
-    if ! build "$original" "compare/$sha:original" "$context" "work/$sha/original-build"; then
-        context=$root
-        build "$original" "compare/$sha:original" "$context" "work/$sha/original-build" || {
-            echo "the original does not build with its directory or the repository root as context; see" \
-                "original-build.log" > "$work/failure.txt"; echo "   original does not build"; continue; }
+    if ! build "$original" "compare/$sha:original" "$context" "work/$sha/original-build-directory"; then
+        if build "$original" "compare/$sha:original" "$root" "work/$sha/original-build-root"; then
+            context=$root
+        else
+            stub "$context" "$work"
+            [[ -s $work/stubs.txt ]] && build "$original" "compare/$sha:original" "$context" \
+                "work/$sha/original-build-stubbed" || {
+                echo "the original does not build with its directory or the repository root as context, nor" \
+                    "with its missing sources stubbed; see original-build-*.log" > "$work/failure.txt"
+                echo "   original does not build"; continue; }
+            echo "   built on stubs: $(paste -sd ' ' "$work/stubs.txt")"
+        fi
     fi
     build "$work/regenerated.Dockerfile" "compare/$sha:regenerated" "$context" "work/$sha/regenerated-build" || {
         echo "the regenerated Dockerfile does not build where the original does; see regenerated-build.log" \
@@ -105,7 +137,7 @@ native=linux/$(docker info --format '{{.Architecture}}' | sed 's/x86_64/amd64/; 
 auth=()
 [[ -n $REGISTRY_AUTH_FILE ]] && auth=(-v "$(cd "$(dirname "$REGISTRY_AUTH_FILE")" && pwd)/$(basename "$REGISTRY_AUTH_FILE"):/auth.json:ro" -e REGISTRY_AUTH_FILE=/auth.json)
 docker run --rm --privileged --platform "$native" -e STORAGE_DRIVER=vfs "${auth[@]+"${auth[@]}"}" \
-    -v "$OUT/src:/src:ro" -v "$OUT:/work" -v inventory-compare-buildah:/var/lib/containers \
+    -v "$OUT/src:/src" -v "$OUT:/work" -v inventory-compare-buildah:/var/lib/containers \
     "$BUILDAH_IMAGE" bash /work/build.sh | tee "$OUT/build.log"
 
 step "4. Compare each pair"

@@ -1,0 +1,35 @@
+package io.github.fiftieshousewife.dockerfileinventory.converter;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import org.junit.jupiter.api.Test;
+
+class LocalSourcesTest {
+
+    @Test
+    void theSourcesTakenFromTheContextAreThoseOfCopyAndAddNotOfStagesUrlsOrHeredocs() {
+        String dockerfile = """
+                FROM golang AS build
+                COPY go.mod go.sum ./
+                FROM ubi9
+                COPY --from=build /out/app /usr/local/bin/
+                COPY bin/app-${TARGETOS}-${TARGETARCH} target/lib/* /opt/
+                ADD https://example.com/a.tgz rootfs.tar.gz /
+                COPY <<EOF /etc/a
+                x
+                EOF
+                """;
+
+        assertThat(LocalSources.of(Convert.of(Parsed.of(dockerfile)).model())).containsExactly("go.mod", "go.sum",
+                "bin/app-${TARGETOS}-${TARGETARCH}", "target/lib/*", "rootfs.tar.gz");
+    }
+
+    @Test
+    void aSourceIsRemoteWhenItIsAUrlOrAGitAddress() {
+        assertAll(
+                () -> assertThat(LocalSources.remote("https://example.com/a.tgz")).isTrue(),
+                () -> assertThat(LocalSources.remote("git@github.com:o/r.git")).isTrue(),
+                () -> assertThat(LocalSources.remote("rootfs.tar.gz")).isFalse());
+    }
+}

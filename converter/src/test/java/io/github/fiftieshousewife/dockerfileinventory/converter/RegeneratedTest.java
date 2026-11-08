@@ -28,4 +28,10 @@ class RegeneratedTest {
                 () -> assertThatIllegalArgumentException().isThrownBy(() -> Regenerated.of("not a dockerfile\n")),
                 () -> assertThatIllegalArgumentException().isThrownBy(() -> Regenerated.of("FROM ubi9@sha256:x\n")));
     }
+
+    @Test
+    void theLocalSourcesAreThoseTheContextMustHold() {
+        assertThat(Regenerated.localSources("FROM ubi9\nCOPY app.jar /opt/\nCOPY --from=x /a /b\n"))
+                .containsExactly("app.jar");
+    }
 }

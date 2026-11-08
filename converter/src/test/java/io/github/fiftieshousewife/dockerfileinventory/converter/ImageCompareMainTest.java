@@ -22,13 +22,15 @@ class ImageCompareMainTest {
     @Test
     void renderWritesEachDockerfilesRegeneratedTextOrWhyItCannot() throws IOException {
         Files.createDirectories(discovery.resolve("blobs"));
-        Files.writeString(discovery.resolve("blobs/good"), "FROM ubi9\nUSER   1001\n");
+        Files.writeString(discovery.resolve("blobs/good"), "FROM ubi9\nCOPY app.jar run.sh /opt/\nUSER   1001\n");
         Files.writeString(discovery.resolve("blobs/bad"), "not a dockerfile\n");
 
         ImageCompareMain.render(discovery, List.of("good", "bad"), work);
 
         assertAll(
-                () -> assertThat(work.resolve("good/regenerated.Dockerfile")).hasContent("FROM ubi9\nUSER 1001\n"),
+                () -> assertThat(work.resolve("good/regenerated.Dockerfile"))
+                        .hasContent("FROM ubi9\nCOPY app.jar run.sh /opt/\nUSER 1001\n"),
+                () -> assertThat(work.resolve("good/sources.txt")).hasContent("app.jar\nrun.sh\n"),
                 () -> assertThat(work.resolve("bad/failure.txt"))
                         .hasContent("the converter cannot render it: the Dockerfile does not parse"));
     }
