@@ -83,6 +83,21 @@ Questions (8 Nov):
 7. The unit: one entry per Dockerfile with its images' hierarchy attached (as now), or one entry per image, each
    naming its Dockerfile?
 
+Answers (8 Nov): the archetype leaves the entry (it stays in the report and `archetypes.json`); 5, unmaintained is
+any of: not rebuilt on its updated base (its parent published after it was built), not published for longer than
+a threshold (default 12 months, a setting), its repository archived; 6, discovery fetches each Dockerfile's last
+commit date up to the scanned commit (GraphQL, batched per repository, kept by blob).
+
+**Also asked 8 Nov: complexity, permissions and provenance.** Per stage, so a multi-stage build reads as a graph:
+
+- **complexity**: the stage graph (which stage builds on which, which copies from which), and per stage its
+  instructions, `RUN`s, the commands in them, the `RUN`s the shell reader could not read, and the layers it adds;
+- **where things come from**: every `COPY` and `ADD`, with its sources, destination and origin (the build context,
+  an earlier stage, another image, a URL or Git repository), and its `--chown` and `--chmod`;
+- **permissions**: the user and its kind, the ports, and every change of ownership or mode (`chown`, `chgrp`,
+  `chmod` in `RUN`s, with their paths; `--chown` and `--chmod` on copies), so group-0 writability can be read off;
+- facts records these per stage (`StageGraph` grows; the shell reader already splits `RUN`s into commands).
+
 ## Questions
 
 1. One record per distinct Dockerfile, its locations listed (and a locations table), or one per location?
