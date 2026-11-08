@@ -32,9 +32,32 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.addAll(listOf("-parameters", "-Xlint:all", "-Werror"))
 }
 
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        excludeTags("estate", "images")
+    }
     finalizedBy(tasks.named("jacocoTestReport"))
+}
+
+// The bulk checks: a real estate converted, real images built and compared. Outside check, as they need an
+// estate on disk, Docker and the network; each skips with its reason when its input is missing.
+mapOf("estateTest" to "estate", "imageTest" to "images").forEach { (name, tag) ->
+    tasks.register<Test>(name) {
+        description = "Runs the tests tagged $tag"
+        group = "verification"
+        val test = tasks.named<Test>("test").get()
+        testClassesDirs = test.testClassesDirs
+        classpath = test.classpath
+        useJUnitPlatform {
+            includeTags(tag)
+        }
+        outputs.upToDateWhen { false }
+        testLogging {
+            events("passed", "skipped", "failed")
+            showStandardStreams = true
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        }
+    }
 }
 
 jacoco {
