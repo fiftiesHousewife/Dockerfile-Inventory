@@ -63,7 +63,7 @@ final class ChangedAfterCopy implements Rule {
         return changed.equals(copy) || recursive && copy.startsWith(changed + "/") || changed.startsWith(copy + "/");
     }
 
-    private static String written(PermissionChange change) {
+    static String written(PermissionChange change) {
         return change.command() + (change.recursive() ? " -R " : " ") + change.setting() + " "
                 + String.join(" ", change.paths());
     }

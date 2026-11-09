@@ -54,7 +54,8 @@ and one line when its gate is met.
   done 9 Nov: 468 on the combined estate, no false positives in 50. H4 (every package upgraded in the build) done 9 Nov: 414,
   none false in 50. S6 (`ADD` of a URL without a checksum) done 9 Nov: 25, all right. H5 (`ADD` that `COPY` would do)
   done 9 Nov: 1,015, none false in 50. H6 (owner or mode changed after the copy) done 9 Nov: 433, none false in 50.
-  A whole stage copied (`COPY --from=x / /`): measured, 15, all deliberate idioms, not built. Next: the other new rules, one at a time, each measured on 50 sampled findings.
+  A whole stage copied (`COPY --from=x / /`): measured, 15, all deliberate idioms, not built. H7 (a path changed
+  after its `VOLUME`) done 9 Nov: 4, all right. Next: the other new rules, one at a time, each measured on 50 sampled findings.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

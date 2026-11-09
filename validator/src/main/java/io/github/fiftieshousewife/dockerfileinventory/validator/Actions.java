@@ -48,6 +48,8 @@ final class Actions {
             Map.entry(Check.H5, "use COPY: ADD only earns its place for a tar archive it should unpack"),
             Map.entry(Check.H6, "set the owner and mode as the files are copied (COPY --chown, --chmod) instead of "
                     + "changing them in a later layer, which stores them twice"),
+            Map.entry(Check.H7, "change the path before the VOLUME that declares it: after it, whether the change "
+                    + "is kept depends on the builder"),
             Map.entry(Check.I1, "pin the packages' versions, or record why not"),
             Map.entry(Check.I2, "fix the Dockerfile so it parses"));
 

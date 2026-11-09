@@ -129,3 +129,12 @@ Measured on the combined estate: 433 in 298 Dockerfiles (`chmod` 180, `chown -R`
 commonest is sclorg's `chown -R 1001:0 /opt/app-root` after a copy into it, the cheapest a `chmod +x` on a script
 just copied.
 
+## H7: a path changed after a VOLUME declared it (9 Nov)
+
+`ChangedAfterVolume` (rules, low; information in both shipped profiles): in the final image's instructions in order,
+a `chown`, `chmod` or `chgrp` in a `RUN` on a path a `VOLUME` declared earlier, inside it, or recursively over it.
+Docker's legacy builder discards such a change and BuildKit keeps it, so the image depends on the builder; low, not
+drift, for that reason. Only permission changes are read: other writes into a volume are not known to the facts.
+Measured on the combined estate: 4 in 2 Dockerfiles (devlake's backend images, `VOLUME /app/logs` then `chmod -R
+g=u /app`), each read and right.
+
