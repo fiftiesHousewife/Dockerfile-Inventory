@@ -169,3 +169,32 @@ the Docker socket. Fixtures: three of those lines (`validator/src/test/resources
 
 Next, 3b: link each container's image to a Dockerfile through lineage, let a manifest answer its image's P9, and make
 the pod findings actions naming the YAML (and the Dockerfile when linked).
+
+## Slice 3b: linking, answers, actions (planned 10 Nov; questions open)
+
+Design so far:
+
+- A container's `image` is matched to an image lineage read (`images.jsonl`: repository, image, tag, config digest),
+  and lineage's credited link (`links.jsonl`) names the Dockerfile's blob SHA. Linked, the workload's verdict is the
+  worst of its pod findings and its image's findings, less those the manifest answers.
+- The manifest answers P9 for its container when it declares a liveness or readiness probe (for a `HEALTHCHECK`) and
+  mounts a volume at each of the image's `VOLUME` paths.
+- `workload-verdicts.jsonl` names each container's Dockerfile, or says it is unlinked and why (no lineage, no image
+  matching, a Kustomize patch naming no image).
+
+Tests, in order, once the questions are answered: matching a reference (each form the answers allow); a container
+linked through a credited link, and one whose link is not credited; P9 answered by probes and mounts, and not when a
+`VOLUME` path is left unmounted; a linked workload's verdict taking its image's findings; the pod findings as actions
+(per question 3); `ValidatorRun` with lineage and workloads; `validate` unchanged.
+
+Questions:
+
+1. How a reference matches an image. Manifests name `registry/path:tag` or `registry/path@sha256:...`. Lineage keeps
+   each Artifactory repository's image path and tag and the config digest (not the manifest digest a `@sha256`
+   reference names). Match on the image path and tag alone, whatever registry host the manifest names, or only when the
+   host is the Artifactory being read?
+2. A floating tag (`latest`, or none). Link it to the image that tag points at when lineage read it, or leave it
+   unlinked since the cluster may pull another?
+3. The pod findings as actions. Into `actions.jsonl` and `fixes.jsonl` beside the images' (each naming the YAML file
+   to change, and for an image finding the manifest answers, the YAML instead of the Dockerfile), or kept in
+   `workload-verdicts.jsonl` until the report's slice shows them?
