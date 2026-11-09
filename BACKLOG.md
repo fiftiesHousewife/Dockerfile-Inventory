@@ -66,8 +66,9 @@ and one line when its gate is met.
   examples; the owner's Central namespace, token and signing key.
 - Now (asked 8 Nov, `docs/plans/scripts-to-java.md`, questions answered 9 Nov): the remaining shell scripts replaced
   by Java, the container's entry point aside. Slice 1 done 9 Nov: the survey takes several organisations and merges
-  them (`Combine`), `discover.sh` and `combine.sh` gone. Next: a `tools` module for the corpus collectors, the JCR
-  fixture recorder and the OKD image picker; then the container demo.
+  them (`Combine`), `discover.sh` and `combine.sh` gone. Slice 2 in progress: the `tools` module, its Dockerfile
+  collector built 9 Nov (`./gradlew collectCorpus`, the same 129 cases as the script on `out/all`). Next: the image
+  collector, the JCR fixture recorder and the OKD image picker; then the container demo.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index

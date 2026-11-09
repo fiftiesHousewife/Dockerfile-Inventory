@@ -1,6 +1,7 @@
 # The scripts as Java: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov.
+Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov; slice 2 in progress (the Dockerfile
+collector built).
 
 ## Why
 
@@ -66,4 +67,14 @@ konflux-ci, redhat-developer, docker-library, bitnami) merged again by `Combine`
 repositories and 5,250 Dockerfiles, line for line and file for file what `combine.sh` wrote. Those sources predate
 `changes.jsonl`, so nothing had been lost there. `discover.sh` and `combine.sh` deleted; the README surveys several
 organisations instead, and runs discovery alone through Gradle with the CLI's login.
+
+## Slice 2: the Dockerfile collector (9 Nov)
+
+`CorpusCollect` in the new `tools` module (`./gradlew collectCorpus --args=<run>`, settings as the script's):
+`RunOutcomes` reads the run's five files, `Workaround` tells a retried file's workaround from its text, `CorpusCase`
+writes `expected.json` as jq printed the bank's earlier cases. Its tests run on a small run holding one of each kind,
+a secret and an existing case. Measured on `out/all` against the script, each into an empty folder: the same 129
+cases, 128 byte for byte; the one other is the empty file (`e69de29b`, at three locations), where the script's `sort
+-u` kept a location by the platform's sort and the collector takes the one that sorts first. `corpus-collect.sh`
+deleted.
 

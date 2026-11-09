@@ -23,7 +23,8 @@ secret-shaped value are never collected.
 | `retried-<kind>-*` (4 per kind) | files that parse only with a parser workaround: `json-comma`, `flag-default`, `arg-names`, `arg-empty`, `lone-backslash`, `comment-in-continuation`, `key-value-comment`, `other` |
 | `parsed-plain-*` | a plain file, the control |
 
-Collected from the combined run of 7 Nov (`docs/plans/combined-report.md`) with `scripts/corpus-collect.sh out/all`.
+Collected from the combined run of 7 Nov (`docs/plans/combined-report.md`) with `scripts/corpus-collect.sh out/all`; since 9 Nov the collector is
+`./gradlew collectCorpus --args=out/all` (the `tools` module).
 
 ## `images/<case>/`
 

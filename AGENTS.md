@@ -73,9 +73,10 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
                     ActionPlanPage (ActionPlanView: the validator's output);
                     Page, Html, Style, About (info text)
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
-                    Rule, EffectiveRule, CatalogueRule (over the estate, from CatalogueView), Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
-                    one class per rule (S1-S7, R1-R4, H1-H9, I1, I2; AddSources reads an ADD or COPY); RuleSet, RulesRun, DiscoveryFiles,
-                    RuleRates, Samples; renovate/ holds the Renovate preset
+                    Rule, EffectiveRule, CatalogueRule (over the estate, from CatalogueView), Finding, Subject,
+                    ImageView, RuleRun (a failing rule is a finding); one class per rule (S1-S7, R1-R4, H1-H9, I1, I2;
+                    AddSources reads an ADD or COPY); RuleSet, RulesRun, DiscoveryFiles, RuleRates, Samples;
+                    renovate/ holds the Renovate preset
 validator/          stage 3c: facts -> each image judged through a platform profile -> actions
                     Profile (profiles/*.json: severities per check, allowed registries), Check, Severity, Certainty;
                     Subject (a facts line as the checks read it, with the EffectiveUser that EffectiveUsers reads
@@ -86,6 +87,9 @@ validator/          stage 3c: facts -> each image judged through a platform prof
                     RuleFindings (the rules' findings.jsonl as findings); JsonLines; ValidatorRun
 survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`), Survey (the stages in order, each
                     with the folders the earlier ones wrote); every stage's ...Main.run(env)
+tools/              the contributors' tools, not in the image: CorpusCollect (`./gradlew collectCorpus
+                    --args=<run>`: the Dockerfiles a run found hard into testdata/corpus/dockerfiles; RunOutcomes,
+                    Workaround, CorpusCase)
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
                     io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model
@@ -115,8 +119,9 @@ testdata/contracts/ the normal-form contracts between facts and lineage: real Do
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
                     outcome; facts', the converter's and lineage's corpus tests ratchet on it (its README)
 scripts/            lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published
-                    images), okd-select.sh (OKD images and their release index), corpus-collect.sh and
-                    corpus-collect-images.sh (the fixture bank from a run), jcr-diagnose.sh, record-jcr-fixtures.sh
+                    images), okd-select.sh (OKD images and their release index),
+                    corpus-collect-images.sh (the fixture bank's images from a lineage run), jcr-diagnose.sh,
+                    record-jcr-fixtures.sh
 LICENSE, NOTICE     Apache 2.0 for the project's own code, put in every published jar (a module with its own, as the
                     parser has, ships those instead)
 Containerfile       the image for a pod: every stage's distribution and a jlink'd JRE on UBI 9 minimal;
