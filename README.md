@@ -358,8 +358,9 @@ its line.
 | H1 | An RPM install with no clean in the same `RUN` | Low |
 | H2 | A shell-form entrypoint | Low |
 | H3 | Adjacent `RUN`s that could be one | Low |
-| H5 | An `ADD` of local files with no tar archive to unpack, which `COPY` would do (judged by the names) | Low |
 | H4 | Every package upgraded in the build (`apt-get upgrade`, `dnf update` and the like, with no package named; apt's and apk's `update` only refresh the index) | Low |
+| H5 | An `ADD` of local files with no tar archive to unpack, which `COPY` would do (judged by the names) | Low |
+| H6 | A `chown` or `chmod` in a later layer on files the final image copied in, which stores them twice (`COPY --chown`, `--chmod` would not) | Low |
 | I1 | Packages installed without a version | Info |
 | I2 | A Dockerfile the parser cannot read | Medium |
 
@@ -395,7 +396,7 @@ its path as `PROFILE`.
 
 With `RULES_DIR`, every rule finding becomes an action too, grouped into fixes like the checks', with the severity
 the profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3, S5, S6 and R2 drift; R3,
-H1, H3, H4, H5, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
+H1, H3, H4, H5, H6, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
 the verdicts say how each image fares on the platform.
 
 | Check | What it finds | Under v2 | Under v1 |

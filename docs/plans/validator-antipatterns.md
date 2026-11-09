@@ -111,3 +111,21 @@ unpack (it unpacks a tar named as a source, never one inside a directory), so no
 recognises an archive by its content, so a tar named without its extension would be a false positive; none in the
 sample.
 
+## A whole stage copied: not built (9 Nov)
+
+`COPY --from=<stage> / /` is in the table. Measured first on the combined estate's facts: 15 in all, every one an
+idiom on purpose: `tonistiigi/xx`'s cross-compiling helpers (7), a `FROM scratch` stage of files copied whole (2),
+`ubi-micro` copied into `/mnt/rootfs` to build a micro image as Red Hat documents (4), `hi/core-runtime` into
+`/runtime/` (2). A rule would find nothing to fix here, so none is built; a larger estate may change that.
+
+## H6: owner or mode changed after the copy (9 Nov)
+
+`ChangedAfterCopy` (rules, low; information in both shipped profiles): in the final image's instructions in order,
+a `chown`, `chmod` or `chgrp` in a `RUN` on a path an earlier `COPY` or `ADD` wrote (the copied path itself, a path
+inside it, or a recursive change over it), which writes those files again in a new layer; `COPY --chown` and
+`--chmod` set them as they are copied. Destinations that are relative or hold a variable are left alone.
+Measured on the combined estate: 433 in 298 Dockerfiles (`chmod` 180, `chown -R` 138, `chmod -R` 92, `chgrp -R` 18,
+`chown` 5). The 50-finding sample read by hand: each rewrites what the named copy wrote, so no false positives; the
+commonest is sclorg's `chown -R 1001:0 /opt/app-root` after a copy into it, the cheapest a `chmod +x` on a script
+just copied.
+
