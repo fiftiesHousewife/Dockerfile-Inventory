@@ -35,3 +35,12 @@ tasks.register<JavaExec>("selectOkd") {
     mainClass.set("io.github.fiftieshousewife.dockerfileinventory.tools.OkdSelect")
     workingDir = rootDir
 }
+
+// ./gradlew recordJcrFixtures, with the local JCR running: its replies as lineage's test fixtures.
+tasks.register<JavaExec>("recordJcrFixtures") {
+    group = "tools"
+    description = "Records the local JCR's replies as lineage's test fixtures"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("io.github.fiftieshousewife.dockerfileinventory.tools.JcrRecord")
+    workingDir = rootDir
+}

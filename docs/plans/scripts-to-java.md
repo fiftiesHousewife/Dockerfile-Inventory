@@ -1,7 +1,7 @@
 # The scripts as Java: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov; slice 2 in progress (the two corpus
-collectors and the OKD picker built).
+Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov; slice 2 built 9 Nov; slice 3 (the container
+demo) next.
 
 ## Why
 
@@ -90,4 +90,10 @@ holds the choosing (tools first, one image per scanned repository spread evenly,
 loopback server. Measured offline: the stored OKD tag list and configs given as quay.io, all seven files
 (`tags.txt` to `releases.csv`) byte for byte what the script wrote. Not yet tried live: this session's network does
 not reach quay.io; the owner's run is the check. `okd-select.sh` deleted.
+
+`JcrRecord` (`./gradlew recordJcrFixtures`, settings as the script's): the same requests in the same order, each
+body kept byte for byte and indexed with its status, Content-Type and Docker-Content-Digest. Its test replays the
+committed fixtures through a loopback server playing JCR (every reply `index.tsv` lists, the ping and the token) and
+expects them back: all 22 replies and `index.tsv`, byte for byte. Not tried against a live JCR (that waits for slice
+3's demo). `record-jcr-fixtures.sh` deleted.
 

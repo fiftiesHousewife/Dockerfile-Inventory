@@ -69,8 +69,9 @@ and one line when its gate is met.
   them (`Combine`), `discover.sh` and `combine.sh` gone. Slice 2 in progress: the `tools` module, its two corpus
   collectors built 9 Nov (`./gradlew collectCorpus`, `collectImages`, each writing what its script did, byte for
   byte). The OKD picker (`./gradlew selectOkd`) built 9 Nov: the same
-  seven files as the script on the stored data, its live run against quay.io left to the owner. Next: the JCR fixture
-  recorder; then the container demo.
+  seven files as the script on the stored data, its live run against quay.io left to the owner. The JCR fixture recorder
+  (`./gradlew recordJcrFixtures`) built 9 Nov: replaying the committed fixtures, it records them again byte for byte.
+  Next: the container demo (`lineage-demo.sh`, `jcr-diagnose.sh`).
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index
