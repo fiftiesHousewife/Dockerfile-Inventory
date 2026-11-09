@@ -41,7 +41,10 @@ and one line when its gate is met.
   judges the user a Dockerfile's credited registry images run as (`LINEAGE_DIR`), clearing it for a numeric
   non-root one; on OKD and the demo it confirms 19 inferred root findings and clears none. Done 9 Nov
   (`docs/plans/catalogue-stage.md`, asked 9 Nov): the catalogue as a stage of its own (`inventory catalogue`), so the
-  validator can read it. Next: reach through bases and archetypes, the antipatterns.
+  validator can read it. Done 9 Nov (`docs/plans/validator-reach.md`, asked 9 Nov): `fixes.jsonl`, the
+  same check on an archetype's copies as one fix, with what it reaches through the Dockerfiles built on them, per
+  check; the report's page leads with the fixes (combined estate: 8,777 actions, 4,396 fixes). Next: P2 reading
+  `fix-permissions` given a variable (found measuring the fixes), then the antipatterns.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

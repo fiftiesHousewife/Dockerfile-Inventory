@@ -14,7 +14,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
-// Reads the facts, the manifest and lineage's effective users when given, judges every image through the profile, writes the plan and its actions.
+// Reads the facts and the manifest, with lineage's effective users and the catalogue when given; judges every image
+// through the profile; writes the plan, its actions and its fixes.
 final class ValidatorRun {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -25,13 +26,15 @@ final class ValidatorRun {
     private final Path factsDir;
     private final Path discoveryDir;
     private final Path lineageDir;
+    private final Path catalogueDir;
     private final Profile profile;
     private final Path outDir;
 
-    ValidatorRun(Path factsDir, Path discoveryDir, Path lineageDir, Profile profile, Path outDir) {
+    ValidatorRun(Path factsDir, Path discoveryDir, Path lineageDir, Path catalogueDir, Profile profile, Path outDir) {
         this.factsDir = factsDir;
         this.discoveryDir = discoveryDir;
         this.lineageDir = lineageDir;
+        this.catalogueDir = catalogueDir;
         this.profile = profile;
         this.outDir = outDir;
     }
@@ -48,15 +51,19 @@ final class ValidatorRun {
             findings.addAll(own);
             verdicts.put(image.blobSha(), Verdict.of(own));
         });
-        List<Action> actions = Actions.of(findings, locations(discoveryDir.resolve("manifest.jsonl")));
+        Map<String, List<Location>> locations = locations(discoveryDir.resolve("manifest.jsonl"));
+        List<Action> actions = Actions.of(findings, locations);
+        List<Fix> fixes = Fixes.of(actions, catalogueDir == null ? Catalogue.NONE : Catalogue.read(catalogueDir),
+                all.stream().collect(Collectors.toMap(Subject::blobSha, s -> s, (a, b) -> a)), locations);
         write("actions.jsonl", lines(actions));
+        write("fixes.jsonl", lines(fixes));
         write("verdicts.jsonl", lines(verdicts.entrySet().stream()
                 .map(e -> new ImageVerdict(e.getKey(), e.getValue())).toList()));
         write("action-plan.json", JSON.writerWithDefaultPrettyPrinter()
-                .writeValueAsString(summary(verdicts, all.size() - images.size(), actions)));
+                .writeValueAsString(summary(verdicts, all.size() - images.size(), actions, fixes.size())));
     }
 
-    Map<String, Object> summary(Map<String, Verdict> verdicts, int notRunnable, List<Action> actions) {
+    Map<String, Object> summary(Map<String, Verdict> verdicts, int notRunnable, List<Action> actions, int fixes) {
         Map<Verdict, Long> counted = new EnumMap<>(Verdict.class);
         verdicts.values().forEach(v -> counted.merge(v, 1L, Long::sum));
         Map<String, Object> summary = new LinkedHashMap<>();
@@ -68,6 +75,7 @@ final class ValidatorRun {
                 e -> e.getKey().name().toLowerCase(Locale.ROOT), Map.Entry::getValue, (a, b) -> a,
                 LinkedHashMap::new)));
         summary.put("actions", actions.size());
+        summary.put("fixes", fixes);
         summary.put("repositories", Actions.byRepository(actions).entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey, e -> e.getValue().size(), (a, b) -> a, LinkedHashMap::new)));
         return summary;

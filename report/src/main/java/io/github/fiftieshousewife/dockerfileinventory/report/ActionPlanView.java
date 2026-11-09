@@ -10,14 +10,14 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-// The validator's output as the report reads it: action-plan.json and actions.jsonl.
-record ActionPlanView(Plan plan, List<PlannedAction> actions) {
+// The validator's output as the report reads it: action-plan.json, actions.jsonl and fixes.jsonl.
+record ActionPlanView(Plan plan, List<PlannedAction> actions, List<PlannedFix> fixes) {
 
     private static final ObjectMapper JSON = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
 
     record Plan(String profile, String describes, int images, int notRunnable, Map<String, Integer> verdicts,
-                int actions, Map<String, Integer> repositories) {
+                int actions, int fixes, Map<String, Integer> repositories) {
     }
 
     record PlannedAction(String check, String severity, String certainty, String what, String blobSha,
@@ -27,15 +27,24 @@ record ActionPlanView(Plan plan, List<PlannedAction> actions) {
     record Where(String repository, String path) {
     }
 
+    record PlannedFix(String check, String severity, String certainty, String what, String representative,
+                      List<String> because, List<String> copies, List<String> inheriting, int locations) {
+    }
+
     ActionPlanView {
         actions = List.copyOf(actions);
+        fixes = List.copyOf(fixes);
     }
 
     static ActionPlanView read(Path validatorDir) {
-        try (var lines = Files.lines(validatorDir.resolve("actions.jsonl"))) {
-            return new ActionPlanView(JSON.readValue(validatorDir.resolve("action-plan.json").toFile(), Plan.class),
-                    lines.filter(line -> !line.isBlank()).map(line -> JSON.readValue(line, PlannedAction.class))
-                            .toList());
+        return new ActionPlanView(JSON.readValue(validatorDir.resolve("action-plan.json").toFile(), Plan.class),
+                rows(validatorDir.resolve("actions.jsonl"), PlannedAction.class),
+                rows(validatorDir.resolve("fixes.jsonl"), PlannedFix.class));
+    }
+
+    static <T> List<T> rows(Path file, Class<T> type) {
+        try (var lines = Files.lines(file)) {
+            return lines.filter(line -> !line.isBlank()).map(line -> JSON.readValue(line, type)).toList();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

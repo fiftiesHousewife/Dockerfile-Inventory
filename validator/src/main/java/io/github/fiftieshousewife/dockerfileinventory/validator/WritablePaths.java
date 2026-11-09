@@ -57,6 +57,12 @@ final class WritablePaths implements PlatformCheck {
                 .flatMap(step -> FIX_PERMISSIONS.matcher(step.text()).results().map(m -> m.group(1))).toList();
     }
 
+    static boolean makesGroupWritable(Subject image) {
+        return !fixedPermissions(image.steps()).isEmpty() || image.finalStages().stream().anyMatch(stage ->
+                stage.permissions().stream().anyMatch(p -> p.command().equals("chmod") && groupWrite(p.setting()))
+                        || stage.copies().stream().anyMatch(c -> c.chmod() != null && groupWrite(c.chmod())));
+    }
+
     static boolean writable(Subject.Stage stage, String path) {
         return stage.permissions().stream().anyMatch(p -> p.command().equals("chmod") && groupWrite(p.setting())
                 && covers(p, path))

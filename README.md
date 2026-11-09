@@ -258,7 +258,7 @@ version, package managers and packages, user kind, ports, entrypoint form, stage
 | `hierarchy.html` | Every tree of estate Dockerfiles built on one another, from each root down, each node with its total layers, registry images, when it last changed and why it is unmaintained; how many stand alone |
 | `blocked.html` | The unmaintained images in the middle of chains, the one holding back most images first, each with its reasons and the Dockerfiles whose images it holds back |
 | `archetypes.html`, `archetypes-<n>.html` | Every archetype, ranked, 250 to a page, each named from what it builds and linked to the page of one of its Dockerfiles |
-| `openshift.html` | With `VALIDATOR_DIR`: the action plan, how many images would break, drift or run under the validator's profile, the first 250 actions most urgent first, each linked to its Dockerfile's page, and the actions per repository; the summary then leads with the same sentence |
+| `openshift.html` | With `VALIDATOR_DIR`: the action plan, how many images would break, drift or run under the validator's profile and how many fixes its actions come to, the first 250 fixes most urgent first, each naming the Dockerfile to change (linked to its page) with its copies, the Dockerfiles built on them and the locations reached, and the actions per repository; the summary then leads with the same sentence |
 | `dockerfiles/<blobSha>.html` | One Dockerfile's catalogue entry made readable: its locations; the final image; its stages, copies and ownership changes; packages and runtimes; the Dockerfiles above and below it; its registry images with their chains; its actions (release scope, reach, conversion, base lag, near-duplicates); or why it did not parse |
 
 Every page is drawn from `catalogue/dockerfiles.jsonl` (the archetype ranking from the same run), so the pages and
@@ -352,6 +352,7 @@ export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
 export PROFILE=openshift-4-restricted-v2      # optional: a shipped profile's name or a profile file
 export LINEAGE_DIR=/data/lineage              # optional: the user each Dockerfile's registry images run as
+export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for fixes and their reach
 export OUT_DIR=/data/validator
 ./gradlew :validator:run
 ```
@@ -380,8 +381,9 @@ Metadata-only bundles (`FROM scratch` with no start command) never run as contai
 
 | File | Contents |
 | --- | --- |
-| `action-plan.json` | The profile, how many images were judged and how many not, the verdicts (`breaks`, `drift`, `information`, `runs`: each image's worst finding), the number of actions, and the actions per repository |
+| `action-plan.json` | The profile, how many images were judged and how many not, the verdicts (`breaks`, `drift`, `information`, `runs`: each image's worst finding), the number of actions and of fixes, and the actions per repository |
 | `actions.jsonl` | One action per line, most urgent first (severity, then the locations it reaches, then read before inferred): the check, its severity and certainty, what to change, the Dockerfile's blob SHA, the findings behind it and every location |
+| `fixes.jsonl` | The actions as fixes, most urgent first (severity, then the locations reached): with `CATALOGUE_DIR`, the same check on an archetype's copies is one fix to its `representative`, listing its `copies`, the Dockerfiles built on them that keep what the fix changes (`inheriting`: for P1 those setting no `USER`; P4, P6 and P10 those setting no start command; P2 those doing no group-0 permission work of their own; P3, P5 and P9 all; P7 and P8 none) and every location they reach; without it, one fix per action |
 | `verdicts.jsonl` | Each judged Dockerfile's verdict |
 
 The report shows the plan as a page when given the validator's `OUT_DIR` as `VALIDATOR_DIR`.

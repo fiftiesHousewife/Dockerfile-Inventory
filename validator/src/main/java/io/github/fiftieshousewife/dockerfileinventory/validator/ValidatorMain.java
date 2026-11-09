@@ -6,8 +6,8 @@ import java.util.Map;
 /**
  * The validator job's entry point. It takes its settings from the environment: {@code FACTS_DIR},
  * {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code PROFILE} (a shipped profile's name or a file;
- * {@code openshift-4-restricted-v2} by default) and {@code LINEAGE_DIR} (the user each Dockerfile's registry images
- * run as).
+ * {@code openshift-4-restricted-v2} by default), {@code LINEAGE_DIR} (the user each Dockerfile's registry images
+ * run as) and {@code CATALOGUE_DIR} (the catalogue stage's output: archetypes and what is built on what, for fixes).
  */
 public final class ValidatorMain {
 
@@ -23,10 +23,14 @@ public final class ValidatorMain {
     static Path run(Map<String, String> env) {
         Path out = Path.of(required(env, "OUT_DIR"));
         Profile profile = Profile.of(env.getOrDefault("PROFILE", Profile.DEFAULT));
-        String lineage = env.get("LINEAGE_DIR");
         new ValidatorRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
-                lineage == null || lineage.isBlank() ? null : Path.of(lineage), profile, out).run();
+                optional(env, "LINEAGE_DIR"), optional(env, "CATALOGUE_DIR"), profile, out).run();
         return out;
+    }
+
+    static Path optional(Map<String, String> env, String name) {
+        String value = env.get(name);
+        return value == null || value.isBlank() ? null : Path.of(value);
     }
 
     static String required(Map<String, String> env, String name) {

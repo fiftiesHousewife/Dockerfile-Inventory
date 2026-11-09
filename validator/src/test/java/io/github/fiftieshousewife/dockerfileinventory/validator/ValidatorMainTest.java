@@ -37,6 +37,21 @@ class ValidatorMainTest {
     }
 
     @Test
+    void theCatalogueDirectoryGroupsAnArchetypesCopiesIntoFixes(@TempDir Path catalogue) throws IOException {
+        Files.writeString(catalogue.resolve("archetypes.jsonl"), "{\"key\":\"k\",\"representative\":\"r\","
+                + "\"blobShas\":[\"00b7e9b0f4f07bea7f89b52371b0221dc848d085\","
+                + "\"0e896df40fd9aba9d2df16e92fd4b92ad3c379a7\"]}\n");
+        Files.createDirectories(catalogue.resolve("catalogue"));
+        Files.writeString(catalogue.resolve("catalogue/dockerfiles.jsonl"), "");
+
+        ValidatorMain.run(Map.of("FACTS_DIR", "src/test/resources/fixtures", "DISCOVERY_DIR",
+                "src/test/resources/fixtures", "CATALOGUE_DIR", catalogue.toString(), "OUT_DIR", out.toString()));
+
+        assertThat(Files.readAllLines(out.resolve("fixes.jsonl")))
+                .hasSizeLessThan(Files.readAllLines(out.resolve("actions.jsonl")).size());
+    }
+
+    @Test
     void aMissingSettingIsRefusedByName() {
         assertThatThrownBy(() -> ValidatorMain.run(Map.of("OUT_DIR", out.toString())))
                 .hasMessage("FACTS_DIR must be set");

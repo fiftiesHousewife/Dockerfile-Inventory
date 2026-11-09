@@ -29,9 +29,10 @@ class FinalUserTest {
     void anImageSettingNoUserIsJudgedOnTheUserItsRegistryImagesRunAs() {
         Subject unset = subject("00b7e9b0");
         assertAll(
-                () -> assertThat(check.problems(unset.withEffectiveUser(new EffectiveUser("0", "the image sha256:base")),
-                        V2)).containsExactly("its registry images run as root, set by the image sha256:base; "
-                        + "OpenShift runs it as an arbitrary UID in group 0, without root's rights"),
+                () -> assertThat(check.problems(unset.withEffectiveUser(
+                        new EffectiveUser("0", "the image sha256:base")), V2)).containsExactly(
+                        "its registry images run as root, set by the image sha256:base; OpenShift runs it as an "
+                                + "arbitrary UID in group 0, without root's rights"),
                 () -> assertThat(check.problems(unset.withEffectiveUser(new EffectiveUser("0", null)), V2))
                         .containsExactly("its registry images run as root; OpenShift runs it as an arbitrary UID in "
                                 + "group 0, without root's rights"),

@@ -70,4 +70,13 @@ class WritablePathsTest {
                 () -> assertThat(WritablePaths.groupWrite("+x")).isFalse(),
                 () -> assertThat(WritablePaths.groupWrite("g-w")).isFalse());
     }
+
+    @Test
+    void aDockerfileMakesPathsGroupWritableByFixPermissionsOrAGroupWritableChmod() {
+        assertAll(
+                () -> assertThat(WritablePaths.makesGroupWritable(subject("141f718e"))).isTrue(),
+                () -> assertThat(WritablePaths.makesGroupWritable(subject("08bf2be5"))).isTrue(),
+                () -> assertThat(WritablePaths.makesGroupWritable(subject("080b0412"))).isFalse(),
+                () -> assertThat(WritablePaths.makesGroupWritable(subject("03cab6f0"))).isFalse());
+    }
 }

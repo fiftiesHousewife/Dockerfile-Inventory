@@ -4,12 +4,13 @@
   "images": 2440,
   "notRunnable": 139,
   "verdicts": {
-    "breaks": 1992,
-    "drift": 357,
+    "breaks": 1987,
+    "drift": 362,
     "information": 2,
     "runs": 89
   },
-  "actions": 4610,
+  "actions": 4604,
+  "fixes": 2475,
   "repositories": {
     "openshift/Azure-karpenter-provider-azure": 6,
     "openshift/addon-operator": 8

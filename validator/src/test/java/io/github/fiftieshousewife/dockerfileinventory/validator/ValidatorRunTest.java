@@ -16,12 +16,14 @@ class ValidatorRunTest {
 
     private static final Path FIXTURES = Path.of("src/test/resources/fixtures");
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final String UNSET = "00b7e9b0f4f07bea7f89b52371b0221dc848d085";
+    private static final String ROOT = "007a290c65b529f0a12b9b03b2e67ab5df5cfefd";
 
     @TempDir
     Path out;
 
     private JsonNode plan() {
-        new ValidatorRun(FIXTURES, FIXTURES, null, Fixtures.V2, out).run();
+        new ValidatorRun(FIXTURES, FIXTURES, null, null, Fixtures.V2, out).run();
         return JSON.readTree(out.resolve("action-plan.json").toFile());
     }
 
@@ -66,11 +68,34 @@ class ValidatorRunTest {
         Files.writeString(lineage.resolve("effective.jsonl"),
                 "{\"configDigest\":\"sha256:app\",\"user\":{\"value\":\"1001\",\"setBy\":{\"kind\":\"Unknown\"}}}\n");
 
-        new ValidatorRun(FIXTURES, FIXTURES, lineage, Fixtures.V2, out).run();
+        new ValidatorRun(FIXTURES, FIXTURES, lineage, null, Fixtures.V2, out).run();
 
         assertThat(Files.readAllLines(out.resolve("actions.jsonl")).stream().map(JSON::readTree)
                 .filter(action -> action.path("check").asString().equals("P1"))
                 .map(action -> action.path("blobSha").asString()))
                 .doesNotContain("00b7e9b0f4f07bea7f89b52371b0221dc848d085");
+    }
+
+    @Test
+    void withoutACatalogueEachActionIsAFixOfItsOwnAndThePlanCountsThem() throws IOException {
+        JsonNode plan = plan();
+
+        assertAll(
+                () -> assertThat(Files.readAllLines(out.resolve("fixes.jsonl")))
+                        .hasSameSizeAs(Files.readAllLines(out.resolve("actions.jsonl"))),
+                () -> assertThat(plan.path("fixes").asInt()).isEqualTo(plan.path("actions").asInt()));
+    }
+
+    @Test
+    void withACatalogueTheSameCheckOnAnArchetypesCopiesIsOneFix(@TempDir Path catalogue) throws IOException {
+        Files.writeString(catalogue.resolve("archetypes.jsonl"), "{\"key\":\"k\",\"representative\":\"" + UNSET
+                + "\",\"blobShas\":[\"" + UNSET + "\",\"" + ROOT + "\"]}\n");
+        Files.createDirectories(catalogue.resolve("catalogue"));
+        Files.writeString(catalogue.resolve("catalogue/dockerfiles.jsonl"), "");
+
+        new ValidatorRun(FIXTURES, FIXTURES, null, catalogue, Fixtures.V2, out).run();
+
+        assertThat(Files.readAllLines(out.resolve("fixes.jsonl")))
+                .anyMatch(line -> line.contains("\"copies\":[\"" + ROOT + "\",\"" + UNSET + "\"]"));
     }
 }
