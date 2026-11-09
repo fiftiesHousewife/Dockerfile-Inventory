@@ -16,7 +16,7 @@ record RuleSet(List<Rule> perFile, List<EffectiveRule> effective, List<String> s
                 new ShellEntrypoint(), new UnversionedPackages(), new Unparseable(), new SecretValue(),
                 new PipeToShell(), new AdjacentRuns(), new MissingOciLabels(), new WorldWritable(),
                 new SystemUpgrade(), new UnverifiedDownload(), new PlainAdd(),
-                new ChangedAfterCopy(), new ChangedAfterVolume()));
+                new ChangedAfterCopy(), new ChangedAfterVolume(), new RemovedLater()));
         List<EffectiveRule> effective = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
         if (allowed != null) {

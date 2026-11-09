@@ -138,3 +138,23 @@ drift, for that reason. Only permission changes are read: other writes into a vo
 Measured on the combined estate: 4 in 2 Dockerfiles (devlake's backend images, `VOLUME /app/logs` then `chmod -R
 g=u /app`), each read and right.
 
+## A toolchain shipped: not built (9 Nov)
+
+Measured first on the combined estate's facts: 950 Dockerfiles install a compiler, `make`, `git` or `-devel`/`-dev`
+packages into the final image; 369 purge them again in the build (docker-library's pattern), leaving 581. A
+sample of 50 of those read by hand: about 40 are images meant to build or test (S2I builders, Jenkins agents, CI
+build roots, `buildpack-deps`, the language images) or need `git` at run time (OpenShift's builder). Leaving out
+`git`, images without a service's start command and paths naming tests, CI or builders: 123, of which a sample of 50
+still held about 30 build environments (S2I and devtoolset images, docker-in-docker, the SDK images). Too many
+findings would be images built that way on purpose, so no rule; telling a service from a build environment needs
+something the Dockerfile does not say (an image role, or a list from the estate's owner).
+
+## H8: a copied file removed in a later layer (9 Nov)
+
+`RemovedLater` (rules, low; information in both shipped profiles): in the final image's instructions in order, an
+`rm` of exactly what an earlier `COPY` or `ADD` wrote (each source where it landed: the destination, or inside it
+when it is a directory or there are several), or a recursive `rm` over it. Paths with a variable or a glob, relative
+destinations and the local archives `ADD` unpacks are left alone. Measured on the combined estate: 79 in 65
+Dockerfiles. The 50-finding sample read by hand: each removes what the named copy wrote, so no false positives; the
+commonest is sclorg's python images, which copy wheels to `/opt/wheels`, install them and remove them.
+

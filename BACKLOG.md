@@ -55,7 +55,8 @@ and one line when its gate is met.
   none false in 50. S6 (`ADD` of a URL without a checksum) done 9 Nov: 25, all right. H5 (`ADD` that `COPY` would do)
   done 9 Nov: 1,015, none false in 50. H6 (owner or mode changed after the copy) done 9 Nov: 433, none false in 50.
   A whole stage copied (`COPY --from=x / /`): measured, 15, all deliberate idioms, not built. H7 (a path changed
-  after its `VOLUME`) done 9 Nov: 4, all right. Next: the other new rules, one at a time, each measured on 50 sampled findings.
+  after its `VOLUME`) done 9 Nov: 4, all right. H8 (a copied file removed in a later layer) done 9 Nov: 79, none false
+  in 50. A shipped toolchain: measured, too many images built so on purpose, not built. Next: the other new rules, one at a time, each measured on 50 sampled findings.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

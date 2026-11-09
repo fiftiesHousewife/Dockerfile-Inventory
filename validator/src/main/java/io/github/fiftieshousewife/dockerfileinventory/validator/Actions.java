@@ -50,6 +50,8 @@ final class Actions {
                     + "changing them in a later layer, which stores them twice"),
             Map.entry(Check.H7, "change the path before the VOLUME that declares it: after it, whether the change "
                     + "is kept depends on the builder"),
+            Map.entry(Check.H8, "use the file where it is copied (RUN --mount=type=bind) or in a build stage, since "
+                    + "removing it later leaves it in the image"),
             Map.entry(Check.I1, "pin the packages' versions, or record why not"),
             Map.entry(Check.I2, "fix the Dockerfile so it parses"));
 
