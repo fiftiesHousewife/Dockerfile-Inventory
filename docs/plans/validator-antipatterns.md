@@ -158,3 +158,16 @@ destinations and the local archives `ADD` unpacks are left alone. Measured on th
 Dockerfiles. The 50-finding sample read by hand: each removes what the named copy wrote, so no false positives; the
 commonest is sclorg's python images, which copy wheels to `/opt/wheels`, install them and remove them.
 
+## S7: a key or credential copied in (9 Nov)
+
+The table's "a key or credential copied in, then removed": removing it changes nothing (H8's point), so the rule is
+the copy. `CredentialCopied` (rules, high; drift in both shipped profiles): a `COPY` or `ADD` in the final image of a
+file named like a private key (`id_rsa`, `id_ed25519` and the like, `*.key`, `*.p12`, `*.pfx`, `*.jks`,
+`*.keystore`) or a file that holds logins (`.netrc`, `.git-credentials`, `.pgpass`, `.pypirc`, `kubeconfig`,
+`.dockercfg`). Judged by the name only; nothing is read from the files. Left out after measuring: `.pem` (on this
+estate public CA certificates), a bare `config.json`, and `.npmrc` and `.yarnrc.yml`, which first made 12 of 20
+locations (Backstage's standard `.yarnrc.yml`) and mostly hold settings.
+Measured on the combined estate: 8 locations, every one read: private keys for integration tests (docker
+distribution's token server, Kubernetes' agnhost), `kubeconfig` in origin's GSSAPI test images, and `id_rsa`
+copied into betka's deployment image.
+

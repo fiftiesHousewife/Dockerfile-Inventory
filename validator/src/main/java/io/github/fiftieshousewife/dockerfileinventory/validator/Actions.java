@@ -36,6 +36,8 @@ final class Actions {
                     + "everyone"),
             Map.entry(Check.S6, "give the download a checksum (ADD --checksum=sha256:...), or fetch and verify it in a "
                     + "RUN"),
+            Map.entry(Check.S7, "keep keys and credentials out of the image: mount them at build time (RUN "
+                    + "--mount=type=secret) or give them at run time from the platform, and rotate any that shipped"),
             Map.entry(Check.R1, "pin the base by digest"),
             Map.entry(Check.R2, "move to a base still supported"),
             Map.entry(Check.R3, "label the image with its source and revision (org.opencontainers.image.source, "

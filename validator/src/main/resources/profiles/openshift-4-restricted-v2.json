@@ -7,7 +7,7 @@
     "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information"
   },
   "rules": {
-    "S1": "drift", "S2": "drift", "S3": "drift", "S5": "drift", "S6": "drift", "R2": "drift",
+    "S1": "drift", "S2": "drift", "S3": "drift", "S5": "drift", "S6": "drift", "S7": "drift", "R2": "drift",
     "R3": "information", "H1": "information", "H3": "information", "H4": "information", "H5": "information", "H6": "information", "H7": "information", "H8": "information",
     "I1": "information", "I2": "information",
     "S4": "off", "H2": "off", "R1": "off"
