@@ -74,6 +74,10 @@ and one line when its gate is met.
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and
   `jcrDiagnose`, each checked against what its script wrote, or against the local JCR. Left to the owner: `selectOkd`
   live on quay.io, and `lineageDemo` end to end (it needs quay.io or GitHub).
+- Done 9 Nov (asked 9 Nov): a quality pass over every module but the vendored parser: long classes and methods
+  split, loops turned into streams where they read better, decisions in private methods opened up and tested, comments
+  that said what the code does removed; line coverage up in most modules. Behaviour kept: `check`, `roundTrip` and
+  `validate` green, and every stage's output on the combined estate byte for byte the same before and after.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index
