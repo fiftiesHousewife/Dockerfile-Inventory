@@ -11,29 +11,31 @@ class RuleSetTest {
 
     @Test
     void withoutListsOrLineageOnlyTheSelfContainedPerFileRulesRun() {
-        assertThat(RuleSet.of(null, null, false)).satisfies(rules -> {
+        assertThat(RuleSet.of(null, null, false, false)).satisfies(rules -> {
             assertThat(rules.perFile()).extracting(Rule::id)
                     .containsExactly("R1", "H1", "H2", "I1", "I2", "S2", "S3", "H3", "R3", "S5", "H4", "S6", "H5",
                             "H6", "H7", "H8", "S7", "H9");
             assertThat(rules.effective()).isEmpty();
-            assertThat(rules.skipped()).containsExactly("S1", "R2", "S4");
+            assertThat(rules.catalogue()).isEmpty();
+            assertThat(rules.skipped()).containsExactly("S1", "R2", "S4", "R4");
         });
     }
 
     @Test
     void withEveryInputEveryRuleRunsAndNoneIsSkipped() {
-        assertThat(RuleSet.of(LIST, LIST, true)).satisfies(rules -> {
+        assertThat(RuleSet.of(LIST, LIST, true, true)).satisfies(rules -> {
             assertThat(rules.perFile()).extracting(Rule::id).endsWith("S1", "R2");
             assertThat(rules.effective()).extracting(EffectiveRule::id).containsExactly("S4", "S1");
+            assertThat(rules.catalogue()).extracting(CatalogueRule::id).containsExactly("R4");
             assertThat(rules.skipped()).isEmpty();
         });
     }
 
     @Test
     void lineageWithoutTheApprovedListRunsOnlyS4OverImages() {
-        assertThat(RuleSet.of(null, LIST, true)).satisfies(rules -> {
+        assertThat(RuleSet.of(null, LIST, true, false)).satisfies(rules -> {
             assertThat(rules.effective()).extracting(EffectiveRule::id).containsExactly("S4");
-            assertThat(rules.skipped()).containsExactly("S1");
+            assertThat(rules.skipped()).containsExactly("S1", "R4");
         });
     }
 }

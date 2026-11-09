@@ -336,6 +336,7 @@ export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR: blobs and m
 export LINEAGE_DIR=/data/lineage              # optional: rules about inherited users and bases
 export ALLOW_LIST=/data/approved-bases.csv    # optional: imagePath,tagPrefix (rule S1)
 export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate (rule R2)
+export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for the rules over the estate (R4)
 export OUT_DIR=/data/rules
 ./gradlew :rules:run
 ```
@@ -356,6 +357,7 @@ its line.
 | R1 | A base not pinned by digest (`scratch` has none) | Medium |
 | R2 | An end-of-life base | Medium |
 | R3 | No OCI revision or source label | Low |
+| R4 | One base and tag pinned at several digests across the estate (with `CATALOGUE_DIR`): every pin but the newest is behind | Low |
 | H1 | An RPM install with no clean in the same `RUN` | Low |
 | H2 | A shell-form entrypoint | Low |
 | H3 | Adjacent `RUN`s that could be one | Low |
@@ -400,7 +402,7 @@ its path as `PROFILE`.
 
 With `RULES_DIR`, every rule finding becomes an action too, grouped into fixes like the checks', with the severity
 the profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3, S5, S6, S7 and R2 drift; R3,
-H1, H3 to H9, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
+R4, H1, H3 to H9, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
 the verdicts say how each image fares on the platform.
 
 | Check | What it finds | Under v2 | Under v1 |

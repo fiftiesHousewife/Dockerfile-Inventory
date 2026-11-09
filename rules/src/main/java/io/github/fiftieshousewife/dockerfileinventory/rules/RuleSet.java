@@ -3,15 +3,17 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 import java.util.ArrayList;
 import java.util.List;
 
-record RuleSet(List<Rule> perFile, List<EffectiveRule> effective, List<String> skipped) {
+record RuleSet(List<Rule> perFile, List<EffectiveRule> effective, List<CatalogueRule> catalogue,
+               List<String> skipped) {
 
     RuleSet {
         perFile = List.copyOf(perFile);
         effective = List.copyOf(effective);
+        catalogue = List.copyOf(catalogue);
         skipped = List.copyOf(skipped);
     }
 
-    static RuleSet of(BaseList allowed, BaseList endOfLife, boolean lineage) {
+    static RuleSet of(BaseList allowed, BaseList endOfLife, boolean lineage, boolean catalogue) {
         List<Rule> perFile = new ArrayList<>(List.of(new UnpinnedBase(), new UncleanedInstall(),
                 new ShellEntrypoint(), new UnversionedPackages(), new Unparseable(), new SecretValue(),
                 new PipeToShell(), new AdjacentRuns(), new MissingOciLabels(), new WorldWritable(),
@@ -38,6 +40,10 @@ record RuleSet(List<Rule> perFile, List<EffectiveRule> effective, List<String> s
         } else {
             skipped.add("S4");
         }
-        return new RuleSet(perFile, effective, skipped);
+        List<CatalogueRule> overEstate = catalogue ? List.of(new PinDrift()) : List.of();
+        if (!catalogue) {
+            skipped.add("R4");
+        }
+        return new RuleSet(perFile, effective, overEstate, skipped);
     }
 }

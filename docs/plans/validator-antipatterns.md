@@ -185,5 +185,37 @@ combined estate: 32 in 31 Dockerfiles, every one read and right (most in kata-co
 The rest of the table reads more than one Dockerfile (a deep chain, an application image used as a base, siblings
 repeating their first steps, many digests of one base, published intermediates, a smaller footprint) or the
 effective image (no `ENTRYPOINT` or `CMD` in a runnable image, which without lineage is mostly inherited). The rules
-read one Dockerfile at a time, so where these live is the next question.
+read one Dockerfile at a time; asked 9 Nov where these live: the rules read the catalogue.
+
+## Slice 3: rules that read the catalogue
+
+- `RulesMain` reads an optional `CATALOGUE_DIR` (the catalogue stage's `OUT_DIR`); the survey already runs the
+  catalogue before the rules. A `CatalogueRule` is given the whole estate as `CatalogueView` reads it from
+  `catalogue/dockerfiles.jsonl` (only the fields the rules need; no dependency on the report module). Without the
+  catalogue the catalogue rules are skipped and listed in `rates.json`, as the lineage rules are.
+- First rule, R4 (see below).
+
+Tests, in order:
+
+1. `CatalogueView.read`: each entry's blob SHA, whether its image starts something, the Dockerfiles built on it.
+2. `RuleSet` with the catalogue: R4 among the catalogue rules; skipped without it.
+3. R4 itself.
+4. `RulesRun` with a catalogue directory; `RulesMain` reads `CATALOGUE_DIR`.
+5. Measured on the combined estate, every finding read.
+
+Built 9 Nov. An application image used as another's base was tried first: 39 on the combined estate, every one
+read, and nearly all images built to be extended (sclorg's `s2i-core` and the S2I language images, whose `CMD`
+prints their usage; the .NET runtime images under their build images; httpd and postgresql under their own
+examples), so a start command does not make them applications; not shipped.
+
+## R4: one base pinned at several digests (9 Nov)
+
+The table's "many images on different digests of one base". `PinDrift` (rules, low; information in both shipped
+profiles), a catalogue rule: across the estate, each base name and tag (or name alone) pinned by digest in any stage,
+and each Dockerfile pinning one the estate pins at more than one digest: all but the newest are behind, and one
+bot can keep them together. Digests that are no real `sha256:` (examples write `sha256...`) are left out, found
+reading the sample. Different tags are different versions and are never compared. Measured on the combined estate:
+231 findings in 200 Dockerfiles over 40 bases; the widest, `registry.access.redhat.com/ubi9/ubi-minimal:latest`,
+pinned at 13 digests by 47 Dockerfiles in 29 repositories. The 50-finding sample checked against each Dockerfile's
+`FROM` and `ARG` lines: all 50 pin as reported.
 

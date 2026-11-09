@@ -57,8 +57,9 @@ and one line when its gate is met.
   A whole stage copied (`COPY --from=x / /`): measured, 15, all deliberate idioms, not built. H7 (a path changed
   after its `VOLUME`) done 9 Nov: 4, all right. H8 (a copied file removed in a later layer) done 9 Nov: 79, none false
   in 50. A shipped toolchain: measured, too many images built so on purpose, not built. S7 (a key or credential copied in)
-  done 9 Nov: 8, all right by name. H9 (`ENV DEBIAN_FRONTEND`) done 9 Nov: 32, all right. Next: the hierarchy and
-  footprint antipatterns, which read more than one Dockerfile (where they live: a question). Next: the other new rules, one at a time, each measured on 50 sampled findings.
+  done 9 Nov: 8, all right by name. H9 (`ENV DEBIAN_FRONTEND`) done 9 Nov: 32, all right. Rules read the catalogue
+  (`CATALOGUE_DIR`, asked 9 Nov). R4 (one base pinned at several digests) done 9 Nov: 231, none false in 50. An
+  application image used as a base: measured, images built to be extended, not built. Next: the other new rules, one at a time, each measured on 50 sampled findings.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

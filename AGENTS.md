@@ -73,8 +73,8 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
                     ActionPlanPage (ActionPlanView: the validator's output);
                     Page, Html, Style, About (info text)
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
-                    Rule, EffectiveRule, Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
-                    one class per rule (S1-S7, R1-R3, H1-H9, I1, I2; AddSources reads an ADD or COPY); RuleSet, RulesRun, DiscoveryFiles,
+                    Rule, EffectiveRule, CatalogueRule (over the estate, from CatalogueView), Finding, Subject, ImageView, RuleRun (a failing rule is a finding);
+                    one class per rule (S1-S7, R1-R4, H1-H9, I1, I2; AddSources reads an ADD or COPY); RuleSet, RulesRun, DiscoveryFiles,
                     RuleRates, Samples; renovate/ holds the Renovate preset
 validator/          stage 3c: facts -> each image judged through a platform profile -> actions
                     Profile (profiles/*.json: severities per check, allowed registries), Check, Severity, Certainty;

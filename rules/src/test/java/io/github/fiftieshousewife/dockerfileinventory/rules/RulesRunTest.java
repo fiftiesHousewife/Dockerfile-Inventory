@@ -42,7 +42,7 @@ class RulesRunTest {
 
     @Test
     void writesFindingsPerDockerfileAndSkipsRulesWhoseInputsAreMissing() throws IOException {
-        new RulesRun(discovery, null, null, null, out).run();
+        new RulesRun(discovery, null, null, null, null, out).run();
 
         assertThat(lines("findings.jsonl"))
                 .extracting(f -> f.path("rule").asString() + "@" + f.path("blobSha").asString())
@@ -50,7 +50,8 @@ class RulesRunTest {
                 .doesNotContain("R1@secret", "R3@secret");
         JsonNode rates = JSON.readTree(out.resolve("rates.json").toFile());
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(rates.path("skipped")).extracting(JsonNode::asString).containsExactly("R2", "S1", "S4");
+            softly.assertThat(rates.path("skipped")).extracting(JsonNode::asString)
+                    .containsExactly("R2", "R4", "S1", "S4");
             softly.assertThat(rates.path("rules").path("S3").path("findings").asInt()).isEqualTo(1);
             softly.assertThat(rates.path("rules").path("S3").path("locations").asInt()).isEqualTo(3);
         });
@@ -58,16 +59,16 @@ class RulesRunTest {
 
     @Test
     void noCsvTableOrDdlIsWritten() {
-        new RulesRun(discovery, null, null, null, out).run();
+        new RulesRun(discovery, null, null, null, null, out).run();
 
         assertThat(out.resolve("tables")).doesNotExist();
     }
 
     @Test
     void samplesSpreadAcrossOrganisationsAndAreTheSameEveryRun() throws IOException {
-        new RulesRun(discovery, null, null, null, out).run();
+        new RulesRun(discovery, null, null, null, null, out).run();
         List<String> first = Files.readAllLines(out.resolve("samples/S3.csv"));
-        new RulesRun(discovery, null, null, null, out).run();
+        new RulesRun(discovery, null, null, null, null, out).run();
 
         assertThat(Files.readAllLines(out.resolve("samples/S3.csv"))).isEqualTo(first);
         assertThat(first.subList(1, 3)).extracting(line -> line.split(",")[2].split("/")[0])
@@ -76,7 +77,7 @@ class RulesRunTest {
 
     @Test
     void noSecretValueAppearsInAnyOutput() throws IOException {
-        new RulesRun(discovery, null, null, null, out).run();
+        new RulesRun(discovery, null, null, null, null, out).run();
 
         try (Stream<Path> files = Files.walk(out)) {
             assertThat(files.filter(Files::isRegularFile).toList()).isNotEmpty()
@@ -95,12 +96,23 @@ class RulesRunTest {
                 {"repository":"docker-local","image":"payments/api","tag":"1","configDigest":"img"}
                 """);
 
-        new RulesRun(discovery, lineage, null, null, out).run();
+        new RulesRun(discovery, lineage, null, null, null, out).run();
 
         assertThat(lines("findings.jsonl")).filteredOn(f -> f.path("rule").asString().equals("S4"))
                 .singleElement().satisfies(f -> assertThat(f.path("blobSha").asString()).isEqualTo("a"));
         assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("skipped"))
-                .extracting(JsonNode::asString).containsExactly("R2", "S1");
+                .extracting(JsonNode::asString).containsExactly("R2", "R4", "S1");
+    }
+
+    @Test
+    void withTheCatalogueTheRulesOverTheWholeEstateRun(@TempDir Path catalogue) throws IOException {
+        Files.createDirectories(catalogue.resolve("catalogue"));
+        Files.writeString(catalogue.resolve("catalogue/dockerfiles.jsonl"), pinned("a", "1") + pinned("secret", "2"));
+
+        new RulesRun(discovery, null, null, null, catalogue, out).run();
+
+        assertThat(lines("findings.jsonl"))
+                .extracting(f -> f.path("rule").asString() + "@" + f.path("blobSha").asString()).contains("R4@a");
     }
 
     @Test
@@ -108,10 +120,10 @@ class RulesRunTest {
         Path allow = Path.of("src/test/resources/fixtures/allow.csv");
         Path eol = Path.of("src/test/resources/fixtures/eol.csv");
 
-        new RulesRun(discovery, null, allow, eol, out).run();
+        new RulesRun(discovery, null, allow, eol, null, out).run();
 
         assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("skipped"))
-                .extracting(JsonNode::asString).containsExactly("S4");
+                .extracting(JsonNode::asString).containsExactly("R4", "S4");
     }
 
     @Test
@@ -150,7 +162,7 @@ class RulesRunTest {
 
     @Test
     void jsonLinesWritesOneFindingPerLineEndingInANewlineOrNothingForNone() {
-        RulesRun run = new RulesRun(discovery, null, null, null, out);
+        RulesRun run = new RulesRun(discovery, null, null, null, null, out);
         Finding finding = new Finding("H2", Severity.LOW, "a", 3, "m", null, List.of("b"));
 
         assertThat(run.jsonLines(List.of(finding))).isEqualTo("{\"rule\":\"H2\",\"severity\":\"LOW\",\"blobSha\":\"a\","
@@ -165,5 +177,10 @@ class RulesRunTest {
     private static String location(String repository, String blob) {
         return ("{\"repository\":\"%s\",\"commitSha\":\"c\",\"scope\":\"RELEASED\","
                 + "\"path\":\"Dockerfile\",\"blobSha\":\"%s\"}").formatted(repository, blob);
+    }
+
+    private static String pinned(String blob, String digest) {
+        return "{\"blobSha\":\"" + blob + "\",\"build\":{\"stages\":[{\"baseName\":\"ubi9\",\"baseTag\":\"9\","
+                + "\"baseDigest\":\"sha256:" + digest.repeat(64) + "\"}]}}\n";
     }
 }

@@ -18,24 +18,28 @@ final class RulesRun {
     private final Path lineageDir;
     private final Path allowList;
     private final Path eolList;
+    private final Path catalogueDir;
     private final Path outDir;
     private final ObjectMapper json = new ObjectMapper();
 
-    RulesRun(Path discoveryDir, Path lineageDir, Path allowList, Path eolList, Path outDir) {
+    RulesRun(Path discoveryDir, Path lineageDir, Path allowList, Path eolList, Path catalogueDir, Path outDir) {
         this.discoveryDir = discoveryDir;
         this.lineageDir = lineageDir;
         this.allowList = allowList;
         this.eolList = eolList;
+        this.catalogueDir = catalogueDir;
         this.outDir = outDir;
     }
 
     void run() {
-        RuleSet rules = RuleSet.of(list(allowList), list(eolList), lineageDir != null);
+        RuleSet rules = RuleSet.of(list(allowList), list(eolList), lineageDir != null, catalogueDir != null);
         DiscoveryFiles discovery = new DiscoveryFiles(discoveryDir);
         List<Finding> perFile = new RuleRun(rules.perFile()).run(discovery.subjects());
         List<ImageView> images = lineageDir == null ? List.of() : LineageView.read(lineageDir);
-        List<Finding> findings = Stream.concat(perFile.stream(),
-                effective(rules.effective(), images, discovery::text).stream()).toList();
+        List<CatalogueView.Entry> estate = catalogueDir == null ? List.of() : CatalogueView.read(catalogueDir);
+        List<Finding> findings = Stream.of(perFile, effective(rules.effective(), images, discovery::text),
+                rules.catalogue().stream().flatMap(rule -> rule.check(estate).stream()).toList())
+                .flatMap(List::stream).toList();
         write(findings, discovery.locations(), rules.skipped());
     }
 

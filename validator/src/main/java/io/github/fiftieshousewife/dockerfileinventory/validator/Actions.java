@@ -42,6 +42,8 @@ final class Actions {
             Map.entry(Check.R2, "move to a base still supported"),
             Map.entry(Check.R3, "label the image with its source and revision (org.opencontainers.image.source, "
                     + ".revision)"),
+            Map.entry(Check.R4, "pin the base at the digest the rest of the estate moves to, and let one bot keep "
+                    + "every pin of it together"),
             Map.entry(Check.H1, "clean the package manager's cache in the same RUN as the install"),
             Map.entry(Check.H2, "write the ENTRYPOINT in exec form"),
             Map.entry(Check.H3, "join adjacent RUNs into one"),
