@@ -58,8 +58,8 @@ lineage/            stage 1b: Artifactory images -> family tree -> links to Dock
                     (authorised GET, retries); Inventory -> images.jsonl, configs/; ImageNodes, ImageConfig
                     Lineage (parents from layer prefixes), HistoryNormaliser and PairKeys (history -> NormalStep),
                     OwnSteps (an image's own steps; Konflux's and Red Hat release tooling's steps cut)
-                    Links (the run), Alignment (scoring: the best and the runner-up), BasePaths, StepIndex (candidates by
-                    rare steps), LinkRule (which links credit an image to a Dockerfile: `credited` on each link)
+                    Links (the run), Alignment (scoring: the best and the runner-up), BasePaths, StepIndex (candidates
+                    by rare steps), LinkRule (which links credit an image to a Dockerfile: `credited` on each)
                     Fold (effective user, env, labels, with who set each), Gaps, Analysis, Dockerfiles, LineageRates
 report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, the catalogue, HTML pages from it
                     Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, Tallies, ReportRun
@@ -77,8 +77,8 @@ rules/              stage 3: detect-only rules over facts, parsed Dockerfiles an
                     RuleRates, Samples; renovate/ holds the Renovate preset
 validator/          stage 3c: facts -> each image judged through a platform profile -> actions
                     Profile (profiles/*.json: severities per check, allowed registries), Check, Severity, Certainty;
-                    Subject (a facts line as the checks read it, with the EffectiveUser that EffectiveUsers reads from
-                    lineage's credited links), PlatformCheck: FinalUser (P1), WritablePaths,
+                    Subject (a facts line as the checks read it, with the EffectiveUser that EffectiveUsers reads
+                    from lineage's credited links), PlatformCheck: FinalUser (P1), WritablePaths,
                     LowPorts, UserSwitch, SetuidBits, ShellStart, BaseRegistry, UnpinnedBase, DeploymentHints,
                     UserIdentity (P10); Validation, Finding, Verdict; Actions, Action, Location; ValidatorRun
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
