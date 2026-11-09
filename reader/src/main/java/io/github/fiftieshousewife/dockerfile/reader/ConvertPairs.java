@@ -17,7 +17,6 @@ final class ConvertPairs {
     private ConvertPairs() {
     }
 
-    // Facts' reader says which names have a default; the values are put in the model's form here.
     static List<Arg> args(Docker.Arg arg) {
         Map<String, String> declared = ArgPairs.of(arg);
         Map<String, String> values = new HashMap<>();

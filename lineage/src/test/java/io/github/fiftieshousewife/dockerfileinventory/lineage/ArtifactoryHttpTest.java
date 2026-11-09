@@ -22,11 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tools.jackson.databind.ObjectMapper;
 
 class ArtifactoryHttpTest {
 
@@ -260,6 +263,16 @@ class ArtifactoryHttpTest {
     @Test
     void aMissingJsonDocumentReadsAsEmpty() {
         assertThat(artifactory.getJson("api/repositories").isEmpty()).isTrue();
+    }
+
+    @Test
+    void downloadStatsAreTheCountAndTheLastDownloadWhenThereWasOne() {
+        ObjectMapper json = new ObjectMapper();
+
+        assertThat(Stream.of("{\"downloadCount\": 3, \"lastDownloaded\": 1000}", "{\"downloadCount\": 0}", "{}")
+                .map(text -> ArtifactoryHttp.downloadStats(json.readTree(text))))
+                .containsExactly(Optional.of(new DownloadStats(3, Instant.ofEpochMilli(1000))),
+                        Optional.of(new DownloadStats(0, null)), Optional.empty());
     }
 
     private static void slowDown(HttpExchange exchange, int status) throws IOException {

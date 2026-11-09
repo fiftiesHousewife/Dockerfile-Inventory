@@ -5,16 +5,16 @@ import java.util.Optional;
 
 final class RepoScan {
 
-    // found: the Dockerfiles; yaml: the files that could be deployment manifests.
-    record Result(RepoOutcome outcome, List<Located> found, List<Located> yaml) {
+    // yaml: the files that could be deployment manifests.
+    record Result(RepoOutcome outcome, List<Located> dockerfiles, List<Located> yaml) {
 
         Result {
-            found = List.copyOf(found);
+            dockerfiles = List.copyOf(dockerfiles);
             yaml = List.copyOf(yaml);
         }
 
-        Result(RepoOutcome outcome, List<Located> found) {
-            this(outcome, found, List.of());
+        Result(RepoOutcome outcome, List<Located> dockerfiles) {
+            this(outcome, dockerfiles, List.of());
         }
     }
 

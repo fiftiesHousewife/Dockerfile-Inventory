@@ -11,8 +11,7 @@ final class ImageComparisonRun {
 
     interface Builder {
 
-        // Each secret id is given an empty secret.
-        BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets);
+        BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> emptySecretIds);
 
         JsonNode inspect(String tag);
 

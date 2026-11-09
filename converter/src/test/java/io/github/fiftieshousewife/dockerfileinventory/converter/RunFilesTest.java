@@ -1,8 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -67,5 +70,23 @@ class RunFilesTest {
         RunFiles.writeFile(root.resolve("a/b/c.txt"), "text");
 
         assertThat(root.resolve("a/b/c.txt")).hasContent("text");
+    }
+
+    @Test
+    void aDiscoveryWithoutBlobsOrAMissingFileCannotBeRead() {
+        assertAll(() -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> new RunFiles(discovery, out).blobs()),
+                () -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> RunFiles.read(discovery.resolve("missing"))));
+    }
+
+    @Test
+    void aFileUnderAnotherFileCannotBeWritten() throws IOException {
+        Path file = Files.writeString(out.resolve("file"), "x");
+
+        assertAll(() -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> new RunFiles(discovery, file).write("a/b.json", "{}")),
+                () -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> RunFiles.writeFile(file.resolve("c.txt"), "")));
     }
 }

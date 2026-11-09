@@ -31,6 +31,15 @@ class ImageBuilderTest {
     }
 
     @Test
+    void volumesTheStopSignalAndAMaintainerAreWrittenAsGiven() {
+        String text = DockerfileRenderer.render(valid().volume("/data").volume(List.of("/cache"), false)
+                .stopSignal("SIGQUIT").maintainer("Jane").build(POLICY).dockerfile(), Target.DEFAULT);
+
+        assertThat(text).containsSubsequence("VOLUME [\"/data\"]", "VOLUME /cache", "STOPSIGNAL SIGQUIT",
+                "MAINTAINER Jane");
+    }
+
+    @Test
     void s4TheFinalUserMustBeNumericAndNonRoot() {
         assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).entrypoint("app"))).containsExactly("S4");
         assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user("app").entrypoint("app")))

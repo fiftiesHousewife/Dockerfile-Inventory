@@ -24,7 +24,7 @@ final class ConvertMetadata {
             return new Shell(shell.getArguments().stream()
                     .map(word -> ConvertCommands.decoded(Values.text(word))).toList());
         } catch (JacksonException e) {
-            return Convert.notModelled(printed);
+            return ConvertInstruction.notModelled(printed);
         }
     }
 
@@ -36,7 +36,7 @@ final class ConvertMetadata {
                     .toList();
             return new Volume(paths, volume.isJsonForm());
         } catch (JacksonException e) {
-            return Convert.notModelled(printed);
+            return ConvertInstruction.notModelled(printed);
         }
     }
 
@@ -55,7 +55,7 @@ final class ConvertMetadata {
                         .orElseGet(() -> new Raw(printed, "HEALTHCHECK in exec form that is not JSON"));
                 case Docker.ShellForm shell -> new Healthcheck(options,
                         List.of(ConvertCommands.shellText(shell)), CommandForm.SHELL);
-                default -> Convert.notModelled(printed);
+                default -> ConvertInstruction.notModelled(printed);
             };
         } catch (IllegalArgumentException notDockers) {
             return new Raw(printed, "HEALTHCHECK with an option Docker lacks");

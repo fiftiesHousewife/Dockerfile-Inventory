@@ -70,17 +70,11 @@ final class ArtifactoryClient {
         boolean refreshed = false;
         for (int attempt = 1; ; attempt++) {
             HttpRequest built = request.get();
-            HttpResponse<String> response;
-            try {
-                response = http.send(built, HttpResponse.BodyHandlers.ofString());
-            } catch (IOException e) {
-                pause(retries.afterError(e, attempt)
-                        .orElseThrow(() -> new ArtifactoryException("GET " + built.uri() + " failed", e)), built);
+            Optional<HttpResponse<String>> answered = exchange(built, attempt);
+            if (answered.isEmpty()) {
                 continue;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ArtifactoryException("interrupted calling " + built.uri(), e);
             }
+            HttpResponse<String> response = answered.get();
             if (response.statusCode() == 401 && !refreshed && token.refresh()) {
                 refreshed = true;
                 continue;
@@ -94,7 +88,20 @@ final class ArtifactoryClient {
         }
     }
 
-    private void pause(Duration wait, HttpRequest request) {
+    Optional<HttpResponse<String>> exchange(HttpRequest request, int attempt) {
+        try {
+            return Optional.of(http.send(request, HttpResponse.BodyHandlers.ofString()));
+        } catch (IOException e) {
+            pause(retries.afterError(e, attempt)
+                    .orElseThrow(() -> new ArtifactoryException("GET " + request.uri() + " failed", e)), request);
+            return Optional.empty();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ArtifactoryException("interrupted calling " + request.uri(), e);
+        }
+    }
+
+    void pause(Duration wait, HttpRequest request) {
         try {
             sleeper.sleep(wait);
         } catch (InterruptedException e) {

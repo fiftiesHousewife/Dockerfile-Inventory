@@ -62,4 +62,14 @@ class TokenSourceTest {
         assertThat(TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN").toString())
                 .isEqualTo("GHE_TOKEN (variable)").doesNotContain("t0ken");
     }
+
+    @Test
+    void readingAFileThatHasBeenEmptiedIsRefusedNamingTheSetting(@TempDir Path dir) throws IOException {
+        Path file = Files.writeString(dir.resolve("token"), "t0ken");
+        TokenSource source = TokenSource.from(Map.of("GHE_TOKEN_FILE", file.toString()), "GHE_TOKEN");
+        Files.writeString(file, " ");
+
+        assertThatThrownBy(source::read).isInstanceOf(IllegalStateException.class)
+                .hasMessage("GHE_TOKEN_FILE is empty: " + file);
+    }
 }

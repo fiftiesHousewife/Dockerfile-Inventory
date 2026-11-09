@@ -278,6 +278,26 @@ class DockerfileRendererTest {
     }
 
     @Test
+    void anArgHasItsDefaultDoubleQuotedOrNone() {
+        assertThat(List.of(DockerfileRenderer.arg(new Arg("V", "1")), DockerfileRenderer.arg(new Arg("V", null))))
+                .containsExactly("ARG V=\"1\"", "ARG V");
+    }
+
+    @Test
+    void aRunWritesEachFlagBeforeItsBody() {
+        Run run = new Run(new RunBody.Shell(List.of("make")), List.of(new RunFlag.Network("none")));
+
+        assertThat(DockerfileRenderer.run(run)).isEqualTo("RUN --network=none make");
+    }
+
+    @Test
+    void aVolumeKeepsItsJsonOrPlainForm() {
+        assertThat(List.of(DockerfileRenderer.volume(new Volume(List.of("/a", "/b"), true)),
+                DockerfileRenderer.volume(new Volume(List.of("/a", "/b"), false))))
+                .containsExactly("VOLUME [\"/a\", \"/b\"]", "VOLUME /a /b");
+    }
+
+    @Test
     void stageRefusesAnInstructionTheTargetCannotRead() {
         Stage stage = new Stage(null, null, "build", List.of(new Raw("RUN <<EOT\nx\nEOT", "script")));
 

@@ -151,4 +151,16 @@ class BuilderCallsTest {
                                 + "io.github.fiftieshousewife.dockerfile.model.CommandForm.SHELL)",
                         ".user(\"1001\").asOnbuild()");
     }
+
+    @Test
+    void anArgIsWrittenWithItsDefaultOrWithout() {
+        assertThat(List.of(BuilderCalls.arg(new Arg("V", "1")), BuilderCalls.arg(new Arg("V", null))))
+                .map(Object::toString)
+                .containsExactly(".arg(\"V\", \"1\")", ".arg(\"V\")");
+    }
+
+    @Test
+    void aHealthcheckWithNoCommandIsNone() {
+        assertThat(BuilderCalls.healthcheck(Healthcheck.NONE)).hasToString(".healthcheckNone()");
+    }
 }

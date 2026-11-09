@@ -32,7 +32,7 @@ class RepoScanTest {
 
         assertThat(result).satisfies(
                 r -> assertThat(r.outcome().status()).isEqualTo(RepoOutcome.Status.SCANNED),
-                r -> assertThat(r.found()).containsExactly(
+                r -> assertThat(r.dockerfiles()).containsExactly(
                         new Located("pay/api", RELEASED, Scope.RELEASED, "Dockerfile", "d1"),
                         new Located("pay/api", RELEASED, Scope.RELEASED, "ops/Containerfile.ubi9", "d2")));
     }
@@ -54,7 +54,7 @@ class RepoScanTest {
 
         RepoScan.Result result = new RepoScan(gitHub, ReleaseIndex.empty()).scan(repo("pay/api", HEAD));
 
-        assertThat(result.found()).extracting(Located::path).containsExactly("Dockerfile");
+        assertThat(result.dockerfiles()).extracting(Located::path).containsExactly("Dockerfile");
     }
 
     @Test
@@ -65,7 +65,7 @@ class RepoScanTest {
 
         assertThat(result).satisfies(
                 r -> assertThat(r.outcome().scope()).isEqualTo(Scope.DEFAULT_BRANCH),
-                r -> assertThat(r.found()).extracting(Located::commitSha).containsExactly(HEAD));
+                r -> assertThat(r.dockerfiles()).extracting(Located::commitSha).containsExactly(HEAD));
     }
 
     @Test
@@ -94,7 +94,7 @@ class RepoScanTest {
 
         assertThat(result).satisfies(
                 r -> assertThat(r.outcome().status()).isEqualTo(RepoOutcome.Status.SCANNED),
-                r -> assertThat(r.found()).extracting(Located::path).containsExactly("a/Dockerfile", "b/Dockerfile"));
+                r -> assertThat(r.dockerfiles()).extracting(Located::path).containsExactly("a/Dockerfile", "b/Dockerfile"));
     }
 
     @Test
@@ -106,14 +106,14 @@ class RepoScanTest {
 
         assertThat(result).satisfies(
                 r -> assertThat(r.outcome().status()).isEqualTo(RepoOutcome.Status.TRUNCATED),
-                r -> assertThat(r.found()).hasSize(1));
+                r -> assertThat(r.dockerfiles()).hasSize(1));
     }
 
     @Test
     void ignoresADirectoryNamedLikeADockerfile() {
         gitHub.tree("pay/api", HEAD, tree(new Tree.Entry("Dockerfile", "040000", "tree", "t1")));
 
-        assertThat(new RepoScan(gitHub, ReleaseIndex.empty()).scan(repo("pay/api", HEAD)).found()).isEmpty();
+        assertThat(new RepoScan(gitHub, ReleaseIndex.empty()).scan(repo("pay/api", HEAD)).dockerfiles()).isEmpty();
     }
 
     @Test

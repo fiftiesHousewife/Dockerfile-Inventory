@@ -204,4 +204,14 @@ class InventoryTest {
                 .withMessage("reading an image failed")
                 .withCause(cause);
     }
+
+    @Test
+    void anInterruptedWaitFailsTheRunAndKeepsTheInterrupt() {
+        Thread.currentThread().interrupt();
+
+        assertAll(() -> assertThatIllegalStateException()
+                        .isThrownBy(() -> Inventory.await(new CompletableFuture<>()))
+                        .withMessage("interrupted while reading Artifactory"),
+                () -> assertThat(Thread.interrupted()).isTrue());
+    }
 }

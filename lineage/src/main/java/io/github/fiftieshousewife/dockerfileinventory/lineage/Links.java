@@ -1,6 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;

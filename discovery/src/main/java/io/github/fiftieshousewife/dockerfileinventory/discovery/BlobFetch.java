@@ -27,7 +27,6 @@ final class BlobFetch {
         this(gitHub, output, output::storeBlob);
     }
 
-    // store: where a fetched text goes (the Dockerfiles' blobs/, or yaml/).
     BlobFetch(GitHub gitHub, DiscoveryOutput output, BiConsumer<String, String> store) {
         this.gitHub = gitHub;
         this.output = output;
