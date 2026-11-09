@@ -1,6 +1,8 @@
 # From estate summary to action plan: an OpenShift validator
 
-Status: planned 8 Nov; questions answered 8 Nov; slice 1 (the module, the profiles, the image checks, verdicts, actions and the run) built 9 Nov.
+Status: planned 8 Nov; questions answered 8 Nov; slice 1 (the module, the profiles, the image checks, verdicts,
+actions and the run) built 9 Nov; the effective user, fixes with reach and the antipatterns followed 9 Nov, each in
+its own plan (validator-effective-user, validator-reach, validator-antipatterns).
 
 ## Why
 

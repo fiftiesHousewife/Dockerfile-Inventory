@@ -36,39 +36,34 @@ and one line when its gate is met.
 - Done 9 Nov (`docs/plans/survey-command.md`, asked 9 Nov): `survey [--try] <organisation URL>`, every stage in
   order in one command; a try stops after ten repositories with a Dockerfile. Waiting: a try on a real
   organisation with the owner's token.
-- Now: the validator, slice 1 built 9 Nov: the module, both OpenShift profiles, checks P1 to P10 on facts, verdicts,
-  actions by urgency and by repository, `action-plan.json`, `actions.jsonl`, `verdicts.jsonl`. The report's page and
-  the tagged ratchet (`./gradlew validate`) built 9 Nov. Done 9 Nov (`docs/plans/link-credit-in-lineage.md`, asked
-  9 Nov): lineage decides which links credit an image (`credited`, `LINK_THRESHOLD` and `LINK_MARGIN` moved from the
-  report), so the validator can read it. Done 9 Nov (`docs/plans/validator-effective-user.md`, asked 9 Nov): P1
-  judges the user a Dockerfile's credited registry images run as (`LINEAGE_DIR`), clearing it for a numeric
-  non-root one; on OKD and the demo it confirms 19 inferred root findings and clears none. Done 9 Nov
-  (`docs/plans/catalogue-stage.md`, asked 9 Nov): the catalogue as a stage of its own (`inventory catalogue`), so the
-  validator can read it. Done 9 Nov (`docs/plans/validator-reach.md`, asked 9 Nov): `fixes.jsonl`, the
-  same check on an archetype's copies as one fix, with what it reaches through the Dockerfiles built on them, per
-  check; the report's page leads with the fixes (combined estate: 8,777 actions, 4,396 fixes). Done 9 Nov: P2
-  expands variables from the image's environment (sclorg's `fix-permissions ${APP_ROOT}`; P2 1,055 -> 1,133 on the
-  combined estate). Now: the antipatterns (`docs/plans/validator-antipatterns.md`, asked 9 Nov: new rules in
-  `rules`, severities per rule ID in the profile). Slice 1 done 9 Nov: the rules' findings as actions and fixes
-  (`RULES_DIR`; combined estate 18,544 actions, 9,091 fixes, verdicts unchanged). S5 (world-writable `chmod`)
-  done 9 Nov: 468 on the combined estate, no false positives in 50. H4 (every package upgraded in the build) done 9 Nov: 414,
-  none false in 50. S6 (`ADD` of a URL without a checksum) done 9 Nov: 25, all right. H5 (`ADD` that `COPY` would do)
-  done 9 Nov: 1,015, none false in 50. H6 (owner or mode changed after the copy) done 9 Nov: 433, none false in 50.
-  A whole stage copied (`COPY --from=x / /`): measured, 15, all deliberate idioms, not built. H7 (a path changed
-  after its `VOLUME`) done 9 Nov: 4, all right. H8 (a copied file removed in a later layer) done 9 Nov: 79, none false
-  in 50. A shipped toolchain: measured, too many images built so on purpose, not built. S7 (a key or credential copied in)
-  done 9 Nov: 8, all right by name. H9 (`ENV DEBIAN_FRONTEND`) done 9 Nov: 32, all right. Rules read the catalogue
-  (`CATALOGUE_DIR`, asked 9 Nov). R4 (one base pinned at several digests) done 9 Nov: 231, none false in 50. An
-  application image used as a base: measured, images built to be extended, not built. Next: the other new rules, one at a time, each measured on 50 sampled findings.
-- (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
-  plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
-  default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by
-  severity, reach and certainty.
+- Done 9 Nov, the validator (`docs/plans/openshift-validator.md`, asked 8 Nov): each image judged through a platform
+  profile (OpenShift 4 `restricted-v2` by default, `restricted` v1 to choose), checks P1 to P10, verdicts, actions
+  by urgency and by repository, the report's page and the tagged ratchet (`./gradlew validate`). Then, each with its
+  plan:
+  - lineage decides which links credit an image (`link-credit-in-lineage.md`);
+  - P1 judges the user a Dockerfile's registry images run as (`validator-effective-user.md`; on OKD and the demo it
+    confirms 19 inferred root findings);
+  - the catalogue as a stage of its own (`catalogue-stage.md`);
+  - fixes: the same check on an archetype's copies as one fix, with its reach through the Dockerfiles built on them
+    (`validator-reach.md`);
+  - P2 expands variables from the image's environment (P2 1,055 -> 1,133 on the combined estate).
+- Now: the antipatterns (`docs/plans/validator-antipatterns.md`, asked 9 Nov: new rules in `rules`, the validator
+  reading their findings, severities per rule ID in the profile). Done 9 Nov, each measured on 50 sampled findings
+  (or every one, when fewer) with none false: S5 (world-writable `chmod`, 468), S6 (`ADD` of a URL without a
+  checksum, 25), S7 (a key or credential copied in, 8), R4 (one base pinned at several digests, 231; the rules read
+  the catalogue), H4 (every package upgraded in the build, 414), H5 (`ADD` that `COPY` would do, 1,015), H6 (owner or
+  mode changed after the copy, 433), H7 (a path changed after its `VOLUME`, 4), H8 (a copied file removed later, 79),
+  H9 (`ENV DEBIAN_FRONTEND`, 32). Measured and not built, their findings mostly deliberate: a whole stage copied, a
+  toolchain shipped, an application image used as a base, build-only `ENV`s beyond `DEBIAN_FRONTEND`. Combined
+  estate: 20,555 actions in 10,255 fixes, verdicts unchanged. Waiting for lineage on a real registry (the stored
+  lineage holds 39 images, too few to sample): deep chains, siblings repeating their first steps, stale or childless
+  intermediates, an image with no start command.
 - Next (asked 8 Nov, `docs/plans/libraries.md`, questions answered): three published libraries, `dockerfile-parser`
   1.0.0 (its last bugs fixed, a plain `parse(String)`), `dockerfile-model` 0.1.0 (today's `dsl`) and
-  `dockerfile-reader` 0.1.0 (text to model, from the converter; built 8 Nov), on Java 21, each with a licence, a library package name, a module descriptor exporting only its
-  API, a Java release users can take, Javadoc, a compatibility check, a Central bundle, a release task instead of
-  `scripts/release-parser.sh`, docs with tested examples; the owner's Central namespace, token and signing key.
+  `dockerfile-reader` 0.1.0 (text to model, from the converter; built 8 Nov), on Java 21, each with a licence, a
+  library package name, a module descriptor exporting only its API, a Java release users can take, Javadoc, a
+  compatibility check, a Central bundle, a release task instead of `scripts/release-parser.sh`, docs with tested
+  examples; the owner's Central namespace, token and signing key.
 - Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
   container's entry point aside; to be planned.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from

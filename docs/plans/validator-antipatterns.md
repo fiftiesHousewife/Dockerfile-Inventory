@@ -1,6 +1,7 @@
 # The validator's antipatterns: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; slice 1 (the rules' findings in the plan) built 9 Nov.
+Status: planned 9 Nov; the questions answered 9 Nov; slices 1 to 3 built 9 Nov (the rules' findings in the plan;
+S5 to S7, H4 to H9; the rules reading the catalogue, R4); the hierarchy rules wait for lineage on a real registry.
 
 ## Why
 
