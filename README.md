@@ -84,7 +84,7 @@ podman run --rm -e GHE_API_URL -e GHE_TOKEN_FILE=/secrets/ghe-token -v ./out:/wo
     -v ./secrets:/secrets:ro,Z -e OUT_DIR=/work/out/discovery dockerfile-inventory discovery
 ```
 
-`inventory <stage>` runs `discovery`, `facts`, `lineage`, `report`, `rules`, `validator` or `converter`, with the settings below
+`inventory <stage>` runs `discovery`, `facts`, `lineage`, `catalogue`, `report`, `rules`, `validator` or `converter`, with the settings below
 from the environment; `JAVA_OPTS` (default `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`) is passed to Java.
 Mount the token as a file and set `GHE_TOKEN_FILE` or `ARTIFACTORY_TOKEN_FILE`, so a rotated secret is picked up.
 
@@ -238,6 +238,10 @@ export FOOTPRINTS=/data/footprints.csv        # optional: footprint rules tried 
 export OUT_DIR=/data/report
 ./gradlew :report:run
 ```
+
+With the validator, run the catalogue first: `inventory catalogue` (or the report distribution's `bin/catalogue`)
+takes the same settings, without `VALIDATOR_DIR`, and writes only `catalogue/dockerfiles.jsonl`, `archetypes.jsonl`
+and `passes.json`, which the validator reads; the report then writes the same files again with its pages.
 
 Every Dockerfile location counts once. Dockerfiles are collapsed in four passes, cheapest first: identical files,
 files identical once comments and whitespace are normalised, files with the same signature (base family and major

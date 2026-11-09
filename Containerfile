@@ -1,5 +1,6 @@
-# The pipeline as one image for a pod on OpenShift: `inventory <stage>` runs discovery, facts, lineage, report, rules,
-# validator or converter, configured from the environment as the README says. Build with Buildah or Podman:
+# The pipeline as one image for a pod on OpenShift: `inventory <stage>` runs discovery, facts, lineage, catalogue,
+# report, rules, validator or converter, configured from the environment as the README says. Build with Buildah or
+# Podman:
 #   buildah build -t dockerfile-inventory -f Containerfile .
 # Behind a firewall, pass the Maven mirror the build should use: --build-arg INVENTORY_MIRROR=https://...
 # Pin the two base images by digest in the pipeline that builds this (rule R1); the tags here are for a first build.

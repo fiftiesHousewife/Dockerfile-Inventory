@@ -67,6 +67,7 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
                     Footprint, Runtimes, Versions; RegistryImages (lineage's output per image), Unmaintained,
                     Hierarchies (chains, layers, blockedBy), CatalogueSettings (FootprintRules),
                     Placement; Actions: ReleaseScope, Reaches, Conversions, Siblings, BaseLags, Cadences, Provenance
+                    CatalogueMain (the catalogue alone, for the validator: `inventory catalogue`)
                     Pages (writes them, from CatalogueView and ArchetypeRows): OverviewPage (EstateFigures),
                     HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName,
                     ActionPlanPage (ActionPlanView: the validator's output);

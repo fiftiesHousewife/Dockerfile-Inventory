@@ -36,7 +36,17 @@ final class ReportRun {
         this.outDir = outDir;
     }
 
+    record Catalogued(Estate estate, Ranking ranking) {
+    }
+
     void run() {
+        Catalogued catalogued = catalogue();
+        Pages.all(CatalogueView.read(outDir.resolve(CatalogueRun.PATH)),
+                ArchetypeRows.of(catalogued.ranking(), catalogued.estate()),
+                Optional.ofNullable(validatorDir).map(ActionPlanView::read)).forEach(this::write);
+    }
+
+    Catalogued catalogue() {
         Estate estate = Estate.read(factsDir, discoveryDir, lineageDir);
         List<Group> archetypeGroups = NearDuplicates.of(Passes.signatureGroups(estate));
         Ranking ranking = Archetypes.rank(archetypeGroups, estate);
@@ -48,8 +58,7 @@ final class ReportRun {
                 .collect(Collectors.joining("\n", "", "\n")));
         CatalogueRun.write(new CatalogueRun.Inputs(factsDir, discoveryDir, lineageDir, converterDir, archetypeGroups),
                 outDir, catalogueSettings);
-        Pages.all(CatalogueView.read(outDir.resolve(CatalogueRun.PATH)), ArchetypeRows.of(ranking, estate),
-                Optional.ofNullable(validatorDir).map(ActionPlanView::read)).forEach(this::write);
+        return new Catalogued(estate, ranking);
     }
 
     static Map<String, Object> passesSummary(Ranking ranking, List<PassCount> passes) {

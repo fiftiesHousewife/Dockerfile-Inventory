@@ -39,8 +39,9 @@ and one line when its gate is met.
   9 Nov): lineage decides which links credit an image (`credited`, `LINK_THRESHOLD` and `LINK_MARGIN` moved from the
   report), so the validator can read it. Done 9 Nov (`docs/plans/validator-effective-user.md`, asked 9 Nov): P1
   judges the user a Dockerfile's credited registry images run as (`LINEAGE_DIR`), clearing it for a numeric
-  non-root one; on OKD and the demo it confirms 19 inferred root findings and clears none. Next: reach through bases
-  and archetypes, the antipatterns.
+  non-root one; on OKD and the demo it confirms 19 inferred root findings and clears none. Done 9 Nov
+  (`docs/plans/catalogue-stage.md`, asked 9 Nov): the catalogue as a stage of its own (`inventory catalogue`), so the
+  validator can read it. Next: reach through bases and archetypes, the antipatterns.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

@@ -45,6 +45,18 @@ class ReportRunTest {
     }
 
     @Test
+    void theCatalogueAloneWritesTheCatalogueTheArchetypesAndThePassesButNoPage() {
+        new ReportRun(EstateTest.FIXTURES, EstateTest.FIXTURES, null, null, null, CatalogueSettings.DEFAULTS, out)
+                .catalogue();
+
+        assertAll(
+                () -> assertThat(out.resolve(CatalogueRun.PATH)).exists(),
+                () -> assertThat(out.resolve("archetypes.jsonl")).exists(),
+                () -> assertThat(out.resolve("passes.json")).exists(),
+                () -> assertThat(out.resolve("index.html")).doesNotExist());
+    }
+
+    @Test
     void passesJsonHoldsTheTotalsBeforeThePasses() {
         List<PassCount> passes = List.of(new PassCount("blob", 1, 2));
 
