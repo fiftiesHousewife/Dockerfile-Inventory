@@ -53,10 +53,10 @@ class WritablePathsTest {
         Subject.Permission flat = new Subject.Permission("chmod", "775", List.of("/opt"), false);
 
         assertAll(
-                () -> assertThat(WritablePaths.covers(recursive, "/opt/app/data")).isTrue(),
-                () -> assertThat(WritablePaths.covers(flat, "/opt")).isTrue(),
-                () -> assertThat(WritablePaths.covers(flat, "/opt/app")).isFalse(),
-                () -> assertThat(WritablePaths.covers(recursive, "/optional")).isFalse());
+                () -> assertThat(WritablePaths.covers(recursive, "/opt/app/data", Map.of())).isTrue(),
+                () -> assertThat(WritablePaths.covers(flat, "/opt", Map.of())).isTrue(),
+                () -> assertThat(WritablePaths.covers(flat, "/opt/app", Map.of())).isFalse(),
+                () -> assertThat(WritablePaths.covers(recursive, "/optional", Map.of())).isFalse());
     }
 
     @Test
@@ -78,5 +78,19 @@ class WritablePathsTest {
                 () -> assertThat(WritablePaths.makesGroupWritable(subject("08bf2be5"))).isTrue(),
                 () -> assertThat(WritablePaths.makesGroupWritable(subject("080b0412"))).isFalse(),
                 () -> assertThat(WritablePaths.makesGroupWritable(subject("03cab6f0"))).isFalse());
+    }
+
+    @Test
+    void aPathsVariablesAreExpandedFromTheImagesEnvironmentAndUnknownOnesLeft() {
+        Map<String, String> environment = Map.of("APP_ROOT", "/opt/app-root", "HOME", "/opt/app-root/src");
+        assertAll(
+                () -> assertThat(WritablePaths.expanded("${APP_ROOT}/src", environment)).isEqualTo("/opt/app-root/src"),
+                () -> assertThat(WritablePaths.expanded("/$HOME", environment)).isEqualTo("/opt/app-root/src"),
+                () -> assertThat(WritablePaths.expanded("$CONF/x", environment)).isEqualTo("$CONF/x"));
+    }
+
+    @Test
+    void fixPermissionsGivenAVariableCoversThePathTheVariableNames() {
+        assertThat(new WritablePaths().problems(subject("d133a9d4"), V2)).isEmpty();
     }
 }

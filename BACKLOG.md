@@ -43,8 +43,9 @@ and one line when its gate is met.
   (`docs/plans/catalogue-stage.md`, asked 9 Nov): the catalogue as a stage of its own (`inventory catalogue`), so the
   validator can read it. Done 9 Nov (`docs/plans/validator-reach.md`, asked 9 Nov): `fixes.jsonl`, the
   same check on an archetype's copies as one fix, with what it reaches through the Dockerfiles built on them, per
-  check; the report's page leads with the fixes (combined estate: 8,777 actions, 4,396 fixes). Next: P2 reading
-  `fix-permissions` given a variable (found measuring the fixes), then the antipatterns.
+  check; the report's page leads with the fixes (combined estate: 8,777 actions, 4,396 fixes). Done 9 Nov: P2
+  expands variables from the image's environment (sclorg's `fix-permissions ${APP_ROOT}`; P2 1,055 -> 1,133 on the
+  combined estate). Next: the antipatterns.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

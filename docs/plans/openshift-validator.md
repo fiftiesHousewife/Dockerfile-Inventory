@@ -225,3 +225,12 @@ combined estate 3,590 break, 693 drift, 2 information, 187 run.
 Test 7 built 9 Nov: `./gradlew validate` (tag `validate`) runs the validator over the combined estate's stored facts
 and compares the images judged, the verdicts and the actions per check exactly with
 `validator/src/test/resources/estate/expected.json`, so a change to a check carries its effect in the diff.
+
+P2 expands `$VAR` and `${VAR}` from the image's final environment in the paths it reads (`VOLUME`, `WORKDIR`, `HOME`,
+`chmod` and `COPY --chmod` targets, `fix-permissions` arguments), found 9 Nov sampling the fixes
+(`docs/plans/validator-reach.md`): sclorg's minimal images run `fix-permissions ${APP_ROOT}`. On the combined estate
+P2 1,055 -> 1,133: 50 findings gone (a sample of six each made the path group-writable through a variable), 128 new
+(paths written with a variable, skipped before, now judged as if written out, such as tomcat's `WORKDIR
+$CATALINA_HOME`), 78 reworded. Verdicts 3,562 break, 723 drift, 2 information, 185 run. On OKD P2 stays 360 (12 gone,
+12 new).
+

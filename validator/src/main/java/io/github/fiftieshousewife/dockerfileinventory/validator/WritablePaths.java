@@ -3,13 +3,16 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 // P2: the arbitrary UID writes only where group 0 may write; files made during the build are root's, group 0.
 final class WritablePaths implements PlatformCheck {
 
     private static final Pattern OCTAL = Pattern.compile("0?[0-7]{3}");
-    private static final Pattern FIX_PERMISSIONS = Pattern.compile("(?:^|[\\s/])fix-permissions\\s+(/\\S+)");
+    private static final Pattern FIX_PERMISSIONS = Pattern.compile("(?:^|[\\s/])fix-permissions\\s+([/$]\\S+)");
+    private static final Pattern VARIABLE = Pattern.compile("\\$\\{?(\\w+)}?");
     private static final Pattern CLAUSE = Pattern.compile("([ugoa]*)([+=])([rwxXstugo]*)");
 
     @Override
@@ -25,9 +28,12 @@ final class WritablePaths implements PlatformCheck {
     @Override
     public List<String> problems(Subject image, Profile profile) {
         List<Subject.Stage> stages = image.finalStages();
-        List<String> fixed = fixedPermissions(image.steps());
-        return written(image).stream().filter(path -> !path.value().contains("$"))
-                .filter(path -> stages.stream().noneMatch(stage -> writable(stage, path.value())))
+        Map<String, String> environment = image.config().environment();
+        List<String> fixed = fixedPermissions(image.steps()).stream().map(p -> expanded(p, environment)).toList();
+        return written(image).stream()
+                .map(path -> new Written(path.kind(), expanded(path.value(), environment)))
+                .filter(path -> !path.value().contains("$"))
+                .filter(path -> stages.stream().noneMatch(stage -> writable(stage, path.value(), environment)))
                 .filter(path -> fixed.stream().noneMatch(directory -> under(path.value(), directory)))
                 .map(path -> path.kind() + " " + path.value() + " is never made writable by group 0 (chmod g=u or "
                         + "g+w), so OpenShift's arbitrary UID may not write it")
@@ -57,22 +63,27 @@ final class WritablePaths implements PlatformCheck {
                 .flatMap(step -> FIX_PERMISSIONS.matcher(step.text()).results().map(m -> m.group(1))).toList();
     }
 
+    static String expanded(String path, Map<String, String> environment) {
+        return VARIABLE.matcher(path).replaceAll(m -> Matcher.quoteReplacement(
+                environment.getOrDefault(m.group(1), m.group()))).replaceAll("/{2,}", "/");
+    }
+
     static boolean makesGroupWritable(Subject image) {
         return !fixedPermissions(image.steps()).isEmpty() || image.finalStages().stream().anyMatch(stage ->
                 stage.permissions().stream().anyMatch(p -> p.command().equals("chmod") && groupWrite(p.setting()))
                         || stage.copies().stream().anyMatch(c -> c.chmod() != null && groupWrite(c.chmod())));
     }
 
-    static boolean writable(Subject.Stage stage, String path) {
+    static boolean writable(Subject.Stage stage, String path, Map<String, String> environment) {
         return stage.permissions().stream().anyMatch(p -> p.command().equals("chmod") && groupWrite(p.setting())
-                && covers(p, path))
+                && covers(p, path, environment))
                 || stage.copies().stream().anyMatch(c -> c.chmod() != null && groupWrite(c.chmod())
-                && under(path, c.destination()));
+                && under(path, expanded(c.destination(), environment)));
     }
 
-    static boolean covers(Subject.Permission permission, String path) {
-        return permission.paths().stream().anyMatch(p -> trimmed(p).equals(trimmed(path))
-                || permission.recursive() && under(path, p));
+    static boolean covers(Subject.Permission permission, String path, Map<String, String> environment) {
+        return permission.paths().stream().map(p -> expanded(p, environment)).anyMatch(p -> trimmed(p)
+                .equals(trimmed(path)) || permission.recursive() && under(path, p));
     }
 
     static boolean groupWrite(String setting) {

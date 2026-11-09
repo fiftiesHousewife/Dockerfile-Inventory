@@ -12,3 +12,4 @@
 {"repository":"openshift/moby-moby","commitSha":"8cf8fe9cf80a07d4e68829f619ea2c71fbb5af0c","scope":"DEFAULT_BRANCH","path":"contrib/nnp-test/Dockerfile","blobSha":"026d86954f6e0953c8fdc99e2aeadd4626783fd6"}
 {"repository":"redhat-developer/agentic-skills","commitSha":"cf2b78762c90231221065f25fae1efd57ba8dfe4","scope":"DEFAULT_BRANCH","path":"Containerfile","blobSha":"02810ad6fa9156a93d7ad08996840190e2f245fd"}
 {"repository":"redhat-developer/message-tagging-service","commitSha":"fd84de9daa7a0e592a648a6445ce6ba928246bf5","scope":"DEFAULT_BRANCH","path":"Dockerfile","blobSha":"12baa7e1ea2860e387552422af48d49ca01a9219"}
+{"repository":"sclorg/s2i-python-container","commitSha":"cc6d266cb1e9641c1f547da1d0c6094352b4e47c","scope":"DEFAULT_BRANCH","path":"3.12-minimal/Dockerfile.rhel10","blobSha":"d133a9d4f3712fca468eb30146074754728082bc"}

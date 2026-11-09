@@ -2,7 +2,7 @@
 
 - `copied-profile.json`: the shipped `openshift-4-restricted-v2` profile, copied and changed as an estate owner
   would: P8 (an unpinned base) raised from drift to breaks and one allowed registry added.
-- `facts.jsonl`: fourteen real lines of the facts stage's output on the combined public estate (`out/all`, written 8 Nov
+- `facts.jsonl`: fifteen real lines of the facts stage's output on the combined public estate (`out/all`, written 8 Nov
   with the catalogue's fields), each picked for one behaviour a check reads. By blob SHA, with one location each:
 
 | Behaviour | Blob SHA | A location |
@@ -21,5 +21,6 @@
 | a `HEALTHCHECK` | `2fc5b392...` | docker-library/healthcheck `cassandra/Dockerfile` |
 | a metadata-only bundle (`FROM scratch`, no start command) | `02810ad6...` | redhat-developer/agentic-skills `Containerfile` |
 | a start command reading `$HOME` or the user | `6cc3382e...` | openshift/cloud-api-adaptor `src/cloud-api-adaptor/test/e2e/fixtures/Dockerfile.testuser` |
-- `manifest.jsonl`: discovery's manifest lines for those fourteen Dockerfiles on the same estate, up to two
+| `fix-permissions ${APP_ROOT}`, a variable set by `ENV` | `d133a9d4...` | sclorg/s2i-python-container `3.12-minimal/Dockerfile.rhel10` |
+- `manifest.jsonl`: discovery's manifest lines for those fifteen Dockerfiles on the same estate, up to two
   locations each.
