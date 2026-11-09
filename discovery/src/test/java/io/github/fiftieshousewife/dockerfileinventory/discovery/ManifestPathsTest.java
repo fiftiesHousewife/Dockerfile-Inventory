@@ -20,7 +20,8 @@ class ManifestPathsTest {
         "e2e/manifests/job.yaml, false", "docs/snippets/deployment.yaml, false", "doc/example.yml, false",
         "bitnami/autoscaler/aws-examples/one.yaml, false",
         "examples/basic/deploy.yaml, false", "samples/app.yaml, false", "config/samples/cr.yaml, false",
-        "latest/deploy.yaml, true", "contest/deploy.yaml, true"})
+        "latest/deploy.yaml, true", "contest/deploy.yaml, true",
+        "openshift/installer/vendored/openshift-ansible-3.11/roles/node/files/sync.yaml, false"})
     void aCandidateManifestIsYamlOutsideVendoredTestDocsExampleCiAndHelmFiles(String path, boolean candidate) {
         assertThat(ManifestPaths.isCandidate(path)).isEqualTo(candidate);
     }

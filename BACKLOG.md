@@ -67,8 +67,8 @@ and one line when its gate is met.
 - Now (`docs/plans/deployment-manifests.md`, asked 9 Nov: plain workload YAML first, tied to Dockerfiles through
   lineage, a verdict per workload): the validator reads deployment manifests. Slice 1 done 9 Nov: `Workloads` reads
   workload YAML (templates unread). Slice 2 done 9 Nov: discovery fetches candidate YAML into `yaml/`, facts writes
-  `workloads.jsonl`; on ten cloned repositories 596 candidates, 6 with workloads. Waiting: a survey by the owner for
-  real numbers. Next: the pod checks (`refused`), then the report.
+  `workloads.jsonl`; on ten cloned repositories 596 candidates, 6 with workloads; on the owner's survey of 24 openshift
+  repositories, 530 files and 4 workloads once `vendored/` is left out (2,568 and 21 before). Next: the pod checks (`refused`), then the report.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

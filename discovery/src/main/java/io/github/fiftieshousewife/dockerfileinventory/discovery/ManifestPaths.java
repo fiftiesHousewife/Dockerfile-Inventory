@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 final class ManifestPaths {
 
     private static final Pattern YAML = Pattern.compile(".*\\.ya?ml$");
-    private static final Pattern NOT_DEPLOYED = Pattern.compile("(^|/)(vendor|node_modules|third_party|testdata"
+    private static final Pattern NOT_DEPLOYED = Pattern.compile("(^|/)(vendor(ed)?|node_modules|third_party|testdata"
             + "|testfiles|testfiles-negative|\\.github|\\.tekton|\\.circleci|templates|tests?|e2e|docs?"
             + "|[^/]*examples?|samples?)/");
     private static final Pattern NOT_MANIFESTS = Pattern.compile("(^|/)(\\.gitlab-ci\\.ya?ml|\\.ci-operator\\.yaml"

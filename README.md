@@ -149,7 +149,7 @@ symlinks, third-party copies (`vendor/`, `node_modules/`, `third_party/`) and te
 | `blobs/<sha>` | Each distinct Dockerfile's text, stored once however many repositories copy it |
 | `repos.jsonl` | One line per repository per run: outcome (`SCANNED`, `EMPTY`, `TRUNCATED`, `RELEASE_COMMIT_MISSING`, `FAILED`), commit, archived and fork flags, Dockerfile count |
 | `blob-findings.jsonl` | Dockerfiles and YAML that could not be stored: binary, too large, or not found |
-| `yaml.jsonl`, `yaml/` | Every YAML file that could be a deployment manifest (not vendored, tests, docs, examples, CI or Helm's files), its locations and each file once by blob SHA, apart from the Dockerfiles |
+| `yaml.jsonl`, `yaml/` | Every YAML file that could be a deployment manifest (not vendored, tests, docs, examples, CI or Helm's files), its locations and each file once by blob SHA, apart from the Dockerfiles; a discovery run before 9 Nov lists none, and resuming it does not add them: discover into a new folder |
 | `changes.jsonl` | One line per location: the last commit that changed the Dockerfile up to the scanned commit, and its date, both empty where GitHub has no history for it; a location GitHub refused (an error, counted in the summary) is asked for again on the next run |
 
 Several organisations are surveyed as one estate by giving the survey each one's URL: it discovers each into

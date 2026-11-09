@@ -138,4 +138,26 @@ class WorkloadsTest {
     void yamlThatDoesNotParseIsUnreadWithWhy() {
         assertThat(Workloads.read("kind: Deployment\n  bad: [").unread()).startsWith("not YAML: ");
     }
+
+    @Test
+    void aRealDaemonSetAskingForEverythingIsReadWithItsHostAccessAndPrivilege() throws IOException {
+        Workload.Pod pod = Workloads.read(fixture("openshift-tools-sync.yaml")).workloads().getFirst().pod();
+
+        assertAll(
+                () -> assertThat(pod.hostNetwork()).isTrue(),
+                () -> assertThat(pod.hostPid()).isTrue(),
+                () -> assertThat(pod.hostPaths()).isNotEmpty(),
+                () -> assertThat(pod.containers().getFirst().security().privileged()).isTrue(),
+                () -> assertThat(pod.containers().getFirst().security().runAsUser()).isZero());
+    }
+
+    @Test
+    void aRealPrivilegedPodMountingTheHostsDockerSocketIsRead() throws IOException {
+        Workload.Pod pod = Workloads.read(fixture("image-inspector-app.yaml")).workloads().getFirst().pod();
+
+        assertAll(
+                () -> assertThat(pod.hostPaths()).containsExactly("/var/run/docker.sock"),
+                () -> assertThat(pod.containers().getFirst().security().privileged()).isTrue(),
+                () -> assertThat(pod.containers().getFirst().ports()).containsExactly(8080));
+    }
 }

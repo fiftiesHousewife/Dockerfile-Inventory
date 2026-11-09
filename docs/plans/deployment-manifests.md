@@ -91,3 +91,15 @@ expectations), documentation snippets or examples; asked 9 Nov, tests, docs, exa
 of a deployment, not one of its own. Still about one candidate in a hundred holds a workload; a survey on a real
 organisation, run by the owner, gives the numbers that count.
 
+## The owner's survey (9 Nov)
+
+`survey --try https://github.com/openshift`, rerun into the first try's folder: 24 repositories newly scanned (the 32
+from the first try were finished, so discovery skipped them and listed none of their YAML; a discovery written before
+this slice needs a new folder to list its YAML). 4,539 YAML locations, 2,568 files fetched, 21 holding a workload,
+1,657 templates. One repository, openshift/openshift-tools, held 2,503 of the files: most a copy of openshift-ansible
+under `openshift/installer/vendored/`, its 17 workloads and 1,436 of the templates. `vendored/` is now left out like
+`vendor/`; on the same list that leaves 530 files and 4 workloads, the vendored copies' gone and the real ones kept:
+openshift-tools' own `sync` DaemonSet (privileged, `runAsUser: 0`, the host's network, PID and paths) and
+image-inspector's privileged Pod mounting the Docker socket, both now fixtures for the reader and for slice 3's
+checks. The 223 templates left are Ansible roles' Jinja files.
+
