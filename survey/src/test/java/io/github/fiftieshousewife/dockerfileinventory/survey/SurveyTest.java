@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.survey;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -79,5 +80,45 @@ class SurveyTest {
                         "out/acme+beta-try/discovery-of/acme,out/acme+beta-try/discovery-of/beta")
                         .containsEntry("OUT_DIR", "out/acme+beta-try/discovery"),
                 () -> assertThat(steps.get(3).env()).containsEntry("DISCOVERY_DIR", "out/acme+beta-try/discovery"));
+    }
+
+    @Test
+    void theRootIsTheOrganisationsJoinedMarkedForATryUnlessAnOutputDirectoryIsGiven() {
+        List<String> urls = List.of("https://github.com/acme", "https://github.com/beta");
+
+        assertAll(
+                () -> assertThat(Survey.root(urls, true, Map.of())).isEqualTo("out/acme+beta-try"),
+                () -> assertThat(Survey.root(urls, false, Map.of())).isEqualTo("out/acme+beta"),
+                () -> assertThat(Survey.root(urls, true, Map.of("OUT_DIR", "/data"))).isEqualTo("/data"));
+    }
+
+    @Test
+    void aDiscoveryIsPointedAtItsOrganisationAndStoppedEarlyOnlyForATry() {
+        assertAll(
+                () -> assertThat(Survey.discovery("https://github.com/acme", false))
+                        .isEqualTo(Map.of("GHE_API_URL", "https://github.com/acme")),
+                () -> assertThat(Survey.discovery("https://github.com/acme", true))
+                        .containsEntry("TRY_REPOSITORIES", "10"));
+    }
+
+    @Test
+    void aStepWritesIntoItsOwnFolderAndTellsTheLaterStepsWhereThatIs() {
+        Map<String, String> dirs = new HashMap<>();
+
+        Survey.Step step = Survey.step(TOKEN, "out/acme", dirs, "facts", Map.of());
+
+        assertAll(
+                () -> assertThat(step.env()).containsEntry("OUT_DIR", "out/acme/facts"),
+                () -> assertThat(dirs).containsExactly(Map.entry("FACTS_DIR", "out/acme/facts")));
+    }
+
+    @Test
+    void oneOrganisationIsDiscoveredStraightIntoTheDiscoveryTheStagesRead() {
+        Map<String, String> dirs = new HashMap<>();
+
+        assertAll(
+                () -> assertThat(Survey.discoveries(List.of("https://github.com/acme"), false, TOKEN, "out/acme",
+                        dirs)).extracting(Survey.Step::stage).containsExactly("discovery"),
+                () -> assertThat(dirs).containsEntry("DISCOVERY_DIR", "out/acme/discovery"));
     }
 }

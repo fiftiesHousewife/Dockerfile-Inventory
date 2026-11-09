@@ -53,8 +53,21 @@ class BuildPlanTest {
         List<BuildPlan.Build> chain = BuildPlan.chain(all);
         assertAll(
                 () -> assertThat(chain).hasSize(3),
-                () -> assertThat(BuildPlan.ordered(chain)).extracting(BuildPlan.Build::name).containsExactly(
+                () -> assertThat(BuildPlan.parentsFirst(chain)).extracting(BuildPlan.Build::name).containsExactly(
                         "sclorg/s2i-core-c9s:c9s", "sclorg/s2i-base-c9s:c9s",
                         "sclorg/s2i-python-container-3-12-c9s:c9s"));
+    }
+
+    @Test
+    void aBuildRanksByHowFarDownTheChainItsBaseIs() {
+        assertAll(
+                () -> assertThat(BuildPlan.rank(build("a", "r", "p", "quay.io/centos/centos:stream9"))).isZero(),
+                () -> assertThat(BuildPlan.rank(build("a", "r", "p", "quay.io/sclorg/s2i-core-c9s:c9s"))).isEqualTo(1),
+                () -> assertThat(BuildPlan.rank(build("a", "r", "p", "quay.io/sclorg/s2i-base-c9s:c9s"))).isEqualTo(2));
+    }
+
+    @Test
+    void aDockerfileWithoutAFromHasNoBase(@TempDir Path blobs) throws IOException {
+        assertThat(BuildPlan.firstFrom(Files.writeString(blobs.resolve("b"), "# only a comment\nFROM\n"))).isEmpty();
     }
 }

@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,20 +49,28 @@ public final class OkdSelect {
     }
 
     void run() {
+        requireDiscovery();
+        List<String> tags = quay.tags(release).stream().distinct().sorted().toList();
+        write("tags.txt", tags);
+        Map<String, JsonNode> configs = tags.stream().collect(Collectors.toMap(tag -> tag,
+                tag -> Json.MAPPER.readTree(cachedConfig(tag))));
+        List<OkdChoice.Image> images = tags.stream().map(tag -> image(tag, configs.get(tag))).toList();
+        write("images.tsv", images.stream().map(OkdSelect::row).toList());
+        Map<String, List<String>> bases = configs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
+                entry -> bases(entry.getValue())));
+        OkdChoice choice = OkdChoice.of(OkdChoice.candidates(release, images, scanned(discovery), count), bases,
+                count);
+        writeChoice(choice);
+    }
+
+    void requireDiscovery() {
         if (!Files.isRegularFile(discovery.resolve("repos.jsonl"))) {
             throw new IllegalArgumentException("no " + discovery.resolve("repos.jsonl") + "; run discovery on "
                     + "openshift first");
         }
-        List<String> tags = quay.tags(release).stream().distinct().sorted().toList();
-        write("tags.txt", tags);
-        Map<String, JsonNode> configs = new HashMap<>();
-        tags.forEach(tag -> configs.put(tag, Json.MAPPER.readTree(config(tag))));
-        List<OkdChoice.Image> images = tags.stream().map(tag -> image(tag, configs.get(tag))).toList();
-        write("images.tsv", images.stream().map(OkdSelect::row).toList());
-        Map<String, List<String>> bases = new HashMap<>();
-        configs.forEach((tag, config) -> bases.put(tag, bases(config)));
-        OkdChoice choice = OkdChoice.of(OkdChoice.candidates(release, images, scanned(discovery), count), bases,
-                count);
+    }
+
+    private void writeChoice(OkdChoice choice) {
         write("candidates.tsv", choice.candidates().stream().map(OkdSelect::row).toList());
         write("chosen.tsv", choice.chosen().stream().map(OkdSelect::row).toList());
         write("bases.txt", choice.bases());
@@ -74,8 +80,7 @@ public final class OkdSelect {
                 + " bases; next: discovery with RELEASE_INDEX=" + out.resolve("releases.csv"));
     }
 
-    // Fetched once: a config read before is kept in configs/.
-    private String config(String tag) {
+    String cachedConfig(String tag) {
         Path cached = out.resolve("configs").resolve(tag + ".json");
         try {
             if (Files.isRegularFile(cached) && Files.size(cached) > 0) {
@@ -97,14 +102,9 @@ public final class OkdSelect {
     }
 
     static List<String> bases(JsonNode config) {
-        List<String> bases = new ArrayList<>();
-        config.path("history").forEach(step -> {
-            String comment = step.path("comment").asString("");
-            if (comment.startsWith("FROM ") && !comment.equals("FROM oci-archive")) {
-                bases.add(comment.substring(5));
-            }
-        });
-        return bases;
+        return config.path("history").valueStream().map(step -> step.path("comment").asString(""))
+                .filter(comment -> comment.startsWith("FROM ") && !comment.equals("FROM oci-archive"))
+                .map(comment -> comment.substring(5)).toList();
     }
 
     static Set<String> scanned(Path discovery) {

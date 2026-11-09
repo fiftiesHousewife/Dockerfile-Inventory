@@ -1,6 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.tools;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -36,6 +38,10 @@ class QuayHttpTest {
                     : "{\"config\":{\"digest\":\"sha256:cfg\"}}");
         });
         server.createContext("/v2/okd/scos-content/blobs/sha256:cfg", exchange -> reply(exchange, "{\"config\":{}}"));
+        server.createContext("/broken", exchange -> {
+            exchange.sendResponseHeaders(500, -1);
+            exchange.close();
+        });
         server.start();
         quay = new QuayHttp(URI.create("http://127.0.0.1:" + server.getAddress().getPort()),
                 HttpClient.newHttpClient());
@@ -61,5 +67,18 @@ class QuayHttpTest {
     @Test
     void aConfigIsTheAmd64ImagesThroughTheManifestList() {
         assertThat(quay.config("r-a")).isEqualTo("{\"config\":{}}");
+    }
+
+    @Test
+    void aReplyOtherThanOkIsRefusedNamingTheRequestAndItsStatus() {
+        assertThatIllegalStateException().isThrownBy(() -> quay.get("/broken", null, null))
+                .withMessageEndingWith("/broken returned 500");
+    }
+
+    @Test
+    void aPageSaysWhetherAnotherFollows() {
+        assertAll(
+                () -> assertThat(quay.page("r", 1).more()).isTrue(),
+                () -> assertThat(quay.page("r", 2).more()).isFalse());
     }
 }

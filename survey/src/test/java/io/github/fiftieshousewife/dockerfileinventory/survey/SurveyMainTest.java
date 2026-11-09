@@ -5,15 +5,19 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import io.github.fiftieshousewife.dockerfileinventory.discovery.Combine;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class SurveyMainTest {
 
@@ -98,5 +102,39 @@ class SurveyMainTest {
                         new PrintStream(err, true, StandardCharsets.UTF_8))).isEqualTo(1),
                 () -> assertThat(err.toString(StandardCharsets.UTF_8)).contains(SurveyMain.USAGE,
                         "survey: discovery failed: no network"));
+    }
+
+    @Test
+    void aStageIsRunWithItsSettings() throws Exception {
+        List<Map<String, String>> given = new ArrayList<>();
+
+        SurveyMain.runStage(new Survey.Step("facts", Map.of("OUT_DIR", "out/acme/facts")), Map.of("facts",
+                given::add));
+
+        assertThat(given).containsExactly(Map.of("OUT_DIR", "out/acme/facts"));
+    }
+
+    @Test
+    void aCombinationSaysWhatItHoldsAndWhichRepositoriesItCountedTwice() {
+        assertAll(
+                () -> assertThat(SurveyMain.combined(new Combine.Summary(3, 2, 1, List.of())))
+                        .isEqualTo("survey: combined 3 locations, 2 repositories, 1 Dockerfiles"),
+                () -> assertThat(SurveyMain.combined(new Combine.Summary(3, 2, 1, List.of("acme/a", "acme/b"))))
+                        .endsWith("; in more than one organisation, so counted twice: acme/a, acme/b"));
+    }
+
+    @Test
+    void theOrganisationsDiscoveriesAreCombinedIntoTheOneTheStagesRead(@TempDir Path root) throws IOException {
+        for (String organisation : List.of("acme", "beta")) {
+            Path source = root.resolve(organisation);
+            Files.createDirectories(source.resolve("blobs"));
+            Files.writeString(source.resolve("manifest.jsonl"), "");
+            Files.writeString(source.resolve("repos.jsonl"), "");
+        }
+
+        SurveyMain.combine(Map.of("COMBINE_SOURCES", root.resolve("acme") + "," + root.resolve("beta"), "OUT_DIR",
+                root.resolve("discovery").toString()));
+
+        assertThat(root.resolve("discovery/manifest.jsonl")).isRegularFile();
     }
 }

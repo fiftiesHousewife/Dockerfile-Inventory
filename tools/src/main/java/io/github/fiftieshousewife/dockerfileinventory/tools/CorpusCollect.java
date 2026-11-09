@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Collects the real Dockerfiles a run found hard into the fixture bank, each with the outcome the pipeline gave it:
@@ -43,52 +45,55 @@ public final class CorpusCollect {
             System.err.println("usage: collectCorpus --args=<run directory>, e.g. --args=out/all");
             System.exit(2);
         }
-        Map<String, String> env = System.getenv();
-        int written = new CorpusCollect(Path.of(args[0]), Path.of(env.getOrDefault("CORPUS",
-                "testdata/corpus/dockerfiles")), Integer.parseInt(env.getOrDefault("PER_KIND", "4")),
-                Integer.parseInt(env.getOrDefault("TEMPLATES", "5"))).collect();
-        System.out.println("corpus: " + written + " cases added");
+        System.out.println("corpus: " + of(Path.of(args[0]), System.getenv()).collect() + " cases added");
+    }
+
+    static CorpusCollect of(Path run, Map<String, String> env) {
+        return new CorpusCollect(run, Path.of(env.getOrDefault("CORPUS", "testdata/corpus/dockerfiles")),
+                Integer.parseInt(env.getOrDefault("PER_KIND", "4")),
+                Integer.parseInt(env.getOrDefault("TEMPLATES", "5")));
     }
 
     int collect() {
         RunOutcomes outcomes = RunOutcomes.read(run);
-        int written = 0;
-        for (RunOutcomes.Outcome outcome : outcomes.failures()) {
-            if (outcome.parse().equals("failed")) {
-                written += write("failed", outcome, "rewrite-docker rejects it", outcomes);
-            }
-        }
-        written += outcomes.failures().stream().filter(o -> o.parse().equals("template")).limit(templates)
-                .mapToInt(o -> write("template", o, "a template saved under a Dockerfile's name", outcomes)).sum();
-        for (RunOutcomes.Outcome outcome : outcomes.parsed()) {
-            if (outcome.unreadableRuns() > 0) {
-                written += write("unreadable-run", outcome, "a RUN the shell reader cannot follow", outcomes);
-            }
-        }
-        for (RunOutcomes.Outcome outcome : outcomes.byBlob()) {
-            if ("fails".equals(outcomes.roundTrips().get(outcome.blobSha()))) {
-                written += write("roundtrip", outcome, "parses but does not round-trip", outcomes);
-            }
-        }
-        return written + retried(outcomes);
+        return failed(outcomes) + templates(outcomes) + unreadableRuns(outcomes) + roundTrips(outcomes)
+                + retried(outcomes);
     }
 
-    private int retried(RunOutcomes outcomes) {
-        Map<String, Integer> kinds = new HashMap<>();
-        int written = 0;
-        for (RunOutcomes.Outcome outcome : outcomes.parsed()) {
-            if (outcome.parse().equals("retried") && !secretShaped(outcome.blobSha(), outcomes)) {
-                String kind = Workaround.of(text(outcome.blobSha()));
-                if (kinds.merge(kind, 1, Integer::sum) <= perKind) {
-                    written += write("retried-" + kind, outcome, "parses only with the parser's " + kind
-                            + " workaround", outcomes);
-                }
-            }
-        }
-        return written;
+    int failed(RunOutcomes outcomes) {
+        return writeAll(outcomes.failures().stream().filter(o -> o.parse().equals("failed")), "failed",
+                "rewrite-docker rejects it", outcomes);
     }
 
-    // 1 when the case was written; 0 when it was there already or its file holds a secret's shape.
+    int templates(RunOutcomes outcomes) {
+        return writeAll(outcomes.failures().stream().filter(o -> o.parse().equals("template")).limit(templates),
+                "template", "a template saved under a Dockerfile's name", outcomes);
+    }
+
+    int unreadableRuns(RunOutcomes outcomes) {
+        return writeAll(outcomes.parsed().stream().filter(o -> o.unreadableRuns() > 0), "unreadable-run",
+                "a RUN the shell reader cannot follow", outcomes);
+    }
+
+    int roundTrips(RunOutcomes outcomes) {
+        return writeAll(outcomes.byBlob().stream().filter(o -> "fails".equals(outcomes.roundTrips().get(o.blobSha()))),
+                "roundtrip", "parses but does not round-trip", outcomes);
+    }
+
+    private int writeAll(Stream<RunOutcomes.Outcome> cases, String prefix, String why, RunOutcomes outcomes) {
+        return cases.mapToInt(outcome -> write(prefix, outcome, why, outcomes)).sum();
+    }
+
+    int retried(RunOutcomes outcomes) {
+        Map<String, List<RunOutcomes.Outcome>> byKind = outcomes.parsed().stream()
+                .filter(o -> o.parse().equals("retried") && !secretShaped(o.blobSha(), outcomes))
+                .collect(Collectors.groupingBy(o -> Workaround.of(text(o.blobSha())), LinkedHashMap::new,
+                        Collectors.toList()));
+        return byKind.entrySet().stream().mapToInt(kind -> writeAll(kind.getValue().stream().limit(perKind),
+                "retried-" + kind.getKey(), "parses only with the parser's " + kind.getKey() + " workaround",
+                outcomes)).sum();
+    }
+
     int write(String prefix, RunOutcomes.Outcome outcome, String why, RunOutcomes outcomes) {
         Path dir = corpus.resolve(prefix + "-" + outcome.blobSha().substring(0, 8));
         if (Files.isDirectory(dir) || secretShaped(outcome.blobSha(), outcomes)) {

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.tools;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
@@ -85,5 +86,23 @@ class OkdSelectTest {
     void anImagesBasesAreTheFromCommentsInItsHistoryButAnOciArchive() {
         assertThat(OkdSelect.bases(Json.MAPPER.readTree(quay.config(RELEASE + "-tools"))))
                 .isEqualTo(List.of("quay.io/okd/base:9"));
+    }
+
+    @Test
+    void anEmptyConfigLeftByAnEarlierRunIsFetchedAgain() throws IOException {
+        Files.createDirectories(out.resolve("configs"));
+        Files.writeString(out.resolve("configs/" + RELEASE + "-tools.json"), "");
+
+        new OkdSelect(quay, RELEASE, out, discovery, 30).cachedConfig(RELEASE + "-tools");
+
+        assertThat(fetched).containsExactly(RELEASE + "-tools");
+    }
+
+    @Test
+    void aSelectionBeforeDiscoveryIsRefusedSayingSo() throws IOException {
+        Files.delete(discovery.resolve("repos.jsonl"));
+
+        assertThatIllegalArgumentException().isThrownBy(() -> new OkdSelect(quay, RELEASE, out, discovery, 30)
+                .requireDiscovery()).withMessageEndingWith("; run discovery on openshift first");
     }
 }

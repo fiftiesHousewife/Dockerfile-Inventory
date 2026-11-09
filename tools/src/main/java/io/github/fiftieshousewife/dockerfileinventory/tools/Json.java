@@ -12,7 +12,7 @@ import tools.jackson.core.util.Separators;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-// The fixture bank's JSON: read line by line, written as jq printed the bank's earlier cases.
+// jq printed the bank's earlier cases, so new ones are laid out as jq lays them out.
 final class Json {
 
     static final ObjectMapper MAPPER = new ObjectMapper();

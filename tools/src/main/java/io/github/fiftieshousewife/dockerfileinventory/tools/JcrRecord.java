@@ -1,19 +1,13 @@
 package io.github.fiftieshousewife.dockerfileinventory.tools;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
 
 /**
@@ -35,8 +29,6 @@ public final class JcrRecord {
     private final String password;
     private final Path out;
     private final HttpClient client;
-    private final List<String> index = new ArrayList<>();
-    private String token;
 
     JcrRecord(URI api, String password, Path out, HttpClient client) {
         this.api = api;
@@ -51,72 +43,66 @@ public final class JcrRecord {
      * @param args none
      */
     public static void main(String[] args) {
-        Map<String, String> env = System.getenv();
-        new JcrRecord(URI.create("http://localhost:" + env.getOrDefault("JCR_PORT", "8082") + "/artifactory/"),
+        of(System.getenv()).run();
+    }
+
+    static JcrRecord of(Map<String, String> env) {
+        return new JcrRecord(URI.create("http://localhost:" + env.getOrDefault("JCR_PORT", "8082") + "/artifactory/"),
                 env.getOrDefault("ADMIN_PASSWORD", "password"), Path.of(env.getOrDefault("OUT",
-                "lineage/src/test/resources/fixtures/artifactory-jcr")), HttpClient.newHttpClient()).run();
+                "lineage/src/test/resources/fixtures/artifactory-jcr")), HttpClient.newHttpClient());
     }
 
     void run() {
-        token = token();
-        clear();
-        get("api/repositories?type=local&packageType=docker", "repositories.json", "application/json")
-                .forEach(repository -> repository(repository.path("key").asString()));
-        write("index.tsv", String.join("", index).getBytes(StandardCharsets.UTF_8));
-        System.out.println("recorded " + index.size() + " replies into " + out);
+        ping();
+        RecordedReplies replies = new RecordedReplies(api, out, client, token());
+        replies.clear();
+        replies.get("api/repositories?type=local&packageType=docker", "repositories.json", "application/json")
+                .forEach(repository -> repository(replies, repository.path("key").asString()));
+        System.out.println("recorded " + replies.writeIndex() + " replies into " + out);
     }
 
-    private void repository(String repository) {
-        String docker = "api/docker/" + repository + "/v2/";
-        get(docker + "_catalog?n=" + PAGE, "catalog-" + repository + ".json", "application/json")
-                .path("repositories").forEach(image -> {
-                    String name = image.asString();
-                    get(docker + name + "/tags/list?n=" + PAGE, "tags-" + slug(name) + ".json", "application/json")
-                            .path("tags").forEach(tag -> tag(repository, name, tag.asString()));
-                });
+    private void repository(RecordedReplies replies, String repository) {
+        replies.get("api/docker/" + repository + "/v2/_catalog?n=" + PAGE, "catalog-" + repository + ".json",
+                "application/json").path("repositories").valueStream().map(JsonNode::asString)
+                .forEach(image -> image(replies, repository, image));
     }
 
-    private void tag(String repository, String image, String tag) {
+    private void image(RecordedReplies replies, String repository, String image) {
+        replies.get("api/docker/" + repository + "/v2/" + image + "/tags/list?n=" + PAGE, "tags-" + slug(image)
+                + ".json", "application/json").path("tags").valueStream().map(JsonNode::asString)
+                .forEach(tag -> tag(replies, repository, image, tag));
+    }
+
+    void tag(RecordedReplies replies, String repository, String image, String tag) {
         String docker = "api/docker/" + repository + "/v2/" + image;
         String name = slug(image + ":" + tag);
-        String config = get(docker + "/manifests/" + tag, "manifest-" + name + ".json", MANIFESTS)
+        String config = replies.get(docker + "/manifests/" + tag, "manifest-" + name + ".json", MANIFESTS)
                 .path("config").path("digest").asString("");
         if (!config.isEmpty()) {
-            get(docker + "/blobs/" + config, "config-" + name + ".json", "*/*");
+            replies.get(docker + "/blobs/" + config, "config-" + name + ".json", "*/*");
         }
-        get("api/storage/" + repository + "/" + image + "/" + tag, "storage-" + name + ".json", "application/json");
+        replies.get("api/storage/" + repository + "/" + image + "/" + tag, "storage-" + name + ".json",
+                "application/json");
     }
 
-    // One request as lineage makes it: the body kept byte for byte, the reply indexed.
-    private JsonNode get(String path, String file, String accept) {
-        HttpResponse<byte[]> response = send(HttpRequest.newBuilder(api.resolve(path))
-                .header("Authorization", "Bearer " + token).header("Accept", accept).GET().build());
-        write(file, response.body());
-        index.add("/artifactory/" + path + "\t" + file + "\t" + response.statusCode() + "\t"
-                + response.headers().firstValue("Content-Type").orElse("") + "\t"
-                + response.headers().firstValue("Docker-Content-Digest").orElse("") + "\n");
+    void ping() {
         try {
-            return Json.MAPPER.readTree(response.body());
-        } catch (RuntimeException notJson) {
-            return Json.MAPPER.createObjectNode();
-        }
-    }
-
-    private String token() {
-        try {
-            if (!"OK".equals(new String(send(HttpRequest.newBuilder(api.resolve("api/system/ping")).build()).body(),
-                    StandardCharsets.UTF_8))) {
+            String reply = new String(RecordedReplies.send(client, HttpRequest.newBuilder(api.resolve(
+                    "api/system/ping")).build()).body(), StandardCharsets.UTF_8);
+            if (!"OK".equals(reply)) {
                 throw new IllegalStateException("JCR is not answering at " + api);
             }
         } catch (UncheckedIOException e) {
             throw new IllegalStateException("JCR is not answering at " + api + ": " + e.getMessage(), e);
         }
-        String form = "username=admin&scope=member-of-groups:readers&expires_in=3600";
-        String basic = Base64.getEncoder().encodeToString(("admin:" + password)
-                .getBytes(StandardCharsets.UTF_8));
-        JsonNode reply = Json.MAPPER.readTree(send(HttpRequest.newBuilder(api.resolve("api/security/token"))
-                .header("Authorization", "Basic " + basic).header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(form)).build()).body());
+    }
+
+    String token() {
+        String basic = Base64.getEncoder().encodeToString(("admin:" + password).getBytes(StandardCharsets.UTF_8));
+        JsonNode reply = Json.MAPPER.readTree(RecordedReplies.send(client, HttpRequest.newBuilder(api.resolve(
+                "api/security/token")).header("Authorization", "Basic " + basic).header("Content-Type",
+                "application/x-www-form-urlencoded").POST(HttpRequest.BodyPublishers.ofString(
+                "username=admin&scope=member-of-groups:readers&expires_in=3600")).build()).body());
         String made = reply.path("access_token").asString("");
         if (made.isEmpty()) {
             throw new IllegalStateException("no token from JCR");
@@ -124,38 +110,7 @@ public final class JcrRecord {
         return made;
     }
 
-    // A rerun starts clean: the fixtures it wrote last time go, the README stays.
-    private void clear() {
-        try (Stream<Path> files = Files.isDirectory(out) ? Files.list(out) : Stream.empty()) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".json") || f.endsWith("index.tsv")).toList()) {
-                Files.delete(file);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     static String slug(String name) {
         return name.replace('/', '_').replace(':', '_');
-    }
-
-    private HttpResponse<byte[]> send(HttpRequest request) {
-        try {
-            return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private void write(String file, byte[] body) {
-        try {
-            Files.createDirectories(out);
-            Files.write(out.resolve(file), body);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

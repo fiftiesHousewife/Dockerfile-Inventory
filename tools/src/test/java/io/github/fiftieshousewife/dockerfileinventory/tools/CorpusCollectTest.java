@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,5 +112,39 @@ class CorpusCollectTest {
 
         assertThat(corpus.resolve("failed-ffffffff/expected.json")).content()
                 .startsWith("{\n  \"source\": {\n    \"repository\": \"team/z\",");
+    }
+
+    @Test
+    void everyParseFailureThatIsNotATemplateIsACase() {
+        assertThat(new CorpusCollect(run, corpus, 4, 5).failed(RunOutcomes.read(run))).isEqualTo(1);
+    }
+
+    @Test
+    void templatesAreCollectedOnlyUpToTheirLimit() {
+        assertThat(new CorpusCollect(run, corpus, 4, 0).templates(RunOutcomes.read(run))).isZero();
+    }
+
+    @Test
+    void aFileWithAnUnreadableRunIsACaseUnlessItHoldsASecret() {
+        assertThat(new CorpusCollect(run, corpus, 4, 5).unreadableRuns(RunOutcomes.read(run))).isEqualTo(1);
+    }
+
+    @Test
+    void aFileThatFailsTheRoundTripIsACase() {
+        assertThat(new CorpusCollect(run, corpus, 4, 5).roundTrips(RunOutcomes.read(run))).isEqualTo(1);
+    }
+
+    @Test
+    void retriedFilesAreCollectedOnlyUpToTheLimitPerKindOfWorkaround() {
+        assertAll(
+                () -> assertThat(new CorpusCollect(run, corpus, 0, 5).retried(RunOutcomes.read(run))).isZero(),
+                () -> assertThat(new CorpusCollect(run, corpus, 4, 5).retried(RunOutcomes.read(run))).isEqualTo(1));
+    }
+
+    @Test
+    void theSettingsNameTheCorpusAndTheLimits() {
+        CorpusCollect.of(run, Map.of("CORPUS", corpus.toString(), "TEMPLATES", "0")).collect();
+
+        assertThat(corpus.resolve("template-eeeeeeee")).doesNotExist();
     }
 }

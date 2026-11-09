@@ -98,6 +98,29 @@ class JcrRecordTest {
         server.stop(0);
 
         assertThatIllegalStateException().isThrownBy(() -> new JcrRecord(api, "password", out,
-                HttpClient.newHttpClient()).run()).withMessageStartingWith("JCR is not answering at " + api);
+                HttpClient.newHttpClient()).ping()).withMessageStartingWith("JCR is not answering at " + api);
+    }
+
+    @Test
+    void aJcrThatGivesNoTokenIsRefused() {
+        server.removeContext("/artifactory/api/security/token");
+        server.createContext("/artifactory/api/security/token", exchange -> reply(exchange, 200,
+                "{}".getBytes(StandardCharsets.UTF_8), "application/json", ""));
+
+        assertThatIllegalStateException().isThrownBy(() -> new JcrRecord(api, "password", out,
+                HttpClient.newHttpClient()).token()).withMessage("no token from JCR");
+    }
+
+    @Test
+    void aTagWhoseManifestNamesNoConfigHasNoConfigRecorded() {
+        new JcrRecord(api, "password", out, HttpClient.newHttpClient()).tag(new RecordedReplies(api, out,
+                HttpClient.newHttpClient(), "t1"), "docker-local", "missing", "1");
+
+        assertThat(out.resolve("config-missing_1.json")).doesNotExist();
+    }
+
+    @Test
+    void theEnvironmentsSettingsMakeARecorder() {
+        assertThat(JcrRecord.of(Map.of("JCR_PORT", "18082"))).isNotNull();
     }
 }

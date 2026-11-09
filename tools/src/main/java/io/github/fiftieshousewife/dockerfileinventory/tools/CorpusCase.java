@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.tools;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// A case's expected.json: where the file came from, why it is in the bank, and what the pipeline made of it.
 final class CorpusCase {
 
     private CorpusCase() {

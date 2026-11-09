@@ -86,4 +86,33 @@ class JcrContainersTest {
 
         assertThat(containers.memoryGb()).isEqualTo(8);
     }
+
+    @Test
+    void jcrPublishedOnAnotherPortIsRemoved() {
+        docker.answers.put("docker ps -q -f name=^inventory-jcr$", new Commands.Result(0, "abc\n"));
+        docker.answers.put("docker port inventory-jcr", new Commands.Result(0, "0.0.0.0:9999\n"));
+
+        containers.removeIfOnAnotherPort();
+
+        assertThat(docker.asked).contains("docker rm -f inventory-jcr");
+    }
+
+    @Test
+    void jcrRunningOnThePortAskedIsLeftAlone() {
+        docker.answers.put("docker ps -q -f name=^inventory-jcr$", new Commands.Result(0, "abc\n"));
+        docker.answers.put("docker port inventory-jcr", new Commands.Result(0, "0.0.0.0:8082\n"));
+
+        containers.jcr();
+
+        assertThat(docker.asked).noneMatch(line -> line.startsWith("docker rm") || line.startsWith("docker run"));
+    }
+
+    @Test
+    void aPortAlreadyTakenIsRefusedNamingAnother() throws IOException {
+        try (ServerSocket taken = new ServerSocket(0)) {
+            JcrContainers onTaken = new JcrContainers(docker, "jcr:7.77.17", "postgres:16.4", taken.getLocalPort());
+
+            assertThatIllegalStateException().isThrownBy(onTaken::startJcr).withMessageEndingWith("JCR_PORT=18082");
+        }
+    }
 }

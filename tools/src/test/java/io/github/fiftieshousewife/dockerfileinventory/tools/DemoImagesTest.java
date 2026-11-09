@@ -62,6 +62,55 @@ class DemoImagesTest {
     }
 
     @Test
+    void anImageThatCannotBeCopiedIsLoggedAsFailed() throws IOException {
+        docker.answers.put("docker run", new Commands.Result(1, "manifest unknown"));
+
+        images.copy("quay.io/bad", "bad:1", out.resolve("build.log"));
+
+        assertThat(Files.readAllLines(out.resolve("build.log"))).containsExactly("FAILED quay.io/bad");
+    }
+
+    @Test
+    void aCloneAlreadyMadeIsOnlyBroughtUpToItsSubmodules() throws IOException {
+        Files.createDirectories(out.resolve("src/sclorg/nginx-container/c1/.git"));
+
+        images.checkout("sclorg/nginx-container", "c1", out.resolve("src"));
+
+        assertThat(docker.asked).singleElement().asString().endsWith("submodule update -q --init --recursive");
+    }
+
+    @Test
+    void aRootThatCannotBeMirroredIsLoggedAndNotTaggedOrPushed() throws IOException {
+        docker.answers.put("docker run", new Commands.Result(1, "pull failed"));
+
+        images.mirrorRoot("quay.io/centos/centos:stream9", out, out.resolve("build.log"));
+
+        assertAll(
+                () -> assertThat(docker.asked).hasSize(1),
+                () -> assertThat(Files.readAllLines(out.resolve("build.log")))
+                        .containsExactly("FAILED mirror quay.io/centos/centos:stream9"));
+    }
+
+    @Test
+    void aDockerfileThatDoesNotBuildIsLoggedAndNotPushed() throws IOException {
+        docker.answers.put("docker run", new Commands.Result(1, "build failed"));
+
+        images.buildAndPush(new BuildPlan.Build("sclorg/s2i-core-c9s:c9s", "sclorg/s2i-base-container", "c1",
+                "core/Dockerfile.c9s", "quay.io/centos/centos:stream9"), out, out.resolve("build.log"));
+
+        assertAll(
+                () -> assertThat(docker.asked).hasSize(1),
+                () -> assertThat(Files.readAllLines(out.resolve("build.log")))
+                        .containsExactly("FAILED sclorg/s2i-core-c9s:c9s"));
+    }
+
+    @Test
+    void theArgumentListsAreJoinedInOrder() {
+        assertThat(DemoImages.concat(List.of(List.of("a"), List.of(), List.of("b", "c"))))
+                .containsExactly("a", "b", "c");
+    }
+
+    @Test
     void aBaseResolvesInsideJcrWithoutQuayAndWithSclorgsTagWhenItHasNone() {
         assertAll(
                 () -> assertThat(images.local("quay.io/sclorg/s2i-core-c9s"))
