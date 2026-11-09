@@ -65,3 +65,18 @@ Found on the way: the ranking's `parse-failures` and `templates` groups are not 
 alike), but the fixes grouped them as if they were, folding 90 unparseable files into 2 fixes; `Catalogue` now leaves
 them out.
 
+## S5: world-writable paths (9 Nov)
+
+`WorldWritable` (rules, medium; drift in both shipped profiles): a `chmod` in the final image (the last stage and
+the stages it is built on) whose mode gives others write: the octal mode's last digit has the write bit, or a clause
+for `o` or `a` adds `w`. The permission changes are facts' reading of each `RUN` (`StagePermissions.ofRun`, public
+for this).
+
+Measured on the combined estate: 468 changes in 381 Dockerfiles (`1777` 243, `a+rwx` 67, `777` 62, `og+rwx` 32,
+`a+rwX` 23, the rest under 15 each). The 50-finding sample (`samples/S5.csv`, seed as every rule's) read by hand: all
+50 make what they name writable by everyone, so no false positives. Half of all findings are the sticky `1777` that
+docker-library uses on purpose so an arbitrary UID can write (php's `/var/www/html`, ruby's `GEM_HOME`, tomcat's
+`logs temp work`); world-writable all the same, where `chgrp 0` and `chmod g=u` is the OpenShift way, so they stay.
+The worst read: `chmod 777` on `/etc/pki/tls/certs/ca-bundle.crt`, `chmod -R 666` on a configuration directory.
+In the validator: 381 actions, 155 fixes.
+

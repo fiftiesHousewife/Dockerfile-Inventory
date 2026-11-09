@@ -13,7 +13,7 @@ class RuleSetTest {
     void withoutListsOrLineageOnlyTheSelfContainedPerFileRulesRun() {
         assertThat(RuleSet.of(null, null, false)).satisfies(rules -> {
             assertThat(rules.perFile()).extracting(Rule::id)
-                    .containsExactly("R1", "H1", "H2", "I1", "I2", "S2", "S3", "H3", "R3");
+                    .containsExactly("R1", "H1", "H2", "I1", "I2", "S2", "S3", "H3", "R3", "S5");
             assertThat(rules.effective()).isEmpty();
             assertThat(rules.skipped()).containsExactly("S1", "R2", "S4");
         });

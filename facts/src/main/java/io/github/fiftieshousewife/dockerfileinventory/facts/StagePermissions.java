@@ -1,14 +1,26 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
+import io.github.fiftieshousewife.dockerfile.reader.internal.Continuations;
 import io.github.fiftieshousewife.dockerfile.reader.internal.ShellTokeniser;
 import java.util.List;
 import java.util.Set;
 
-final class StagePermissions {
+/** The {@code chmod}, {@code chown} and {@code chgrp} commands a {@code RUN} makes, as the shell reader reads them. */
+public final class StagePermissions {
 
     private static final Set<String> COMMANDS = Set.of("chmod", "chown", "chgrp");
 
     private StagePermissions() {
+    }
+
+    /**
+     * The changes in one {@code RUN} instruction's text, keyword, flags and line continuations included.
+     *
+     * @param run the instruction as written
+     * @return its changes, in order; none when the shell reader cannot read it
+     */
+    public static List<PermissionChange> ofRun(String run) {
+        return of(StageGraph.Scan.script(Continuations.oneLine(run)));
     }
 
     static List<PermissionChange> of(String script) {

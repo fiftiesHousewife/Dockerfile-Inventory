@@ -32,6 +32,8 @@ final class Actions {
             Map.entry(Check.S3, "download, verify a checksum or signature, then run: never pipe a download to a "
                     + "shell"),
             Map.entry(Check.S4, "run as a numeric, non-root user"),
+            Map.entry(Check.S5, "give group 0 the write it needs (chmod g=u) instead of making paths writable by "
+                    + "everyone"),
             Map.entry(Check.R1, "pin the base by digest"),
             Map.entry(Check.R2, "move to a base still supported"),
             Map.entry(Check.R3, "label the image with its source and revision (org.opencontainers.image.source, "

@@ -32,4 +32,11 @@ class StagePermissionsTest {
                         .isTrue(),
                 () -> assertThat(StagePermissions.change(List.of("chmod", "-v", "644", "/a")).recursive()).isFalse());
     }
+
+    @Test
+    void aRunInstructionsChangesAreReadAfterItsKeywordFlagsAndContinuations() {
+        assertThat(StagePermissions.ofRun("RUN --mount=type=cache,target=/c chmod 777 /data \\\n    && chown 1:0 /x"))
+                .containsExactly(new PermissionChange("chmod", "777", List.of("/data"), false),
+                        new PermissionChange("chown", "1:0", List.of("/x"), false));
+    }
 }
