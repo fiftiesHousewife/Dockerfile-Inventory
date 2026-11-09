@@ -57,9 +57,11 @@ class ArchetypesTest {
     void eachArchetypeNamesItsBlobsSignatureRepresentativeAndRepositories() {
         Group sig1 = Passes.signatureGroups(PassesTest.ESTATE).getFirst();
 
-        Archetype archetype = Archetypes.rank(List.of(sig1), PassesTest.ESTATE).archetypes().getFirst();
+        List<Archetype> archetypes = Archetypes.rank(List.of(sig1), PassesTest.ESTATE).archetypes();
+        Archetype archetype = archetypes.getFirst();
 
         assertAll(
+                () -> assertThat(archetypes).hasSize(1),
                 () -> assertThat(archetype.blobShas()).containsExactly("a", "a-cosmetic", "b-same-function"),
                 () -> assertThat(archetype.signature()).isEqualTo("ubi-minimal:9|microdnf|git|ROOT||NONE|stages=1"),
                 () -> assertThat(archetype.representative()).isEqualTo("a"),
