@@ -45,6 +45,7 @@ final class Actions {
             Map.entry(Check.H3, "join adjacent RUNs into one"),
             Map.entry(Check.H4, "build on a newer base instead of upgrading every package in the build, so builds "
                     + "repeat"),
+            Map.entry(Check.H5, "use COPY: ADD only earns its place for a tar archive it should unpack"),
             Map.entry(Check.I1, "pin the packages' versions, or record why not"),
             Map.entry(Check.I2, "fix the Dockerfile so it parses"));
 

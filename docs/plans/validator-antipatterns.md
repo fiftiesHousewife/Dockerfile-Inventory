@@ -100,3 +100,14 @@ holds the reported upgrade with no package named, so no false positives.
 Measured on the combined estate: 25 in 18 Dockerfiles, mostly GitHub releases (13); fewer than 50, so every location
 was read: all right. One adds a corporate root CA over HTTPS unverified and trusts it (`update-ca-trust`).
 
+## H5: an ADD that COPY would do (9 Nov)
+
+`PlainAdd` (rules, low; information in both shipped profiles): an `ADD` in any stage whose sources are all local,
+none written with a variable or as a heredoc, and none a tar archive by its name (`.tar`, compressed with gzip,
+bzip2, xz or zstd, `.tgz` and the like). `AddSources` reads an `ADD`'s flags and sources for this rule and S6.
+Measured on the combined estate: 1,015 in 603 Dockerfiles, most with no extension (699: binaries, directories,
+`ADD . /src`) or scripts (140). The 50-finding sample read by hand: all copy files or directories `ADD` would not
+unpack (it unpacks a tar named as a source, never one inside a directory), so no false positives by the names. `ADD`
+recognises an archive by its content, so a tar named without its extension would be a false positive; none in the
+sample.
+

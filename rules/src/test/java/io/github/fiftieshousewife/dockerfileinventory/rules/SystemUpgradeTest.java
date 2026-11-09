@@ -31,7 +31,8 @@ class SystemUpgradeTest {
     @ParameterizedTest
     @CsvSource(delimiterString = " => ", value = {
         "apt-get -y upgrade => apt-get upgrade", "sudo dnf -y update => dnf update",
-        "microdnf upgrade => microdnf upgrade", "apk upgrade --no-cache => apk upgrade", "apt-get update => ", "yum update -y openssl => ",
+        "microdnf upgrade => microdnf upgrade", "apk upgrade --no-cache => apk upgrade", "apt-get update => ",
+        "yum update -y openssl => ",
         "dnf install -y make => ", "pip install -U pip => "})
     void anUpgradeIsTheManagersUpgradeSubcommandWithNoPackageNamed(String command, String upgrade) {
         assertThat(SystemUpgrade.upgrade(List.of(command.split(" "))).orElse(null)).isEqualTo(upgrade);

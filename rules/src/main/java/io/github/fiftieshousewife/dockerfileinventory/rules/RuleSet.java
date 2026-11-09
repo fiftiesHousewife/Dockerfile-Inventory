@@ -15,7 +15,7 @@ record RuleSet(List<Rule> perFile, List<EffectiveRule> effective, List<String> s
         List<Rule> perFile = new ArrayList<>(List.of(new UnpinnedBase(), new UncleanedInstall(),
                 new ShellEntrypoint(), new UnversionedPackages(), new Unparseable(), new SecretValue(),
                 new PipeToShell(), new AdjacentRuns(), new MissingOciLabels(), new WorldWritable(),
-                new SystemUpgrade(), new UnverifiedDownload()));
+                new SystemUpgrade(), new UnverifiedDownload(), new PlainAdd()));
         List<EffectiveRule> effective = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
         if (allowed != null) {

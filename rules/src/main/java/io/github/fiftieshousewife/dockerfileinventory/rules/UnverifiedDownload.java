@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import io.github.fiftieshousewife.dockerfile.reader.internal.Continuations;
-import io.github.fiftieshousewife.dockerfile.reader.internal.KeyValuePairs;
 import java.util.List;
 import org.openrewrite.Cursor;
 
@@ -34,16 +33,8 @@ final class UnverifiedDownload implements Rule {
 
     // The remote sources of an ADD written without --checksum.
     static List<String> unverified(String add) {
-        List<String> words = KeyValuePairs.words(add);
-        List<String> flags = words.subList(1, words.size()).stream().takeWhile(w -> w.startsWith("--")).toList();
-        if (flags.stream().anyMatch(flag -> flag.startsWith("--checksum="))) {
-            return List.of();
-        }
-        List<String> written = words.subList(1 + flags.size(), words.size()).stream()
-                .map(word -> KeyValuePairs.unquoted(word.replaceAll("^\\[|[],]$", ""))).toList();
-        return written.isEmpty() ? List.of() : written.subList(0, written.size() - 1).stream()
-                .filter(source -> source.startsWith("http://") || source.startsWith("https://")
-                        || source.startsWith("git@"))
-                .toList();
+        AddSources read = AddSources.of(add);
+        return read.flags().stream().anyMatch(flag -> flag.startsWith("--checksum=")) ? List.of()
+                : read.sources().stream().filter(AddSources::remote).toList();
     }
 }
