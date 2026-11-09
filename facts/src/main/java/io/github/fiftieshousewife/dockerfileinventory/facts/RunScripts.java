@@ -11,7 +11,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
-final class RunScripts {
+/** A {@code RUN}'s script and the commands the shell reader reads in it. */
+public final class RunScripts {
 
     private static final Set<String> OTHER_SHELLS = Set.of("powershell", "pwsh", "cmd");
 
@@ -28,7 +29,13 @@ final class RunScripts {
         };
     }
 
-    static Optional<List<List<String>>> commands(Docker.Run run) {
+    /**
+     * The commands one {@code RUN} runs, each as its words.
+     *
+     * @param run the instruction
+     * @return its commands; empty when the shell reader cannot read its script
+     */
+    public static Optional<List<List<String>>> commands(Docker.Run run) {
         return run.getCommand() instanceof Docker.ExecForm exec
                 ? Optional.of(List.of(exec.getArguments().stream().map(Docker.Literal::getText).toList()))
                 : script(run).flatMap(ShellTokeniser::parse);

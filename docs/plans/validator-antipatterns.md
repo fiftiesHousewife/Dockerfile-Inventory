@@ -80,3 +80,16 @@ docker-library uses on purpose so an arbitrary UID can write (php's `/var/www/ht
 The worst read: `chmod 777` on `/etc/pki/tls/certs/ca-bundle.crt`, `chmod -R 666` on a configuration directory.
 In the validator: 381 actions, 155 fixes.
 
+## H4: every package upgraded in the build (9 Nov)
+
+`SystemUpgrade` (rules, low; information in both shipped profiles): a `RUN` in any stage running a package
+manager's upgrade (`apt-get` and `apt` `upgrade`, `dist-upgrade`, `full-upgrade`; `apk upgrade`; `dnf`, `yum` and
+`microdnf` `update`, `upgrade`, `distro-sync`; `zypper` `update`, `dup`, `patch`) with no package named. apt's and
+apk's `update` only refresh the index and are left alone. The rule reads each `RUN`'s commands through facts'
+`RunScripts.commands` (public for it), since facts keeps package names only for installs: in the raw files about 65
+of some 490 upgrades name their packages (`yum update -y tzdata`), which are left alone.
+
+Measured on the combined estate: 414 in 407 Dockerfiles (`apt-get upgrade` 224, `microdnf update` 63, `yum update`
+59, `dnf update` 34, `dnf upgrade` 17, the rest under 11). The 50-finding sample checked line by line: each `RUN`
+holds the reported upgrade with no package named, so no false positives.
+

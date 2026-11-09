@@ -48,8 +48,8 @@ and one line when its gate is met.
   combined estate). Now: the antipatterns (`docs/plans/validator-antipatterns.md`, asked 9 Nov: new rules in
   `rules`, severities per rule ID in the profile). Slice 1 done 9 Nov: the rules' findings as actions and fixes
   (`RULES_DIR`; combined estate 18,544 actions, 9,091 fixes, verdicts unchanged). S5 (world-writable `chmod`)
-  done 9 Nov: 468 on the combined estate, no false positives in 50. Next: the other new rules, one at a time, each
-  measured on 50 sampled findings.
+  done 9 Nov: 468 on the combined estate, no false positives in 50. H4 (every package upgraded in the build) done 9 Nov: 414,
+  none false in 50. Next: the other new rules, one at a time, each measured on 50 sampled findings.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

@@ -14,7 +14,8 @@ record RuleSet(List<Rule> perFile, List<EffectiveRule> effective, List<String> s
     static RuleSet of(BaseList allowed, BaseList endOfLife, boolean lineage) {
         List<Rule> perFile = new ArrayList<>(List.of(new UnpinnedBase(), new UncleanedInstall(),
                 new ShellEntrypoint(), new UnversionedPackages(), new Unparseable(), new SecretValue(),
-                new PipeToShell(), new AdjacentRuns(), new MissingOciLabels(), new WorldWritable()));
+                new PipeToShell(), new AdjacentRuns(), new MissingOciLabels(), new WorldWritable(),
+                new SystemUpgrade()));
         List<EffectiveRule> effective = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
         if (allowed != null) {
