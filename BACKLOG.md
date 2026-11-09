@@ -34,8 +34,8 @@ and one line when its gate is met.
   organisations, hierarchy, blocked images, a page per Dockerfile, one archetype ranking; the CSV tables, DDL, bases
   and lineage pages and `EOL_LIST` gone.
 - Done 9 Nov (`docs/plans/survey-command.md`, asked 9 Nov): `survey [--try] <organisation URL>`, every stage in
-  order in one command; a try stops after ten repositories with a Dockerfile. Waiting: a try on a real
-  organisation with the owner's token.
+  order in one command; a try stops after ten repositories with a Dockerfile. Tried on `github.com/openshift`
+  9 Nov: 10 repositories, 38 Dockerfiles, every stage, the report whole.
 - Done 9 Nov, the validator (`docs/plans/openshift-validator.md`, asked 8 Nov): each image judged through a platform
   profile (OpenShift 4 `restricted-v2` by default, `restricted` v1 to choose), checks P1 to P10, verdicts, actions
   by urgency and by repository, the report's page and the tagged ratchet (`./gradlew validate`). Then, each with its

@@ -1,6 +1,6 @@
 # One command for a survey: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; built 9 Nov, the end-to-end try waiting for the owner.
+Status: planned 9 Nov; the questions answered 9 Nov; built and tried end to end 9 Nov.
 
 ## Why
 
@@ -49,4 +49,13 @@ Tests 1 to 4 as listed, each seen to fail first. `scripts/inventory` tried on a 
 survey --try <URL>` reaches the survey's start script; no arguments print the usage). `./gradlew :survey:run` runs
 from the repository root, so `out/` is the repository's. Not yet tried: a survey against a real organisation, which
 needs the owner's GitHub token (test 5).
+
+## Tried (9 Nov)
+
+The owner's first try failed at discovery with GitHub's 401: a `GITHUB_TOKEN` set elsewhere had been taken by
+`gh auth token` instead of the login. The survey now stops a failing stage with one line saying which and why, and
+explains a 401; the README gives `env -u GITHUB_TOKEN gh auth token`. The second try, on `https://github.com/openshift`:
+862 repositories listed, 32 scanned until 10 held a Dockerfile (38 Dockerfiles, all parsed), every stage in order,
+the report 44 pages and 398 links, none broken; under `restricted-v2` 30 of 38 images break, 5 drift, 3 run; 157
+actions in 122 fixes.
 
