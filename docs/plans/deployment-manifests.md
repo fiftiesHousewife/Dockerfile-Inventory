@@ -1,6 +1,6 @@
 # Deployment manifests in the validator: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov.
+Status: planned 9 Nov; the questions answered 9 Nov; slices 1 and 2 built 9 Nov.
 
 ## Why
 
@@ -25,8 +25,9 @@ or adds capabilities, the host paths, ports and volumes it mounts, its probes. T
   `ReplicaSet`, `Job`, `CronJob`, `Pod`, OpenShift's `DeploymentConfig`; several documents a file). Helm templates
   and Kustomize overlays wait for later slices; a file holding `{{` or `{%` is a template, counted as unread.
 - **Discovery** fetches YAML beside Dockerfiles: every `.yaml` and `.yml` outside what is never deployed (the
-  directories `DockerfilePaths` leaves out, a chart's `templates/`, CI configuration: `.github/`, `.tekton/`,
-  `.gitlab-ci`, `.ci-operator.yaml`), stored once by blob SHA; their locations in a manifest file of their own
+  directories `DockerfilePaths` leaves out; tests, documentation, examples and samples, asked 9 Nov after measuring;
+  a chart's `templates/`, `Chart.yaml` and values; CI configuration: `.github/`, `.tekton/`, `.circleci/`,
+  `.gitlab-ci`, `.ci-operator.yaml`), stored once by blob SHA in `yaml/`, apart from the Dockerfiles' `blobs/`; their locations in a manifest file of their own
   (`yaml.jsonl`), so the Dockerfile stages read what they read today. Which files hold workloads is only known once
   read, so the facts stage keeps those that do.
 - **Reading**: `Workloads` (in facts, with Jackson's YAML reader) turns each document into a workload: its kind,
@@ -71,4 +72,22 @@ cloned repositories holds a plain workload that asks for privileges, so the secu
 slice 2's estate will give real ones for the checks.
 
 Process: the Liquid check went in with its test rather than after seeing the test fail.
+
+## Built, slice 2 (9 Nov)
+
+Discovery: `ManifestPaths` picks the candidates; `RepoScan` lists them beside the Dockerfiles; `DiscoveryOutput`
+writes `yaml.jsonl` and stores each file once in `yaml/` (the stages after discovery read every file in `blobs/` as
+a Dockerfile, so YAML stays out of it); `BlobFetch` takes where to store, so YAML is fetched in the same batches of 50
+and its problems recorded as the Dockerfiles' are; the summary counts YAML locations and files fetched; `Combine`
+merges `yaml.jsonl` and `yaml/` too. Facts: `ManifestRun`, after the Dockerfiles, writes `workloads.jsonl` (each
+workload once with its file's locations) and `yaml-rates.json` (files read, with workloads, workloads, templates,
+not YAML).
+
+Measured on the ten repositories cloned for the image comparisons, walked as discovery would: with the first filter,
+1,647 candidates of 2,506 YAML files, 16 holding a workload, most of them test inputs (ci-tools' integration
+expectations), documentation snippets or examples; asked 9 Nov, tests, docs, examples and samples are left out too:
+596 candidates, 6 holding a workload. Of those 6, four are pieces of one Kustomize base (ptp-operator's
+`config/default/*_patch.yaml`, `config/manager/env.yaml`): a patch names no image, which slice 3 has to treat as part
+of a deployment, not one of its own. Still about one candidate in a hundred holds a workload; a survey on a real
+organisation, run by the owner, gives the numbers that count.
 

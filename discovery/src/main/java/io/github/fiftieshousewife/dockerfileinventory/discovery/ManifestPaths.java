@@ -1,0 +1,27 @@
+package io.github.fiftieshousewife.dockerfileinventory.discovery;
+
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+// What could be a deployment manifest: YAML outside what is never deployed (vendored code, tests and their inputs,
+// documentation, examples and samples), CI configuration and Helm's files (a chart's templates are rendered, not read;
+// Chart.yaml and values hold no workload). Which files hold workloads is known only once read: measured on ten cloned
+// repositories, about one candidate in a hundred did before tests, docs and examples were left out.
+final class ManifestPaths {
+
+    private static final Pattern YAML = Pattern.compile(".*\\.ya?ml$");
+    private static final Pattern NOT_DEPLOYED = Pattern.compile("(^|/)(vendor|node_modules|third_party|testdata"
+            + "|testfiles|testfiles-negative|\\.github|\\.tekton|\\.circleci|templates|tests?|e2e|docs?"
+            + "|[^/]*examples?|samples?)/");
+    private static final Pattern NOT_MANIFESTS = Pattern.compile("(^|/)(\\.gitlab-ci\\.ya?ml|\\.ci-operator\\.yaml"
+            + "|\\.travis\\.yml|chart\\.ya?ml|values[^/]*\\.ya?ml)$");
+
+    private ManifestPaths() {
+    }
+
+    static boolean isCandidate(String path) {
+        String lower = path.toLowerCase(Locale.ROOT);
+        return YAML.matcher(lower).matches() && !NOT_DEPLOYED.matcher(lower).find()
+                && !NOT_MANIFESTS.matcher(lower).find();
+    }
+}

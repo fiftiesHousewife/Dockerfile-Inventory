@@ -13,12 +13,14 @@ import java.util.stream.Collectors;
 final class Discovery {
 
     record Summary(int repositories, int skipped, int scanned, int failed, int dockerfiles,
-                   int uniqueBlobs, int fetched, int blobProblems, int lastChanges, int lastChangeProblems) {
+                   int uniqueBlobs, int fetched, int blobProblems, int lastChanges, int lastChangeProblems,
+                   int yamlLocations, int yamlFetched) {
     }
 
     private final GitHub gitHub;
     private final Scans scans;
     private final BlobFetch blobFetch;
+    private final BlobFetch yamlFetch;
     private final ChangeFetch changeFetch;
     private final DiscoveryOutput output;
     private final List<String> organizations;
@@ -42,6 +44,7 @@ final class Discovery {
         this.tryRepositories = tryRepositories;
         this.scans = new Scans(new RepoScan(gitHub, releases), output, concurrency);
         this.blobFetch = new BlobFetch(gitHub, output);
+        this.yamlFetch = new BlobFetch(gitHub, output, output::storeYaml);
         this.changeFetch = new ChangeFetch(gitHub, output);
         this.output = output;
         this.organizations = List.copyOf(organizations);
@@ -58,12 +61,15 @@ final class Discovery {
         Set<String> reported = output.reportedBlobs();
         BlobFetch.Fetched fetched = blobFetch.fetch(
                 missing(byBlob.values(), sha -> output.hasBlob(sha) || reported.contains(sha)));
+        List<Located> yaml = output.yaml();
+        BlobFetch.Fetched fetchedYaml = yamlFetch.fetch(missing(firstByBlob(yaml).values(),
+                sha -> output.hasYaml(sha) || reported.contains(sha)));
         ChangeFetch.Fetched lastChanges = changeFetch.fetch(unchanged(manifest, output.changes().stream()
                 .map(c -> new ChangeRequest(c.repository(), c.commitSha(), c.path())).collect(Collectors.toSet())));
 
         return new Summary(repositories.size(), repositories.size() - todo.size(), results.size() - failed, failed,
                 manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges.recorded(),
-                lastChanges.problems());
+                lastChanges.problems(), yaml.size(), fetchedYaml.stored());
     }
 
     List<RepoScan.Result> scanUntilEnough(List<Repository> todo) {

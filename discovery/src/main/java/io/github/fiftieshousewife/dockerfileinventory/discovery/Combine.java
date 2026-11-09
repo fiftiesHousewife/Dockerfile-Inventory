@@ -21,7 +21,8 @@ import tools.jackson.databind.ObjectMapper;
  */
 public final class Combine {
 
-    static final List<String> FILES = List.of("manifest.jsonl", "repos.jsonl", "changes.jsonl", "blob-findings.jsonl");
+    static final List<String> FILES = List.of("manifest.jsonl", "repos.jsonl", "changes.jsonl", "blob-findings.jsonl",
+            "yaml.jsonl");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /**
@@ -62,7 +63,9 @@ public final class Combine {
             for (Map.Entry<String, List<String>> file : merged.entrySet()) {
                 Files.write(out.resolve(file.getKey()), file.getValue(), StandardCharsets.UTF_8);
             }
-            int blobs = copyBlobs(sources, out.resolve("blobs"));
+            int blobs = copyBlobs(sources, "blobs", out.resolve("blobs"));
+            Files.createDirectories(out.resolve("yaml"));
+            copyBlobs(sources, "yaml", out.resolve("yaml"));
             return new Summary(merged.get("manifest.jsonl").size(), merged.get("repos.jsonl").size(), blobs,
                     repeated(sources));
         } catch (IOException e) {
@@ -76,9 +79,9 @@ public final class Combine {
     }
 
     // Each blob once, by its SHA; a .part is a download a killed run left unfinished.
-    static int copyBlobs(List<Path> sources, Path target) throws IOException {
-        for (Path source : sources) {
-            try (Stream<Path> blobs = Files.list(source.resolve("blobs"))) {
+    static int copyBlobs(List<Path> sources, String folder, Path target) throws IOException {
+        for (Path source : sources.stream().filter(s -> Files.isDirectory(s.resolve(folder))).toList()) {
+            try (Stream<Path> blobs = Files.list(source.resolve(folder))) {
                 List<Path> stored = blobs.filter(b -> Files.isRegularFile(b) && !b.toString().endsWith(".part"))
                         .toList();
                 for (Path blob : stored) {

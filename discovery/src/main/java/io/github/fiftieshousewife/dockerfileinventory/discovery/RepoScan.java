@@ -5,10 +5,16 @@ import java.util.Optional;
 
 final class RepoScan {
 
-    record Result(RepoOutcome outcome, List<Located> found) {
+    // found: the Dockerfiles; yaml: the files that could be deployment manifests.
+    record Result(RepoOutcome outcome, List<Located> found, List<Located> yaml) {
 
         Result {
             found = List.copyOf(found);
+            yaml = List.copyOf(yaml);
+        }
+
+        Result(RepoOutcome outcome, List<Located> found) {
+            this(outcome, found, List.of());
         }
     }
 
@@ -41,8 +47,13 @@ final class RepoScan {
                 .filter(RepoScan::isDockerfile)
                 .map(e -> new Located(repository.nameWithOwner(), commit, scope, e.path(), e.sha()))
                 .toList();
+        List<Located> yaml = tree.entries().stream()
+                .filter(e -> e.isBlob() && !e.isSymlink() && ManifestPaths.isCandidate(e.path()))
+                .map(e -> new Located(repository.nameWithOwner(), commit, scope, e.path(), e.sha()))
+                .toList();
         RepoOutcome.Status status = tree.truncated() ? RepoOutcome.Status.TRUNCATED : RepoOutcome.Status.SCANNED;
-        return result(repository, status, scope, commit, found, null);
+        Result result = result(repository, status, scope, commit, found, null);
+        return new Result(result.outcome(), found, yaml);
     }
 
     static Result noTree(Repository repository, Scope scope, String commit) {

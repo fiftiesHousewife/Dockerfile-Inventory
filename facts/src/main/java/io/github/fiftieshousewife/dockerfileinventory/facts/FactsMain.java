@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
-/** Runs Phase 1 from the environment: {@code DISCOVERY_DIR} (discovery's output directory) and {@code OUT_DIR}. */
+/**
+ * Runs Phase 1 from the environment: {@code DISCOVERY_DIR} (discovery's output directory) and {@code OUT_DIR}; the
+ * Dockerfiles' facts, then the workloads in the YAML discovery fetched.
+ */
 public final class FactsMain {
 
     private FactsMain() {
@@ -22,7 +25,9 @@ public final class FactsMain {
      */
     public static void run(Map<String, String> env) throws IOException {
         Path discovery = Path.of(required(env, "DISCOVERY_DIR"));
-        System.out.println(new FactsRun(discovery, Path.of(required(env, "OUT_DIR"))).run());
+        Path out = Path.of(required(env, "OUT_DIR"));
+        System.out.println(new FactsRun(discovery, out).run());
+        System.out.println(new ManifestRun(discovery, out).run());
     }
 
     static String required(Map<String, String> env, String name) {

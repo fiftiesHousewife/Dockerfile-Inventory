@@ -81,4 +81,19 @@ class DiscoveryOutputTest {
     private static RepoOutcome outcome(String repository, RepoOutcome.Status status) {
         return new RepoOutcome(repository, status, Scope.DEFAULT_BRANCH, "c1", false, false, null, 0, null);
     }
+
+    @Test
+    void aScansYamlIsListedAndStoredApartFromItsDockerfiles(@TempDir Path out) throws IOException {
+        DiscoveryOutput output = new DiscoveryOutput(out);
+        Located yaml = new Located("pay/api", "c1", Scope.RELEASED, "deploy/api.yaml", "y1");
+        output.record(new RepoScan.Result(new RepoOutcome("pay/api", RepoOutcome.Status.SCANNED, Scope.RELEASED,
+                "c1", false, false, null, 0, null), List.of(), List.of(yaml)));
+        output.storeYaml("y1", "kind: Pod\n");
+
+        assertAll(
+                () -> assertThat(output.yaml()).containsExactly(yaml),
+                () -> assertThat(output.hasYaml("y1")).isTrue(),
+                () -> assertThat(out.resolve("yaml/y1")).hasContent("kind: Pod\n"),
+                () -> assertThat(output.hasBlob("y1")).isFalse());
+    }
 }

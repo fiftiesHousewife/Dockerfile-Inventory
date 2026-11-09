@@ -61,4 +61,23 @@ class CombineTest {
         assertThatIllegalArgumentException().isThrownBy(() -> Combine.of(List.of(empty), dir.resolve("out")))
                 .withMessage(empty + " is not a discovery output (no manifest.jsonl, repos.jsonl and blobs/)");
     }
+
+    @Test
+    void theYamlTheSourcesFoundIsMergedTooEachFileOnce() throws IOException {
+        Path a = source("a", "acme/api", "aaa");
+        Path b = source("b", "beta/web", "bbb");
+        for (Path source : List.of(a, b)) {
+            Files.createDirectories(source.resolve("yaml"));
+            Files.writeString(source.resolve("yaml/y1"), "kind: Pod\n");
+            Files.writeString(source.resolve("yaml.jsonl"), "{\"repository\":\"" + source.getFileName()
+                    + "\",\"blobSha\":\"y1\"}\n");
+        }
+        Path out = dir.resolve("out");
+
+        Combine.of(List.of(a, b), out);
+
+        assertAll(
+                () -> assertThat(Files.readAllLines(out.resolve("yaml.jsonl"))).hasSize(2),
+                () -> assertThat(out.resolve("yaml/y1")).hasContent("kind: Pod\n"));
+    }
 }

@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -20,10 +21,17 @@ final class BlobFetch {
 
     private final GitHub gitHub;
     private final DiscoveryOutput output;
+    private final BiConsumer<String, String> store;
 
     BlobFetch(GitHub gitHub, DiscoveryOutput output) {
+        this(gitHub, output, output::storeBlob);
+    }
+
+    // store: where a fetched text goes (the Dockerfiles' blobs/, or yaml/).
+    BlobFetch(GitHub gitHub, DiscoveryOutput output, BiConsumer<String, String> store) {
         this.gitHub = gitHub;
         this.output = output;
+        this.store = store;
     }
 
     Fetched fetch(List<BlobRequest> requests) {
@@ -50,7 +58,7 @@ final class BlobFetch {
                     problem.get()));
             return new Fetched(0, 1);
         }
-        output.storeBlob(request.sha(), blob.text());
+        store.accept(request.sha(), blob.text());
         return new Fetched(1, 0);
     }
 

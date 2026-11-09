@@ -24,13 +24,16 @@ final class DiscoveryOutput {
 
     private final Path dir;
     private final Path blobs;
+    private final Path yaml;
     private final ObjectMapper json = new ObjectMapper();
 
     DiscoveryOutput(Path dir) {
         this.dir = dir;
         this.blobs = dir.resolve("blobs");
+        this.yaml = dir.resolve("yaml");
         try {
             Files.createDirectories(blobs);
+            Files.createDirectories(yaml);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -38,6 +41,7 @@ final class DiscoveryOutput {
 
     synchronized void record(RepoScan.Result result) {
         append("manifest.jsonl", result.found());
+        append("yaml.jsonl", result.yaml());
         append("repos.jsonl", List.of(result.outcome()));
     }
 
@@ -68,6 +72,10 @@ final class DiscoveryOutput {
         return read("manifest.jsonl", Located.class);
     }
 
+    List<Located> yaml() {
+        return read("yaml.jsonl", Located.class);
+    }
+
     Set<String> reportedBlobs() {
         return read("blob-findings.jsonl", BlobFinding.class).stream().map(BlobFinding::sha)
                 .collect(Collectors.toSet());
@@ -77,12 +85,25 @@ final class DiscoveryOutput {
         return Files.exists(blobs.resolve(sha));
     }
 
-    // Moved into place whole, so a killed run never leaves half a blob a rerun would take as stored.
+    boolean hasYaml(String sha) {
+        return Files.exists(yaml.resolve(sha));
+    }
+
     void storeBlob(String sha, String text) {
+        store(blobs, sha, text);
+    }
+
+    // Apart from the Dockerfiles: the stages after discovery read every file in blobs/ as one.
+    void storeYaml(String sha, String text) {
+        store(yaml, sha, text);
+    }
+
+    // Moved into place whole, so a killed run never leaves half a file a rerun would take as stored.
+    private static void store(Path folder, String sha, String text) {
         try {
-            Path temp = Files.createTempFile(blobs, sha, ".part");
+            Path temp = Files.createTempFile(folder, sha, ".part");
             Files.writeString(temp, text, StandardCharsets.UTF_8);
-            Files.move(temp, blobs.resolve(sha), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(temp, folder.resolve(sha), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

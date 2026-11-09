@@ -114,6 +114,21 @@ class DiscoveryTest {
     }
 
     @Test
+    void theYamlBesideTheDockerfilesIsFetchedIntoItsOwnFolderOnce() {
+        gitHub.tree("pay/api", A, tree(file("Dockerfile", "same"), file("deploy/api.yaml", "y1"),
+                file("deploy/copy.yaml", "y1")));
+        gitHub.blob("y1", "kind: Pod\n");
+
+        Discovery.Summary summary = discovery().run();
+
+        assertAll(
+                () -> assertThat(out.resolve("yaml/y1")).hasContent("kind: Pod\n"),
+                () -> assertThat(out.resolve("blobs/y1")).doesNotExist(),
+                () -> assertThat(summary.yamlLocations()).isEqualTo(2),
+                () -> assertThat(summary.yamlFetched()).isEqualTo(1));
+    }
+
+    @Test
     void namedOrganisationsAreTheOnlyOnesScanned() {
         gitHub.repository("ops", repo("ops/tools", A)).tree("ops/tools", A, tree(file("Dockerfile", "same")));
 

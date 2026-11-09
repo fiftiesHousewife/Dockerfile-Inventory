@@ -38,6 +38,17 @@ class RepoScanTest {
     }
 
     @Test
+    void findsTheYamlThatCouldBeDeploymentManifestsBesideTheDockerfiles() throws IOException {
+        gitHub.tree("pay/api", RELEASED, tree(file("Dockerfile", "d1"), file("deploy/api.yaml", "y1"),
+                file(".github/workflows/ci.yaml", "y2"), link("deploy/link.yaml", "y3")));
+
+        RepoScan.Result result = new RepoScan(gitHub, releases("pay/api," + RELEASED)).scan(repo("pay/api", HEAD));
+
+        assertThat(result.yaml()).containsExactly(new Located("pay/api", RELEASED, Scope.RELEASED, "deploy/api.yaml",
+                "y1"));
+    }
+
+    @Test
     void skipsASymlinkNamedLikeADockerfile() {
         gitHub.tree("pay/api", HEAD, tree(file("Dockerfile", "d1"), link("10/Dockerfile.fedora", "l1")));
 
