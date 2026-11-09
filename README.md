@@ -328,6 +328,7 @@ its line.
 | S3 | `curl` or `wget` piped to a shell | High |
 | S4 | An image that cannot run as an arbitrary non-root UID (OpenShift's default) | High |
 | S5 | A `chmod` in the final image that lets everyone write (others' write bit, `o+w`, `a+w`; the sticky `1777` included) | Medium |
+| S6 | An `ADD` of a URL (`http`, `https`, `git@`) without `--checksum` | Medium |
 | R1 | A base not pinned by digest (`scratch` has none) | Medium |
 | R2 | An end-of-life base | Medium |
 | R3 | No OCI revision or source label | Low |
@@ -369,7 +370,7 @@ the registries the cluster pulls from in `allowedRegistries` (empty: any), set a
 its path as `PROFILE`.
 
 With `RULES_DIR`, every rule finding becomes an action too, grouped into fixes like the checks', with the severity
-the profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3, S5 and R2 drift; R3,
+the profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3, S5, S6 and R2 drift; R3,
 H1, H3, H4, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
 the verdicts say how each image fares on the platform.
 

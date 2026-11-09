@@ -75,6 +75,7 @@ class ProfileTest {
         Profile v2 = Profile.shipped(Profile.DEFAULT);
 
         assertThat(v2.severity()).containsEntry(Check.S2, Severity.DRIFT).containsEntry(Check.S5, Severity.DRIFT)
+                .containsEntry(Check.S6, Severity.DRIFT)
                 .containsEntry(Check.H3, Severity.INFORMATION).containsEntry(Check.H4, Severity.INFORMATION)
                 .containsEntry(Check.S4, Severity.OFF).containsEntry(Check.H2, Severity.OFF)
                 .containsEntry(Check.R1, Severity.OFF);

@@ -93,3 +93,10 @@ Measured on the combined estate: 414 in 407 Dockerfiles (`apt-get upgrade` 224, 
 59, `dnf update` 34, `dnf upgrade` 17, the rest under 11). The 50-finding sample checked line by line: each `RUN`
 holds the reported upgrade with no package named, so no false positives.
 
+## S6: a download added without a checksum (9 Nov)
+
+`UnverifiedDownload` (rules, medium; drift in both shipped profiles): an `ADD` in any stage with a remote source
+(`http://`, `https://`, `git@`) and no `--checksum`, read from the instruction's words (facts' copies keep no flags).
+Measured on the combined estate: 25 in 18 Dockerfiles, mostly GitHub releases (13); fewer than 50, so every location
+was read: all right. One adds a corporate root CA over HTTPS unverified and trusts it (`update-ca-trust`).
+
