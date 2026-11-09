@@ -97,3 +97,19 @@ committed fixtures through a loopback server playing JCR (every reply `index.tsv
 expects them back: all 22 replies and `index.tsv`, byte for byte. Not tried against a live JCR (that waits for slice
 3's demo). `record-jcr-fixtures.sh` deleted.
 
+## Slice 3: the container demo, in pieces (9 Nov)
+
+1. `BuildPlan` (built 9 Nov): sclorg's CentOS Stream 9 Dockerfiles from discovery, named as sclorg publishes them,
+   with the base each is built from; the chain (s2i-core, s2i-base, python 3.12, nginx 1.24), parents first.
+   Measured on `out/demo4/discovery`: `plan.txt.all`, `plan.txt` and `plan.txt.ordered` byte for byte what the script
+   wrote for the last demo run.
+2. The registry: PostgreSQL and JCR in containers, waited for; the local Docker repository (API, then the setup
+   wizard's import file); JFrog's licence agreement accepted only with the owner's `ACCEPT_JCR_EULA=yes`; the Docker
+   API waited for; a read token (the access API, then the older one), held in memory only.
+3. The images: mirrored with skopeo from a `selectOkd` list, or built with Buildah from the plan; then lineage,
+   report and rules on them.
+4. `jcr-diagnose`.
+
+This session's network reaches neither GitHub's clones nor quay.io, so pieces 2 and 3 are tested on their commands
+and on a loopback JCR; the end-to-end run is the owner's.
+
