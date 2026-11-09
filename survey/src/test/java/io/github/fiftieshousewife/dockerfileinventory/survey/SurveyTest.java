@@ -13,7 +13,7 @@ class SurveyTest {
 
     @Test
     void aFullRunIsEveryStageButLineageInOrderEachIntoItsOwnFolder() {
-        List<Survey.Step> steps = Survey.steps("https://github.com/acme", false, TOKEN);
+        List<Survey.Step> steps = Survey.steps(List.of("https://github.com/acme"), false, TOKEN);
 
         assertAll(
                 () -> assertThat(steps).extracting(Survey.Step::stage)
@@ -32,7 +32,7 @@ class SurveyTest {
 
     @Test
     void aTryStopsDiscoveryAfterTenRepositoriesWithADockerfileAndWritesBesideTheFullRun() {
-        Survey.Step discovery = Survey.steps("https://github.com/acme", true, TOKEN).getFirst();
+        Survey.Step discovery = Survey.steps(List.of("https://github.com/acme"), true, TOKEN).getFirst();
 
         assertThat(discovery.env()).containsEntry("TRY_REPOSITORIES", "10")
                 .containsEntry("OUT_DIR", "out/acme-try/discovery");
@@ -40,7 +40,7 @@ class SurveyTest {
 
     @Test
     void withAnArtifactoryLineageRunsAfterTheFactsAndTheLaterStagesReadIt() {
-        List<Survey.Step> steps = Survey.steps("https://github.com/acme", false,
+        List<Survey.Step> steps = Survey.steps(List.of("https://github.com/acme"), false,
                 Map.of("ARTIFACTORY_URL", "https://artifactory.acme.example/artifactory/"));
 
         assertAll(
@@ -51,7 +51,7 @@ class SurveyTest {
 
     @Test
     void anOutputDirectoryGivenHoldsTheStagesFolders() {
-        assertThat(Survey.steps("https://github.com/acme", false, Map.of("OUT_DIR", "/data")).getFirst().env())
+        assertThat(Survey.steps(List.of("https://github.com/acme"), false, Map.of("OUT_DIR", "/data")).getFirst().env())
                 .containsEntry("OUT_DIR", "/data/discovery");
     }
 
@@ -62,5 +62,22 @@ class SurveyTest {
                 () -> assertThat(Survey.folder("https://ghe.acme.example/platform/")).isEqualTo("platform"),
                 () -> assertThat(Survey.folder("https://ghe.acme.example")).isEqualTo("ghe.acme.example"),
                 () -> assertThat(Survey.folder("https://acme.ghe.com")).isEqualTo("acme.ghe.com"));
+    }
+
+    @Test
+    void severalOrganisationsAreEachDiscoveredThenMergedIntoTheOneDiscoveryTheStagesRead() {
+        List<Survey.Step> steps = Survey.steps(List.of("https://github.com/acme", "https://github.com/beta"), true,
+                TOKEN);
+
+        assertAll(
+                () -> assertThat(steps).extracting(Survey.Step::stage).containsExactly("discovery", "discovery",
+                        "combine", "facts", "catalogue", "rules", "validator", "report"),
+                () -> assertThat(steps.get(1).env()).containsEntry("GHE_API_URL", "https://github.com/beta")
+                        .containsEntry("OUT_DIR", "out/acme+beta-try/discovery-of/beta")
+                        .containsEntry("TRY_REPOSITORIES", "10"),
+                () -> assertThat(steps.get(2).env()).containsEntry("COMBINE_SOURCES",
+                        "out/acme+beta-try/discovery-of/acme,out/acme+beta-try/discovery-of/beta")
+                        .containsEntry("OUT_DIR", "out/acme+beta-try/discovery"),
+                () -> assertThat(steps.get(3).env()).containsEntry("DISCOVERY_DIR", "out/acme+beta-try/discovery"));
     }
 }

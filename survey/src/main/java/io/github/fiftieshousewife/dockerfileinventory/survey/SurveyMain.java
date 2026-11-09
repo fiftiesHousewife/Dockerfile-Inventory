@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.survey;
 
+import io.github.fiftieshousewife.dockerfileinventory.discovery.Combine;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.DiscoveryMain;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsMain;
 import io.github.fiftieshousewife.dockerfileinventory.lineage.LineageMain;
@@ -9,18 +10,21 @@ import io.github.fiftieshousewife.dockerfileinventory.rules.RulesMain;
 import io.github.fiftieshousewife.dockerfileinventory.validator.ValidatorMain;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Surveys one organisation: {@code survey [--try] <organisation URL>} runs every stage in order into
+ * Surveys organisations: {@code survey [--try] <organisation URL>...} runs every stage in order into
  * {@code out/<organisation>/} ({@code out/<organisation>-try/} for a try, which stops after ten repositories holding a
- * Dockerfile), and says where the report is. The token comes from {@code GHE_TOKEN_FILE} or {@code GHE_TOKEN};
+ * Dockerfile; several organisations are each discovered, merged, then surveyed as one estate in
+ * {@code out/<a>+<b>/}), and says where the report is. The token comes from {@code GHE_TOKEN_FILE} or {@code GHE_TOKEN};
  * lineage runs when {@code ARTIFACTORY_URL} is set; every other stage's setting is passed on.
  */
 public final class SurveyMain {
 
-    static final String USAGE = "usage: survey [--try] <organisation URL>, e.g. survey --try https://github.com/acme";
+    static final String USAGE = "usage: survey [--try] <organisation URL>..., e.g. survey --try "
+            + "https://github.com/acme";
 
     interface Runner {
         void run(Map<String, String> env) throws Exception;
@@ -28,6 +32,7 @@ public final class SurveyMain {
 
     static final Map<String, Runner> RUNNERS = Map.of(
             "discovery", DiscoveryMain::run,
+            "combine", SurveyMain::combine,
             "facts", FactsMain::run,
             "lineage", LineageMain::run,
             "catalogue", CatalogueMain::run,
@@ -35,7 +40,11 @@ public final class SurveyMain {
             "validator", ValidatorMain::run,
             "report", ReportMain::run);
 
-    record Arguments(String url, boolean trial) {
+    record Arguments(List<String> urls, boolean trial) {
+
+        Arguments {
+            urls = List.copyOf(urls);
+        }
     }
 
     // A stage's failure, told in one line: the stage and the first line of why.
@@ -83,7 +92,7 @@ public final class SurveyMain {
 
     static Path survey(Arguments arguments, Map<String, String> env, Map<String, Runner> runners)
             throws StageFailed {
-        List<Survey.Step> steps = Survey.steps(arguments.url(), arguments.trial(), env);
+        List<Survey.Step> steps = Survey.steps(arguments.urls(), arguments.trial(), env);
         for (Survey.Step step : steps) {
             System.out.println("survey: " + step.stage() + " into " + step.env().get("OUT_DIR"));
             try {
@@ -102,13 +111,21 @@ public final class SurveyMain {
                 + " taken instead)" : "");
     }
 
+    static void combine(Map<String, String> env) {
+        Combine.Summary merged = Combine.of(Arrays.stream(env.get("COMBINE_SOURCES").split(",")).map(Path::of)
+                .toList(), Path.of(env.get("OUT_DIR")));
+        System.out.println("survey: combined " + merged.locations() + " locations, " + merged.repositories()
+                + " repositories, " + merged.blobs() + " Dockerfiles" + (merged.repeated().isEmpty() ? ""
+                : "; in more than one organisation, so counted twice: " + String.join(", ", merged.repeated())));
+    }
+
     static Arguments arguments(String... args) {
         List<String> words = List.of(args);
         boolean trial = words.contains("--try");
         List<String> rest = words.stream().filter(word -> !word.equals("--try")).toList();
-        if (rest.size() != 1 || rest.getFirst().startsWith("-")) {
+        if (rest.isEmpty() || rest.stream().anyMatch(word -> word.startsWith("-"))) {
             throw new IllegalArgumentException(USAGE);
         }
-        return new Arguments(rest.getFirst(), trial);
+        return new Arguments(rest, trial);
     }
 }

@@ -43,9 +43,11 @@ the rules, the OpenShift validator and the report, each stage reading what the o
 export GHE_TOKEN_FILE=~/secrets/ghe-token          # or GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token)
 ./gradlew -q :survey:run --args="--try https://github.example.com/acme"   # 10 repositories with a Dockerfile
 ./gradlew -q :survey:run --args="https://github.example.com/acme"         # every repository
+./gradlew -q :survey:run --args="https://github.example.com/acme https://github.example.com/beta"  # one estate
 ```
 
-A try writes to `out/acme-try/`, the full run to `out/acme/` (`OUT_DIR` overrides), one folder per stage; the last
+A try writes to `out/acme-try/`, the full run to `out/acme/`, several organisations to `out/acme+beta/` (`OUT_DIR`
+overrides), one folder per stage; the last
 line says where the report's `index.html` is. A try proves the token, the network and the proxy in a few minutes
 and shows a real report; it stops once ten repositories holding a Dockerfile are found (a few more when they come in
 the same batch). The URL is a GitHub Enterprise Server host with the organisation (`https://ghe.example.com/acme`),
@@ -113,13 +115,8 @@ Mount the token as a file and set `GHE_TOKEN_FILE` or `ARTIFACTORY_TOKEN_FILE`, 
 
 ## Run discovery
 
-To try one public or enterprise organisation with the GitHub CLI's login (`gh auth login`), so no token is typed:
-
-```bash
-scripts/discover.sh https://github.com/openshift out/openshift/discovery
-```
-
-In full:
+To discover and survey an organisation in one step, see [Survey an organisation](#survey-an-organisation). To run
+discovery alone:
 
 ```bash
 export GHE_API_URL=https://github.example.com       # or https://github.com/MyOrg, or https://myco.ghe.com
@@ -154,14 +151,10 @@ symlinks, third-party copies (`vendor/`, `node_modules/`, `third_party/`) and te
 | `blob-findings.jsonl` | Dockerfiles that could not be stored: binary, too large, or not found |
 | `changes.jsonl` | One line per location: the last commit that changed the Dockerfile up to the scanned commit, and its date, both empty where GitHub has no history for it; a location GitHub refused (an error, counted in the summary) is asked for again on the next run |
 
-Several discovery runs (one per organisation, say) are merged into one estate for the stages after it:
-
-```bash
-scripts/combine.sh out/all/discovery out/openshift/discovery out/bitnami/discovery   # any number of sources
-```
-
-Locations and repositories are concatenated and each file is stored once; discover each organisation only once, or
-its repositories are counted twice (the script warns).
+Several organisations are surveyed as one estate by giving the survey each one's URL: it discovers each into
+`<out>/discovery-of/<organisation>/` and merges them into `<out>/discovery/` (every file, each line once, each
+Dockerfile stored once). Discover each organisation only once, or its repositories are counted twice (the survey
+says which).
 
 ## Parse the Dockerfiles
 
@@ -238,7 +231,8 @@ To try lineage on images someone else built, OKD's published images can be copie
 
 ```bash
 scripts/okd-select.sh                       # one OKD release on quay.io -> out/okd/mirror.txt, releases.csv
-RELEASE_INDEX=out/okd/releases.csv scripts/discover.sh https://github.com/openshift out/okd/discovery
+GHE_API_URL=https://github.com/openshift GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token) \
+    RELEASE_INDEX=out/okd/releases.csv OUT_DIR=out/okd/discovery ./gradlew :discovery:run
 DISCOVERY_DIR=out/okd/discovery OUT_DIR=out/okd/facts ./gradlew :facts:run
 MIRROR=out/okd/mirror.txt DISCOVERY_DIR=out/okd/discovery FACTS_DIR=out/okd/facts OUT=out/okd \
     scripts/lineage-demo.sh
@@ -401,10 +395,10 @@ OpenShift ships it, with no grants: `openshift-4-restricted-v2` (the default; Op
 the registries the cluster pulls from in `allowedRegistries` (empty: any), set a rule's severity in `rules`, and pass
 its path as `PROFILE`.
 
-With `RULES_DIR`, every rule finding becomes an action too, grouped into fixes like the checks', with the severity
-the profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3, S5, S6, S7 and R2 drift; R3,
-R4, H1, H3 to H9, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
-the verdicts say how each image fares on the platform.
+With `RULES_DIR`, every rule finding becomes an action too, grouped into fixes like the checks', with the severity the
+profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3, S5, S6, S7 and R2
+drift; R3, R4, H1, H3 to H9, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add
+actions, not verdicts: the verdicts say how each image fares on the platform.
 
 | Check | What it finds | Under v2 | Under v1 |
 | --- | --- | --- | --- |

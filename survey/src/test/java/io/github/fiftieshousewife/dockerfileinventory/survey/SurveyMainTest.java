@@ -21,9 +21,12 @@ class SurveyMainTest {
     void theArgumentsAreTheOrganisationsUrlAndOptionallyATry() {
         assertAll(
                 () -> assertThat(SurveyMain.arguments("https://github.com/acme"))
-                        .isEqualTo(new SurveyMain.Arguments("https://github.com/acme", false)),
+                        .isEqualTo(new SurveyMain.Arguments(List.of("https://github.com/acme"), false)),
                 () -> assertThat(SurveyMain.arguments("--try", "https://github.com/acme"))
-                        .isEqualTo(new SurveyMain.Arguments("https://github.com/acme", true)));
+                        .isEqualTo(new SurveyMain.Arguments(List.of("https://github.com/acme"), true)),
+                () -> assertThat(SurveyMain.arguments("https://github.com/acme", "https://github.com/beta"))
+                        .isEqualTo(new SurveyMain.Arguments(List.of("https://github.com/acme",
+                                "https://github.com/beta"), false)));
     }
 
     @Test
@@ -32,12 +35,14 @@ class SurveyMainTest {
                 () -> assertThatIllegalArgumentException().isThrownBy(SurveyMain::arguments)
                         .withMessage(SurveyMain.USAGE),
                 () -> assertThatIllegalArgumentException().isThrownBy(() -> SurveyMain.arguments("--all", "x"))
+                        .withMessage(SurveyMain.USAGE),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> SurveyMain.arguments("--try"))
                         .withMessage(SurveyMain.USAGE));
     }
 
     @Test
     void everyStageASurveyRunsHasARunner() {
-        assertThat(SurveyMain.RUNNERS).containsKeys(Survey.steps("https://github.com/acme", false,
+        assertThat(SurveyMain.RUNNERS).containsKeys(Survey.steps(List.of("https://github.com/acme"), false,
                 Map.of("ARTIFACTORY_URL", "x")).stream().map(Survey.Step::stage).toArray(String[]::new));
     }
 
@@ -48,7 +53,7 @@ class SurveyMainTest {
         SurveyMain.RUNNERS.keySet().forEach(stage -> recording.put(stage,
                 env -> ran.add(stage + " " + env.get("OUT_DIR"))));
 
-        Path report = SurveyMain.survey(new SurveyMain.Arguments("https://github.com/acme", true), Map.of(),
+        Path report = SurveyMain.survey(new SurveyMain.Arguments(List.of("https://github.com/acme"), true), Map.of(),
                 recording);
 
         assertAll(
@@ -66,7 +71,7 @@ class SurveyMainTest {
                     + "\"Bad credentials\"}");
         }));
 
-        assertThatThrownBy(() -> SurveyMain.survey(new SurveyMain.Arguments("https://github.com/acme", true),
+        assertThatThrownBy(() -> SurveyMain.survey(new SurveyMain.Arguments(List.of("https://github.com/acme"), true),
                 Map.of(), failing)).isInstanceOf(SurveyMain.StageFailed.class)
                 .hasMessage("discovery failed: POST https://api.github.com/graphql returned 401: {");
     }

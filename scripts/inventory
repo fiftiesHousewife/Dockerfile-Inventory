@@ -4,7 +4,7 @@ set -eu
 
 stages="survey discovery facts lineage catalogue report rules validator converter"
 usage() {
-    echo "usage: inventory survey [--try] <organisation URL>    or: inventory <stage>    stages: $stages"
+    echo "usage: inventory survey [--try] <organisation URL>...    or: inventory <stage>    stages: $stages"
     echo "settings come from the environment; see the README of github.com/fiftiesHousewife/Dockerfile-Inventory"
 }
 

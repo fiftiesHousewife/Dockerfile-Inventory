@@ -64,8 +64,10 @@ and one line when its gate is met.
   library package name, a module descriptor exporting only its API, a Java release users can take, Javadoc, a
   compatibility check, a Central bundle, a release task instead of `scripts/release-parser.sh`, docs with tested
   examples; the owner's Central namespace, token and signing key.
-- Next (asked 8 Nov): the remaining shell scripts replaced by Java (mains, Gradle tasks, tagged tests), the
-  container's entry point aside; to be planned.
+- Now (asked 8 Nov, `docs/plans/scripts-to-java.md`, questions answered 9 Nov): the remaining shell scripts replaced
+  by Java, the container's entry point aside. Slice 1 done 9 Nov: the survey takes several organisations and merges
+  them (`Combine`), `discover.sh` and `combine.sh` gone. Next: a `tools` module for the corpus collectors, the JCR
+  fixture recorder and the OKD image picker; then the container demo.
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index

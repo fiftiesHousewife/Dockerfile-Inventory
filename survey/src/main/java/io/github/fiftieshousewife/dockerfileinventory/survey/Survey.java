@@ -22,14 +22,25 @@ final class Survey {
     private Survey() {
     }
 
-    static List<Step> steps(String url, boolean trial, Map<String, String> env) {
-        String root = env.getOrDefault("OUT_DIR", "out/" + folder(url) + (trial ? "-try" : ""));
+    static List<Step> steps(List<String> urls, boolean trial, Map<String, String> env) {
+        String root = env.getOrDefault("OUT_DIR", "out/" + String.join("+", urls.stream().map(Survey::folder)
+                .toList()) + (trial ? "-try" : ""));
         boolean lineage = env.containsKey("ARTIFACTORY_URL");
         Map<String, String> dirs = new HashMap<>();
         List<Step> steps = new ArrayList<>();
-        steps.add(step(env, root, dirs, "discovery", trial
-                ? Map.of("GHE_API_URL", url, "TRY_REPOSITORIES", String.valueOf(TRY_REPOSITORIES))
-                : Map.of("GHE_API_URL", url)));
+        if (urls.size() == 1) {
+            steps.add(step(env, root, dirs, "discovery", discovery(urls.getFirst(), trial)));
+        } else {
+            List<String> sources = urls.stream().map(url -> root + "/discovery-of/" + folder(url)).toList();
+            for (int i = 0; i < urls.size(); i++) {
+                Map<String, String> own = new HashMap<>(discovery(urls.get(i), trial));
+                own.put("OUT_DIR", sources.get(i));
+                steps.add(new Step("discovery", merged(env, dirs, own)));
+            }
+            steps.add(new Step("combine", merged(env, dirs, Map.of("COMBINE_SOURCES", String.join(",", sources),
+                    "OUT_DIR", root + "/discovery"))));
+            dirs.put("DISCOVERY_DIR", root + "/discovery");
+        }
         steps.add(step(env, root, dirs, "facts", Map.of()));
         if (lineage) {
             steps.add(step(env, root, dirs, "lineage", Map.of()));
@@ -41,15 +52,27 @@ final class Survey {
         return steps;
     }
 
+    private static Map<String, String> discovery(String url, boolean trial) {
+        return trial ? Map.of("GHE_API_URL", url, "TRY_REPOSITORIES", String.valueOf(TRY_REPOSITORIES))
+                : Map.of("GHE_API_URL", url);
+    }
+
     // Each stage is told every earlier stage's folder, and reads those it knows.
     private static Step step(Map<String, String> env, String root, Map<String, String> dirs, String stage,
                              Map<String, String> own) {
+        Map<String, String> settings = new HashMap<>(own);
+        settings.put("OUT_DIR", root + "/" + stage);
+        Step step = new Step(stage, merged(env, dirs, settings));
+        dirs.put(stage.toUpperCase(Locale.ROOT) + "_DIR", root + "/" + stage);
+        return step;
+    }
+
+    private static Map<String, String> merged(Map<String, String> env, Map<String, String> dirs,
+                                              Map<String, String> own) {
         Map<String, String> settings = new HashMap<>(env);
         settings.putAll(dirs);
         settings.putAll(own);
-        settings.put("OUT_DIR", root + "/" + stage);
-        dirs.put(stage.toUpperCase(Locale.ROOT) + "_DIR", root + "/" + stage);
-        return new Step(stage, settings);
+        return settings;
     }
 
     static String folder(String url) {
