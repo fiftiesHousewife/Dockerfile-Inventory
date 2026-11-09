@@ -52,7 +52,8 @@ facts/              stage 1: blobs -> rewrite-docker -> ImageFacts, steps, norma
                     Steps (the final image's steps, lineage's normal form); FinalConfig (ImageConfig: the
                     final image's configuration, secrets hidden) and StageGraph (ImageStage: per stage its counts,
                     StageCopies' CopyFacts and StagePermissions' PermissionChanges), for the catalogue
-                    PackageCalls; NormalForms; FactsRun; Workloads (workload YAML: Workload, its pod and containers); the shell reader and shared text helpers come from reader
+                    PackageCalls; NormalForms; FactsRun; Workloads (workload YAML: Workload, its pod and containers);
+                    the shell reader and shared text helpers come from reader
 lineage/            stage 1b: Artifactory images -> family tree -> links to Dockerfiles -> effective images, gaps
                     Artifactory (interface) / ArtifactoryHttp (endpoints, REST only, never AQL), ArtifactoryClient
                     (authorised GET, retries); Inventory -> images.jsonl, configs/; ImageNodes, ImageConfig
