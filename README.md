@@ -40,7 +40,7 @@ One command runs the whole survey: discovery, the facts, lineage (when `ARTIFACT
 the rules, the OpenShift validator and the report, each stage reading what the one before wrote. Try it first:
 
 ```bash
-export GHE_TOKEN_FILE=~/secrets/ghe-token                          # or GHE_TOKEN; e.g. GHE_TOKEN=$(gh auth token)
+export GHE_TOKEN_FILE=~/secrets/ghe-token          # or GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token)
 ./gradlew -q :survey:run --args="--try https://github.example.com/acme"   # 10 repositories with a Dockerfile
 ./gradlew -q :survey:run --args="https://github.example.com/acme"         # every repository
 ```
@@ -51,7 +51,8 @@ and shows a real report; it stops once ten repositories holding a Dockerfile are
 the same batch). The URL is a GitHub Enterprise Server host with the organisation (`https://ghe.example.com/acme`),
 `https://github.com/acme`, or `https://acme.ghe.com`. Every other setting below is passed on to the stage that
 reads it, so the same environment configures a proxy, a CA bundle, Artifactory or a profile. A rerun of a full run
-resumes discovery where it stopped. In the image: `inventory survey [--try] <URL>`.
+resumes discovery where it stopped; a stage that fails stops the survey with one line saying which and why (GitHub
+refusing the token is explained). In the image: `inventory survey [--try] <URL>`.
 
 The sections after this one run each stage alone, for a pod job per stage or to rerun one.
 

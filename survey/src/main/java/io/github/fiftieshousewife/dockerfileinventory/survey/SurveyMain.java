@@ -7,6 +7,7 @@ import io.github.fiftieshousewife.dockerfileinventory.report.CatalogueMain;
 import io.github.fiftieshousewife.dockerfileinventory.report.ReportMain;
 import io.github.fiftieshousewife.dockerfileinventory.rules.RulesMain;
 import io.github.fiftieshousewife.dockerfileinventory.validator.ValidatorMain;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,16 @@ public final class SurveyMain {
     record Arguments(String url, boolean trial) {
     }
 
+    // A stage's failure, told in one line: the stage and the first line of why.
+    static final class StageFailed extends Exception {
+
+        private static final long serialVersionUID = 1L;
+
+        StageFailed(String stage, Exception cause) {
+            super(stage + " failed: " + String.valueOf(cause.getMessage()).lines().findFirst().orElse(""), cause);
+        }
+    }
+
     private SurveyMain() {
     }
 
@@ -44,28 +55,51 @@ public final class SurveyMain {
      * Runs the survey; a stage that fails stops it, and a rerun resumes discovery where it stopped.
      *
      * @param args {@code [--try] <organisation URL>}
-     * @throws Exception from the stage that failed
      */
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) {
+        int exit = run(args, System.getenv(), RUNNERS, System.err);
+        if (exit != 0) {
+            System.exit(exit);
+        }
+    }
+
+    static int run(String[] args, Map<String, String> env, Map<String, Runner> runners, PrintStream err) {
         Arguments arguments;
         try {
             arguments = arguments(args);
         } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-            System.exit(2);
-            return;
+            err.println(e.getMessage());
+            return 2;
         }
-        Path report = survey(arguments, System.getenv(), RUNNERS);
-        System.out.println("survey: the report is " + report.toAbsolutePath());
+        try {
+            Path report = survey(arguments, env, runners);
+            System.out.println("survey: the report is " + report.toAbsolutePath());
+            return 0;
+        } catch (StageFailed e) {
+            err.println("survey: " + explained(e));
+            return 1;
+        }
     }
 
-    static Path survey(Arguments arguments, Map<String, String> env, Map<String, Runner> runners) throws Exception {
+    static Path survey(Arguments arguments, Map<String, String> env, Map<String, Runner> runners)
+            throws StageFailed {
         List<Survey.Step> steps = Survey.steps(arguments.url(), arguments.trial(), env);
         for (Survey.Step step : steps) {
             System.out.println("survey: " + step.stage() + " into " + step.env().get("OUT_DIR"));
-            runners.get(step.stage()).run(step.env());
+            try {
+                runners.get(step.stage()).run(step.env());
+            } catch (Exception e) {
+                throw new StageFailed(step.stage(), e);
+            }
         }
         return Path.of(steps.getLast().env().get("OUT_DIR"), "index.html");
+    }
+
+    static String explained(StageFailed failure) {
+        return failure.getMessage() + (failure.getMessage().contains(" returned 401")
+                ? "; GitHub refused the token: give one that can read the organisation as GHE_TOKEN or GHE_TOKEN_FILE"
+                + " (with the GitHub CLI, `env -u GITHUB_TOKEN gh auth token`, so a GITHUB_TOKEN set elsewhere is not"
+                + " taken instead)" : "");
     }
 
     static Arguments arguments(String... args) {
