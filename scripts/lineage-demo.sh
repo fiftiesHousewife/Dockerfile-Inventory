@@ -12,7 +12,7 @@
 #   scripts/lineage-demo.sh                 # the chain: centos stream9 -> s2i-core -> s2i-base -> python 3.12, nginx
 #   SCOPE=all scripts/lineage-demo.sh       # every Dockerfile.c9s discovery found (45 on sclorg; hours, emulated)
 #   MIRROR=out/okd/mirror.txt DISCOVERY_DIR=out/okd/discovery FACTS_DIR=out/okd/facts OUT=out/okd \
-#       scripts/lineage-demo.sh             # copy published images unchanged (scripts/okd-select.sh), no builds
+#       scripts/lineage-demo.sh             # copy published images unchanged (./gradlew selectOkd), no builds
 #
 # Settings (environment): DISCOVERY_DIR (out/demo4/discovery), FACTS_DIR (out/demo5/facts), OUT (out/lineage-demo),
 # ACCEPT_JCR_EULA=yes (accepts JFrog's JCR licence agreement for you; read it first), JCR_PORT (the Mac's port, 8082), ADMIN_PASSWORD (JCR's first-start default, "password"), JCR_IMAGE, POSTGRES_IMAGE, BUILDAH_IMAGE,
@@ -48,7 +48,7 @@ die() { printf 'stopped: %s\n' "$*" >&2; exit 1; }
 [[ -f gradlew ]] || die "run from the repository root"
 [[ -f $DISCOVERY_DIR/manifest.jsonl ]] || die "no $DISCOVERY_DIR/manifest.jsonl; run discovery first"
 [[ -f $FACTS_DIR/facts.jsonl ]] || die "no $FACTS_DIR/facts.jsonl; run facts on $DISCOVERY_DIR first"
-[[ -z $MIRROR || -f $MIRROR ]] || die "no $MIRROR; scripts/okd-select.sh writes it"
+[[ -z $MIRROR || -f $MIRROR ]] || die "no $MIRROR; ./gradlew selectOkd writes it"
 for tool in docker git jq curl; do command -v $tool >/dev/null || die "$tool is not installed"; done
 docker info >/dev/null 2>&1 || die "Docker is not running"
 memory_gb=$(docker info --format '{{.MemTotal}}' | awk '{printf "%d", $1 / 1024 / 1024 / 1024 + 0.5}')

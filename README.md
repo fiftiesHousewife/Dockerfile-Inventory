@@ -230,7 +230,7 @@ API replies.
 To try lineage on images someone else built, OKD's published images can be copied in unchanged instead:
 
 ```bash
-scripts/okd-select.sh                       # one OKD release on quay.io -> out/okd/mirror.txt, releases.csv
+./gradlew selectOkd                         # one OKD release on quay.io -> out/okd/mirror.txt, releases.csv
 GHE_API_URL=https://github.com/openshift GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token) \
     RELEASE_INDEX=out/okd/releases.csv OUT_DIR=out/okd/discovery ./gradlew :discovery:run
 DISCOVERY_DIR=out/okd/discovery OUT_DIR=out/okd/facts ./gradlew :facts:run
@@ -238,9 +238,10 @@ MIRROR=out/okd/mirror.txt DISCOVERY_DIR=out/okd/discovery FACTS_DIR=out/okd/fact
     scripts/lineage-demo.sh
 ```
 
-`okd-select.sh` picks about 30 images (the bases, `tools` and `network-tools`, and components whose repository
-discovery found, one per repository) and writes each chosen component's repository and the commit its source label
-names, so discovery reads the Dockerfiles that built them. The mirror copies with skopeo, keeping digests.
+`selectOkd` (`--args="<release> <output directory>"`, default `5.0.0-okd-scos.5 out/okd`) picks about 30 images (the
+bases, `tools` and `network-tools`, and components whose repository discovery found, one per repository) and writes each
+chosen component's repository and the commit its source label names, so discovery reads the Dockerfiles that built them.
+The mirror copies with skopeo, keeping digests.
 
 ## Report on the estate
 
@@ -331,7 +332,7 @@ export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR: blobs and m
 export LINEAGE_DIR=/data/lineage              # optional: rules about inherited users and bases
 export ALLOW_LIST=/data/approved-bases.csv    # optional: imagePath,tagPrefix (rule S1)
 export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate (rule R2)
-export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for the rules over the estate (R4)
+export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for R4 (over the estate)
 export OUT_DIR=/data/rules
 ./gradlew :rules:run
 ```

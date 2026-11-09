@@ -1,7 +1,7 @@
 # The scripts as Java: plan
 
 Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov; slice 2 in progress (the two corpus
-collectors built).
+collectors and the OKD picker built).
 
 ## Why
 
@@ -83,4 +83,11 @@ since 9 Nov. `Json` writes the bank's JSON as jq laid it out (every array elemen
 when empty), tested byte for byte on a committed case. Measured on OKD's lineage against the script: the same 34
 cases (an image pushed under two names takes the first the run recorded, as the script did), every `config.json` and
 `dockerfiles.jsonl` byte for byte, `expected.json` the same but for `credited`. `corpus-collect-images.sh` deleted.
+
+`OkdSelect` (`./gradlew selectOkd --args="[release] [output directory]"`, settings as the script's): `OkdChoice`
+holds the choosing (tools first, one image per scanned repository spread evenly, within the count with every base),
+`Quay` the reading of quay.io, `QuayHttp` it over HTTP through the pipeline's `http` settings, tested against a
+loopback server. Measured offline: the stored OKD tag list and configs given as quay.io, all seven files
+(`tags.txt` to `releases.csv`) byte for byte what the script wrote. Not yet tried live: this session's network does
+not reach quay.io; the owner's run is the check. `okd-select.sh` deleted.
 
