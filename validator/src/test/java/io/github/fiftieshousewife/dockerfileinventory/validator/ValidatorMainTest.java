@@ -52,6 +52,17 @@ class ValidatorMainTest {
     }
 
     @Test
+    void theRulesDirectoryAddsTheRulesFindingsAsActions(@TempDir Path rules) throws IOException {
+        Files.writeString(rules.resolve("findings.jsonl"), "{\"rule\":\"H1\",\"severity\":\"LOW\",\"blobSha\":"
+                + "\"00b7e9b0f4f07bea7f89b52371b0221dc848d085\",\"message\":\"apt-get install not cleaned\"}\n");
+
+        ValidatorMain.run(Map.of("FACTS_DIR", "src/test/resources/fixtures", "DISCOVERY_DIR",
+                "src/test/resources/fixtures", "RULES_DIR", rules.toString(), "OUT_DIR", out.toString()));
+
+        assertThat(out.resolve("actions.jsonl")).content().contains("apt-get install not cleaned");
+    }
+
+    @Test
     void aMissingSettingIsRefusedByName() {
         assertThatThrownBy(() -> ValidatorMain.run(Map.of("OUT_DIR", out.toString())))
                 .hasMessage("FACTS_DIR must be set");

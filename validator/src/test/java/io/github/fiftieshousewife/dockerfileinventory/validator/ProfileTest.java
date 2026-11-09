@@ -69,4 +69,33 @@ class ProfileTest {
                 .hasMessage("PROFILE openshift-5 is neither a shipped profile (openshift-4-restricted-v2, "
                         + "openshift-4-restricted) nor a file");
     }
+
+    @Test
+    void theShippedProfilesSetEachRulesSeverityAndTurnOffThoseAPlatformCheckRepeats() {
+        Profile v2 = Profile.shipped(Profile.DEFAULT);
+
+        assertThat(v2.severity()).containsEntry(Check.S2, Severity.DRIFT).containsEntry(Check.H3, Severity.INFORMATION)
+                .containsEntry(Check.S4, Severity.OFF).containsEntry(Check.H2, Severity.OFF)
+                .containsEntry(Check.R1, Severity.OFF);
+    }
+
+    @Test
+    void aRuleTheProfileLeavesOutIsInformation() {
+        Profile copied = Profile.of(FIXTURES.resolve("copied-profile.json").toString());
+
+        assertThat(copied.severity()).containsEntry(Check.S2, Severity.INFORMATION);
+    }
+
+    @Test
+    void anUnknownRuleOrAPlatformCheckAmongTheRulesIsRefusedByName() {
+        String platform = """
+                {"name": "x", "describes": "", "allowedRegistries": [], "severity": {"P1": "breaks", "P2": "breaks",
+                 "P3": "breaks", "P4": "breaks", "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift",
+                 "P9": "information", "P10": "information"}, "rules": {"%s": "drift"}}""";
+        assertAll(
+                () -> assertThatThrownBy(() -> Profile.parse("x", platform.formatted("Z9")))
+                        .hasMessage("profile x: Z9 is not a rule"),
+                () -> assertThatThrownBy(() -> Profile.parse("x", platform.formatted("P1")))
+                        .hasMessage("profile x: P1 is not a rule"));
+    }
 }

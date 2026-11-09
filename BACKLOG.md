@@ -45,7 +45,10 @@ and one line when its gate is met.
   same check on an archetype's copies as one fix, with what it reaches through the Dockerfiles built on them, per
   check; the report's page leads with the fixes (combined estate: 8,777 actions, 4,396 fixes). Done 9 Nov: P2
   expands variables from the image's environment (sclorg's `fix-permissions ${APP_ROOT}`; P2 1,055 -> 1,133 on the
-  combined estate). Next: the antipatterns.
+  combined estate). Now: the antipatterns (`docs/plans/validator-antipatterns.md`, asked 9 Nov: new rules in
+  `rules`, severities per rule ID in the profile). Slice 1 done 9 Nov: the rules' findings as actions and fixes
+  (`RULES_DIR`; combined estate 18,544 actions, 9,091 fixes, verdicts unchanged). Next: the new rules, one at a time,
+  each measured on 50 sampled findings.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

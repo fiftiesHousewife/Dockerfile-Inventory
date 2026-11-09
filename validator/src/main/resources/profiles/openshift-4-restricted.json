@@ -5,5 +5,10 @@
   "severity": {
     "P1": "breaks", "P2": "breaks", "P3": "breaks", "P4": "breaks",
     "P5": "information", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information"
+  },
+  "rules": {
+    "S1": "drift", "S2": "drift", "S3": "drift", "R2": "drift",
+    "R3": "information", "H1": "information", "H3": "information", "I1": "information", "I2": "information",
+    "S4": "off", "H2": "off", "R1": "off"
   }
 }

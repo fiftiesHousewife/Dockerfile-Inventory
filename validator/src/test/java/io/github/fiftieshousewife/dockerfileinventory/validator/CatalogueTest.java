@@ -34,4 +34,20 @@ class CatalogueTest {
                 () -> assertThat(catalogue.children("a")).isEqualTo(List.of("c")),
                 () -> assertThat(catalogue.children("u")).isEmpty());
     }
+
+    @Test
+    void theRankingsGroupsOfUnparseableFilesAndTemplatesAreNotArchetypes(@TempDir Path dir) throws IOException {
+        Files.writeString(dir.resolve("archetypes.jsonl"), """
+                {"rank":1,"key":"parse-failures","blobShas":["a","b"],"representative":"a"}
+                {"rank":2,"key":"templates","blobShas":["c","d"],"representative":"c"}
+                """);
+        Files.createDirectories(dir.resolve("catalogue"));
+        Files.writeString(dir.resolve("catalogue/dockerfiles.jsonl"), "");
+
+        Catalogue catalogue = Catalogue.read(dir);
+
+        assertAll(
+                () -> assertThat(catalogue.archetype("a")).isEqualTo("a"),
+                () -> assertThat(catalogue.archetype("c")).isEqualTo("c"));
+    }
 }

@@ -353,6 +353,7 @@ export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
 export PROFILE=openshift-4-restricted-v2      # optional: a shipped profile's name or a profile file
 export LINEAGE_DIR=/data/lineage              # optional: the user each Dockerfile's registry images run as
 export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for fixes and their reach
+export RULES_DIR=/data/rules                  # optional: the rules stage's OUT_DIR, whose findings become actions
 export OUT_DIR=/data/validator
 ./gradlew :validator:run
 ```
@@ -362,7 +363,13 @@ break, what drifts and what the deployment must supply. Two profiles ship, each 
 OpenShift ships it, with no grants: `openshift-4-restricted-v2` (the default; OpenShift 4.11 and later) and
 `openshift-4-restricted` (before 4.11, and clusters that kept it). A profile is a JSON file: copy one from
 `validator/src/main/resources/profiles/`, change a check's severity (`breaks`, `drift`, `information` or `off`) or list
-the registries the cluster pulls from in `allowedRegistries` (empty: any), and pass its path as `PROFILE`.
+the registries the cluster pulls from in `allowedRegistries` (empty: any), set a rule's severity in `rules`, and pass
+its path as `PROFILE`.
+
+With `RULES_DIR`, every rule finding becomes an action too, grouped into fixes like the checks', with the severity
+the profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3 and R2 drift; R3,
+H1, H3, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
+the verdicts say how each image fares on the platform.
 
 | Check | What it finds | Under v2 | Under v1 |
 | --- | --- | --- | --- |

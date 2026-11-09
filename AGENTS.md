@@ -83,7 +83,7 @@ validator/          stage 3c: facts -> each image judged through a platform prof
                     LowPorts, UserSwitch, SetuidBits, ShellStart, BaseRegistry, UnpinnedBase, DeploymentHints,
                     UserIdentity (P10); Validation, Finding, Verdict; Actions, Action, Location; Fixes, Fix (an action
                     made once: Catalogue, the catalogue stage's archetypes and links; Inheritance, per check);
-                    JsonLines; ValidatorRun
+                    RuleFindings (the rules' findings.jsonl as findings); JsonLines; ValidatorRun
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
                     io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model

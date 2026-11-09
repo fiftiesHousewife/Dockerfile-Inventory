@@ -14,6 +14,7 @@ final class Inheritance {
             case P2 -> !WritablePaths.makesGroupWritable(child);
             case P3, P5, P9 -> true;
             case P7, P8 -> false;
+            case S1, S2, S3, S4, R1, R2, R3, H1, H2, H3, I1, I2 -> false;
         };
     }
 }

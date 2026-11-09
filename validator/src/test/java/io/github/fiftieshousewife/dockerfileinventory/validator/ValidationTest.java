@@ -15,7 +15,8 @@ class ValidationTest {
 
     @Test
     void everyCheckRunsInTheOrderOfItsId() {
-        assertThat(Validation.CHECKS).extracting(PlatformCheck::id).containsExactly(Check.values());
+        assertThat(Validation.CHECKS).extracting(PlatformCheck::id)
+                .containsExactly(Arrays.stream(Check.values()).filter(check -> !check.rule()).toArray(Check[]::new));
     }
 
     @Test

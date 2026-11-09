@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 // What the catalogue stage says about reach: each Dockerfile's archetype, each archetype's representative, and the
 // Dockerfiles built on each Dockerfile.
@@ -12,10 +13,14 @@ record Catalogue(Map<String, String> archetypes, Map<String, String> representat
 
     static final Catalogue NONE = new Catalogue(Map.of(), Map.of(), Map.of());
 
+    // The ranking's groups of files that are not alike: the report's Passes.PARSE_FAILURES and Passes.TEMPLATES.
+    static final Set<String> NOT_ARCHETYPES = Set.of("parse-failures", "templates");
+
     static Catalogue read(Path dir) {
         Map<String, String> archetypes = new HashMap<>();
         Map<String, String> representatives = new HashMap<>();
-        JsonLines.read(dir.resolve("archetypes.jsonl")).forEach(row -> {
+        JsonLines.read(dir.resolve("archetypes.jsonl")).stream()
+                .filter(row -> !NOT_ARCHETYPES.contains(row.path("key").asString())).forEach(row -> {
             String key = row.path("key").asString();
             representatives.put(key, row.path("representative").asString());
             row.path("blobShas").forEach(sha -> archetypes.put(sha.asString(), key));

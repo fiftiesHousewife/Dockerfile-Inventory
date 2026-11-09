@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
-// Reads the facts and the manifest, with lineage's effective users and the catalogue when given; judges every image
-// through the profile; writes the plan, its actions and its fixes.
+// Reads the facts and the manifest, with lineage's effective users, the catalogue and the rules' findings when given;
+// judges every image through the profile; writes the plan, its actions and its fixes.
 final class ValidatorRun {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -27,14 +27,17 @@ final class ValidatorRun {
     private final Path discoveryDir;
     private final Path lineageDir;
     private final Path catalogueDir;
+    private final Path rulesDir;
     private final Profile profile;
     private final Path outDir;
 
-    ValidatorRun(Path factsDir, Path discoveryDir, Path lineageDir, Path catalogueDir, Profile profile, Path outDir) {
+    ValidatorRun(Path factsDir, Path discoveryDir, Path lineageDir, Path catalogueDir, Path rulesDir, Profile profile,
+                 Path outDir) {
         this.factsDir = factsDir;
         this.discoveryDir = discoveryDir;
         this.lineageDir = lineageDir;
         this.catalogueDir = catalogueDir;
+        this.rulesDir = rulesDir;
         this.profile = profile;
         this.outDir = outDir;
     }
@@ -51,6 +54,9 @@ final class ValidatorRun {
             findings.addAll(own);
             verdicts.put(image.blobSha(), Verdict.of(own));
         });
+        if (rulesDir != null) {
+            findings.addAll(RuleFindings.read(rulesDir, profile));
+        }
         Map<String, List<Location>> locations = locations(discoveryDir.resolve("manifest.jsonl"));
         List<Action> actions = Actions.of(findings, locations);
         List<Fix> fixes = Fixes.of(actions, catalogueDir == null ? Catalogue.NONE : Catalogue.read(catalogueDir),

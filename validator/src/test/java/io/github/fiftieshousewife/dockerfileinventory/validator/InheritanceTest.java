@@ -43,4 +43,9 @@ class InheritanceTest {
                 () -> assertThat(Inheritance.inherits(Check.P7, setsNothing)).isFalse(),
                 () -> assertThat(Inheritance.inherits(Check.P8, setsNothing)).isFalse());
     }
+
+    @Test
+    void aRulesFindingIsOnlyEverAboutTheDockerfileItRead() {
+        assertThat(Inheritance.inherits(Check.H1, setsNothing)).isFalse();
+    }
 }

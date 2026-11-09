@@ -23,7 +23,7 @@ class ValidatorRunTest {
     Path out;
 
     private JsonNode plan() {
-        new ValidatorRun(FIXTURES, FIXTURES, null, null, Fixtures.V2, out).run();
+        new ValidatorRun(FIXTURES, FIXTURES, null, null, null, Fixtures.V2, out).run();
         return JSON.readTree(out.resolve("action-plan.json").toFile());
     }
 
@@ -68,7 +68,7 @@ class ValidatorRunTest {
         Files.writeString(lineage.resolve("effective.jsonl"),
                 "{\"configDigest\":\"sha256:app\",\"user\":{\"value\":\"1001\",\"setBy\":{\"kind\":\"Unknown\"}}}\n");
 
-        new ValidatorRun(FIXTURES, FIXTURES, lineage, null, Fixtures.V2, out).run();
+        new ValidatorRun(FIXTURES, FIXTURES, lineage, null, null, Fixtures.V2, out).run();
 
         assertThat(Files.readAllLines(out.resolve("actions.jsonl")).stream().map(JSON::readTree)
                 .filter(action -> action.path("check").asString().equals("P1"))
@@ -93,9 +93,24 @@ class ValidatorRunTest {
         Files.createDirectories(catalogue.resolve("catalogue"));
         Files.writeString(catalogue.resolve("catalogue/dockerfiles.jsonl"), "");
 
-        new ValidatorRun(FIXTURES, FIXTURES, null, catalogue, Fixtures.V2, out).run();
+        new ValidatorRun(FIXTURES, FIXTURES, null, catalogue, null, Fixtures.V2, out).run();
 
         assertThat(Files.readAllLines(out.resolve("fixes.jsonl")))
                 .anyMatch(line -> line.contains("\"copies\":[\"" + ROOT + "\",\"" + UNSET + "\"]"));
+    }
+
+    @Test
+    void withTheRulesTheirFindingsAreActionsButNotVerdicts(@TempDir Path rules) throws IOException {
+        plan();
+        List<String> verdictsWithout = Files.readAllLines(out.resolve("verdicts.jsonl"));
+        Files.writeString(rules.resolve("findings.jsonl"), "{\"rule\":\"S2\",\"severity\":\"CRITICAL\",\"blobSha\":\""
+                + UNSET + "\",\"message\":\"ENV TOKEN holds a secret\"}\n");
+
+        new ValidatorRun(FIXTURES, FIXTURES, null, null, rules, Fixtures.V2, out).run();
+
+        assertAll(
+                () -> assertThat(Files.readAllLines(out.resolve("actions.jsonl"))).anyMatch(line ->
+                        line.contains("\"check\":\"S2\"") && line.contains(UNSET)),
+                () -> assertThat(Files.readAllLines(out.resolve("verdicts.jsonl"))).isEqualTo(verdictsWithout));
     }
 }

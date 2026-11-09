@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -54,16 +55,28 @@ record Profile(String name, String describes, List<String> allowedRegistries, Ma
         Map<Check, Severity> severity = new EnumMap<>(Check.class);
         root.path("severity").properties().forEach(e -> severity.put(check(source, e.getKey()),
                 severity(source, e.getKey(), e.getValue().asString())));
-        Arrays.stream(Check.values()).filter(c -> !severity.containsKey(c)).findFirst().ifPresent(missing -> {
+        platform().filter(c -> !severity.containsKey(c)).findFirst().ifPresent(missing -> {
             throw refused(source, "no severity for " + missing);
         });
+        Arrays.stream(Check.values()).filter(Check::rule).forEach(rule -> severity.put(rule, Severity.INFORMATION));
+        root.path("rules").properties().forEach(e -> severity.put(rule(source, e.getKey()),
+                severity(source, e.getKey(), e.getValue().asString())));
         return new Profile(root.path("name").asString(), root.path("describes").asString(),
                 root.path("allowedRegistries").valueStream().map(JsonNode::asString).toList(), severity);
     }
 
     static Check check(String source, String id) {
-        return Arrays.stream(Check.values()).filter(c -> c.name().equals(id)).findFirst()
-                .orElseThrow(() -> refused(source, id + " is not a check (P1 to P" + Check.values().length + ")"));
+        return platform().filter(c -> c.name().equals(id)).findFirst()
+                .orElseThrow(() -> refused(source, id + " is not a check (P1 to P" + platform().count() + ")"));
+    }
+
+    static Check rule(String source, String id) {
+        return Arrays.stream(Check.values()).filter(c -> c.rule() && c.name().equals(id)).findFirst()
+                .orElseThrow(() -> refused(source, id + " is not a rule"));
+    }
+
+    private static Stream<Check> platform() {
+        return Arrays.stream(Check.values()).filter(c -> !c.rule());
     }
 
     static Severity severity(String source, String check, String word) {
