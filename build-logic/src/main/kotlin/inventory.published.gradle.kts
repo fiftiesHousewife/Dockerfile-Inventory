@@ -1,6 +1,6 @@
 // A module published to Maven Central: jar, sources and Javadoc jars, a complete POM, signatures when a key is in
 // the environment. `check` writes the bundle to build/central (unsigned without a key) and verifies it, so what a
-// release uploads is tested on every build; scripts/release-parser.sh uploads it.
+// release uploads is tested on every build; releaseToCentral uploads it.
 
 import java.util.zip.ZipFile
 

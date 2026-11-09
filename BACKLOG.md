@@ -107,8 +107,9 @@ and one line when its gate is met.
     install (package calls 648 -> 1,110). R1 no longer reports `FROM scratch` (524 false positives in konflux-ci, 174
     in openshift) and S2 leaves a secret-named value that is only a path alone (`docs/plans/bitnami-fixes.md`).
   - Built 7 Nov, OKD lineage (`docs/plans/okd-lineage.md`): lineage cuts the wrapper Red Hat's release tooling puts
-    around a Dockerfile's steps, a source label limits an image's link to that repository, `scripts/okd-select.sh`
-    picks 30 images of OKD 5.0.0-okd-scos.5 and their release index, and `lineage-demo.sh` mirrors them unchanged.
+    around a Dockerfile's steps, a source label limits an image's link to that repository, `./gradlew selectOkd`
+    picks 30 images of OKD 5.0.0-okd-scos.5 and their release index, and `./gradlew lineageDemo` mirrors them
+    unchanged.
     Run 7 Nov: every parent right; links 14 of 26 at first, 26 of 26 after reading build-argument prefixes, leaving
     `ARG` out and comparing labels as a set (owner's choice). Q12's outdated-base rule misleads where one repository
     holds different images under different tags (Konflux's `art-okd-images`): noted, not changed.
@@ -117,15 +118,14 @@ and one line when its gate is met.
   published. Code complete; the gate waits on a discovery run.
   - Done: slice 1, `facts` module and parser adapter; slice 2, shell tokeniser; slice 3, package calls; slice 4, fact extraction; slice 5, normal forms; slice 6, the facts run and rates.
   - Fixed 6 Nov: a comment line inside a continued instruction was recorded as a parse failure.
-  - To raise upstream (the owner's call, not filed): fifteen rewrite-docker 8.90.4 issues, drafted with
-    reproductions in `docs/upstream/rewrite-docker-issues.md`; twelve are worked around here, three (a heredoc after
-    a command in `RUN`, a quoted `COPY` heredoc delimiter, `ENV KEY = value`) are not and those files count as parse
-    failures.
+  - Fixed 7 Nov in the fork (`parser`): fifteen rewrite-docker 8.90.4 issues, with reproductions in
+    `docs/upstream/rewrite-docker-issues.md`; the workarounds and the retry are gone. Filing them upstream is the
+    owner's call (not filed).
 
 - Phase 1b — Lineage and effective images. Plan: `docs/plans/phase-1b.md` (questions answered 6 Nov). Gate:
   lineage for at least 95% of Artifactory images; images matched to Dockerfiles by fingerprint, unmatched images
   published as the gap list.
-  - Tried 6 Nov against a real Artifactory (local JCR 7.77, `scripts/lineage-demo.sh`): four sclorg images built
+  - Tried 6 Nov against a real Artifactory (local JCR 7.77, the lineage demo, now `./gradlew lineageDemo`): four sclorg images built
     with Buildah from discovered Dockerfiles; every parent right, each image linked to its own Dockerfile
     (PROBABLE, as no release index). nginx 1.24 also linked to 1.20, 1.22 and c8s files whose steps differ only in
     ENV values, which the normal form leaves out.
