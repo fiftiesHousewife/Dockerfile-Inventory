@@ -1,8 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
 final class Footprint {
 
@@ -20,20 +22,21 @@ final class Footprint {
 
     static Found through(String sha, Map<String, CatalogueEntry> bySha, Map<String, CatalogueLinks.Links> links,
                          FootprintRules rules) {
-        List<String> through = new ArrayList<>();
-        String current = sha;
-        for (List<CatalogueLinks.Link> up = parents(links, current); !up.isEmpty()
-                && bySha.containsKey(up.getFirst().blobSha()) && !through.contains(up.getFirst().blobSha())
-                && !up.getFirst().blobSha().equals(sha); up = parents(links, current)) {
-            current = up.getFirst().blobSha();
-            through.add(current);
-        }
-        String base = CatalogueLinks.finalBase(bySha.get(current));
+        List<String> through = ancestors(sha, bySha, links);
+        String base = CatalogueLinks.finalBase(bySha.get(through.isEmpty() ? sha : through.getLast()));
         return new Found(base == null ? UNKNOWN : rules.classify(base), base, through);
     }
 
-    private static List<CatalogueLinks.Link> parents(Map<String, CatalogueLinks.Links> links, String sha) {
+    static List<String> ancestors(String sha, Map<String, CatalogueEntry> bySha,
+                                  Map<String, CatalogueLinks.Links> links) {
+        Set<String> seen = new HashSet<>(Set.of(sha));
+        return Stream.iterate(firstParent(links, sha),
+                parent -> parent != null && bySha.containsKey(parent) && seen.add(parent),
+                parent -> firstParent(links, parent)).toList();
+    }
+
+    static String firstParent(Map<String, CatalogueLinks.Links> links, String sha) {
         CatalogueLinks.Links found = links.get(sha);
-        return found == null ? List.of() : found.parents();
+        return found == null || found.parents().isEmpty() ? null : found.parents().getFirst().blobSha();
     }
 }

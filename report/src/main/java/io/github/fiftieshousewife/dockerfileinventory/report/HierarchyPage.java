@@ -10,12 +10,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-// Every tree of Dockerfiles built on one another, from each root down, each node linking to its Dockerfile's page.
 final class HierarchyPage {
 
     private final Map<String, CatalogueEntry> bySha;
 
-    private HierarchyPage(List<CatalogueEntry> entries) {
+    HierarchyPage(List<CatalogueEntry> entries) {
         this.bySha = entries.stream().collect(Collectors.toMap(CatalogueEntry::blobSha, Function.identity(),
                 (first, second) -> first));
     }
@@ -58,7 +57,7 @@ final class HierarchyPage {
         return known(entry.links().children());
     }
 
-    private List<CatalogueEntry> known(List<CatalogueLinks.Link> links) {
+    List<CatalogueEntry> known(List<CatalogueLinks.Link> links) {
         return links.stream().map(link -> bySha.get(link.blobSha())).filter(e -> e != null).distinct().toList();
     }
 

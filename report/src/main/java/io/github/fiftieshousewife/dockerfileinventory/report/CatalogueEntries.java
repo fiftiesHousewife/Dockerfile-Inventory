@@ -119,7 +119,7 @@ final class CatalogueEntries {
         return counts;
     }
 
-    private static CatalogueEntry.Command command(JsonNode command) {
+    static CatalogueEntry.Command command(JsonNode command) {
         return command.isMissingNode() || command.isNull() ? null
                 : new CatalogueEntry.Command(command.path("form").asString(), strings(command.path("arguments")));
     }

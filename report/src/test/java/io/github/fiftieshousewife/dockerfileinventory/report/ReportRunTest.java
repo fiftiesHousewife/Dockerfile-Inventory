@@ -80,4 +80,18 @@ class ReportRunTest {
             throw new AssertionError(e);
         }
     }
+
+    @Test
+    void aFileInAFolderIsWrittenWithItsFolder() {
+        new ReportRun(null, null, null, null, null, CatalogueSettings.DEFAULTS, out).write("pages/a.html", "a");
+
+        assertThat(out.resolve("pages/a.html")).hasContent("a");
+    }
+
+    @Test
+    void aFileAtTheTopIsWrittenInTheOutputFolder() {
+        new ReportRun(null, null, null, null, null, CatalogueSettings.DEFAULTS, out).write("b.json", "b");
+
+        assertThat(out.resolve("b.json")).hasContent("b");
+    }
 }

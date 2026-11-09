@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 class RuntimesTest {
@@ -57,5 +59,63 @@ class RuntimesTest {
         assertThat(Runtimes.inherited(List.of("aaa"), CatalogueEntries.bySha(entries))).containsExactly(
                 new Runtimes.Found("java", "inherited",
                         "from aaa: stage 0 base registry.access.redhat.com/ubi9/openjdk-21"));
+    }
+
+    @Test
+    void aBaseNamingARuntimeIsEvidenceOfIt() {
+        assertThat(Runtimes.fromBase(stage(0, null, "docker.io/library/golang", null), Set.of(0)))
+                .containsExactly(new Runtimes.Found("go", "final", "stage 0 base docker.io/library/golang"));
+    }
+
+    @Test
+    void aBaseMatchingOnlyInItsRegistryPathIsNoEvidence() {
+        assertThat(Runtimes.fromBase(stage(0, null, "java.example.com/ubi9/ubi", null), Set.of(0))).isEmpty();
+    }
+
+    @Test
+    void aPackageInABuildStageIsBuildEvidence() {
+        assertThat(Runtimes.fromPackage(new CatalogueEntry.PackageEntry(0, "dnf", "golang", false, true), Set.of(1)))
+                .containsExactly(new Runtimes.Found("go", "build", "stage 0 installs golang"));
+    }
+
+    @Test
+    void anUnknownVariableIsNoEvidence() {
+        assertThat(Runtimes.fromEnvironment("PATH")).isEmpty();
+    }
+
+    @Test
+    void aRuntimeFoundInTheFinalStagesIsFinalAndElsewhereBuild() {
+        assertAll(
+                () -> assertThat(Runtimes.found("go", true, "e").where()).isEqualTo("final"),
+                () -> assertThat(Runtimes.found("go", false, "e").where()).isEqualTo("build"));
+    }
+
+    @Test
+    void theFirstEvidenceForEachKeyIsKept() {
+        assertThat(Runtimes.firstOf(Stream.of(new Runtimes.Found("go", "final", "one"),
+                new Runtimes.Found("go", "final", "two"), new Runtimes.Found("java", "final", "three")),
+                Runtimes.Found::runtime)).extracting(Runtimes.Found::evidence).containsExactly("one", "three");
+    }
+
+    @Test
+    void onlyAnAncestorsFinalRuntimesAreInherited() {
+        CatalogueEntry base = CatalogueLinksTest.entry("aaa", "registry.access.redhat.com/ubi9/ubi:9",
+                Map.of("name", "acme/base"));
+        CatalogueEntry building = new CatalogueEntry("aaa", List.of(), false, base.image(), new CatalogueEntry.Build(
+                List.of(stage(0, "build", "golang", null), stage(1, null, "ubi9/ubi", null)), List.of(), List.of(),
+                0, 0, 0, Map.of(), List.of()), null, null, null, null, null);
+
+        assertThat(Runtimes.inheritedFrom(building)).isEmpty();
+    }
+
+    @Test
+    void stagesThatBuildOnEachOtherInACircleAreEachCountedOnce() {
+        assertThat(Runtimes.finalStages(List.of(stage(0, "a", null, "b"), stage(1, "b", null, "a"))))
+                .containsExactly(1, 0);
+    }
+
+    @Test
+    void aDockerfileWithoutStagesHasNoFinalStages() {
+        assertThat(Runtimes.finalStages(List.of())).isEmpty();
     }
 }

@@ -2,9 +2,11 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ArchetypeRowsTest {
@@ -50,18 +52,83 @@ class ArchetypeRowsTest {
 
     @Test
     void eachRowCountsItsLocationsByOrganisationAndRepositoryLargestFirst() {
-        assertThat(ArchetypeRows.of(RANKING, ESTATE).rows().getFirst()).satisfies(r -> {
-            assertThat(r.organisations()).containsExactly(Map.entry("acme", 3));
-            assertThat(r.repositories()).containsExactly(Map.entry("acme/api", 2), Map.entry("acme/web", 1));
-        });
+        ArchetypeRows.Row first = ArchetypeRows.of(RANKING, ESTATE).rows().getFirst();
+
+        assertAll(
+                () -> assertThat(first.organisations()).containsExactly(Map.entry("acme", 3)),
+                () -> assertThat(first.repositories())
+                        .containsExactly(Map.entry("acme/api", 2), Map.entry("acme/web", 1)));
     }
 
     @Test
     void coverageCountsTheFewestRowsCoveringEightyAndNinetyFivePercent() {
-        assertThat(ArchetypeRows.of(RANKING, ESTATE)).satisfies(r -> {
-            assertThat(r.total()).isEqualTo(5);
-            assertThat(r.k80()).isEqualTo(2);
-            assertThat(r.k95()).isEqualTo(3);
-        });
+        ArchetypeRows rows = ArchetypeRows.of(RANKING, ESTATE);
+
+        assertAll(
+                () -> assertThat(rows.total()).isEqualTo(5),
+                () -> assertThat(rows.k80()).isEqualTo(2),
+                () -> assertThat(rows.k95()).isEqualTo(3));
+    }
+
+    @Test
+    void anArchetypesDockerfilesOutsideTheEstateAreNotLocated() {
+        assertThat(ArchetypeRows.located(RANKING.archetypes().getFirst(), Map.of("c1", List.of())))
+                .containsExactly("c1");
+    }
+
+    @Test
+    void anOrdinaryArchetypeKeepsItsDockerfilesThatAreNotBundles() {
+        assertThat(ArchetypeRows.kept(RANKING.archetypes().getFirst(), List.of("a2", "c1"), Set.of("a2")))
+                .containsExactly("c1");
+    }
+
+    @Test
+    void anArchetypeOfTemplatesKeepsNoDockerfiles() {
+        assertThat(ArchetypeRows.kept(RANKING.archetypes().get(2), List.of("t1"), Set.of())).isEmpty();
+    }
+
+    @Test
+    void anOrdinaryArchetypeSetsApartOnlyItsBundles() {
+        assertThat(ArchetypeRows.setApart(RANKING.archetypes().getFirst(), List.of("a2", "c1"), Set.of("a2")))
+                .isEqualTo(Map.entry(ArchetypeName.BUNDLE, List.of("a2")));
+    }
+
+    @Test
+    void anArchetypeOfTemplatesIsSetApartWhole() {
+        assertThat(ArchetypeRows.setApart(RANKING.archetypes().get(2), List.of("t1"), Set.of()))
+                .isEqualTo(Map.entry("template, not a Dockerfile", List.of("t1")));
+    }
+
+    @Test
+    void theKindsOfArchetypeSetApartAreTemplatesUnreadableFilesAndUnresolvedBases() {
+        assertAll(
+                () -> assertThat(ArchetypeRows.kind(Passes.TEMPLATES)).isEqualTo("template, not a Dockerfile"),
+                () -> assertThat(ArchetypeRows.kind("unresolved:|||ROOT||NONE|stages=1"))
+                        .isEqualTo(ArchetypeRows.UNRESOLVED),
+                () -> assertThat(ArchetypeRows.kind(UBI)).isNull());
+    }
+
+    @Test
+    void eachKindSetApartCountsItsFilesAndLocationsInTheKindsOrder() {
+        assertThat(ArchetypeRows.apart(Map.of(ArchetypeRows.UNRESOLVED, List.of("u1"),
+                ArchetypeName.BUNDLE, List.of("a2", "zz")), Map.of("a2", List.of(location("acme/bundles")))))
+                .containsExactly(Map.entry(ArchetypeName.BUNDLE, new ArchetypeRows.Apart(2, 1)),
+                        Map.entry(ArchetypeRows.UNRESOLVED, new ArchetypeRows.Apart(1, 0)));
+    }
+
+    @Test
+    void rowsAreRankedByLocationsThenByTheArchetypesRank() {
+        ArchetypeRows.Row one = ArchetypeRows.row(0, RANKING.archetypes().get(1), List.of("a1"),
+                Map.of("a1", List.of(location("acme/api"))));
+        ArchetypeRows.Row two = ArchetypeRows.row(0, RANKING.archetypes().getFirst(), List.of("c1"),
+                Map.of("c1", List.of(location("beta/c"))));
+
+        assertThat(ArchetypeRows.ranked(List.of(one, two), Map.of()).rows())
+                .extracting(ArchetypeRows.Row::rank, row -> row.archetype().rank())
+                .containsExactly(tuple(1, 1), tuple(2, 2));
+    }
+
+    private static Location location(String repository) {
+        return new Location(repository, "Dockerfile", "release");
     }
 }

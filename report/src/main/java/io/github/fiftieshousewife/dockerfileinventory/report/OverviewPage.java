@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// The summary of the estate, or of one organisation, from the catalogue's figures.
 final class OverviewPage {
 
     static final List<String> DATA = List.of("catalogue/dockerfiles.jsonl", "archetypes.jsonl", "passes.json");

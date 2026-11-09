@@ -9,7 +9,6 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-// The catalogue as the pages read it: the file the report wrote, and nothing else.
 record CatalogueView(List<CatalogueEntry> entries) {
 
     private static final ObjectMapper JSON = JsonMapper.builder()

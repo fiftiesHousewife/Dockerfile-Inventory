@@ -63,4 +63,12 @@ class ReportMainTest {
         assertThatThrownBy(() -> ReportMain.run(Map.of("OUT_DIR", "/o")))
                 .isInstanceOf(IllegalStateException.class).hasMessage("FACTS_DIR is not set");
     }
+
+    @Test
+    void theReportIsWrittenUnderTheOutputDirectory(@TempDir Path out) {
+        ReportMain.run(Map.of("FACTS_DIR", EstateTest.FIXTURES.toString(), "DISCOVERY_DIR",
+                EstateTest.FIXTURES.toString(), "OUT_DIR", out.toString()));
+
+        assertThat(out.resolve("index.html")).exists();
+    }
 }

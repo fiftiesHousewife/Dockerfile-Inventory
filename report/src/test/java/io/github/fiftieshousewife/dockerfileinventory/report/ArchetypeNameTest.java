@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
@@ -43,5 +44,27 @@ class ArchetypeNameTest {
                 Map.entry("Base family", "scratch"), Map.entry("Package managers", "none"),
                 Map.entry("Packages", "none"), Map.entry("User", "numeric user"), Map.entry("Ports", "none"),
                 Map.entry("Start command", "none of its own"), Map.entry("Stages", "1"));
+    }
+
+    @Test
+    void theFirstThreePackagesAreNamedAndTheRestCounted() {
+        assertAll(
+                () -> assertThat(ArchetypeName.packages("git,curl,jq,tar,gzip")).isEqualTo("git, curl, jq and 2 more"),
+                () -> assertThat(ArchetypeName.packages("git,curl")).isEqualTo("git, curl"));
+    }
+
+    @Test
+    void anEmptyAttributeReadsAsNone() {
+        assertAll(
+                () -> assertThat(ArchetypeName.orNone("")).isEqualTo("none"),
+                () -> assertThat(ArchetypeName.orNone("8080")).isEqualTo("8080"));
+    }
+
+    @Test
+    void theStartCommandSaysItsForm() {
+        assertAll(
+                () -> assertThat(ArchetypeName.start("EXEC")).isEqualTo("exec form"),
+                () -> assertThat(ArchetypeName.start("SHELL")).isEqualTo("shell form"),
+                () -> assertThat(ArchetypeName.start("NONE")).isEqualTo("none of its own"));
     }
 }

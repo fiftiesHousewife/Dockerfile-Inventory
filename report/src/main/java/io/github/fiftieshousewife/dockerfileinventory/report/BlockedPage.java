@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-// The unmaintained images in the middle of chains, ordered by how many images each holds back from a fresh base.
 final class BlockedPage {
 
     record Blocker(Hierarchies.Step step, int images, Set<String> dockerfiles) {
@@ -51,6 +50,7 @@ final class BlockedPage {
     private static String row(Blocker blocker) {
         return "<tr><td>" + escape(String.join(", ", blocker.step().names())) + "</td><td>"
                 + escape(String.join("; ", blocker.step().unmaintained())) + "</td><td>" + blocker.images()
-                + "</td><td>" + blocker.dockerfiles().stream().map(sha -> Html.shaLink("dockerfiles/", sha)).collect(Collectors.joining(" ")) + "</td></tr>";
+                + "</td><td>" + blocker.dockerfiles().stream().map(sha -> Html.shaLink("dockerfiles/", sha))
+                .collect(Collectors.joining(" ")) + "</td></tr>";
     }
 }

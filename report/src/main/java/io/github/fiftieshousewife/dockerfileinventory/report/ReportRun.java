@@ -81,7 +81,7 @@ final class ReportRun {
         return json.writerWithDefaultPrettyPrinter().writeValueAsString(value);
     }
 
-    private void write(String file, String text) {
+    void write(String file, String text) {
         try {
             int slash = file.lastIndexOf('/');
             Files.createDirectories(slash < 0 ? outDir : outDir.resolve(file.substring(0, slash)));

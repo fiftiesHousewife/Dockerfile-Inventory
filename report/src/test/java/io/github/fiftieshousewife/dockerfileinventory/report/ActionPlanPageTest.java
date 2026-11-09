@@ -61,4 +61,41 @@ class ActionPlanPageTest {
     void theRepositoriesComeWithTheMostActionsFirst() {
         assertThat(ActionPlanPage.body(view(1), Set.of())).containsSubsequence("team/web", "team/api");
     }
+
+    @Test
+    void aCataloguedDockerfileLinksToItsPageByItsFirstPlace() {
+        assertThat(ActionPlanPage.dockerfile("aaa", new ActionPlanView.Where("team/api", "Dockerfile"), Set.of("aaa")))
+                .isEqualTo("<a href=\"dockerfiles/aaa.html\">team/api Dockerfile</a>");
+    }
+
+    @Test
+    void aDockerfileWithoutAPlaceOrPageIsNamedByItsSha() {
+        assertThat(ActionPlanPage.dockerfile("aaa", null, Set.of())).isEqualTo("aaa");
+    }
+
+    @Test
+    void aFixesRowSaysItsSeverityCertaintyAndCounts() {
+        ActionPlanView.PlannedFix fix = view(1).fixes().getFirst();
+
+        assertThat(ActionPlanPage.row(fix, null, Set.of())).contains("<td>breaks (read)</td>", "<td>P6</td>",
+                "<td class=\"num\">3</td>", "<td class=\"num\">7</td>");
+    }
+
+    @Test
+    void eachDockerfileKeepsTheFirstPlaceAnyActionNames() {
+        assertThat(ActionPlanPage.firstPlaces(view(2).actions()))
+                .containsEntry("aaa", new ActionPlanView.Where("team/api", "aaa/Dockerfile"));
+    }
+
+    @Test
+    void repositoriesAreListedMostActionsFirst() {
+        assertThat(ActionPlanPage.repositories(Map.of("team/api", 1, "team/web", 3)))
+                .containsSubsequence("team/web", "team/api");
+    }
+
+    @Test
+    void fixesBeyondThoseShownAreCountedNotListed() {
+        assertThat(ActionPlanPage.fixes(view(ActionPlanPage.SHOWN + 2), Set.of()))
+                .contains("and 2 more in the validator's fixes.jsonl.");
+    }
 }

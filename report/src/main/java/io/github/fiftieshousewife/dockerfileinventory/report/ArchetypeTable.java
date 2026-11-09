@@ -42,8 +42,9 @@ final class ArchetypeTable {
     static String name(Row row, Set<String> pages, String up) {
         return row.blobShas().stream().filter(pages::contains).findFirst()
                 .map(sha -> "<a href=\"" + up + "dockerfiles/" + escape(sha) + ".html\">" + escape(row.name()) + "</a>")
-                .orElseGet(() -> escape(row.name()) + "<br><span class=\"note\">" + escape(row.where().getFirst().repository()
-                        + ": " + row.where().getFirst().path()) + "</span>");
+                .orElseGet(() -> escape(row.name()) + "<br><span class=\"note\">"
+                        + escape(row.where().getFirst().repository() + ": " + row.where().getFirst().path())
+                        + "</span>");
     }
 
     static String chips(Map<String, Integer> organisations) {

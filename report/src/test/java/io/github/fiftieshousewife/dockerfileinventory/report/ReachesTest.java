@@ -2,8 +2,10 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ReachesTest {
@@ -43,5 +45,17 @@ class ReachesTest {
     void registryImagesBelowAreThoseWhoseChainPassesThroughAnImageBuiltFromIt() {
         assertThat(new Hierarchies(RegistryImages.read(RegistryImagesTest.LINEAGE), 12, 40)
                 .imagesBelow("1723284a866651acfdadf451286d13c452181e12")).isEqualTo(3);
+    }
+
+    @Test
+    void everyDockerfileBelowIsAddedOnceWhateverItsPath() {
+        Map<String, CatalogueLinks.Links> links = Map.of(
+                "aaa", new CatalogueLinks.Links(List.of(), List.of(link("bbb"), link("ccc")), 0),
+                "bbb", new CatalogueLinks.Links(List.of(), List.of(link("ccc")), 1));
+        Set<String> below = new LinkedHashSet<>();
+
+        Reaches.addChildren("aaa", "aaa", links, below);
+
+        assertThat(below).containsExactlyInAnyOrder("bbb", "ccc");
     }
 }

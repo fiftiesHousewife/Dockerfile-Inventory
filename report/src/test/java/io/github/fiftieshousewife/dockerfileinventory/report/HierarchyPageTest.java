@@ -72,4 +72,13 @@ class HierarchyPageTest {
         assertThat(HierarchyPage.detail(entry))
                 .isEqualTo("10 layers, 0 images, last changed 2025-03-01, unmaintained: repository archived");
     }
+
+    @Test
+    void onlyLinksToEstateDockerfilesAreKnownAndEachOnce() {
+        HierarchyPage page = new HierarchyPage(List.of(linked("aaa", "platform/base", List.of(), List.of())));
+
+        assertThat(page.known(List.of(new CatalogueLinks.Link("aaa", "inferred", ""),
+                new CatalogueLinks.Link("aaa", "lineage", ""), new CatalogueLinks.Link("zzz", "inferred", ""))))
+                .extracting(CatalogueEntry::blobSha).containsExactly("aaa");
+    }
 }
