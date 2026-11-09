@@ -1,16 +1,16 @@
 package io.github.fiftieshousewife.dockerfileinventory.tools;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-// Which OKD images a lineage run copies: tools and network-tools (one built on the other), then one image per
-// repository discovery scanned, spread evenly across the release, while they and every base they need stay within
-// the count.
+// tools and network-tools come first: one is built on the other.
 record OkdChoice(List<Image> candidates, List<Image> chosen, List<String> bases) {
 
     static final String CONTENT = "okd/scos-content";
@@ -26,15 +26,17 @@ record OkdChoice(List<Image> candidates, List<Image> chosen, List<String> bases)
 
     static List<Image> candidates(String release, List<Image> images, Set<String> scanned, int count) {
         Set<String> tools = Set.of(release + "-tools", release + "-network-tools");
-        Set<String> seen = new HashSet<>();
-        List<Image> others = images.stream().filter(image -> !tools.contains(image.tag()))
-                .filter(image -> scanned.contains(image.repository()) && seen.add(image.repository())).toList();
-        double step = Math.max(1, (double) others.size() / count);
-        List<Image> spread = new ArrayList<>();
-        for (int i = 0; i * step < others.size(); i++) {
-            spread.add(others.get((int) (i * step)));
-        }
-        return Stream.concat(images.stream().filter(image -> tools.contains(image.tag())), spread.stream()).toList();
+        List<Image> others = List.copyOf(images.stream().filter(image -> !tools.contains(image.tag()))
+                .filter(image -> scanned.contains(image.repository())).collect(Collectors.toMap(Image::repository,
+                        image -> image, (first, later) -> first, LinkedHashMap::new)).values());
+        return Stream.concat(images.stream().filter(image -> tools.contains(image.tag())), spread(others, count)
+                .stream()).toList();
+    }
+
+    static List<Image> spread(List<Image> images, int count) {
+        double step = Math.max(1, (double) images.size() / count);
+        return IntStream.iterate(0, i -> i * step < images.size(), i -> i + 1)
+                .mapToObj(i -> images.get((int) (i * step))).toList();
     }
 
     static OkdChoice of(List<Image> candidates, Map<String, List<String>> bases, int count) {
@@ -52,7 +54,6 @@ record OkdChoice(List<Image> candidates, List<Image> chosen, List<String> bases)
         return new OkdChoice(candidates, chosen, List.copyOf(needed));
     }
 
-    // Each base, then each chosen image, with the name it gets in JCR.
     List<String> mirror(String release) {
         return Stream.concat(bases.stream().map(base -> base + " " + jcrName(base)), chosen.stream()
                 .map(image -> "quay.io/" + CONTENT + ":" + image.tag() + " okd/"

@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Collects real images into the fixture bank from a lineage run: each image's config, the facts of every Dockerfile
@@ -22,8 +21,6 @@ public final class ImageCollect {
 
     static final List<String> INPUTS = List.of("lineage/images.jsonl", "lineage/links.jsonl", "facts/facts.jsonl",
             "discovery/manifest.jsonl");
-    static final List<String> SOURCE_LABELS = List.of("io.openshift.build.source-location",
-            "org.opencontainers.image.source");
 
     private final Path run;
     private final Path corpus;
@@ -54,89 +51,52 @@ public final class ImageCollect {
         });
         Map<String, JsonNode> links = Json.rows(run.resolve("lineage/links.jsonl"))
                 .collect(Collectors.toMap(row -> row.path("configDigest").asString(), row -> row, (a, b) -> a));
-        int written = 0;
-        for (Map.Entry<String, String> image : names().entrySet()) {
-            Path config = run.resolve("lineage/configs").resolve(image.getKey().replace(':', '_') + ".json");
-            Path dir = corpus.resolve(image.getValue() + "-" + image.getKey().substring(7, 15));
-            if (!Files.isDirectory(dir) && Files.isRegularFile(config)) {
-                write(dir, image.getValue(), Json.read(config), links.get(image.getKey()));
-                written++;
-            }
-        }
-        return written;
+        List<Map.Entry<String, String>> added = names().entrySet().stream()
+                .filter(image -> !Files.isDirectory(caseDir(image)) && Files.isRegularFile(config(image.getKey())))
+                .toList();
+        added.forEach(image -> write(caseDir(image), image.getValue(), Json.read(config(image.getKey())),
+                links.get(image.getKey())));
+        return added.size();
     }
 
-    // Each placed image's name, the last two parts of its path; the first the run recorded, when pushed under several.
+    private Path config(String digest) {
+        return run.resolve("lineage/configs").resolve(digest.replace(':', '_') + ".json");
+    }
+
+    private Path caseDir(Map.Entry<String, String> image) {
+        return corpus.resolve(image.getValue() + "-" + image.getKey().substring(7, 15));
+    }
+
     Map<String, String> names() {
-        Map<String, String> names = new TreeMap<>();
-        Json.rows(run.resolve("lineage/images.jsonl")).filter(row -> row.path("configDigest").isString())
-                .forEach(row -> {
-                    List<String> parts = List.of(row.path("image").asString().split("/"));
-                    String name = String.join("-", parts.subList(Math.max(0, parts.size() - 2), parts.size()));
-                    names.putIfAbsent(row.path("configDigest").asString(), name);
-                });
-        return names;
+        return Json.rows(run.resolve("lineage/images.jsonl")).filter(row -> row.path("configDigest").isString())
+                .collect(Collectors.toMap(row -> row.path("configDigest").asString(),
+                        row -> name(row.path("image").asString()), (first, later) -> first, TreeMap::new));
+    }
+
+    static String name(String image) {
+        List<String> parts = List.of(image.split("/"));
+        return String.join("-", parts.subList(Math.max(0, parts.size() - 2), parts.size()));
     }
 
     private void write(Path dir, String name, JsonNode config, JsonNode link) {
-        JsonNode labels = config.path("config").path("Labels").isObject() ? config.path("config").path("Labels")
-                : Json.MAPPER.createObjectNode();
-        String repository = repository(SOURCE_LABELS.stream().map(label -> labels.path(label).asString(""))
-                .filter(value -> !value.isEmpty()).findFirst().orElse(""));
+        JsonNode labels = ImageCase.labels(config);
+        String repository = ImageCase.sourceRepository(labels);
         try {
             Files.createDirectories(dir);
-            Files.writeString(dir.resolve("config.json"), Json.pretty(trimmed(config, labels)));
+            Files.writeString(dir.resolve("config.json"), Json.pretty(ImageCase.trimmed(config, labels)));
             Files.writeString(dir.resolve("dockerfiles.jsonl"), candidates(repository));
-            Files.writeString(dir.resolve("expected.json"), Json.pretty(expected(name, repository, link)));
+            Files.writeString(dir.resolve("expected.json"), Json.pretty(ImageCase.expected(name, repository, link)));
             System.out.println("added " + dir.getFileName());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    static ObjectNode trimmed(JsonNode config, JsonNode labels) {
-        ObjectNode trimmed = Json.MAPPER.createObjectNode();
-        ObjectNode inner = trimmed.putObject("config");
-        inner.set("Labels", labels);
-        inner.set("User", config.path("config").path("User").isMissingNode() ? null
-                : config.path("config").path("User"));
-        trimmed.set("rootfs", config.path("rootfs").isMissingNode() ? null : config.path("rootfs"));
-        trimmed.set("history", config.path("history").isMissingNode() ? null : config.path("history"));
-        return trimmed;
-    }
-
-    // The facts of every Dockerfile the repository holds, in the facts' order.
     String candidates(String repository) {
         Set<String> blobs = Json.rows(run.resolve("discovery/manifest.jsonl"))
                 .filter(row -> row.path("repository").asString().equals(repository))
                 .map(row -> row.path("blobSha").asString()).collect(Collectors.toSet());
         return Json.rows(run.resolve("facts/facts.jsonl")).filter(row -> blobs.contains(row.path("blobSha").asString()))
-                .map(row -> {
-                    ObjectNode candidate = Json.MAPPER.createObjectNode();
-                    candidate.set("blobSha", row.path("blobSha"));
-                    candidate.set("steps", row.path("steps"));
-                    candidate.set("fromPath", row.path("fromPath"));
-                    candidate.put("repository", repository);
-                    return candidate.toString() + "\n";
-                }).collect(Collectors.joining());
-    }
-
-    static ObjectNode expected(String name, String repository, JsonNode link) {
-        ObjectNode expected = Json.MAPPER.createObjectNode();
-        expected.put("image", name);
-        expected.put("sourceRepository", repository);
-        if (link != null) {
-            expected.set("tier", link.path("tier"));
-            expected.set("blobShas", link.path("blobShas"));
-            expected.put("credited", link.path("credited").asBoolean(false));
-        }
-        return expected;
-    }
-
-    // The owner and name from a source label's URL: https://host/owner/name/... -> owner/name.
-    static String repository(String url) {
-        String path = url.replaceFirst("^https?://[^/]+/", "");
-        List<String> parts = List.of(path.split("/"));
-        return path.isEmpty() ? "" : String.join("/", parts.subList(0, Math.min(2, parts.size())));
+                .map(row -> ImageCase.candidate(row, repository) + "\n").collect(Collectors.joining());
     }
 }

@@ -47,7 +47,6 @@ public final class SurveyMain {
         }
     }
 
-    // A stage's failure, told in one line: the stage and the first line of why.
     static final class StageFailed extends Exception {
 
         private static final long serialVersionUID = 1L;
@@ -94,14 +93,18 @@ public final class SurveyMain {
             throws StageFailed {
         List<Survey.Step> steps = Survey.steps(arguments.urls(), arguments.trial(), env);
         for (Survey.Step step : steps) {
-            System.out.println("survey: " + step.stage() + " into " + step.env().get("OUT_DIR"));
-            try {
-                runners.get(step.stage()).run(step.env());
-            } catch (Exception e) {
-                throw new StageFailed(step.stage(), e);
-            }
+            runStage(step, runners);
         }
         return Path.of(steps.getLast().env().get("OUT_DIR"), "index.html");
+    }
+
+    static void runStage(Survey.Step step, Map<String, Runner> runners) throws StageFailed {
+        System.out.println("survey: " + step.stage() + " into " + step.env().get("OUT_DIR"));
+        try {
+            runners.get(step.stage()).run(step.env());
+        } catch (Exception e) {
+            throw new StageFailed(step.stage(), e);
+        }
     }
 
     static String explained(StageFailed failure) {
@@ -112,11 +115,14 @@ public final class SurveyMain {
     }
 
     static void combine(Map<String, String> env) {
-        Combine.Summary merged = Combine.of(Arrays.stream(env.get("COMBINE_SOURCES").split(",")).map(Path::of)
-                .toList(), Path.of(env.get("OUT_DIR")));
-        System.out.println("survey: combined " + merged.locations() + " locations, " + merged.repositories()
-                + " repositories, " + merged.blobs() + " Dockerfiles" + (merged.repeated().isEmpty() ? ""
-                : "; in more than one organisation, so counted twice: " + String.join(", ", merged.repeated())));
+        System.out.println(combined(Combine.of(Arrays.stream(env.get("COMBINE_SOURCES").split(",")).map(Path::of)
+                .toList(), Path.of(env.get("OUT_DIR")))));
+    }
+
+    static String combined(Combine.Summary merged) {
+        return "survey: combined " + merged.locations() + " locations, " + merged.repositories() + " repositories, "
+                + merged.blobs() + " Dockerfiles" + (merged.repeated().isEmpty() ? ""
+                : "; in more than one organisation, so counted twice: " + String.join(", ", merged.repeated()));
     }
 
     static Arguments arguments(String... args) {

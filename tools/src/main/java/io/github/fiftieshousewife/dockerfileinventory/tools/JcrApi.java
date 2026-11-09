@@ -12,8 +12,7 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 import tools.jackson.databind.JsonNode;
 
-// The local JCR's API as the lineage demo uses it, as admin with the first-start password. Tokens are kept in
-// memory and never printed: a refusal shows the reply without them.
+// Tokens are kept in memory and never printed: a refusal shows the reply without them.
 final class JcrApi {
 
     private final URI root;
@@ -35,8 +34,7 @@ final class JcrApi {
         }
     }
 
-    // The local Docker repository's key: the one asked for when there is one, else JCR's first (its setup wizard
-    // names its own).
+    // JCR's setup wizard names its repository itself, so without the one asked for, its first is taken.
     Optional<String> repository(String wanted) {
         JsonNode list = Json.MAPPER.readTree(send(get("artifactory/api/repositories?type=local&packageType=docker")
                 .header("Authorization", admin).build()).body());
@@ -74,7 +72,6 @@ final class JcrApi {
                 .build()).statusCode() == 200;
     }
 
-    // A token that can list the repositories: the access API's, else the older security API's.
     String token() {
         String reply = send(HttpRequest.newBuilder(root.resolve("access/api/v1/tokens")).header("Authorization", admin)
                 .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(

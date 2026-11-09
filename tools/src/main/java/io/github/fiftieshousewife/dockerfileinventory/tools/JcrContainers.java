@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.List;
 
-// PostgreSQL and the JFrog Container Registry in containers on the demo's network. JCR 7.19x refuses its old
-// built-in Derby, so it runs on PostgreSQL; the database password is a fixed local one, reachable only on the network.
+// JCR 7.19x refuses its old built-in Derby, so it runs on PostgreSQL; the database password is a fixed local one,
+// reachable only on the demo's network.
 final class JcrContainers {
 
     static final String NETWORK = "inventory-demo";
@@ -46,20 +46,31 @@ final class JcrContainers {
                 .ok();
     }
 
-    // A JCR of another version cannot open this one's database: removing its volumes is left to the person.
     void jcr() {
+        refuseAnotherVersion();
+        removeIfOnAnotherPort();
+        if (!running(JCR)) {
+            startJcr();
+        }
+    }
+
+    // A JCR of another version cannot open this one's database: removing its volumes is left to the person.
+    void refuseAnotherVersion() {
         String running = docker.run("docker", "inspect", "-f", "{{.Config.Image}}", JCR).out().strip();
         if (!running.isEmpty() && !running.equals(jcrImage) && !running.startsWith("Error")) {
             throw new IllegalStateException("JCR runs " + running + ", not " + jcrImage + ". To start again on "
                     + "empty data: docker rm -f " + JCR + " " + POSTGRES + "; docker volume rm " + JCR + " "
                     + POSTGRES);
         }
+    }
+
+    void removeIfOnAnotherPort() {
         if (running(JCR) && !docker.run("docker", "port", JCR, "8082/tcp").out().strip().endsWith(":" + port)) {
             docker.run("docker", "rm", "-f", JCR);
         }
-        if (running(JCR)) {
-            return;
-        }
+    }
+
+    void startJcr() {
         if (taken(port)) {
             throw new IllegalStateException("port " + port + " is already taken; free it, or choose another: "
                     + "JCR_PORT=18082");

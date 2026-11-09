@@ -10,8 +10,6 @@ import java.util.Locale;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-// The lineage demo's builds: sclorg's CentOS Stream 9 Dockerfiles discovery found, each named as sclorg publishes its
-// image and built FROM the image built before it; the chain, or every one.
 final class BuildPlan {
 
     private static final Pattern CHAIN = Pattern.compile("sclorg/s2i-base-container\t[0-9a-f]+\t(core|base)/"
@@ -33,7 +31,7 @@ final class BuildPlan {
                 "Dockerfile.c9s")).forEach(row -> rows.add(String.join("\t", row.path("repository").asString(),
                 row.path("commitSha").asString(), row.path("path").asString(), row.path("blobSha").asString())));
         return rows.stream().map(row -> row.split("\t")).map(fields -> new Build(name(fields[0], fields[2]),
-                fields[0], fields[1], fields[2], base(discovery.resolve("blobs").resolve(fields[3])))).toList();
+                fields[0], fields[1], fields[2], firstFrom(discovery.resolve("blobs").resolve(fields[3])))).toList();
     }
 
     static String name(String repository, String path) {
@@ -48,8 +46,7 @@ final class BuildPlan {
         return "sclorg/" + part.toLowerCase(Locale.ROOT).replace('/', '-').replace('.', '-') + "-c9s:c9s";
     }
 
-    // The first FROM's image, as written.
-    static String base(Path blob) {
+    static String firstFrom(Path blob) {
         try {
             return Files.readAllLines(blob).stream().filter(line -> line.toUpperCase(Locale.ROOT).startsWith("FROM"))
                     .map(line -> line.trim().split("\\s+")).filter(words -> words.length > 1).map(words -> words[1])
@@ -63,12 +60,11 @@ final class BuildPlan {
         return all.stream().filter(build -> CHAIN.matcher(build.line()).find()).toList();
     }
 
-    // Parents before children: the CentOS roots' children, then s2i-core's, then s2i-base's.
-    static List<Build> ordered(List<Build> plan) {
+    static List<Build> parentsFirst(List<Build> plan) {
         return plan.stream().sorted(Comparator.comparingInt(BuildPlan::rank)).toList();
     }
 
-    private static int rank(Build build) {
+    static int rank(Build build) {
         return build.base().contains("s2i-base") ? 2 : build.base().contains("s2i-core") ? 1 : 0;
     }
 }

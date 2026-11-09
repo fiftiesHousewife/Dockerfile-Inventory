@@ -28,6 +28,17 @@ class OkdChoiceTest {
     }
 
     @Test
+    void aSpreadTakesEveryImageWhenThereAreNoMoreThanTheCountElseEvenSteps() {
+        List<OkdChoice.Image> images = List.of(image("a", "r/a"), image("b", "r/b"), image("c", "r/c"),
+                image("d", "r/d"));
+
+        assertAll(
+                () -> assertThat(OkdChoice.spread(images, 5)).isEqualTo(images),
+                () -> assertThat(OkdChoice.spread(images, 2)).extracting(OkdChoice.Image::tag)
+                        .containsExactly(RELEASE + "-a", RELEASE + "-c"));
+    }
+
+    @Test
     void imagesAreChosenInOrderWhileThemAndEveryBaseTheyNeedStayWithinTheCount() {
         List<OkdChoice.Image> candidates = List.of(image("tools", "openshift/oc"), image("a", "openshift/a"),
                 image("b", "openshift/b"));

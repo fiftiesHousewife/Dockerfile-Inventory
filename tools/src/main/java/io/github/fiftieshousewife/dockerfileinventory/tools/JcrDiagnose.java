@@ -12,6 +12,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * Why the local JCR the lineage demo starts is not answering: the image's architecture, Docker's memory, the
  * container's state and memory use, the errors in its own logs, where it can be reached from, and what its Docker API
@@ -55,6 +56,12 @@ public final class JcrDiagnose {
     }
 
     void run() {
+        containerSections();
+        networkSections();
+        dockerApi();
+    }
+
+    private void containerSections() {
         String jcr = JcrContainers.JCR;
         section("image architecture (arm64 runs natively on Apple silicon; amd64 is emulated)",
                 List.of("docker", "image", "inspect", image, "--format", "{{.Architecture}}"));
@@ -69,6 +76,10 @@ public final class JcrDiagnose {
         section("errors in the service logs, last 20 (start-up retries left out)", List.of("docker", "exec", jcr, "sh",
                 "-c", "grep -hiE 'error|exception|fatal' " + LOGS + "/*-service.log | grep -v 'Cluster join' "
                         + "| tail -20"));
+    }
+
+    private void networkSections() {
+        String jcr = JcrContainers.JCR;
         String ping = "/artifactory/api/system/ping";
         section("reachability from the demo network and inside JCR", List.of("docker", "run", "--rm", "--network",
                 JcrContainers.NETWORK, "curlimages/curl:8.10.1", "-s", "-m", "5", "-o", "/dev/null", "-w",
@@ -81,25 +92,28 @@ public final class JcrDiagnose {
                 List.of("docker", "exec", jcr, "ls", "/var/opt/jfrog/artifactory/etc/artifactory"),
                 List.of("docker", "exec", jcr, "sh", "-c", "grep -hiE 'config.import|import.*config|yaml' " + LOGS
                         + "/artifactory-service.log | tail -15"));
+    }
+
+    private void dockerApi() {
         out.println("\n== Docker API from this machine: status and the start of each reply (admin login)");
         DOCKER_API.forEach(path -> out.printf("%-52s %s%n", "/" + path, probe(path)));
     }
 
     @SafeVarargs
-    private void section(String title, List<String>... commands) {
+    final void section(String title, List<String>... commands) {
         out.println("\n== " + title);
         for (List<String> command : commands) {
             out.print(docker.run(command, null).out());
         }
     }
 
-    private String probe(String path) {
+    String probe(String path) {
         try {
             HttpResponse<String> reply = client.send(HttpRequest.newBuilder(root.resolve(path))
                     .timeout(Duration.ofSeconds(10)).header("Authorization", admin).build(),
                     HttpResponse.BodyHandlers.ofString());
             return reply.statusCode() + " " + reply.headers().firstValue("WWW-Authenticate").map(v -> v + " ")
-                    .orElse("") + shown(reply.body());
+                    .orElse("") + redacted(reply.body());
         } catch (IOException e) {
             return "no answer: " + e.getMessage();
         } catch (InterruptedException e) {
@@ -108,8 +122,7 @@ public final class JcrDiagnose {
         }
     }
 
-    // A reply's first 200 characters on one line, any token in it hidden.
-    static String shown(String body) {
+    static String redacted(String body) {
         String hidden = body.replaceAll("\"(token|access_token)\"\\s*:\\s*\"[^\"]*\"", "\"$1\":\"(hidden)\"")
                 .replace('\n', ' ');
         return hidden.length() > 200 ? hidden.substring(0, 200) : hidden;

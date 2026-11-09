@@ -67,19 +67,19 @@ class ImageCollectTest {
     }
 
     @Test
-    void theSourceRepositoryIsTheOwnerAndNameInTheLabelsUrl() {
-        assertAll(
-                () -> assertThat(ImageCollect.repository("https://github.com/openshift/oc.git/tree/main"))
-                        .isEqualTo("openshift/oc.git"),
-                () -> assertThat(ImageCollect.repository("")).isEmpty());
-    }
-
-    @Test
     void anImagePushedUnderTwoNamesTakesTheFirstTheRunRecorded() throws IOException {
         Files.writeString(run.resolve("lineage/images.jsonl"), "{\"image\":\"okd/tools\",\"configDigest\":\""
                 + DIGEST + "\"}\n{\"image\":\"art/ocp-art-tenant/art-okd-images\",\"configDigest\":\"" + DIGEST
                 + "\"}\n");
 
         assertThat(new ImageCollect(run, corpus).names()).containsEntry(DIGEST, "okd-tools");
+    }
+
+    @Test
+    void anImagesNameIsTheLastTwoPartsOfItsPath() {
+        assertAll(
+                () -> assertThat(ImageCollect.name("art/ocp-art-tenant/art-okd-images"))
+                        .isEqualTo("ocp-art-tenant-art-okd-images"),
+                () -> assertThat(ImageCollect.name("tools")).isEqualTo("tools"));
     }
 }

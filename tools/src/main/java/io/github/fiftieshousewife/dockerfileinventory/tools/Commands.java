@@ -5,7 +5,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-// The commands the demo runs (docker, git): an interface, so the tests record them instead.
 interface Commands {
 
     record Result(int exit, String out) {
@@ -21,7 +20,7 @@ interface Commands {
         return run(List.of(command), null);
     }
 
-    // The real ones, their output read whole; stderr joins stdout, so a failure says why.
+    // stderr joins stdout, so a failure says why.
     static Commands processes() {
         return (command, stdin) -> {
             try {
