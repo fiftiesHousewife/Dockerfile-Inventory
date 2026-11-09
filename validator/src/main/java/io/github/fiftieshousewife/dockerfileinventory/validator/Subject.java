@@ -11,8 +11,10 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-// One Dockerfile's facts as the checks read them: the parts of a facts.jsonl line that say how its image runs.
-record Subject(String blobSha, Facts facts, Config config, List<Stage> stages, List<Step> steps) {
+// One Dockerfile's facts as the checks read them: the parts of a facts.jsonl line that say how its image runs, and
+// the user its registry images run as when lineage credits any to it.
+record Subject(String blobSha, Facts facts, Config config, List<Stage> stages, List<Step> steps,
+               EffectiveUser effectiveUser) {
 
     private static final ObjectMapper JSON = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
@@ -53,6 +55,14 @@ record Subject(String blobSha, Facts facts, Config config, List<Stage> stages, L
     Subject {
         stages = List.copyOf(stages);
         steps = List.copyOf(steps);
+    }
+
+    Subject(String blobSha, Facts facts, Config config, List<Stage> stages, List<Step> steps) {
+        this(blobSha, facts, config, stages, steps, null);
+    }
+
+    Subject withEffectiveUser(EffectiveUser user) {
+        return new Subject(blobSha, facts, config, stages, steps, user);
     }
 
     boolean runnable() {

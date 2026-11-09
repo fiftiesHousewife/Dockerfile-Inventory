@@ -347,6 +347,7 @@ digest, base updates grouped into one pull request per repository.
 export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
 export PROFILE=openshift-4-restricted-v2      # optional: a shipped profile's name or a profile file
+export LINEAGE_DIR=/data/lineage              # optional: the user each Dockerfile's registry images run as
 export OUT_DIR=/data/validator
 ./gradlew :validator:run
 ```
@@ -360,7 +361,7 @@ the registries the cluster pulls from in `allowedRegistries` (empty: any), and p
 
 | Check | What it finds | Under v2 | Under v1 |
 | --- | --- | --- | --- |
-| P1 | a final user that is root, unset (inferred: it may come from the base) or named; OpenShift runs an arbitrary UID in group 0 | breaks | breaks |
+| P1 | a final user that is root, unset (inferred: it may come from the base) or named; OpenShift runs an arbitrary UID in group 0. With `LINEAGE_DIR`, a Dockerfile lineage credits images to is judged on the user those images run as (read), naming the image or base that set it when lineage knows; a numeric non-root user there clears it, and when its images differ the worst counts | breaks | breaks |
 | P2 | a `VOLUME`, `WORKDIR` or `HOME` never made writable by group 0 in the final stage, by `chmod`, `COPY --chmod` or sclorg's `fix-permissions` (inferred: another script may do it) | breaks | breaks |
 | P3 | an exposed port below 1024 | breaks | breaks |
 | P4 | `sudo`, `su`, `gosu` or `su-exec` in the start command, or `sudo` installed in the final image | breaks | breaks |

@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
-// Reads the facts and the manifest, judges every image through the profile, writes the plan and its actions.
+// Reads the facts, the manifest and lineage's effective users when given, judges every image through the profile, writes the plan and its actions.
 final class ValidatorRun {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -24,18 +24,22 @@ final class ValidatorRun {
 
     private final Path factsDir;
     private final Path discoveryDir;
+    private final Path lineageDir;
     private final Profile profile;
     private final Path outDir;
 
-    ValidatorRun(Path factsDir, Path discoveryDir, Profile profile, Path outDir) {
+    ValidatorRun(Path factsDir, Path discoveryDir, Path lineageDir, Profile profile, Path outDir) {
         this.factsDir = factsDir;
         this.discoveryDir = discoveryDir;
+        this.lineageDir = lineageDir;
         this.profile = profile;
         this.outDir = outDir;
     }
 
     void run() {
-        List<Subject> all = Subject.read(factsDir.resolve("facts.jsonl"));
+        Map<String, EffectiveUser> users = lineageDir == null ? Map.of() : EffectiveUsers.read(lineageDir);
+        List<Subject> all = Subject.read(factsDir.resolve("facts.jsonl")).stream()
+                .map(subject -> subject.withEffectiveUser(users.get(subject.blobSha()))).toList();
         List<Subject> images = all.stream().filter(Subject::runnable).toList();
         List<Finding> findings = new ArrayList<>();
         Map<String, Verdict> verdicts = new LinkedHashMap<>();

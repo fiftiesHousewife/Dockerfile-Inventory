@@ -26,7 +26,7 @@ class EstateValidationTest {
         Path discovery = Path.of(System.getenv().getOrDefault("VALIDATE_DISCOVERY_DIR", "../out/all/discovery"));
         assumeTrue(Files.isRegularFile(facts.resolve("facts.jsonl")), "no facts at " + facts.toAbsolutePath());
 
-        new ValidatorRun(facts, discovery, Profile.shipped(Profile.DEFAULT), out).run();
+        new ValidatorRun(facts, discovery, null, Profile.shipped(Profile.DEFAULT), out).run();
 
         assertThat(counts(out)).isEqualTo(JSON.readTree(Path.of("src/test/resources/estate/expected.json").toFile()));
     }

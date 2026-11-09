@@ -21,7 +21,7 @@ class ValidatorRunTest {
     Path out;
 
     private JsonNode plan() {
-        new ValidatorRun(FIXTURES, FIXTURES, Fixtures.V2, out).run();
+        new ValidatorRun(FIXTURES, FIXTURES, null, Fixtures.V2, out).run();
         return JSON.readTree(out.resolve("action-plan.json").toFile());
     }
 
@@ -56,5 +56,21 @@ class ValidatorRunTest {
 
         assertThat(Files.readAllLines(out.resolve("verdicts.jsonl"))).hasSize(13)
                 .contains("{\"blobSha\":\"01c982921d4919768f2c03ea30ab8db209baab7a\",\"verdict\":\"RUNS\"}");
+    }
+
+    @Test
+    void withLineageAnImageSettingNoUserWhoseRegistryImagesRunAsANumericUserHasNoUserFinding(@TempDir Path lineage)
+            throws IOException {
+        Files.writeString(lineage.resolve("links.jsonl"), "{\"configDigest\":\"sha256:app\",\"blobShas\":"
+                + "[\"00b7e9b0f4f07bea7f89b52371b0221dc848d085\"],\"credited\":true}\n");
+        Files.writeString(lineage.resolve("effective.jsonl"),
+                "{\"configDigest\":\"sha256:app\",\"user\":{\"value\":\"1001\",\"setBy\":{\"kind\":\"Unknown\"}}}\n");
+
+        new ValidatorRun(FIXTURES, FIXTURES, lineage, Fixtures.V2, out).run();
+
+        assertThat(Files.readAllLines(out.resolve("actions.jsonl")).stream().map(JSON::readTree)
+                .filter(action -> action.path("check").asString().equals("P1"))
+                .map(action -> action.path("blobSha").asString()))
+                .doesNotContain("00b7e9b0f4f07bea7f89b52371b0221dc848d085");
     }
 }

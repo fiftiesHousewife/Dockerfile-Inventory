@@ -6,7 +6,8 @@ import java.util.Map;
 /**
  * The validator job's entry point. It takes its settings from the environment: {@code FACTS_DIR},
  * {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code PROFILE} (a shipped profile's name or a file;
- * {@code openshift-4-restricted-v2} by default).
+ * {@code openshift-4-restricted-v2} by default) and {@code LINEAGE_DIR} (the user each Dockerfile's registry images
+ * run as).
  */
 public final class ValidatorMain {
 
@@ -22,8 +23,9 @@ public final class ValidatorMain {
     static Path run(Map<String, String> env) {
         Path out = Path.of(required(env, "OUT_DIR"));
         Profile profile = Profile.of(env.getOrDefault("PROFILE", Profile.DEFAULT));
-        new ValidatorRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")), profile, out)
-                .run();
+        String lineage = env.get("LINEAGE_DIR");
+        new ValidatorRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
+                lineage == null || lineage.isBlank() ? null : Path.of(lineage), profile, out).run();
         return out;
     }
 
