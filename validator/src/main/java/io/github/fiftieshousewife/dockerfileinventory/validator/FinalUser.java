@@ -2,7 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 
 import java.util.List;
 
-// P1: OpenShift replaces the image's user with an arbitrary UID in group 0.
+// OpenShift replaces the image's user with an arbitrary UID in group 0.
 final class FinalUser implements PlatformCheck {
 
     private static final String ARBITRARY = "OpenShift runs it as an arbitrary UID in group 0, without root's rights";

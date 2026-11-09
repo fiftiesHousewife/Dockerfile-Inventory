@@ -3,7 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 import java.util.List;
 import java.util.Optional;
 
-// P7: a cluster pulls only from the registries its image configuration allows.
+// A cluster pulls only from the registries its image configuration allows.
 final class BaseRegistry implements PlatformCheck {
 
     @Override

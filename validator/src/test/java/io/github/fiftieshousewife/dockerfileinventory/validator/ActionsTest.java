@@ -58,4 +58,15 @@ class ActionsTest {
                         .containsExactly("aaa", "bbb"),
                 () -> assertThat(byRepository.get("team/web")).extracting(Action::blobSha).containsExactly("aaa"));
     }
+
+    @Test
+    void anActionIsAsSureAsItsSurestFindingAndGivesEveryMessage() {
+        Action action = Actions.action(List.of(finding(Check.P2, Severity.BREAKS, Certainty.INFERRED, "bbb", "one"),
+                finding(Check.P2, Severity.BREAKS, Certainty.READ, "bbb", "two")), LOCATIONS);
+
+        assertAll(
+                () -> assertThat(action.certainty()).isEqualTo(Certainty.READ),
+                () -> assertThat(action.because()).containsExactly("one", "two"),
+                () -> assertThat(action.where()).isEqualTo(LOCATIONS.get("bbb")));
+    }
 }

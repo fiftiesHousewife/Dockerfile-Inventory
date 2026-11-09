@@ -66,9 +66,9 @@ class StageGraphTest {
     @Test
     void aRunsScriptIsItsTextAfterTheKeywordAndFlags() {
         assertAll(
-                () -> assertThat(StageGraph.Scan.script("RUN --mount=type=cache,target=/c --network=none make"))
-                        .isEqualTo("make"),
-                () -> assertThat(StageGraph.Scan.script("RUN [\"make\"]")).isEqualTo("[\"make\"]"),
-                () -> assertThat(StageGraph.Scan.script("RUN")).isEmpty());
+                () -> assertThat(StageGraph.Scan.scriptAfterFlags(
+                        "RUN --mount=type=cache,target=/c --network=none make")).isEqualTo("make"),
+                () -> assertThat(StageGraph.Scan.scriptAfterFlags("RUN [\"make\"]")).isEqualTo("[\"make\"]"),
+                () -> assertThat(StageGraph.Scan.scriptAfterFlags("RUN")).isEmpty());
     }
 }

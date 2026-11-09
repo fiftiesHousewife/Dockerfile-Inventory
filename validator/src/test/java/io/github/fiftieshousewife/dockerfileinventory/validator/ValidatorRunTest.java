@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.JsonNode;
@@ -112,5 +113,46 @@ class ValidatorRunTest {
                 () -> assertThat(Files.readAllLines(out.resolve("actions.jsonl"))).anyMatch(line ->
                         line.contains("\"check\":\"S2\"") && line.contains(UNSET)),
                 () -> assertThat(Files.readAllLines(out.resolve("verdicts.jsonl"))).isEqualTo(verdictsWithout));
+    }
+
+    private static Finding finding(String blobSha, Severity severity) {
+        return new Finding(Check.P1, severity, Certainty.READ, blobSha, "m");
+    }
+
+    @Test
+    void eachImageJudgedTwiceKeepsItsPlaceAndItsLastVerdict() {
+        assertThat(ValidatorRun.verdicts(List.of(new ValidatorRun.Judged("a", List.of(finding("a", Severity.BREAKS))),
+                new ValidatorRun.Judged("b", List.of()), new ValidatorRun.Judged("a", List.of()))))
+                .containsExactly(Map.entry("a", Verdict.RUNS), Map.entry("b", Verdict.RUNS));
+    }
+
+    @Test
+    void rowsAreWrittenOnePerLineEachEndedAndNoneIsEmpty() {
+        assertAll(
+                () -> assertThat(ValidatorRun.lines(List.of("a", "b"))).isEqualTo("\"a\"\n\"b\"\n"),
+                () -> assertThat(ValidatorRun.lines(List.of())).isEmpty());
+    }
+
+    @Test
+    void withoutTheRulesOrTheCatalogueTheirPartsAreEmpty() {
+        ValidatorRun run = new ValidatorRun(FIXTURES, FIXTURES, null, null, null, Fixtures.V2, out);
+
+        assertAll(
+                () -> assertThat(run.ruleFindings()).isEmpty(),
+                () -> assertThat(run.catalogue()).isEqualTo(Catalogue.NONE));
+    }
+
+    @Test
+    void withoutLineageEachSubjectHasNoEffectiveUser() {
+        assertThat(new ValidatorRun(FIXTURES, FIXTURES, null, null, null, Fixtures.V2, out).subjects())
+                .extracting(Subject::effectiveUser).containsOnlyNulls();
+    }
+
+    @Test
+    void subjectsByBlobKeepTheFirstOfAnyTwoWithTheSameBlob() {
+        Subject first = new Subject("a", null, null, List.of(), List.of(new Subject.Step("RUN", "one")));
+
+        assertThat(ValidatorRun.byBlob(List.of(first, new Subject("a", null, null, List.of(), List.of()))))
+                .containsExactly(Map.entry("a", first));
     }
 }

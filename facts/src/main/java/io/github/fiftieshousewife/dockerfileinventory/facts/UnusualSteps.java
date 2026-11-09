@@ -16,7 +16,6 @@ final class UnusualSteps {
     private UnusualSteps() {
     }
 
-    // A line as printed on one line; empty for an everyday instruction in its everyday form.
     static Optional<String> of(String line) {
         List<String> words = KeyValuePairs.words(line);
         String keyword = words.getFirst().toUpperCase(Locale.ROOT);
@@ -34,7 +33,7 @@ final class UnusualSteps {
         };
     }
 
-    private static Optional<String> flagged(String keyword, List<String> flags, List<String> unusual) {
+    static Optional<String> flagged(String keyword, List<String> flags, List<String> unusual) {
         return flags.stream().map(f -> f.split("=", 2)[0]).filter(unusual::contains).findFirst()
                 .map(flag -> keyword + " " + flag);
     }

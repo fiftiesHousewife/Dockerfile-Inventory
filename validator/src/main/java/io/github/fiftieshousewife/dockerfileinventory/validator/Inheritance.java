@@ -1,7 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.validator;
 
-// Whether a Dockerfile built on another keeps what a fix to that one changes: what an image takes from its base
-// unless it sets its own.
 final class Inheritance {
 
     private Inheritance() {

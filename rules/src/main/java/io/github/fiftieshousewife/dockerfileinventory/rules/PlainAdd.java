@@ -40,7 +40,6 @@ final class PlainAdd implements Rule {
                 .toList();
     }
 
-    // Every source local, known (no variable) and no archive to unpack.
     static boolean plain(List<String> sources) {
         return !sources.isEmpty() && sources.stream().noneMatch(source -> AddSources.remote(source)
                 || source.contains("$") || source.startsWith("<<") || archive(source));

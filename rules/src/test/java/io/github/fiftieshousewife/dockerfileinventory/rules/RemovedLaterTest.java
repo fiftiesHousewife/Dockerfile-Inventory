@@ -51,4 +51,46 @@ class RemovedLaterTest {
                         .containsExactly("/tmp/a"),
                 () -> assertThat(RemovedLater.removed(List.of("rmdir", "/tmp/a"))).isEmpty());
     }
+
+    @Test
+    void eachSourceOfACopyIsCopiedWithItsKeywordAndLine() {
+        assertThat(RemovedLater.copied("COPY a.sh b.sh /opt/", 3)).containsExactly(
+                new RemovedLater.Copied("/opt/a.sh", "a.sh", "COPY", 3),
+                new RemovedLater.Copied("/opt/b.sh", "b.sh", "COPY", 3));
+    }
+
+    @Test
+    void anAddOfAnArchiveCopiesNothingItCouldRemove() {
+        assertThat(RemovedLater.copied("ADD rootfs.tar.gz /", 1)).isEmpty();
+    }
+
+    @Test
+    void anRmOfACopiedPathOrARecursiveRmAboveItIsARemoval() {
+        List<RemovedLater.Copied> copied = List.of(new RemovedLater.Copied("/opt/src", "src", "COPY", 2));
+        assertAll(
+                () -> assertThat(RemovedLater.removals(List.of("rm", "-rf", "/opt"), copied)).hasSize(1),
+                () -> assertThat(RemovedLater.removals(List.of("rm", "/opt"), copied)).isEmpty(),
+                () -> assertThat(RemovedLater.removals(List.of("rm", "/opt/src"), copied)).hasSize(1));
+    }
+
+    @Test
+    void aRemovalOfTheBuildContextNamesThePathItLanded() {
+        assertThat(RemovedLater.removal("/app", new RemovedLater.Copied("/app", ".", "COPY", 2)))
+                .isEqualTo("rm /app removes /app, which COPY on line 2 wrote; its layer still holds it");
+    }
+
+    @Test
+    void anRmIsRecursiveWithAnyShortFlagHoldingRorTheLongFlag() {
+        assertAll(
+                () -> assertThat(RemovedLater.recursive(List.of("rm", "-fR", "/a"))).isTrue(),
+                () -> assertThat(RemovedLater.recursive(List.of("rm", "--recursive", "/a"))).isTrue(),
+                () -> assertThat(RemovedLater.recursive(List.of("rm", "--force", "/a"))).isFalse());
+    }
+
+    @Test
+    void aSourcesNameIsItsLastPathSegment() {
+        assertAll(
+                () -> assertThat(RemovedLater.name("conf/app/")).isEqualTo("app"),
+                () -> assertThat(RemovedLater.name("a.sh")).isEqualTo("a.sh"));
+    }
 }

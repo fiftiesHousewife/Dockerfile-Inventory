@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.openrewrite.Cursor;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
@@ -50,13 +51,9 @@ final class Lines {
     }
 
     static int startOfLine(String text, String own, int from) {
-        for (int at = text.indexOf(own, from); at >= 0; at = text.indexOf(own, at + 1)) {
-            int lineStart = text.lastIndexOf('\n', at - 1) + 1;
-            if (text.substring(lineStart, at).isBlank()) {
-                return at;
-            }
-        }
-        return -1;
+        return Stream.iterate(text.indexOf(own, from), at -> at >= 0, at -> text.indexOf(own, at + 1))
+                .filter(at -> text.substring(text.lastIndexOf('\n', at - 1) + 1, at).isBlank())
+                .findFirst().orElse(-1);
     }
 
     int of(Docker instruction) {

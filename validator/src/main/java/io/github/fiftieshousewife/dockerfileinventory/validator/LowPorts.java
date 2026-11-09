@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// P3: with every capability dropped, a non-root process cannot bind a port below 1024.
+// With every capability dropped, a non-root process cannot bind a port below 1024.
 final class LowPorts implements PlatformCheck {
 
     private static final Pattern NUMBER = Pattern.compile("(\\d{1,5})(-\\d{1,5})?(/\\w+)?");

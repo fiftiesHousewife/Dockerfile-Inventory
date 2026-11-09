@@ -100,4 +100,14 @@ class ProfileTest {
                 () -> assertThatThrownBy(() -> Profile.parse("x", platform.formatted("P1")))
                         .hasMessage("profile x: P1 is not a rule"));
     }
+
+    @Test
+    void theSeverityWordsAreListedWithOrBeforeTheLast() {
+        assertThat(Profile.words()).isEqualTo("breaks, drift, information or off");
+    }
+
+    @Test
+    void thePlatformChecksAreThePChecks() {
+        assertThat(Profile.platform()).allMatch(check -> check.name().startsWith("P")).hasSize(10);
+    }
 }

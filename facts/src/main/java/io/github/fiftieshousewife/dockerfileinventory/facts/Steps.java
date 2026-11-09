@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.openrewrite.Cursor;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import tools.jackson.databind.JsonNode;
@@ -38,14 +39,13 @@ public final class Steps {
     // name refers only to an earlier stage, so FROM app AS app names an image, not itself.
     static List<Docker.Instruction> finalImage(Docker.File file) {
         List<Docker.Stage> stages = file.getStages();
-        List<Docker.Instruction> instructions = new ArrayList<>();
-        int index = stages.size() - 1;
-        while (index >= 0) {
-            Docker.Stage stage = stages.get(index);
-            instructions.addAll(0, stage.getInstructions());
-            index = earlierStage(stage.getFrom(), stages.subList(0, index));
-        }
-        return instructions;
+        return chain(stages).reversed().stream().flatMap(index -> stages.get(index).getInstructions().stream())
+                .toList();
+    }
+
+    static List<Integer> chain(List<Docker.Stage> stages) {
+        return Stream.iterate(stages.size() - 1, index -> index >= 0,
+                index -> earlierStage(stages.get(index).getFrom(), stages.subList(0, index))).toList();
     }
 
     static int earlierStage(Docker.From from, List<Docker.Stage> earlier) {

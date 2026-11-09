@@ -228,4 +228,11 @@ class StepsTest {
     static List<Step> steps(String dockerfile) {
         return Steps.of(Parsed.file(dockerfile));
     }
+
+    @Test
+    void theChainRunsFromTheLastStageBackThroughEachStageItIsBuiltFrom() {
+        List<Docker.Stage> stages = Parsed.file("FROM a AS base\nFROM b AS other\nFROM base\n").getStages();
+
+        assertThat(Steps.chain(stages)).containsExactly(2, 0);
+    }
 }

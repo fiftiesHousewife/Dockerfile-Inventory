@@ -34,22 +34,31 @@ final class ChangedAfterCopy implements Rule {
         Cursor cursor = new Cursor(null, subject.file());
         List<Copied> copied = new ArrayList<>();
         List<Finding> findings = new ArrayList<>();
-        for (Docker.Instruction instruction : FinalImage.instructions(subject.file())) {
+        FinalImage.instructions(subject.file()).forEach(instruction -> {
             String line = Continuations.oneLine(instruction.printTrimmed(cursor));
-            if (instruction instanceof Docker.Copy || instruction instanceof Docker.Add) {
-                String destination = AddSources.of(line).destination();
-                if (destination != null && destination.startsWith("/") && !destination.contains("$")) {
-                    copied.add(new Copied(destination, line.split("\\s+", 2)[0].toUpperCase(Locale.ROOT),
-                            lines.of(instruction)));
+            switch (instruction) {
+                case Docker.Copy _, Docker.Add _ -> copied(line, lines.of(instruction)).ifPresent(copied::add);
+                case Docker.Run _ -> messages(line, copied).forEach(message ->
+                        findings.add(finding(subject, lines.of(instruction), message)));
+                default -> {
                 }
-            } else if (instruction instanceof Docker.Run) {
-                StagePermissions.ofRun(line).forEach(change -> rewritten(change, copied).ifPresent(copy ->
-                        findings.add(finding(subject, lines.of(instruction), written(change) + " rewrites what "
-                                + copy.instruction() + " wrote to " + copy.destination() + " on line "
-                                + copy.line()))));
             }
-        }
+        });
         return findings;
+    }
+
+    static Optional<Copied> copied(String line, int lineNumber) {
+        String destination = AddSources.of(line).destination();
+        return destination != null && destination.startsWith("/") && !destination.contains("$")
+                ? Optional.of(new Copied(destination, line.split("\\s+", 2)[0].toUpperCase(Locale.ROOT),
+                        lineNumber))
+                : Optional.empty();
+    }
+
+    static List<String> messages(String run, List<Copied> copied) {
+        return StagePermissions.ofRun(run).stream().flatMap(change -> rewritten(change, copied)
+                .map(copy -> written(change) + " rewrites what " + copy.instruction() + " wrote to "
+                        + copy.destination() + " on line " + copy.line()).stream()).toList();
     }
 
     static Optional<Copied> rewritten(PermissionChange change, List<Copied> copied) {
@@ -58,17 +67,13 @@ final class ChangedAfterCopy implements Rule {
     }
 
     static boolean rewrites(String path, boolean recursive, String destination) {
-        String changed = trimmed(path);
-        String copy = trimmed(destination);
+        String changed = TrailingSlash.removed(path);
+        String copy = TrailingSlash.removed(destination);
         return changed.equals(copy) || recursive && copy.startsWith(changed + "/") || changed.startsWith(copy + "/");
     }
 
     static String written(PermissionChange change) {
         return change.command() + (change.recursive() ? " -R " : " ") + change.setting() + " "
                 + String.join(" ", change.paths());
-    }
-
-    private static String trimmed(String path) {
-        return path.length() > 1 && path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
     }
 }

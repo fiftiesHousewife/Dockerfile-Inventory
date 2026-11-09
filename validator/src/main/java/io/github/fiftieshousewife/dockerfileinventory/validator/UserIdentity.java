@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-// P10: the arbitrary UID may have no /etc/passwd entry, so no name and no home.
+// The arbitrary UID may have no /etc/passwd entry, so no name and no home.
 final class UserIdentity implements PlatformCheck {
 
     private static final Pattern READS = Pattern.compile(

@@ -20,7 +20,7 @@ public final class StagePermissions {
      * @return its changes, in order; none when the shell reader cannot read it
      */
     public static List<PermissionChange> ofRun(String run) {
-        return of(StageGraph.Scan.script(Continuations.oneLine(run)));
+        return of(StageGraph.Scan.scriptAfterFlags(Continuations.oneLine(run)));
     }
 
     static List<PermissionChange> of(String script) {

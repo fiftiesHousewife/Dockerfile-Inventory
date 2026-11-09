@@ -2,8 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import java.util.List;
 
-// One workload a manifest declares, as the validator reads it: its pod's host access and security settings, and each
-// container's image, ports, probes, mounts and security settings. A setting the manifest leaves out is null.
+// A setting the manifest leaves out is null.
 record Workload(String kind, String name, String namespace, Pod pod) {
 
     record Pod(boolean hostNetwork, boolean hostPid, boolean hostIpc, List<String> hostPaths, Security security,

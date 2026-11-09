@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import io.github.fiftieshousewife.dockerfileinventory.facts.PermissionChange;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -33,5 +34,18 @@ class ChangedAfterVolumeTest {
                 () -> assertThat(ChangedAfterVolume.paths("VOLUME /data /logs")).isEqualTo(List.of("/data", "/logs")),
                 () -> assertThat(ChangedAfterVolume.paths("VOLUME [\"/data\", \"/var/lib/app\"]"))
                         .isEqualTo(List.of("/data", "/var/lib/app")));
+    }
+
+    @Test
+    void aRunsChangeInsideADeclaredVolumeIsReportedWithTheVolumesLine() {
+        assertThat(ChangedAfterVolume.messages("RUN chmod 775 /data/logs",
+                List.of(new ChangedAfterVolume.Declared("/data", 3))))
+                .containsExactly("chmod 775 /data/logs changes the volume /data declared on line 3");
+    }
+
+    @Test
+    void aChangeOutsideEveryVolumeChangesNone() {
+        assertThat(ChangedAfterVolume.changed(new PermissionChange("chmod", "775", List.of("/opt"), false),
+                List.of(new ChangedAfterVolume.Declared("/data", 3)))).isEmpty();
     }
 }

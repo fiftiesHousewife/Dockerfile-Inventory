@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-// Findings turned into actions, most urgent first, and the same actions per repository.
 final class Actions {
 
     static final Map<Check, String> WHAT = Map.ofEntries(
@@ -84,7 +83,7 @@ final class Actions {
         return byRepository;
     }
 
-    private static Action action(List<Finding> group, Map<String, List<Location>> locations) {
+    static Action action(List<Finding> group, Map<String, List<Location>> locations) {
         Finding first = group.getFirst();
         Certainty certainty = group.stream().map(Finding::certainty).min(Comparator.naturalOrder()).orElseThrow();
         return new Action(first.check(), first.severity(), certainty, WHAT.get(first.check()), first.blobSha(),

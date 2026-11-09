@@ -26,4 +26,10 @@ class UnusualStepsTest {
                         "RUN with a heredoc", "RUN --mount", "RUN --network", "COPY --link", "COPY with a heredoc",
                         "COPY --exclude");
     }
+
+    @Test
+    void theFirstUnusualFlagIsNamedWithoutItsValue() {
+        assertThat(UnusualSteps.flagged("RUN", List.of("--mount=type=cache", "--network=none"),
+                List.of("--network", "--mount"))).contains("RUN --mount");
+    }
 }

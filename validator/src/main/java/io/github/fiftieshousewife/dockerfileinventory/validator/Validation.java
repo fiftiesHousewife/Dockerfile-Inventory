@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 
 import java.util.List;
 
-// Every check on one image, each problem weighed by the profile.
 final class Validation {
 
     static final List<PlatformCheck> CHECKS = List.of(new FinalUser(), new WritablePaths(), new LowPorts(),

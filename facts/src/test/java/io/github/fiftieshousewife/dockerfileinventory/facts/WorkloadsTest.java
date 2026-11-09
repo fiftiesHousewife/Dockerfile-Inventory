@@ -8,8 +8,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 class WorkloadsTest {
+
+    private static JsonNode node(String yaml) {
+        return new YAMLMapper().readTree(yaml);
+    }
 
     private static String fixture(String name) throws IOException {
         return Files.readString(Path.of("src/test/resources/fixtures/workloads").resolve(name));
@@ -159,5 +165,44 @@ class WorkloadsTest {
                 () -> assertThat(pod.hostPaths()).containsExactly("/var/run/docker.sock"),
                 () -> assertThat(pod.containers().getFirst().security().privileged()).isTrue(),
                 () -> assertThat(pod.containers().getFirst().ports()).containsExactly(8080));
+    }
+
+    @Test
+    void textWithGoOrLiquidMarkersIsATemplate() {
+        assertAll(
+                () -> assertThat(Workloads.isTemplate("image: {{ .Values.image }}")).isTrue(),
+                () -> assertThat(Workloads.isTemplate("{% if x %}")).isTrue(),
+                () -> assertThat(Workloads.isTemplate("kind: Pod")).isFalse());
+    }
+
+    @Test
+    void onlyADocumentOfAKnownKindIsAWorkload() {
+        assertAll(
+                () -> assertThat(Workloads.isWorkload(node("kind: CronJob"))).isTrue(),
+                () -> assertThat(Workloads.isWorkload(node("kind: Service"))).isFalse(),
+                () -> assertThat(Workloads.isWorkload(null)).isFalse());
+    }
+
+    @Test
+    void aDocumentStreamBrokenAfterAWorkloadGivesThatWorkload() {
+        assertThat(Workloads.documents("kind: Pod\nspec: {}\n---\nkind: [").workloads()).hasSize(1);
+    }
+
+    @Test
+    void onlyNumericPortsOfTheFieldAreRead() {
+        assertThat(Workloads.ports(node("[{containerPort: 80, hostPort: 8080}, {containerPort: http}]"),
+                "containerPort")).containsExactly(80);
+    }
+
+    @Test
+    void aFlagIsNullUnlessItIsABoolean() {
+        assertAll(
+                () -> assertThat(Workloads.flag(node("{privileged: true}"), "privileged")).isTrue(),
+                () -> assertThat(Workloads.flag(node("{privileged: \"yes\"}"), "privileged")).isNull());
+    }
+
+    @Test
+    void aMissingArrayHasNoElements() {
+        assertThat(Workloads.elements(node("{}").path("containers"))).isEmpty();
     }
 }

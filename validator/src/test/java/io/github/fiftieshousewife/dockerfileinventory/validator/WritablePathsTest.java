@@ -93,4 +93,11 @@ class WritablePathsTest {
     void fixPermissionsGivenAVariableCoversThePathTheVariableNames() {
         assertThat(new WritablePaths().problems(subject("d133a9d4"), V2)).isEmpty();
     }
+
+    @Test
+    void aTrailingSlashIsRemovedExceptFromTheRoot() {
+        assertAll(
+                () -> assertThat(WritablePaths.withoutTrailingSlash("/data/")).isEqualTo("/data"),
+                () -> assertThat(WritablePaths.withoutTrailingSlash("/")).isEqualTo("/"));
+    }
 }

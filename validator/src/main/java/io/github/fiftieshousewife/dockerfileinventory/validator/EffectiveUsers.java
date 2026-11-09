@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import tools.jackson.databind.JsonNode;
 
-// Lineage's effective users, by the Dockerfile each credited image was built from.
 final class EffectiveUsers {
 
     private EffectiveUsers() {

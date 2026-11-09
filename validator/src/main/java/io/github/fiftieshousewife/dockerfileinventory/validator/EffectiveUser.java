@@ -1,6 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.validator;
 
-// The user a Dockerfile's registry images run as, from lineage; setBy names where it came from, or is null.
 record EffectiveUser(String user, String setBy) {
 
     // Worst first.

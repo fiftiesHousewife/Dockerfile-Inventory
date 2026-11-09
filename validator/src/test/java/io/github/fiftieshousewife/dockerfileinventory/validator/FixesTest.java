@@ -91,4 +91,13 @@ class FixesTest {
                 IntStream.range(0, locations).mapToObj(i -> new Location("team/" + blobSha, "D" + i))
                         .toList());
     }
+
+    @Test
+    void theInheritingDockerfilesAreEveryGenerationOnceSortedAndNotTheCopies() {
+        Catalogue built = new Catalogue(Map.of(), Map.of(), Map.of("a", List.of("d", "c"), "c", List.of("a", "d")));
+        Map<String, Subject> subjects = Map.of("a", Fixtures.subject("03cab6f0"), "c", Fixtures.subject("03cab6f0"),
+                "d", Fixtures.subject("03cab6f0"));
+
+        assertThat(Fixes.inheriting(Check.P3, List.of("a"), built, subjects)).containsExactly("c", "d");
+    }
 }

@@ -37,4 +37,19 @@ class StageCopiesTest {
                         .isEqualTo("url"),
                 () -> assertThat(StageCopies.origin(null, List.of("src/"), Set.of())).isEqualTo("context"));
     }
+
+    @Test
+    void pathsAreReadFromTheJsonFormOrElseUnquotedWords() {
+        assertAll(
+                () -> assertThat(StageCopies.paths(List.of("[\"a\",", "\"/b\"]"))).containsExactly("a", "/b"),
+                () -> assertThat(StageCopies.paths(List.of("[a", "/b"))).containsExactly("[a", "/b"),
+                () -> assertThat(StageCopies.paths(List.of("\"a\"", "/b"))).containsExactly("a", "/b"));
+    }
+
+    @Test
+    void theLastFlagWithThePrefixGivesItsValue() {
+        assertAll(
+                () -> assertThat(StageCopies.flag(List.of("--from=a", "--from=b"), "--from=")).isEqualTo("b"),
+                () -> assertThat(StageCopies.flag(List.of("--chown=1"), "--from=")).isNull());
+    }
 }

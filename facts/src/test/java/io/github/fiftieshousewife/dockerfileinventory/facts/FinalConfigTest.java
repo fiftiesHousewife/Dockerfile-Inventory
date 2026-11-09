@@ -117,4 +117,12 @@ class FinalConfigTest {
         assertThat(FinalConfig.pairs("JAVA_OPTS -Xmx1g -Xms1g"))
                 .containsExactly(Map.entry("JAVA_OPTS", "-Xmx1g -Xms1g"));
     }
+
+    @Test
+    void onlyAJsonArrayOfStringsIsReadAsJson() {
+        assertAll(
+                () -> assertThat(FinalConfig.json("[\"a\", \"b\"]")).containsExactly("a", "b"),
+                () -> assertThat(FinalConfig.json("[not json")).isNull(),
+                () -> assertThat(FinalConfig.json("a b")).isNull());
+    }
 }

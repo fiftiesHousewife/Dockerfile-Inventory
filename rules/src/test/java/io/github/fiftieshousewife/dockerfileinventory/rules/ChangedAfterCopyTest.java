@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ChangedAfterCopyTest {
@@ -40,5 +41,21 @@ class ChangedAfterCopyTest {
                 () -> assertThat(ChangedAfterCopy.rewrites("/opt/application", true, "/opt/app")).isFalse(),
                 () -> assertThat(ChangedAfterCopy.rewrites("/opt/app/conf/a.yaml", false, "/opt/app/conf/"))
                         .isTrue());
+    }
+
+    @Test
+    void aCopyToAKnownAbsolutePathIsCopiedAndOneWithAVariableIsNot() {
+        assertAll(
+                () -> assertThat(ChangedAfterCopy.copied("add a /opt/a", 4))
+                        .contains(new ChangedAfterCopy.Copied("/opt/a", "ADD", 4)),
+                () -> assertThat(ChangedAfterCopy.copied("COPY a $HOME/a", 4)).isEmpty(),
+                () -> assertThat(ChangedAfterCopy.copied("COPY a app/", 4)).isEmpty());
+    }
+
+    @Test
+    void aRunsChangeToACopiedPathIsReportedWithTheCopysLine() {
+        assertThat(ChangedAfterCopy.messages("RUN chown -R 1001 /opt",
+                List.of(new ChangedAfterCopy.Copied("/opt/app", "COPY", 2))))
+                .containsExactly("chown -R 1001 /opt rewrites what COPY wrote to /opt/app on line 2");
     }
 }

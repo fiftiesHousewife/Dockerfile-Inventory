@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 import io.github.fiftieshousewife.dockerfile.reader.internal.KeyValuePairs;
 import java.util.List;
 
-// An ADD or COPY as written on one line: its flags, its sources and its destination, in either form.
 record AddSources(List<String> flags, List<String> sources, String destination) {
 
     AddSources {

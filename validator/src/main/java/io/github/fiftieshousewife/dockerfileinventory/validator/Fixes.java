@@ -1,18 +1,14 @@
 package io.github.fiftieshousewife.dockerfileinventory.validator;
 
-import java.util.ArrayDeque;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// Actions grouped into fixes: the same check on an archetype's copies is one change to its template.
 final class Fixes {
 
     private static final Comparator<Fix> URGENCY = Comparator.comparing(Fix::severity)
@@ -48,22 +44,16 @@ final class Fixes {
                 inheriting, reached);
     }
 
-    // Down the Dockerfiles built on the copies, as far as each keeps what the fix changes.
     static List<String> inheriting(Check check, List<String> copies, Catalogue catalogue,
                                    Map<String, Subject> subjects) {
         Set<String> seen = new HashSet<>(copies);
-        Deque<String> next = new ArrayDeque<>(copies);
-        Set<String> reached = new TreeSet<>();
-        while (!next.isEmpty()) {
-            catalogue.children(next.pop()).stream()
-                    .filter(child -> subjects.containsKey(child) && Inheritance.inherits(check, subjects.get(child)))
-                    .filter(seen::add)
-                    .forEach(child -> {
-                        reached.add(child);
-                        next.add(child);
-                    });
-        }
-        return List.copyOf(reached);
+        return Stream.iterate(copies, generation -> !generation.isEmpty(), generation -> generation.stream()
+                        .flatMap(sha -> catalogue.children(sha).stream())
+                        .filter(child -> subjects.containsKey(child)
+                                && Inheritance.inherits(check, subjects.get(child)))
+                        .filter(seen::add)
+                        .toList())
+                .skip(1).flatMap(List::stream).sorted().toList();
     }
 
     static String representative(List<Action> group, String archetypes) {

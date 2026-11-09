@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// What the catalogue stage says about reach: each Dockerfile's archetype, each archetype's representative, and the
-// Dockerfiles built on each Dockerfile.
 record Catalogue(Map<String, String> archetypes, Map<String, String> representatives,
                  Map<String, List<String>> builtOn) {
 

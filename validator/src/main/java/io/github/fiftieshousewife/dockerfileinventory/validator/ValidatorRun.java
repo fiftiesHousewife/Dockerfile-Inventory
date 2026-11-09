@@ -5,22 +5,27 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tools.jackson.databind.ObjectMapper;
 
-// Reads the facts and the manifest, with lineage's effective users, the catalogue and the rules' findings when given;
-// judges every image through the profile; writes the plan, its actions and its fixes.
 final class ValidatorRun {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
     record ImageVerdict(String blobSha, Verdict verdict) {
+    }
+
+    record Judged(String blobSha, List<Finding> findings) {
+
+        Judged {
+            findings = List.copyOf(findings);
+        }
     }
 
     private final Path factsDir;
@@ -43,30 +48,45 @@ final class ValidatorRun {
     }
 
     void run() {
-        Map<String, EffectiveUser> users = lineageDir == null ? Map.of() : EffectiveUsers.read(lineageDir);
-        List<Subject> all = Subject.read(factsDir.resolve("facts.jsonl")).stream()
-                .map(subject -> subject.withEffectiveUser(users.get(subject.blobSha()))).toList();
+        List<Subject> all = subjects();
         List<Subject> images = all.stream().filter(Subject::runnable).toList();
-        List<Finding> findings = new ArrayList<>();
-        Map<String, Verdict> verdicts = new LinkedHashMap<>();
-        images.forEach(image -> {
-            List<Finding> own = Validation.findings(image, profile);
-            findings.addAll(own);
-            verdicts.put(image.blobSha(), Verdict.of(own));
-        });
-        if (rulesDir != null) {
-            findings.addAll(RuleFindings.read(rulesDir, profile));
-        }
+        List<Judged> judged = images.stream()
+                .map(image -> new Judged(image.blobSha(), Validation.findings(image, profile))).toList();
+        List<Finding> findings = Stream.concat(judged.stream().flatMap(image -> image.findings().stream()),
+                ruleFindings().stream()).toList();
+        Map<String, Verdict> verdicts = verdicts(judged);
         Map<String, List<Location>> locations = locations(discoveryDir.resolve("manifest.jsonl"));
         List<Action> actions = Actions.of(findings, locations);
-        List<Fix> fixes = Fixes.of(actions, catalogueDir == null ? Catalogue.NONE : Catalogue.read(catalogueDir),
-                all.stream().collect(Collectors.toMap(Subject::blobSha, s -> s, (a, b) -> a)), locations);
+        List<Fix> fixes = Fixes.of(actions, catalogue(), byBlob(all), locations);
         write("actions.jsonl", lines(actions));
         write("fixes.jsonl", lines(fixes));
         write("verdicts.jsonl", lines(verdicts.entrySet().stream()
                 .map(e -> new ImageVerdict(e.getKey(), e.getValue())).toList()));
         write("action-plan.json", JSON.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(summary(verdicts, all.size() - images.size(), actions, fixes.size())));
+    }
+
+    List<Subject> subjects() {
+        Map<String, EffectiveUser> users = lineageDir == null ? Map.of() : EffectiveUsers.read(lineageDir);
+        return Subject.read(factsDir.resolve("facts.jsonl")).stream()
+                .map(subject -> subject.withEffectiveUser(users.get(subject.blobSha()))).toList();
+    }
+
+    List<Finding> ruleFindings() {
+        return rulesDir == null ? List.of() : RuleFindings.read(rulesDir, profile);
+    }
+
+    Catalogue catalogue() {
+        return catalogueDir == null ? Catalogue.NONE : Catalogue.read(catalogueDir);
+    }
+
+    static Map<String, Verdict> verdicts(List<Judged> judged) {
+        return judged.stream().collect(Collectors.toMap(Judged::blobSha, image -> Verdict.of(image.findings()),
+                (first, last) -> last, LinkedHashMap::new));
+    }
+
+    static Map<String, Subject> byBlob(List<Subject> subjects) {
+        return subjects.stream().collect(Collectors.toMap(Subject::blobSha, s -> s, (a, b) -> a));
     }
 
     Map<String, Object> summary(Map<String, Verdict> verdicts, int notRunnable, List<Action> actions, int fixes) {
@@ -88,17 +108,13 @@ final class ValidatorRun {
     }
 
     static Map<String, List<Location>> locations(Path manifest) {
-        try (var lines = Files.lines(manifest)) {
-            return lines.filter(line -> !line.isBlank()).map(JSON::readTree).collect(Collectors.groupingBy(
-                    row -> row.path("blobSha").asString(), LinkedHashMap::new, Collectors.mapping(
-                            row -> new Location(row.path("repository").asString(), row.path("path").asString()),
-                            Collectors.toList())));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return JsonLines.read(manifest).stream().collect(Collectors.groupingBy(
+                row -> row.path("blobSha").asString(), LinkedHashMap::new, Collectors.mapping(
+                        row -> new Location(row.path("repository").asString(), row.path("path").asString()),
+                        Collectors.toList())));
     }
 
-    private static String lines(List<?> rows) {
+    static String lines(List<?> rows) {
         return rows.stream().map(JSON::writeValueAsString).collect(Collectors.joining("\n", "", rows.isEmpty() ? ""
                 : "\n"));
     }

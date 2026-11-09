@@ -5,16 +5,14 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import tools.jackson.databind.JsonNode;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tools.jackson.databind.ObjectMapper;
 
-// The YAML discovery fetched, read for workloads: workloads.jsonl (one line per workload, with its file's
-// locations) and yaml-rates.json (the files read, those holding workloads, and those left unread and why). Written
-// whole each run: reading YAML is cheap.
+// Written whole each run: reading YAML is cheap.
 final class ManifestRun {
 
     record Location(String repository, String path) {
@@ -41,48 +39,51 @@ final class ManifestRun {
         this.outDir = outDir;
     }
 
-    YamlRates run() {
-        Map<String, List<Location>> files = locations();
-        List<String> rows = new ArrayList<>();
-        int withWorkloads = 0;
-        int templates = 0;
-        int notYaml = 0;
-        for (Map.Entry<String, List<Location>> file : files.entrySet()) {
-            Workloads.Read read = Workloads.read(text(file.getKey()));
-            if (read.unread() != null) {
-                templates += read.unread().startsWith("a template") ? 1 : 0;
-                notYaml += read.unread().startsWith("not YAML") ? 1 : 0;
-            }
-            withWorkloads += read.workloads().isEmpty() ? 0 : 1;
-            read.workloads().forEach(w -> rows.add(JSON.writeValueAsString(new WorkloadRow(file.getKey(), w.kind(),
-                    w.name(), w.namespace(), w.pod(), file.getValue()))));
+    record FileRead(String blobSha, List<Location> locations, Workloads.Read read) {
+
+        FileRead {
+            locations = List.copyOf(locations);
         }
-        YamlRates rates = new YamlRates(files.size(), withWorkloads, rows.size(), templates, notYaml);
+    }
+
+    YamlRates run() {
+        List<FileRead> reads = locationsByBlob().entrySet().stream()
+                .map(file -> new FileRead(file.getKey(), file.getValue(), Workloads.read(text(file.getKey()))))
+                .toList();
+        List<String> rows = reads.stream().flatMap(ManifestRun::rows).map(JSON::writeValueAsString).toList();
+        YamlRates rates = rates(reads);
         write("workloads.jsonl", rows.isEmpty() ? "" : String.join("\n", rows) + "\n");
         write("yaml-rates.json", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(rates));
         return rates;
     }
 
-    // Each stored YAML file once, with every location that holds it.
-    Map<String, List<Location>> locations() {
-        Map<String, List<Location>> files = new LinkedHashMap<>();
+    static Stream<WorkloadRow> rows(FileRead file) {
+        return file.read().workloads().stream().map(w -> new WorkloadRow(file.blobSha(), w.kind(), w.name(),
+                w.namespace(), w.pod(), file.locations()));
+    }
+
+    static YamlRates rates(List<FileRead> reads) {
+        return new YamlRates(reads.size(), (int) reads.stream().filter(f -> !f.read().workloads().isEmpty()).count(),
+                reads.stream().mapToInt(f -> f.read().workloads().size()).sum(), unread(reads, "a template"),
+                unread(reads, "not YAML"));
+    }
+
+    static int unread(List<FileRead> reads, String why) {
+        return (int) reads.stream().map(f -> f.read().unread()).filter(u -> u != null && u.startsWith(why)).count();
+    }
+
+    Map<String, List<Location>> locationsByBlob() {
         Path listed = discoveryDir.resolve("yaml.jsonl");
         if (!Files.isRegularFile(listed)) {
-            return files;
+            return Map.of();
         }
-        try {
-            for (String line : Files.readAllLines(listed, StandardCharsets.UTF_8)) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                JsonNode row = JSON.readTree(line);
-                String sha = row.path("blobSha").asString();
-                if (Files.isRegularFile(discoveryDir.resolve("yaml").resolve(sha))) {
-                    files.computeIfAbsent(sha, s -> new ArrayList<>()).add(new Location(
-                            row.path("repository").asString(), row.path("path").asString()));
-                }
-            }
-            return files;
+        try (Stream<String> lines = Files.lines(listed, StandardCharsets.UTF_8)) {
+            return lines.filter(line -> !line.isBlank()).map(JSON::readTree)
+                    .filter(row -> Files.isRegularFile(discoveryDir.resolve("yaml").resolve(row.path("blobSha")
+                            .asString())))
+                    .collect(Collectors.groupingBy(row -> row.path("blobSha").asString(), LinkedHashMap::new,
+                            Collectors.mapping(row -> new Location(row.path("repository").asString(),
+                                    row.path("path").asString()), Collectors.toList())));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -17,7 +17,6 @@ final class StageCopies {
     private StageCopies() {
     }
 
-    // A line as printed on one line: "COPY [--flag=value...] source... destination", or its JSON or heredoc form.
     static CopyFact copy(String line, Set<String> earlierStages) {
         List<String> words = KeyValuePairs.words(line);
         String instruction = words.getFirst().toUpperCase(Locale.ROOT);
@@ -47,7 +46,7 @@ final class StageCopies {
         return source.startsWith("http://") || source.startsWith("https://") || source.startsWith("git@");
     }
 
-    private static List<String> paths(List<String> written) {
+    static List<String> paths(List<String> written) {
         String joined = String.join(" ", written);
         if (joined.startsWith("[")) {
             try {
@@ -59,7 +58,7 @@ final class StageCopies {
         return written.stream().map(KeyValuePairs::unquoted).toList();
     }
 
-    private static String flag(List<String> flags, String prefix) {
+    static String flag(List<String> flags, String prefix) {
         return flags.stream().filter(f -> f.startsWith(prefix)).reduce((first, second) -> second)
                 .map(f -> f.substring(prefix.length())).orElse(null);
     }

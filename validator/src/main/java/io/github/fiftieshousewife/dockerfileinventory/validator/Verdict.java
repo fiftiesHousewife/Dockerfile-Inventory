@@ -3,7 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 import java.util.Comparator;
 import java.util.List;
 
-// What an image's findings mean for it under a profile, worst first.
+// Worst first.
 enum Verdict {
     BREAKS, DRIFT, INFORMATION, RUNS;
 

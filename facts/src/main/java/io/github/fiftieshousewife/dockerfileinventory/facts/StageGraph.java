@@ -66,7 +66,7 @@ final class StageGraph {
             UnusualSteps.of(line).ifPresent(unusual::add);
             String keyword = line.split("\\s+", 2)[0].toUpperCase(Locale.ROOT);
             switch (keyword) {
-                case "RUN" -> run(script(line));
+                case "RUN" -> run(scriptAfterFlags(line));
                 case "COPY", "ADD" -> copies.add(StageCopies.copy(line, earlier));
                 default -> {
                 }
@@ -97,8 +97,7 @@ final class StageGraph {
                     copies, permissions, unusual);
         }
 
-        // The RUN's text after its keyword and flags (--mount, --network).
-        static String script(String line) {
+        static String scriptAfterFlags(String line) {
             String rest = line.split("\\s+", 2).length > 1 ? line.split("\\s+", 2)[1] : "";
             return rest.replaceFirst("^(--\\S+\\s+)*", "").strip();
         }

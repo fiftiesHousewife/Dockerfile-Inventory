@@ -4,15 +4,16 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-// One Dockerfile's facts as the checks read them: the parts of a facts.jsonl line that say how its image runs, and
-// the user its registry images run as when lineage credits any to it.
 record Subject(String blobSha, Facts facts, Config config, List<Stage> stages, List<Step> steps,
                EffectiveUser effectiveUser) {
 
@@ -71,15 +72,15 @@ record Subject(String blobSha, Facts facts, Config config, List<Stage> stages, L
     }
 
     List<Stage> finalStages() {
-        List<Stage> chain = new ArrayList<>();
-        Stage stage = stages.isEmpty() ? null : stages.getLast();
-        while (stage != null && !chain.contains(stage)) {
-            chain.add(stage);
-            String from = stage.fromStage();
-            stage = from == null ? null : stages.stream().filter(s -> from.equals(s.name())
-                    || from.equals(String.valueOf(stages.indexOf(s)))).findFirst().orElse(null);
-        }
-        return chain;
+        Set<Stage> seen = new HashSet<>();
+        return Stream.iterate(stages.isEmpty() ? null : stages.getLast(), Objects::nonNull, this::builtFrom)
+                .takeWhile(seen::add).toList();
+    }
+
+    Stage builtFrom(Stage stage) {
+        String from = stage.fromStage();
+        return from == null ? null : stages.stream().filter(s -> from.equals(s.name())
+                || from.equals(String.valueOf(stages.indexOf(s)))).findFirst().orElse(null);
     }
 
     static List<Subject> read(Path factsFile) {

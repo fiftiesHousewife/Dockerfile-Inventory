@@ -3,7 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 import java.util.List;
 import java.util.Optional;
 
-// P6: OpenShift stops a pod with SIGTERM to PID 1, then SIGKILL after the grace period.
+// OpenShift stops a pod with SIGTERM to PID 1, then SIGKILL after the grace period.
 final class ShellStart implements PlatformCheck {
 
     @Override

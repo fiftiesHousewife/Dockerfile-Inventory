@@ -31,7 +31,6 @@ final class UnverifiedDownload implements Rule {
                 .toList();
     }
 
-    // The remote sources of an ADD written without --checksum.
     static List<String> unverified(String add) {
         AddSources read = AddSources.of(add);
         return read.flags().stream().anyMatch(flag -> flag.startsWith("--checksum=")) ? List.of()

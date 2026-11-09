@@ -95,7 +95,7 @@ final class FinalConfig {
         return pairs;
     }
 
-    private static List<String> json(String rest) {
+    static List<String> json(String rest) {
         if (!rest.startsWith("[")) {
             return null;
         }

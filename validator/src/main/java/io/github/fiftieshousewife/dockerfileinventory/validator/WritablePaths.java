@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// P2: the arbitrary UID writes only where group 0 may write; files made during the build are root's, group 0.
+// The arbitrary UID writes only where group 0 may write; files made during the build are root's, group 0.
 final class WritablePaths implements PlatformCheck {
 
     private static final Pattern OCTAL = Pattern.compile("0?[0-7]{3}");
@@ -82,8 +82,8 @@ final class WritablePaths implements PlatformCheck {
     }
 
     static boolean covers(Subject.Permission permission, String path, Map<String, String> environment) {
-        return permission.paths().stream().map(p -> expanded(p, environment)).anyMatch(p -> trimmed(p)
-                .equals(trimmed(path)) || permission.recursive() && under(path, p));
+        return permission.paths().stream().map(p -> expanded(p, environment)).anyMatch(p -> withoutTrailingSlash(p)
+                .equals(withoutTrailingSlash(path)) || permission.recursive() && under(path, p));
     }
 
     static boolean groupWrite(String setting) {
@@ -96,11 +96,11 @@ final class WritablePaths implements PlatformCheck {
     }
 
     static boolean under(String path, String directory) {
-        String dir = trimmed(directory);
-        return trimmed(path).equals(dir) || path.startsWith(dir.endsWith("/") ? dir : dir + "/");
+        String dir = withoutTrailingSlash(directory);
+        return withoutTrailingSlash(path).equals(dir) || path.startsWith(dir.endsWith("/") ? dir : dir + "/");
     }
 
-    private static String trimmed(String path) {
+    static String withoutTrailingSlash(String path) {
         return path.length() > 1 && path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
     }
 }

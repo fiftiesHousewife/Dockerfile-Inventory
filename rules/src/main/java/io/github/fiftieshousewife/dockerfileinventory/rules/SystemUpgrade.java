@@ -38,14 +38,13 @@ final class SystemUpgrade implements Rule {
         return subject.file().getStages().stream().flatMap(stage -> stage.getInstructions().stream())
                 .filter(i -> i instanceof Docker.Run).map(Docker.Run.class::cast)
                 .flatMap(run -> RunScripts.commands(run).orElse(List.of()).stream()
-                        .flatMap(words -> upgrade(words).stream())
+                        .flatMap(words -> wholeSystemUpgrade(words).stream())
                         .map(upgrade -> finding(subject, lines.of(run), upgrade + " upgrades every package the base "
                                 + "has")))
                 .toList();
     }
 
-    // A whole-system upgrade: the manager and its upgrade subcommand, with no package named.
-    static Optional<String> upgrade(List<String> command) {
+    static Optional<String> wholeSystemUpgrade(List<String> command) {
         List<String> words = !command.isEmpty() && command.getFirst().equals("sudo")
                 ? command.subList(1, command.size()) : command;
         if (words.isEmpty() || !UPGRADES.containsKey(words.getFirst())) {

@@ -3,7 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 import java.util.ArrayList;
 import java.util.List;
 
-// P9: what the image declares that OpenShift leaves to the deployment.
+// What the image declares that OpenShift leaves to the deployment.
 final class DeploymentHints implements PlatformCheck {
 
     @Override

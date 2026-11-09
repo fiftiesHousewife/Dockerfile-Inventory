@@ -75,7 +75,7 @@ record Profile(String name, String describes, List<String> allowedRegistries, Ma
                 .orElseThrow(() -> refused(source, id + " is not a rule"));
     }
 
-    private static Stream<Check> platform() {
+    static Stream<Check> platform() {
         return Arrays.stream(Check.values()).filter(c -> !c.rule());
     }
 
@@ -84,7 +84,7 @@ record Profile(String name, String describes, List<String> allowedRegistries, Ma
                 .findFirst().orElseThrow(() -> refused(source, check + " is " + word + ", not " + words()));
     }
 
-    private static String words() {
+    static String words() {
         List<String> words = Arrays.stream(Severity.values()).map(Severity::word).toList();
         return words.subList(0, words.size() - 1).stream().collect(Collectors.joining(", ")) + " or " + words.getLast();
     }

@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-// P4: neither restricted SCC lets a process switch user; v2 forbids escalation and both drop SETUID and SETGID.
+// Neither restricted SCC lets a process switch user; v2 forbids escalation and both drop SETUID and SETGID.
 final class UserSwitch implements PlatformCheck {
 
     private static final Pattern SWITCH = Pattern.compile("(?:^|[\\s;&|/])(sudo|su|gosu|su-exec)(?=\\s|$)");

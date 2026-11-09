@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
-// The rules stage's findings as the validator's: each read from one Dockerfile, its severity from the profile.
 final class RuleFindings {
 
     private RuleFindings() {

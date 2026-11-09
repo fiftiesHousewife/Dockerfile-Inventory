@@ -32,4 +32,22 @@ class SubjectTest {
                 () -> assertThat(Fixtures.subject("080b0412").runnable()).isTrue(),
                 () -> assertThat(Fixtures.subject("007a290c").runnable()).isTrue());
     }
+
+    @Test
+    void stagesBuildingOnEachOtherInACircleEndTheChainAtTheFirstRepeat() {
+        Subject subject = new Subject("aaa", null, null, List.of(stage("a", "b"), stage("b", "a")), List.of());
+
+        assertThat(subject.finalStages()).extracting(Subject.Stage::name).containsExactly("b", "a");
+    }
+
+    @Test
+    void aStageIsBuiltFromTheStageItNamesOrNoneWhenItNamesNone() {
+        Subject subject = new Subject("aaa", null, null, List.of(stage("base", null), stage("app", "base")),
+                List.of());
+
+        assertAll(
+                () -> assertThat(subject.builtFrom(stage("app", "base"))).isEqualTo(stage("base", null)),
+                () -> assertThat(subject.builtFrom(stage("app", "missing"))).isNull(),
+                () -> assertThat(subject.builtFrom(stage("base", null))).isNull());
+    }
 }

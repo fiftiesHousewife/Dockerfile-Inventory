@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.assertj.core.api.SoftAssertions;
@@ -54,16 +55,18 @@ class LinesTest {
 
     @Test
     void withoutLeadingCommentsDropsTheCommentLinesBeforeTheInstruction() {
-        assertThat(Lines.withoutLeadingComments("\n# one\n  # two\nRUN make")).isEqualTo("RUN make");
-        assertThat(Lines.withoutLeadingComments("# only a comment")).isEmpty();
+        assertAll(
+                () -> assertThat(Lines.withoutLeadingComments("\n# one\n  # two\nRUN make")).isEqualTo("RUN make"),
+                () -> assertThat(Lines.withoutLeadingComments("# only a comment")).isEmpty());
     }
 
     @Test
     void startOfLineSkipsAMatchInsideACommentOrLaterInALine() {
         String text = "# RUN make\nENV X=RUN make\n  RUN make\n";
 
-        assertThat(Lines.startOfLine(text, "RUN make", 0)).isEqualTo(text.lastIndexOf("RUN make"));
-        assertThat(Lines.startOfLine(text, "USER", 0)).isEqualTo(-1);
+        assertAll(
+                () -> assertThat(Lines.startOfLine(text, "RUN make", 0)).isEqualTo(text.lastIndexOf("RUN make")),
+                () -> assertThat(Lines.startOfLine(text, "USER", 0)).isEqualTo(-1));
     }
 
     @Test

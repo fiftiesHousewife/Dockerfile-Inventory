@@ -35,6 +35,6 @@ class SystemUpgradeTest {
         "yum update -y openssl => ",
         "dnf install -y make => ", "pip install -U pip => "})
     void anUpgradeIsTheManagersUpgradeSubcommandWithNoPackageNamed(String command, String upgrade) {
-        assertThat(SystemUpgrade.upgrade(List.of(command.split(" "))).orElse(null)).isEqualTo(upgrade);
+        assertThat(SystemUpgrade.wholeSystemUpgrade(List.of(command.split(" "))).orElse(null)).isEqualTo(upgrade);
     }
 }

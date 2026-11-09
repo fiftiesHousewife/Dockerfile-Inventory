@@ -74,4 +74,37 @@ class ManifestRunTest {
 
         assertThat(Files.readAllLines(out.resolve("workloads.jsonl"))).isEmpty();
     }
+
+    private static ManifestRun.FileRead fileRead(String sha, Workloads.Read read) {
+        return new ManifestRun.FileRead(sha, List.of(new ManifestRun.Location("acme/api", "a.yaml")), read);
+    }
+
+    @Test
+    void eachWorkloadOfAFileIsARowWithThatFilesLocations() {
+        assertThat(ManifestRun.rows(fileRead("y1", Workloads.read("kind: Pod\nmetadata: {name: p}\nspec: {}\n"))))
+                .extracting(ManifestRun.WorkloadRow::blobSha, row -> row.locations().size())
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("y1", 1));
+    }
+
+    @Test
+    void theRatesCountEachKindOfRead() {
+        assertThat(ManifestRun.rates(List.of(fileRead("a", Workloads.read("kind: Pod\nspec: {}\n")),
+                fileRead("b", Workloads.read("{{ x }}")), fileRead("c", Workloads.read("kind: [")))))
+                .isEqualTo(new ManifestRun.YamlRates(3, 1, 1, 1, 1));
+    }
+
+    @Test
+    void unreadCountsOnlyTheFilesLeftUnreadForThatReason() {
+        assertThat(ManifestRun.unread(List.of(fileRead("a", Workloads.read("{{ x }}")),
+                fileRead("b", Workloads.read("kind: Pod\nspec: {}\n"))), "a template")).isEqualTo(1);
+    }
+
+    @Test
+    void eachStoredFileIsListedOnceWithEveryLocationAndAMissingBlobIsLeftOut() throws IOException {
+        Files.delete(discovery.resolve("yaml").resolve("y3"));
+
+        assertThat(new ManifestRun(discovery, out).locationsByBlob())
+                .hasEntrySatisfying("y1", locations -> assertThat(locations).hasSize(2))
+                .doesNotContainKey("y3");
+    }
 }

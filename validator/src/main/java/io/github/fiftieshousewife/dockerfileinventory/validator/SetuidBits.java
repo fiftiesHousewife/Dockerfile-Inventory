@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-// P5: restricted-v2 forbids privilege escalation; restricted (v1) allows it, with SETUID and SETGID dropped.
+// The restricted-v2 SCC forbids privilege escalation; restricted (v1) allows it, with SETUID and SETGID dropped.
 final class SetuidBits implements PlatformCheck {
 
     private static final Pattern OCTAL = Pattern.compile("[46][0-7]{3}");

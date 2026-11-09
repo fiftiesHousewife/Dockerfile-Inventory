@@ -8,7 +8,6 @@ import java.util.List;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-// The catalogue stage's entries as the catalogue rules read them: the file, not the report's classes.
 final class CatalogueView {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -34,7 +33,6 @@ final class CatalogueView {
         }
     }
 
-    // The bases the stages pin by digest; a stage built on an earlier one names none.
     static Entry entry(JsonNode row) {
         return new Entry(row.path("blobSha").asString(), row.path("build").path("stages").valueStream()
                 .filter(stage -> stage.path("baseName").isString() && stage.path("baseDigest").isString())
