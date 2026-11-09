@@ -6,6 +6,10 @@
     "P1": "breaks", "P2": "breaks", "P3": "breaks", "P4": "breaks",
     "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information"
   },
+  "pod": {
+    "D1": "refused", "D2": "refused", "D3": "refused", "D4": "refused", "D5": "refused", "D6": "refused"
+  },
+  "allowedCapabilities": ["NET_BIND_SERVICE"],
   "rules": {
     "S1": "drift", "S2": "drift", "S3": "drift", "S5": "drift", "S6": "drift", "S7": "drift", "R2": "drift",
     "R3": "information", "R4": "information", "H1": "information", "H3": "information", "H4": "information", "H5": "information", "H6": "information", "H7": "information", "H8": "information", "H9": "information",

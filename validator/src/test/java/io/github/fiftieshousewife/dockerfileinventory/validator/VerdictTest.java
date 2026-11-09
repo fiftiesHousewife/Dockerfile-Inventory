@@ -27,4 +27,10 @@ class VerdictTest {
         assertThat(Verdict.of(List.of(new Finding(Check.P9, Severity.INFORMATION, Certainty.READ, "a", "m"))))
                 .isEqualTo(Verdict.INFORMATION);
     }
+
+    @Test
+    void aRefusedFindingIsWorseThanOneThatBreaks() {
+        assertThat(Verdict.of(List.of(new Finding(Check.P1, Severity.BREAKS, Certainty.READ, "a", "m"),
+                new Finding(Check.P1, Severity.REFUSED, Certainty.READ, "a", "m")))).isEqualTo(Verdict.REFUSED);
+    }
 }

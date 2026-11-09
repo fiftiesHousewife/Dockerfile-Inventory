@@ -68,7 +68,9 @@ and one line when its gate is met.
   lineage, a verdict per workload): the validator reads deployment manifests. Slice 1 done 9 Nov: `Workloads` reads
   workload YAML (templates unread). Slice 2 done 9 Nov: discovery fetches candidate YAML into `yaml/`, facts writes
   `workloads.jsonl`; on ten cloned repositories 596 candidates, 6 with workloads; on the owner's survey of 24 openshift
-  repositories, 530 files and 4 workloads once `vendored/` is left out (2,568 and 21 before). Next: the pod checks (`refused`), then the report.
+  repositories, 530 files and 4 workloads once `vendored/` is left out (2,568 and 21 before). Slice 3a done 10 Nov: `refused`, the pod checks D1 to D6 in both profiles, a verdict per workload
+  (`workload-verdicts.jsonl`); on the owner's survey 21 workloads, 15 refused (node agents and static master pods), 6
+  run. Next: 3b, linking containers to Dockerfiles through lineage and the manifest answering P9; then the report.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

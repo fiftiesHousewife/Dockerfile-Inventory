@@ -1,6 +1,6 @@
 # Deployment manifests in the validator: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; slices 1 and 2 built 9 Nov.
+Status: planned 9 Nov; the questions answered 9 Nov; slices 1 and 2 built 9 Nov; slice 3a built 10 Nov.
 
 ## Why
 
@@ -103,3 +103,69 @@ openshift-tools' own `sync` DaemonSet (privileged, `runAsUser: 0`, the host's ne
 image-inspector's privileged Pod mounting the Docker socket, both now fixtures for the reader and for slice 3's
 checks. The 223 templates left are Ansible roles' Jinja files.
 
+
+## Slice 3a: refused, the pod checks, a verdict per workload (planned 10 Nov)
+
+Slice 3 is split: 3a judges each workload on its own pod settings; 3b links its containers to Dockerfiles through
+lineage and lets the manifest answer its image's P9.
+
+Design:
+
+- `Severity` and `Verdict` gain `REFUSED`, above `BREAKS`. No image check is refused in either shipped profile, so
+  the images' verdicts and the estate ratchet stay as they are.
+- `Check` gains D1 to D6, pod checks, beside the platform checks (P) and the rules. A profile must give every one a
+  severity, under `pod` (as the rules have `rules`), and may list `allowedCapabilities`.
+- `restricted-v2`: D1 to D6 refused; `NET_BIND_SERVICE` the one capability allowed. `restricted` (v1): D1, D2, D3
+  and D5 refused, no capability allowed; D4 and D6 off, since v1 allows privilege escalation and sets no seccomp
+  profile.
+- The checks read each container with its pod's settings under it (a container's `runAsUser` or `seccomp` overrides
+  the pod's), init containers included:
+  - D1, a privileged container;
+  - D2, a fixed `runAsUser`: 0 is read as refused; any other UID is inferred, admitted only inside the namespace's
+    range;
+  - D3, an added capability the profile does not allow;
+  - D4, `allowPrivilegeEscalation: true`;
+  - D5, the host's network, PID or IPC namespace, a host path or a host port;
+  - D6, an `Unconfined` seccomp profile.
+- A problem carries its own certainty (D2 has both kinds).
+- The validator reads `workloads.jsonl` from the facts folder when it is there. It writes `workload-verdicts.jsonl`,
+  one line per workload: the YAML's blob SHA, kind, name, namespace, locations, verdict and findings. When there are
+  workloads, `action-plan.json` gains `workloads` and `workloadVerdicts`. Without the file, every output stays byte
+  for byte what it was.
+- Decided without asking (say if wrong): a Kustomize patch, which names no image, is judged as it stands, and 3b
+  leaves it unlinked. Pod findings do not become actions until 3b, when they can name the Dockerfile as well as the
+  YAML.
+
+Tests, in order:
+
+1. `Verdict.of` a refused finding is `REFUSED`, worse than `BREAKS`.
+2. `Profile.parse` reads `refused`, refuses a profile with no severity for a D check (naming it), and reads
+   `allowedCapabilities`.
+3. The shipped profiles: v2 refuses D1 to D6 and allows `NET_BIND_SERVICE`; v1 turns D4 and D6 off and allows none.
+4. `Workload.read` reads the real lines of the owner's survey (`fixtures/workloads/workloads.jsonl`).
+5. The checks, one class each, on the real lines (openshift-tools' `sync`, image-inspector, a plain Deployment) and
+   inline cases for what the estate lacks: D1; D2 for 0, for 1001, and a container overriding its pod; D3 under each
+   profile; D4; D5 naming each host access; D6 at pod and container level, the container's setting winning.
+6. `PodValidation.findings` skips checks that are off and gives each problem its certainty.
+7. `ValidatorRun` with `workloads.jsonl` writes `workload-verdicts.jsonl` and the counts; without it, the outputs
+   are unchanged.
+
+## Built, slice 3a (10 Nov)
+
+`Severity` and `Verdict` have `REFUSED`; `Check` has D1 to D6 (`pod()` beside `platform()` and `rule()`); both
+profiles carry `pod` and `allowedCapabilities`, and a profile without a severity for a pod check is refused naming it.
+The validator reads `workloads.jsonl` into `Workload` (its own record of facts' row: the validator depends on no other
+module), runs `PodValidation`'s six checks (`Privileged`, `FixedUser`, `AddedCapability`, `PrivilegeEscalation`,
+`HostAccess`, `Unconfined`, with `ContainerSettings` giving a container its pod's `runAsUser` and seccomp profile when
+it sets none), and writes `workload-verdicts.jsonl` (`WorkloadVerdict`). The pod checks are never inherited through a
+base (`Inheritance`), and each says what to change, for the actions 3b will make. Without `workloads.jsonl` every
+output is as before: `./gradlew validate` holds the combined estate's counts unchanged.
+
+Measured on the owner's survey of `github.com/openshift` (`out/openshift-try`, whose facts still hold the vendored
+copies): 21 workloads, 15 refused under `restricted-v2`, 6 run. The refused are the node agents (`sync`, `ovs`, `sdn`,
+`proxy-and-dns`: privileged, UID 0, the host's network, PID and paths) and the static master pods (privileged, host
+network and paths), which on a real cluster run under the privileged SCC; and image-inspector's privileged Pod mounting
+the Docker socket. Fixtures: three of those lines (`validator/src/test/resources/fixtures/workloads.jsonl`).
+
+Next, 3b: link each container's image to a Dockerfile through lineage, let a manifest answer its image's P9, and make
+the pod findings actions naming the YAML (and the Dockerfile when linked).

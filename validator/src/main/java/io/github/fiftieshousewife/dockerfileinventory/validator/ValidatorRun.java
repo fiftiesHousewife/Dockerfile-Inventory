@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tools.jackson.databind.ObjectMapper;
@@ -62,8 +63,19 @@ final class ValidatorRun {
         write("fixes.jsonl", lines(fixes));
         write("verdicts.jsonl", lines(verdicts.entrySet().stream()
                 .map(e -> new ImageVerdict(e.getKey(), e.getValue())).toList()));
-        write("action-plan.json", JSON.writerWithDefaultPrettyPrinter()
-                .writeValueAsString(summary(verdicts, all.size() - images.size(), actions, fixes.size())));
+        Map<String, Object> summary = summary(verdicts, all.size() - images.size(), actions, fixes.size());
+        workloads().ifPresent(workloads -> {
+            write("workload-verdicts.jsonl", lines(workloads));
+            summary.putAll(WorkloadVerdict.summary(workloads));
+        });
+        write("action-plan.json", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(summary));
+    }
+
+    Optional<List<WorkloadVerdict>> workloads() {
+        Path file = factsDir.resolve("workloads.jsonl");
+        return Files.isRegularFile(file) ? Optional.of(Workload.read(file).stream()
+                .map(workload -> WorkloadVerdict.of(workload, profile)).toList()).filter(list -> !list.isEmpty())
+                : Optional.empty();
     }
 
     List<Subject> subjects() {

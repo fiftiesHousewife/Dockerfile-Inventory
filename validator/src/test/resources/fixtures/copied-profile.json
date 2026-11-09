@@ -5,5 +5,9 @@
   "severity": {
     "P1": "breaks", "P2": "breaks", "P3": "breaks", "P4": "breaks", "P5": "breaks",
     "P6": "breaks", "P7": "breaks", "P8": "breaks", "P9": "information", "P10": "information"
-  }
+  },
+  "pod": {
+    "D1": "refused", "D2": "refused", "D3": "refused", "D4": "refused", "D5": "refused", "D6": "refused"
+  },
+  "allowedCapabilities": ["NET_BIND_SERVICE"]
 }

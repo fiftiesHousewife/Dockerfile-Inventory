@@ -25,12 +25,30 @@ class ProfileTest {
     }
 
     @Test
-    void theV1ProfileDiffersOnlyInTheSetuidCheck() {
+    void theV1ProfileDiffersInTheSetuidCheckEscalationAndSeccomp() {
         Profile v1 = Profile.shipped("openshift-4-restricted");
         Profile v2 = Profile.shipped(Profile.DEFAULT);
 
         assertThat(v1.severity().entrySet()).filteredOn(e -> e.getValue() != v2.severity().get(e.getKey()))
-                .containsExactly(Map.entry(Check.P5, Severity.INFORMATION));
+                .containsExactlyInAnyOrder(Map.entry(Check.P5, Severity.INFORMATION),
+                        Map.entry(Check.D4, Severity.OFF), Map.entry(Check.D6, Severity.OFF));
+    }
+
+    @Test
+    void restrictedV2RefusesEveryPodCheckAndAllowsOnlyBindingLowPorts() {
+        Profile v2 = Profile.shipped(Profile.DEFAULT);
+
+        assertAll(
+                () -> assertThat(v2.severity()).containsEntry(Check.D1, Severity.REFUSED)
+                        .containsEntry(Check.D2, Severity.REFUSED).containsEntry(Check.D3, Severity.REFUSED)
+                        .containsEntry(Check.D4, Severity.REFUSED).containsEntry(Check.D5, Severity.REFUSED)
+                        .containsEntry(Check.D6, Severity.REFUSED),
+                () -> assertThat(v2.allowedCapabilities()).containsExactly("NET_BIND_SERVICE"));
+    }
+
+    @Test
+    void restrictedV1AllowsNoAddedCapability() {
+        assertThat(Profile.shipped("openshift-4-restricted").allowedCapabilities()).isEmpty();
     }
 
     @Test
@@ -53,7 +71,7 @@ class ProfileTest {
     void aBadSeverityIsRefusedByName() {
         assertThatThrownBy(() -> Profile.parse("x", """
                 {"name": "x", "describes": "", "allowedRegistries": [], "severity": {"P1": "fatal"}}"""))
-                .hasMessage("profile x: P1 is fatal, not breaks, drift, information or off");
+                .hasMessage("profile x: P1 is fatal, not refused, breaks, drift, information or off");
     }
 
     @Test
@@ -93,7 +111,8 @@ class ProfileTest {
         String platform = """
                 {"name": "x", "describes": "", "allowedRegistries": [], "severity": {"P1": "breaks", "P2": "breaks",
                  "P3": "breaks", "P4": "breaks", "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift",
-                 "P9": "information", "P10": "information"}, "rules": {"%s": "drift"}}""";
+                 "P9": "information", "P10": "information"}, "pod": {"D1": "refused", "D2": "refused",
+                 "D3": "refused", "D4": "refused", "D5": "refused", "D6": "refused"}, "rules": {"%s": "drift"}}""";
         assertAll(
                 () -> assertThatThrownBy(() -> Profile.parse("x", platform.formatted("Z9")))
                         .hasMessage("profile x: Z9 is not a rule"),
@@ -101,9 +120,36 @@ class ProfileTest {
                         .hasMessage("profile x: P1 is not a rule"));
     }
 
+    private static final String WITH_POD = """
+            {"name": "x", "describes": "", "allowedRegistries": [], "severity": {"P1": "breaks", "P2": "breaks",
+             "P3": "breaks", "P4": "breaks", "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift",
+             "P9": "information", "P10": "information"}, "pod": {POD}, "allowedCapabilities": ["NET_BIND_SERVICE"]}""";
+
+    private static String withPod(String checks) {
+        return WITH_POD.replace("POD", checks);
+    }
+
+    @Test
+    void aPodCheckLeftOutIsRefusedByName() {
+        assertThatThrownBy(() -> Profile.parse("x", withPod("""
+                "D1": "refused", "D2": "refused\"""")))
+                .hasMessage("profile x: no severity for D3");
+    }
+
+    @Test
+    void thePodChecksAndTheAllowedCapabilitiesAreRead() {
+        Profile profile = Profile.parse("x", withPod("""
+                "D1": "refused", "D2": "refused", "D3": "refused", "D4": "off", "D5": "refused", "D6": "off\""""));
+
+        assertAll(
+                () -> assertThat(profile.severity()).containsEntry(Check.D1, Severity.REFUSED)
+                        .containsEntry(Check.D4, Severity.OFF),
+                () -> assertThat(profile.allowedCapabilities()).containsExactly("NET_BIND_SERVICE"));
+    }
+
     @Test
     void theSeverityWordsAreListedWithOrBeforeTheLast() {
-        assertThat(Profile.words()).isEqualTo("breaks, drift, information or off");
+        assertThat(Profile.words()).isEqualTo("refused, breaks, drift, information or off");
     }
 
     @Test

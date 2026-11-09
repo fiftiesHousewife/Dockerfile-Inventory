@@ -42,6 +42,55 @@ class ValidatorRunTest {
     }
 
     @Test
+    void eachWorkloadIsWrittenWithItsVerdictAndFindings() throws IOException {
+        plan();
+        List<JsonNode> workloads = Files.readAllLines(out.resolve("workload-verdicts.jsonl")).stream()
+                .map(JSON::readTree).toList();
+        JsonNode sync = workloads.stream().filter(w -> w.path("name").asString().equals("sync")).findFirst()
+                .orElseThrow();
+
+        assertAll(
+                () -> assertThat(workloads).hasSize(3),
+                () -> assertThat(sync.path("verdict").asString()).isEqualTo("REFUSED"),
+                () -> assertThat(sync.path("kind").asString()).isEqualTo("DaemonSet"),
+                () -> assertThat(sync.path("locations").get(0).path("repository").asString())
+                        .isEqualTo("openshift/openshift-tools"),
+                () -> assertThat(sync.path("findings").valueStream().map(f -> f.path("check").asString()))
+                        .contains("D1", "D2", "D5"));
+    }
+
+    @Test
+    void thePlanCountsTheWorkloadsAndTheirVerdicts() {
+        JsonNode plan = plan();
+
+        assertAll(
+                () -> assertThat(plan.path("workloads").asInt()).isEqualTo(3),
+                () -> assertThat(plan.path("workloadVerdicts").path("refused").asInt()).isEqualTo(2),
+                () -> assertThat(plan.path("workloadVerdicts").path("runs").asInt()).isEqualTo(1));
+    }
+
+    @Test
+    void anEmptyWorkloadFileLeavesThePlanAsWithoutOne(@TempDir Path facts) throws IOException {
+        Files.copy(FIXTURES.resolve("facts.jsonl"), facts.resolve("facts.jsonl"));
+        Files.writeString(facts.resolve("workloads.jsonl"), "");
+        new ValidatorRun(facts, FIXTURES, null, null, null, Fixtures.V2, out).run();
+
+        assertAll(
+                () -> assertThat(JSON.readTree(out.resolve("action-plan.json").toFile()).has("workloads")).isFalse(),
+                () -> assertThat(out.resolve("workload-verdicts.jsonl")).doesNotExist());
+    }
+
+    @Test
+    void withoutWorkloadsThePlanHasNoWorkloadCountsAndNoWorkloadFile(@TempDir Path facts) throws IOException {
+        Files.copy(FIXTURES.resolve("facts.jsonl"), facts.resolve("facts.jsonl"));
+        new ValidatorRun(facts, FIXTURES, null, null, null, Fixtures.V2, out).run();
+
+        assertAll(
+                () -> assertThat(JSON.readTree(out.resolve("action-plan.json").toFile()).has("workloads")).isFalse(),
+                () -> assertThat(out.resolve("workload-verdicts.jsonl")).doesNotExist());
+    }
+
+    @Test
     void theActionsAreWrittenOnePerLineMostUrgentFirst() throws IOException {
         plan();
         List<JsonNode> actions = Files.readAllLines(out.resolve("actions.jsonl")).stream().map(JSON::readTree)

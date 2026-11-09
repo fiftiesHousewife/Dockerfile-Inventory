@@ -24,3 +24,11 @@
 | `fix-permissions ${APP_ROOT}`, a variable set by `ENV` | `d133a9d4...` | sclorg/s2i-python-container `3.12-minimal/Dockerfile.rhel10` |
 - `manifest.jsonl`: discovery's manifest lines for those fifteen Dockerfiles on the same estate, up to two
   locations each.
+- `workloads.jsonl`: three real lines of the facts stage's `workloads.jsonl` from the owner's survey of
+  `github.com/openshift` (9 Nov, `out/openshift-try`):
+
+| Behaviour | Blob SHA | Location |
+| --- | --- | --- |
+| a plain Deployment, nothing asked of the host | `a185638a...` | openshift/training `assets/cluster-filler.yaml` |
+| a privileged DaemonSet running as root, on the host's network, PID and paths | `d88374c0...` | openshift/openshift-tools `ansible/roles/openshift_node_group/files/sync.yaml` |
+| a privileged Pod mounting a host path (the Docker socket) | `fe15041e...` | openshift/image-inspector `kubernetes/image-inspector-app.yaml` |

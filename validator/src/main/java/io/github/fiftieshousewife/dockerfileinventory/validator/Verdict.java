@@ -5,7 +5,7 @@ import java.util.List;
 
 // Worst first.
 enum Verdict {
-    BREAKS, DRIFT, INFORMATION, RUNS;
+    REFUSED, BREAKS, DRIFT, INFORMATION, RUNS;
 
     static Verdict of(List<Finding> findings) {
         return findings.stream().map(Finding::severity).min(Comparator.naturalOrder())

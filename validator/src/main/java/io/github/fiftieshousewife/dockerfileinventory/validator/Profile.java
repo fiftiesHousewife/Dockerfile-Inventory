@@ -16,7 +16,8 @@ import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-record Profile(String name, String describes, List<String> allowedRegistries, Map<Check, Severity> severity) {
+record Profile(String name, String describes, List<String> allowedRegistries, Map<Check, Severity> severity,
+               List<String> allowedCapabilities) {
 
     static final String DEFAULT = "openshift-4-restricted-v2";
     static final List<String> SHIPPED = List.of(DEFAULT, "openshift-4-restricted");
@@ -24,6 +25,7 @@ record Profile(String name, String describes, List<String> allowedRegistries, Ma
     Profile {
         allowedRegistries = List.copyOf(allowedRegistries);
         severity = Map.copyOf(severity);
+        allowedCapabilities = List.copyOf(allowedCapabilities);
     }
 
     static Profile of(String setting) {
@@ -55,19 +57,31 @@ record Profile(String name, String describes, List<String> allowedRegistries, Ma
         Map<Check, Severity> severity = new EnumMap<>(Check.class);
         root.path("severity").properties().forEach(e -> severity.put(check(source, e.getKey()),
                 severity(source, e.getKey(), e.getValue().asString())));
-        platform().filter(c -> !severity.containsKey(c)).findFirst().ifPresent(missing -> {
-            throw refused(source, "no severity for " + missing);
-        });
+        root.path("pod").properties().forEach(e -> severity.put(pod(source, e.getKey()),
+                severity(source, e.getKey(), e.getValue().asString())));
+        Arrays.stream(Check.values()).filter(c -> !c.rule() && !severity.containsKey(c)).findFirst()
+                .ifPresent(missing -> {
+                    throw refused(source, "no severity for " + missing);
+                });
         Arrays.stream(Check.values()).filter(Check::rule).forEach(rule -> severity.put(rule, Severity.INFORMATION));
         root.path("rules").properties().forEach(e -> severity.put(rule(source, e.getKey()),
                 severity(source, e.getKey(), e.getValue().asString())));
         return new Profile(root.path("name").asString(), root.path("describes").asString(),
-                root.path("allowedRegistries").valueStream().map(JsonNode::asString).toList(), severity);
+                strings(root.path("allowedRegistries")), severity, strings(root.path("allowedCapabilities")));
+    }
+
+    private static List<String> strings(JsonNode array) {
+        return array.valueStream().map(JsonNode::asString).toList();
     }
 
     static Check check(String source, String id) {
         return platform().filter(c -> c.name().equals(id)).findFirst()
                 .orElseThrow(() -> refused(source, id + " is not a check (P1 to P" + platform().count() + ")"));
+    }
+
+    static Check pod(String source, String id) {
+        return Arrays.stream(Check.values()).filter(c -> c.pod() && c.name().equals(id)).findFirst()
+                .orElseThrow(() -> refused(source, id + " is not a pod check (D1 to D6)"));
     }
 
     static Check rule(String source, String id) {
@@ -76,7 +90,7 @@ record Profile(String name, String describes, List<String> allowedRegistries, Ma
     }
 
     static Stream<Check> platform() {
-        return Arrays.stream(Check.values()).filter(c -> !c.rule());
+        return Arrays.stream(Check.values()).filter(Check::platform);
     }
 
     static Severity severity(String source, String check, String word) {

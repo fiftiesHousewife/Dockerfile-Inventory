@@ -3,7 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 import java.util.Locale;
 
 enum Severity {
-    BREAKS, DRIFT, INFORMATION, OFF;
+    REFUSED, BREAKS, DRIFT, INFORMATION, OFF;
 
     String word() {
         return name().toLowerCase(Locale.ROOT);

@@ -16,7 +16,7 @@ class ValidationTest {
     @Test
     void everyCheckRunsInTheOrderOfItsId() {
         assertThat(Validation.CHECKS).extracting(PlatformCheck::id)
-                .containsExactly(Arrays.stream(Check.values()).filter(check -> !check.rule()).toArray(Check[]::new));
+                .containsExactly(Arrays.stream(Check.values()).filter(Check::platform).toArray(Check[]::new));
     }
 
     @Test
@@ -40,7 +40,7 @@ class ValidationTest {
     @Test
     void aCheckTheProfileTurnsOffFindsNothing() {
         Profile off = new Profile("off", "", List.of(), Arrays.stream(Check.values())
-                .collect(Collectors.toMap(c -> c, c -> Severity.OFF)));
+                .collect(Collectors.toMap(c -> c, c -> Severity.OFF)), List.of());
 
         assertThat(Validation.findings(subject("080b0412"), off)).isEmpty();
     }
