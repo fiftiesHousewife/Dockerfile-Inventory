@@ -6,9 +6,7 @@ import java.util.Map;
 /**
  * The report job's entry point. It takes its settings from the environment, as the OpenShift job sets them:
  * {@code FACTS_DIR}, {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR}, {@code CONVERTER_DIR},
- * {@code VALIDATOR_DIR},
- * {@code STALE_AFTER_MONTHS}, {@code LAYER_LIMIT}, {@code FOOTPRINTS}, {@code LINK_THRESHOLD} and
- * {@code LINK_MARGIN}.
+ * {@code VALIDATOR_DIR}, {@code STALE_AFTER_MONTHS}, {@code LAYER_LIMIT} and {@code FOOTPRINTS}.
  */
 public final class ReportMain {
 
@@ -32,9 +30,7 @@ public final class ReportMain {
         String footprints = env.get("FOOTPRINTS");
         return new CatalogueSettings(positive(env, "STALE_AFTER_MONTHS", CatalogueSettings.DEFAULTS.staleAfterMonths()),
                 positive(env, "LAYER_LIMIT", CatalogueSettings.DEFAULTS.layerLimit()), footprints == null
-                ? FootprintRules.defaults() : FootprintRules.read(Path.of(footprints)).then(FootprintRules.defaults()),
-                new LinkRule(share(env, "LINK_THRESHOLD", LinkRule.DEFAULT.threshold()),
-                        share(env, "LINK_MARGIN", LinkRule.DEFAULT.margin())));
+                ? FootprintRules.defaults() : FootprintRules.read(Path.of(footprints)).then(FootprintRules.defaults()));
     }
 
     static int positive(Map<String, String> env, String name, int fallback) {
@@ -46,17 +42,6 @@ public final class ReportMain {
             throw new IllegalStateException(name + " must be a positive whole number, not " + value);
         }
         return Integer.parseInt(value);
-    }
-
-    static double share(Map<String, String> env, String name, double fallback) {
-        String value = env.get(name);
-        if (value == null) {
-            return fallback;
-        }
-        if (!value.matches("0(\\.\\d+)?|1(\\.0+)?|\\.\\d+")) {
-            throw new IllegalStateException(name + " must be a number from 0 to 1, not " + value);
-        }
-        return Double.parseDouble(value);
     }
 
     static String required(Map<String, String> env, String name) {

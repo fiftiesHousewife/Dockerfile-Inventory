@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,7 +59,7 @@ class AnalysisTest {
 
     @Test
     void writesEachImagesParentLinkAndEffectiveProperties() throws IOException {
-        new Analysis(out, facts, discovery).run();
+        new Analysis(out, facts, discovery, LinkRule.DEFAULT).run();
 
         assertThat(byDigest("lineage.jsonl")).satisfies(lineage -> {
             assertThat(lineage.get("app").path("parent").path("configDigest").asString()).isEqualTo("base");
@@ -79,8 +80,27 @@ class AnalysisTest {
     }
 
     @Test
+    void writesWhetherTheRuleCreditsEachLinkInTheLinksAndTheEffectiveImages() throws IOException {
+        new Analysis(out, facts, discovery, LinkRule.DEFAULT).run();
+
+        Map<String, JsonNode> links = byDigest("links.jsonl");
+        JsonNode userSetBy = byDigest("effective.jsonl").get("app").path("user").path("setBy");
+        assertAll(
+                () -> assertThat(links.get("app").path("credited").asBoolean()).isTrue(),
+                () -> assertThat(links.get("stray").path("credited").asBoolean()).isFalse(),
+                () -> assertThat(userSetBy.path("link").path("credited").asBoolean()).isTrue());
+    }
+
+    @Test
+    void theRatesCountTheCreditedLinks() throws IOException {
+        new Analysis(out, facts, discovery, LinkRule.DEFAULT).run();
+
+        assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("credited").asInt()).isEqualTo(2);
+    }
+
+    @Test
     void writesGapsExternalBasesAndOutdatedBases() throws IOException {
-        new Analysis(out, facts, discovery).run();
+        new Analysis(out, facts, discovery, LinkRule.DEFAULT).run();
 
         assertThat(byDigest("gaps.jsonl")).containsOnlyKeys("stray");
         assertThat(byDigest("external-bases.jsonl")).containsOnlyKeys("ubi");
@@ -89,7 +109,7 @@ class AnalysisTest {
 
     @Test
     void writesTheRates() throws IOException {
-        new Analysis(out, facts, discovery).run();
+        new Analysis(out, facts, discovery, LinkRule.DEFAULT).run();
 
         JsonNode rates = JSON.readTree(out.resolve("rates.json").toFile());
         assertSoftly(softly -> {
@@ -122,7 +142,7 @@ class AnalysisTest {
         Files.writeString(facts.resolve("facts.jsonl"), row + "\n");
         Files.writeString(discovery.resolve("manifest.jsonl"), "");
 
-        new Analysis(real, facts, discovery).run();
+        new Analysis(real, facts, discovery, LinkRule.DEFAULT).run();
 
         JsonNode link = Files.readAllLines(real.resolve("links.jsonl")).stream().map(JSON::readTree)
                 .filter(n -> n.path("configDigest").asString().equals("ubi9-python-311")).findFirst().orElseThrow();
@@ -157,7 +177,7 @@ class AnalysisTest {
                 {"repository":"openshift/cluster-storage-operator","scope":"RELEASED","blobSha":"cso-plain"}
                 """);
 
-        new Analysis(real, facts, discovery).run();
+        new Analysis(real, facts, discovery, LinkRule.DEFAULT).run();
 
         JsonNode link = JSON.readTree(Files.readAllLines(real.resolve("links.jsonl")).getFirst());
         assertSoftly(softly -> {
@@ -203,13 +223,13 @@ class AnalysisTest {
         LineageFiles files = new LineageFiles(out);
         files.storeConfig("bad", "not json");
 
-        assertThat(new Analysis(out, facts, discovery).images(new TreeSet<>(List.of("base", "bad", "missing"))))
+        assertThat(new Analysis(out, facts, discovery, LinkRule.DEFAULT).images(new TreeSet<>(List.of("base", "bad", "missing"))))
                 .extracting(Resolved.Node::configDigest).containsExactly("base");
     }
 
     @Test
     void rowsAreSortedByDigestWithTheDigestFirst() {
-        Analysis analysis = new Analysis(out, facts, discovery);
+        Analysis analysis = new Analysis(out, facts, discovery, LinkRule.DEFAULT);
 
         assertThat(analysis.rows(Map.of("b", 2, "a", 1), n -> JSON.createObjectNode().put("n", n)))
                 .containsExactly("{\"configDigest\":\"a\",\"n\":1}", "{\"configDigest\":\"b\",\"n\":2}");

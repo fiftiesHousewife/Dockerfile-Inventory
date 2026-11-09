@@ -18,10 +18,12 @@ final class Analysis {
     private final Path factsDir;
     private final Path discoveryDir;
     private final LineageFiles files;
+    private final LinkRule rule;
     private final ObjectMapper json = new ObjectMapper();
 
-    Analysis(Path outDir, Path factsDir, Path discoveryDir) {
+    Analysis(Path outDir, Path factsDir, Path discoveryDir, LinkRule rule) {
         this.factsDir = factsDir;
+        this.rule = rule;
         this.discoveryDir = discoveryDir;
         this.files = new LineageFiles(outDir);
     }
@@ -32,7 +34,8 @@ final class Analysis {
         List<Resolved.Node> images = images(references.keySet());
         Map<String, Parent> parents = Lineage.of(images);
         Set<String> imageNames = tags.stream().map(TagRow::image).collect(Collectors.toSet());
-        Map<String, Link> links = Links.of(images, parents, Dockerfiles.read(factsDir, discoveryDir), imageNames);
+        Map<String, Link> links = rule.credit(
+                Links.of(images, parents, Dockerfiles.read(factsDir, discoveryDir), imageNames));
         Map<String, EffectiveImage> effective = Fold.of(images, parents, links);
         GapReport gaps = Gaps.of(references, parents, links);
 

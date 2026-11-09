@@ -59,14 +59,14 @@ class CatalogueLinksTest {
                 {"configDigest":"sha256:child","parent":{"kind":"Of","configDigest":"sha256:parent"}}
                 """);
 
-        assertThat(CatalogueLinks.lineage(lineage, LinkRule.DEFAULT)).isEmpty();
+        assertThat(CatalogueLinks.lineage(lineage)).isEmpty();
     }
 
     @Test
     void aLinkFromLineageIsKeptWithTheImagesThatShowIt(@TempDir Path lineage) throws IOException {
         Files.writeString(lineage.resolve("links.jsonl"), """
-                {"configDigest":"sha256:child","tier":"PROBABLE","blobShas":["ccc"],"parentMissing":false}
-                {"configDigest":"sha256:parent","tier":"PROBABLE","blobShas":["aaa"],"parentMissing":false}
+                {"configDigest":"sha256:child","tier":"PROBABLE","blobShas":["ccc"],"credited":true}
+                {"configDigest":"sha256:parent","tier":"PROBABLE","blobShas":["aaa"],"credited":true}
                 """);
         Files.writeString(lineage.resolve("lineage.jsonl"), """
                 {"configDigest":"sha256:child","parent":{"kind":"Of","configDigest":"sha256:parent"}}

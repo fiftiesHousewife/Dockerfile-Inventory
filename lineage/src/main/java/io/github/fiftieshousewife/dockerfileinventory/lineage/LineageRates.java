@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 record LineageRates(int tags, int images, Map<Resolved.Reason, Integer> skipped, double lineageCoverage,
-                    int ambiguousParents, Map<Link.Tier, Integer> links, int parentMissing,
+                    int ambiguousParents, Map<Link.Tier, Integer> links, int credited, int parentMissing,
                     int onbuildChildren, int gaps, int externalBases, int outdatedBases) {
 
     LineageRates {
@@ -22,6 +22,7 @@ record LineageRates(int tags, int images, Map<Resolved.Reason, Integer> skipped,
         return new LineageRates(tags.size(), parents.size(), skipped, coverage(tags, skipped),
                 (int) parents.stream().filter(p -> p instanceof Parent.Ambiguous).count(),
                 tiers(links),
+                (int) links.stream().filter(Link::credited).count(),
                 (int) links.stream().filter(Link::parentMissing).count(),
                 (int) effective.stream().filter(EffectiveImage::parentHasOnbuild).count(),
                 gaps.gaps().size(), gaps.externalBases().size(), gaps.outdatedBases().size());

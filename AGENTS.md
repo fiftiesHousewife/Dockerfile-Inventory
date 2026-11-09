@@ -59,13 +59,13 @@ lineage/            stage 1b: Artifactory images -> family tree -> links to Dock
                     Lineage (parents from layer prefixes), HistoryNormaliser and PairKeys (history -> NormalStep),
                     OwnSteps (an image's own steps; Konflux's and Red Hat release tooling's steps cut)
                     Links (the run), Alignment (scoring: the best and the runner-up), BasePaths, StepIndex (candidates by
-                    rare steps)
+                    rare steps), LinkRule (which links credit an image to a Dockerfile: `credited` on each link)
                     Fold (effective user, env, labels, with who set each), Gaps, Analysis, Dockerfiles, LineageRates
 report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, the catalogue, HTML pages from it
                     Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, Tallies, ReportRun
                     CatalogueRun (catalogue/dockerfiles.jsonl): CatalogueEntry, CatalogueEntries, CatalogueLinks,
                     Footprint, Runtimes, Versions; RegistryImages (lineage's output per image), Unmaintained,
-                    Hierarchies (chains, layers, blockedBy), CatalogueSettings (LinkRule, FootprintRules),
+                    Hierarchies (chains, layers, blockedBy), CatalogueSettings (FootprintRules),
                     Placement; Actions: ReleaseScope, Reaches, Conversions, Siblings, BaseLags, Cadences, Provenance
                     Pages (writes them, from CatalogueView and ArchetypeRows): OverviewPage (EstateFigures),
                     HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName,

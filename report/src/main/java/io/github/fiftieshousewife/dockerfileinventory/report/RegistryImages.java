@@ -35,16 +35,12 @@ final class RegistryImages {
     }
 
     static Map<String, RegistryImage> read(Path lineageDir) {
-        return read(lineageDir, LinkRule.DEFAULT);
-    }
-
-    static Map<String, RegistryImage> read(Path lineageDir, LinkRule rule) {
         Map<String, List<JsonNode>> tags = new LinkedHashMap<>();
         JsonLines.read(lineageDir.resolve("images.jsonl")).stream().filter(row -> row.path("configDigest").isString())
                 .forEach(row -> tags.computeIfAbsent(row.path("configDigest").asString(), d -> new ArrayList<>())
                         .add(row));
         Map<String, String> parents = parents(lineageDir.resolve("lineage.jsonl"));
-        Map<String, Linked> links = links(lineageDir.resolve("links.jsonl"), rule);
+        Map<String, Linked> links = links(lineageDir.resolve("links.jsonl"));
         Map<String, String> newer = newerBases(lineageDir.resolve("outdated-bases.jsonl"));
         Map<String, Map<String, ImageLabel>> labels = labels(lineageDir.resolve("effective.jsonl"));
         Map<String, RegistryImage> images = new LinkedHashMap<>();
@@ -152,24 +148,15 @@ final class RegistryImages {
         return parents;
     }
 
-    static Map<String, Linked> links(Path links, LinkRule rule) {
+    static Map<String, Linked> links(Path links) {
         Map<String, Linked> linked = new HashMap<>();
-        JsonLines.read(links).forEach(row -> linked.put(row.path("configDigest").asString(), linked(row, rule)));
+        JsonLines.read(links).forEach(row -> linked.put(row.path("configDigest").asString(), linked(row)));
         return linked;
     }
 
-    static Linked linked(JsonNode row, LinkRule rule) {
+    static Linked linked(JsonNode row) {
         List<String> shas = row.path("blobShas").valueStream().map(JsonNode::asString).toList();
-        String tier = row.path("tier").asString();
-        boolean credited = "STRONG".equals(tier) || "PROBABLE".equals(tier) && shas.size() == 1
-                || "WEAK".equals(tier) && shas.size() == 1 && aligned(row, rule);
-        return credited ? new Linked(shas, List.of()) : new Linked(List.of(), shas);
-    }
-
-    static boolean aligned(JsonNode row, LinkRule rule) {
-        double score = row.path("score").asDouble(0);
-        JsonNode runnerUp = row.path("runnerUp");
-        return score >= rule.threshold() && (!runnerUp.isNumber() || score - runnerUp.asDouble() >= rule.margin());
+        return row.path("credited").asBoolean(false) ? new Linked(shas, List.of()) : new Linked(List.of(), shas);
     }
 
     static JsonNode config(Path lineageDir, String digest) {

@@ -1,2 +1,2 @@
-{"configDigest":"img-new","tier":"STRONG","blobShas":["blob-a"],"parentMissing":false}
-{"configDigest":"img-old","tier":"PROBABLE","blobShas":["blob-a"],"parentMissing":false}
+{"configDigest":"img-new","tier":"STRONG","blobShas":["blob-a"],"parentMissing":false,"credited":true}
+{"configDigest":"img-old","tier":"PROBABLE","blobShas":["blob-a"],"parentMissing":false,"credited":true}

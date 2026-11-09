@@ -2,5 +2,6 @@
   "image": "centos-centos",
   "sourceRepository": "",
   "tier": "NONE",
-  "blobShas": []
+  "blobShas": [],
+  "credited": false
 }

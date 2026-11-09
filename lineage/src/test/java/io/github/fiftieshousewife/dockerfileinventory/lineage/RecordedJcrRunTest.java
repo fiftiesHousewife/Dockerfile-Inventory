@@ -69,7 +69,7 @@ class RecordedJcrRunTest {
                 TokenSource.from(Map.of("ARTIFACTORY_TOKEN", "t0ken"), "ARTIFACTORY_TOKEN"));
 
         new Inventory(artifactory, new LineageFiles(out), 1).run();
-        new Analysis(out, RUN.resolve("facts"), RUN.resolve("discovery")).run();
+        new Analysis(out, RUN.resolve("facts"), RUN.resolve("discovery"), LinkRule.DEFAULT).run();
 
         Map<String, String> names = new HashMap<>();
         lines(out.resolve("images.jsonl")).forEach(r -> names.put(r.path("configDigest").asString(),

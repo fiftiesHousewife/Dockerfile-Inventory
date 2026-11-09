@@ -12,7 +12,8 @@ import java.util.Map;
 /**
  * Runs lineage from the environment, so the job's pod needs only its variables: {@code OUT_DIR}, {@code FACTS_DIR},
  * {@code DISCOVERY_DIR}, and for the inventory {@code ARTIFACTORY_URL}, {@code ARTIFACTORY_TOKEN} and optionally
- * {@code CONCURRENCY}. Without {@code ARTIFACTORY_URL} only the analysis runs, on what {@code OUT_DIR} already holds,
+ * {@code CONCURRENCY}; {@code LINK_THRESHOLD} and {@code LINK_MARGIN} tune which links credit an image to a
+ * Dockerfile. Without {@code ARTIFACTORY_URL} only the analysis runs, on what {@code OUT_DIR} already holds,
  * so a change to linking can be tried without Artifactory.
  */
 public final class LineageMain {
@@ -38,7 +39,8 @@ public final class LineageMain {
             int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", DEFAULT_CONCURRENCY));
             new Inventory(artifactory, new LineageFiles(out), concurrency).run();
         }
-        new Analysis(out, Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR"))).run();
+        new Analysis(out, Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
+                linkRule(env)).run();
         System.out.println(read(out.resolve("rates.json")));
     }
 
@@ -48,6 +50,22 @@ public final class LineageMain {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    static LinkRule linkRule(Map<String, String> env) {
+        return new LinkRule(share(env, "LINK_THRESHOLD", LinkRule.DEFAULT.threshold()),
+                share(env, "LINK_MARGIN", LinkRule.DEFAULT.margin()));
+    }
+
+    static double share(Map<String, String> env, String name, double fallback) {
+        String value = env.get(name);
+        if (value == null) {
+            return fallback;
+        }
+        if (!value.matches("0(\\.\\d+)?|1(\\.0+)?|\\.\\d+")) {
+            throw new IllegalStateException(name + " must be a number from 0 to 1, not " + value);
+        }
+        return Double.parseDouble(value);
     }
 
     static String required(Map<String, String> env, String name) {

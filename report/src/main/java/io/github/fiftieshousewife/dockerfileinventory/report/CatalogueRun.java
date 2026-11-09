@@ -35,9 +35,9 @@ final class CatalogueRun {
         List<CatalogueEntry> parsed = JsonLines.read(inputs.factsDir().resolve("facts.jsonl")).stream()
                 .map(row -> CatalogueEntries.of(row, places.get(row.path("blobSha").asString())))
                 .toList();
-        Map<String, CatalogueLinks.Links> links = CatalogueLinks.of(parsed, lineageDir, settings.linkRule());
+        Map<String, CatalogueLinks.Links> links = CatalogueLinks.of(parsed, lineageDir);
         Hierarchies hierarchies = new Hierarchies(lineageDir == null ? Map.of()
-                : RegistryImages.read(lineageDir, settings.linkRule()),
+                : RegistryImages.read(lineageDir),
                 settings.staleAfterMonths(), settings.layerLimit(),
                 lineageDir == null ? Map.of() : RegistryImages.pushesByName(lineageDir));
         Set<String> archived = Unmaintained.archivedRepositories(inputs.discoveryDir());

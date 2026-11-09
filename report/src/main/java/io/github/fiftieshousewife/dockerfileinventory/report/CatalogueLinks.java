@@ -32,13 +32,9 @@ final class CatalogueLinks {
     }
 
     static Map<String, Links> of(List<CatalogueEntry> entries, Path lineageDir) {
-        return of(entries, lineageDir, LinkRule.DEFAULT);
-    }
-
-    static Map<String, Links> of(List<CatalogueEntry> entries, Path lineageDir, LinkRule rule) {
         Map<String, List<Link>> parents = new HashMap<>();
         Map<String, List<Link>> children = new HashMap<>();
-        List<Pair> pairs = new ArrayList<>(lineageDir == null ? List.of() : lineage(lineageDir, rule));
+        List<Pair> pairs = new ArrayList<>(lineageDir == null ? List.of() : lineage(lineageDir));
         Set<String> linked = new HashSet<>();
         pairs.forEach(pair -> linked.add(pair.child()));
         inferred(entries).stream().filter(pair -> !linked.contains(pair.child())).forEach(pairs::add);
@@ -54,9 +50,9 @@ final class CatalogueLinks {
         return links;
     }
 
-    static List<Pair> lineage(Path lineageDir, LinkRule rule) {
+    static List<Pair> lineage(Path lineageDir) {
         Map<String, List<String>> blobs = new HashMap<>();
-        RegistryImages.links(lineageDir.resolve("links.jsonl"), rule).forEach((digest, linked) ->
+        RegistryImages.links(lineageDir.resolve("links.jsonl")).forEach((digest, linked) ->
                 blobs.put(digest, linked.built()));
         List<Pair> pairs = new ArrayList<>();
         for (JsonNode row : JsonLines.read(lineageDir.resolve("lineage.jsonl"))) {

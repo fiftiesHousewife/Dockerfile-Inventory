@@ -2,5 +2,6 @@
   "image": "sclorg-nginx-container-1-24-c9s",
   "sourceRepository": "",
   "tier": "NONE",
-  "blobShas": []
+  "blobShas": [],
+  "credited": false
 }

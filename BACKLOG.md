@@ -34,9 +34,11 @@ and one line when its gate is met.
   organisations, hierarchy, blocked images, a page per Dockerfile, one archetype ranking; the CSV tables, DDL, bases
   and lineage pages and `EOL_LIST` gone.
 - Now: the validator, slice 1 built 9 Nov: the module, both OpenShift profiles, checks P1 to P10 on facts, verdicts,
-  actions by urgency and by repository, `action-plan.json`, `actions.jsonl`, `verdicts.jsonl`. Next: the effective
-  image from lineage (P1 on an inherited user), reach through bases and archetypes, the antipatterns. The report's
-  page and the tagged ratchet (`./gradlew validate`) built 9 Nov.
+  actions by urgency and by repository, `action-plan.json`, `actions.jsonl`, `verdicts.jsonl`. The report's page and
+  the tagged ratchet (`./gradlew validate`) built 9 Nov. Done 9 Nov (`docs/plans/link-credit-in-lineage.md`, asked
+  9 Nov): lineage decides which links credit an image (`credited`, `LINK_THRESHOLD` and `LINK_MARGIN` moved from the
+  report), so the validator can read it. Next: the effective image from lineage (P1 on an inherited user), reach
+  through bases and archetypes, the antipatterns.
 - (asked 8 Nov, `docs/plans/openshift-validator.md`, questions answered): the estate summary as an action
   plan: a `validator` stage that judges each image through a platform profile (OpenShift 4 `restricted-v2` by
   default, `restricted` v1 to choose) and turns findings into actions by fix and by repository, ordered by

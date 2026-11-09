@@ -35,7 +35,8 @@ class CorpusLinkTest {
         Resolved.Node image = new Resolved.Node(name,
                 ImageConfig.parse(Files.readString(dir.resolve("config.json"))).orElseThrow());
 
-        Link link = Links.of(List.of(image), Map.of(name, new Parent.Root()), dockerfiles(dir), Set.of()).get(name);
+        Link link = LinkRule.DEFAULT.credit(Links.of(List.of(image), Map.of(name, new Parent.Root()), dockerfiles(dir), Set.of()))
+                .get(name);
 
         List<String> blobShas = new ArrayList<>();
         expected.path("blobShas").forEach(sha -> blobShas.add(sha.asString()));
@@ -44,6 +45,7 @@ class CorpusLinkTest {
                 + " this, update expected.json").satisfies(l -> {
                     assertThat(l.tier().name()).isEqualTo(expected.path("tier").asString());
                     assertThat(l.blobShas()).containsExactlyElementsOf(blobShas);
+                    assertThat(l.credited()).isEqualTo(expected.path("credited").asBoolean());
                 });
     }
 

@@ -33,4 +33,21 @@ class LineageMainTest {
         assertThat(out.resolve("rates.json")).exists();
         assertThat(out.resolve("images.jsonl")).doesNotExist();
     }
+
+    @Test
+    void theLinkThresholdAndMarginAreReadFromTheEnvironment() {
+        assertThat(LineageMain.linkRule(Map.of("LINK_THRESHOLD", "0.9", "LINK_MARGIN", "0.1")))
+                .isEqualTo(new LinkRule(0.9, 0.1));
+    }
+
+    @Test
+    void withoutTheLinkSettingsTheRuleIsTheDefault() {
+        assertThat(LineageMain.linkRule(Map.of())).isEqualTo(LinkRule.DEFAULT);
+    }
+
+    @Test
+    void aLinkSettingThatIsNotAShareBetweenZeroAndOneIsRefusedByName() {
+        assertThatIllegalStateException().isThrownBy(() -> LineageMain.linkRule(Map.of("LINK_MARGIN", "5")))
+                .withMessage("LINK_MARGIN must be a number from 0 to 1, not 5");
+    }
 }
