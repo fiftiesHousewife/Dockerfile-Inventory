@@ -5,8 +5,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 // For sources CI makes before an image is built: the original and the regenerated Dockerfile then build on the same
 // inputs.
@@ -16,16 +16,19 @@ final class Stubs {
     }
 
     static List<String> create(Path context, List<String> sources, String arch) {
-        List<String> created = new ArrayList<>();
-        for (String source : sources) {
-            String path = expanded(source, arch);
-            if (!exists(context, path)) {
-                String stub = path.replace("*", "stub").replace("?", "s");
-                write(context, stub);
-                created.add(stub);
-            }
+        return sources.stream()
+                .map(source -> expanded(source, arch))
+                .flatMap(path -> stubbed(context, path).stream())
+                .toList();
+    }
+
+    static Optional<String> stubbed(Path context, String path) {
+        if (exists(context, path)) {
+            return Optional.empty();
         }
-        return created;
+        String stub = path.replace("*", "stub").replace("?", "s");
+        write(context, stub);
+        return Optional.of(stub);
     }
 
     static String expanded(String source, String arch) {
@@ -51,7 +54,7 @@ final class Stubs {
         }
     }
 
-    private static void write(Path context, String stub) {
+    static void write(Path context, String stub) {
         RunFiles.writeFile(context.resolve(stub.endsWith("/") ? stub + "stub" : stub), "");
     }
 }

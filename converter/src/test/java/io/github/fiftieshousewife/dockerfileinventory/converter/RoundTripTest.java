@@ -4,6 +4,7 @@ import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import io.github.fiftieshousewife.dockerfile.model.Label;
 import io.github.fiftieshousewife.dockerfile.model.User;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
 import io.github.fiftieshousewife.dockerfile.model.Stage;
@@ -221,5 +222,11 @@ class RoundTripTest {
         Docker.Stage stage = Parsed.of("FROM $REG/ubi9:9.4@sha256:abc AS build\n").getStages().getFirst();
 
         assertThat(RoundTrip.from(stage)).isEqualTo("${REG}/ubi9:9.4@sha256:abc AS build");
+    }
+
+    @Test
+    void aTextThatParsesIsItsTreeAndOneThatDoesNotIsNone() {
+        assertAll(() -> assertThat(RoundTrip.parse("FROM ubi9\n")).isNotNull(),
+                () -> assertThat(RoundTrip.parse("not a dockerfile\n")).isNull());
     }
 }

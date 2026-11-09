@@ -29,9 +29,9 @@ import io.github.fiftieshousewife.dockerfile.model.Port;
 import io.github.fiftieshousewife.dockerfile.model.RunBody;
 import io.github.fiftieshousewife.dockerfile.model.RunFlag;
 import io.github.fiftieshousewife.dockerfile.model.Stage;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
@@ -273,32 +273,23 @@ class ConvertTest {
     }
 
     @Test
-    void anInstructionTheModelDoesNotHaveIsRawNamingItsKeywordInCapitals() {
-        assertThat(Convert.notModelled("stopsignal SIGTERM"))
-                .isEqualTo(new Raw("stopsignal SIGTERM", "STOPSIGNAL is not modelled"));
+    void aStageIsNamedByItsAsOrHasNoName() {
+        List<Docker.Stage> stages = Parsed.of("FROM ubi9 AS build\nFROM ubi9\n").getStages();
+
+        assertThat(stages.stream().map(Convert::name)).containsExactly("build", null);
     }
 
     @Test
-    void aUserAndGroupAreUnquotedWithTheirVariablesBraced() {
-        Docker.User withGroup = (Docker.User) first("FROM ubi9\nUSER \"$UID\":'0'\n");
-        Docker.User alone = (Docker.User) first("FROM ubi9\nUSER 1001\n");
-
-        assertThat(List.of(Convert.user(withGroup), Convert.user(alone)))
-                .containsExactly(new User("${UID}:0"), new User("1001"));
+    void theEarlierStagesAreTheNamedOnesBeforeThisOne() {
+        assertThat(Convert.earlierStages(Arrays.asList("build", null, "test", "final"), 3))
+                .containsExactlyInAnyOrder("build", "test");
     }
 
     @Test
-    void anExposeKeepsEachPortAsWrittenOrIsNotTypedWhenOneIsNotAPort() {
-        assertThat(List.of("EXPOSE 8080", "EXPOSE 80 53/udp 8000-8010/tcp $PORT", "EXPOSE 80 ${PORT:-8080}"))
-                .map(line -> Convert.ports((Docker.Expose) first("FROM ubi9\n" + line + "\n")))
-                .containsExactly(Optional.of(List.of(Port.of(8080))),
-                        Optional.of(List.of(Port.of(80), new Port("53/udp"), new Port("8000-8010/tcp"),
-                                new Port("$PORT"))),
-                        Optional.empty());
-    }
+    void anArgWithSeveralNamesKeepsItsCommentsOnTheFirstAndNoneOnTheRest() {
+        Docker.File file = Parsed.of("FROM ubi9\n# ids\nARG UID=1001 GID=0\n");
 
-    private static Docker.Instruction first(String dockerfile) {
-        return Parsed.of(dockerfile).getStages().getFirst().getInstructions().getFirst();
+        assertThat(Convert.of(file).comments().getFirst()).containsExactly(List.of("ids"), List.of());
     }
 
     private static Instruction install(PackageManager manager, List<String> flags, List<String> packages) {

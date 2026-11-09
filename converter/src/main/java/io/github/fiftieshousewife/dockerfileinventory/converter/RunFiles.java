@@ -5,10 +5,10 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tools.jackson.databind.ObjectMapper;
 
@@ -28,11 +28,10 @@ final class RunFiles {
     }
 
     static Map<String, List<Location>> locations(String manifest, ObjectMapper json) {
-        Map<String, List<Location>> locations = new LinkedHashMap<>();
-        manifest.lines().filter(line -> !line.isBlank()).map(json::readTree).forEach(row -> locations
-                .computeIfAbsent(row.path("blobSha").asString(), k -> new ArrayList<>())
-                .add(new Location(row.path("repository").asString(), row.path("path").asString())));
-        return locations;
+        return manifest.lines().filter(line -> !line.isBlank()).map(json::readTree)
+                .collect(Collectors.groupingBy(row -> row.path("blobSha").asString(), LinkedHashMap::new,
+                        Collectors.mapping(row -> new Location(row.path("repository").asString(),
+                                row.path("path").asString()), Collectors.toList())));
     }
 
     List<Path> blobs() {

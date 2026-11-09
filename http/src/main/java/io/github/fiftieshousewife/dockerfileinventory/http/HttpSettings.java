@@ -68,7 +68,7 @@ public record HttpSettings(Duration connectTimeout, Duration requestTimeout, Ret
         }).orElse(5);
     }
 
-    private static Authenticator proxyAuthenticator(ProxySettings.Credentials credentials) {
+    static Authenticator proxyAuthenticator(ProxySettings.Credentials credentials) {
         // the JDK refuses Basic on a proxy's CONNECT unless this is cleared; it must be set before the first call
         System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
         return new Authenticator() {

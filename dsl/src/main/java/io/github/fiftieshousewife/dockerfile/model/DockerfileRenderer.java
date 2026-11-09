@@ -64,12 +64,10 @@ public final class DockerfileRenderer {
 
     static String instruction(Instruction instruction) {
         return switch (instruction) {
-            case Arg arg -> "ARG " + arg.name()
-                    + (arg.defaultValue() == null ? "" : "=" + DockerQuotes.doubleQuoted(arg.defaultValue()));
+            case Arg arg -> arg(arg);
             case Env env -> pairs("ENV", env.values());
             case Label label -> pairs("LABEL", label.values());
-            case Run run -> "RUN " + run.flags().stream().map(flag -> flag.written() + " ")
-                    .collect(Collectors.joining()) + InstructionParts.body(run.body());
+            case Run run -> run(run);
             case Copy copy -> InstructionParts.copy(copy);
             case CopyHeredoc heredoc -> InstructionParts.heredoc(heredoc);
             case Add add -> InstructionParts.add(add);
@@ -77,18 +75,31 @@ public final class DockerfileRenderer {
             case Onbuild onbuild -> "ONBUILD " + instruction(onbuild.instruction());
             case User user -> "USER " + user.user();
             case Workdir workdir -> "WORKDIR " + workdir.path();
-            case Expose expose -> "EXPOSE "
-                    + expose.ports().stream().map(Port::spec).collect(Collectors.joining(" "));
+            case Expose expose -> "EXPOSE " + expose.ports().stream().map(Port::spec).collect(Collectors.joining(" "));
             case Entrypoint entrypoint ->
                     "ENTRYPOINT " + InstructionParts.command(entrypoint.command(), entrypoint.form());
             case Cmd cmd -> "CMD " + InstructionParts.command(cmd.command(), cmd.form());
             case Shell shell -> "SHELL " + DockerQuotes.jsonArray(shell.command());
-            case Volume volume -> "VOLUME " + (volume.jsonForm() ? DockerQuotes.jsonArray(volume.paths())
-                    : String.join(" ", volume.paths()));
+            case Volume volume -> volume(volume);
             case StopSignal stopSignal -> "STOPSIGNAL " + stopSignal.signal();
             case Maintainer maintainer -> "MAINTAINER " + maintainer.name();
             case Raw raw -> raw.text();
         };
+    }
+
+    static String arg(Arg arg) {
+        return "ARG " + arg.name()
+                + (arg.defaultValue() == null ? "" : "=" + DockerQuotes.doubleQuoted(arg.defaultValue()));
+    }
+
+    static String run(Run run) {
+        return "RUN " + run.flags().stream().map(flag -> flag.written() + " ").collect(Collectors.joining())
+                + InstructionParts.body(run.body());
+    }
+
+    static String volume(Volume volume) {
+        return "VOLUME " + (volume.jsonForm() ? DockerQuotes.jsonArray(volume.paths())
+                : String.join(" ", volume.paths()));
     }
 
     static String pairs(String keyword, Map<String, String> values) {

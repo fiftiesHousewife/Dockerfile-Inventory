@@ -82,7 +82,7 @@ record RoundTrip(boolean passed, String difference) {
         return new RoundTrip(false, difference);
     }
 
-    private static Docker.File parse(String text) {
+    static Docker.File parse(String text) {
         return new FactsParser().parse("round-trip", text) instanceof ParseResult.Parsed parsed ? parsed.file() : null;
     }
 }

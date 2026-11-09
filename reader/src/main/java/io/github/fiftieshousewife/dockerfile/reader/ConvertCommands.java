@@ -68,7 +68,6 @@ final class ConvertCommands {
                 : Optional.empty();
     }
 
-    // Empty when any flag is one the model lacks.
     static Optional<List<RunFlag>> flags(Docker.Run run) {
         List<Optional<RunFlag>> flags = Values.flags(run.getFlags()).stream().map(ConvertCommands::flag).toList();
         return flags.stream().allMatch(Optional::isPresent)

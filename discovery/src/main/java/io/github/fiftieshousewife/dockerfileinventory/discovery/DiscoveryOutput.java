@@ -1,7 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import tools.jackson.databind.ObjectMapper;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -40,7 +39,7 @@ final class DiscoveryOutput {
     }
 
     synchronized void record(RepoScan.Result result) {
-        append("manifest.jsonl", result.found());
+        append("manifest.jsonl", result.dockerfiles());
         append("yaml.jsonl", result.yaml());
         append("repos.jsonl", List.of(result.outcome()));
     }
@@ -113,12 +112,9 @@ final class DiscoveryOutput {
         if (rows.isEmpty()) {
             return;
         }
-        try (BufferedWriter out = Files.newBufferedWriter(dir.resolve(file), StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
-            for (Object row : rows) {
-                out.write(json.writeValueAsString(row));
-                out.newLine();
-            }
+        try {
+            Files.write(dir.resolve(file), rows.stream().map(json::writeValueAsString).toList(), StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -41,8 +41,7 @@ final class BuilderCalls {
 
     static CodeBlock call(Instruction instruction) {
         return switch (instruction) {
-            case Arg arg -> arg.defaultValue() == null ? CodeBlock.of(".arg($S)", arg.name())
-                    : CodeBlock.of(".arg($S, $S)", arg.name(), arg.defaultValue());
+            case Arg arg -> arg(arg);
             case Env env -> CodeBlock.of(".env($L)", map(env.values()));
             case Label label -> CodeBlock.of(".label($L)", map(label.values()));
             case Run run -> run(run);
@@ -59,13 +58,21 @@ final class BuilderCalls {
             case Volume volume -> CodeBlock.of(".volume($L, $L)", list(volume.paths()), volume.jsonForm());
             case StopSignal stopSignal -> CodeBlock.of(".stopSignal($S)", stopSignal.signal());
             case Maintainer maintainer -> CodeBlock.of(".maintainer($S)", maintainer.name());
-            case Healthcheck healthcheck -> healthcheck.command().isEmpty()
-                    ? CodeBlock.of(".healthcheckNone()")
-                    : CodeBlock.of(".healthcheck($L, $L, $T.$L)", map(healthcheck.options()),
-                            list(healthcheck.command()), CommandForm.class, healthcheck.form().name());
+            case Healthcheck healthcheck -> healthcheck(healthcheck);
             case Onbuild onbuild -> CodeBlock.of("$L.asOnbuild()", call(onbuild.instruction()));
             case Raw raw -> CodeBlock.of(".raw($S, $S)", raw.text(), raw.reason());
         };
+    }
+
+    static CodeBlock arg(Arg arg) {
+        return arg.defaultValue() == null ? CodeBlock.of(".arg($S)", arg.name())
+                : CodeBlock.of(".arg($S, $S)", arg.name(), arg.defaultValue());
+    }
+
+    static CodeBlock healthcheck(Healthcheck healthcheck) {
+        return healthcheck.command().isEmpty() ? CodeBlock.of(".healthcheckNone()")
+                : CodeBlock.of(".healthcheck($L, $L, $T.$L)", map(healthcheck.options()), list(healthcheck.command()),
+                        CommandForm.class, healthcheck.form().name());
     }
 
     static CodeBlock command(String method, List<String> command, CommandForm form) {

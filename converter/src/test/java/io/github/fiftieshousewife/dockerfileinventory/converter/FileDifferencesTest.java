@@ -3,6 +3,8 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,29 @@ class FileDifferencesTest {
                 new FileEntry("d", "777", "1001", "0", "", null)))
                 .containsExactly("/bin: type l became d", "/bin: owner 0:0 became 1001:0",
                         "/bin: link target usr/bin became ");
+    }
+
+    @Test
+    void aPathInOneImageOnlySaysWhichAndOneInBothIsComparedEntryByEntry() {
+        assertThat(List.of(FileDifferences.path("/x", null, file("644", "s")),
+                FileDifferences.path("/x", file("644", "s"), null),
+                FileDifferences.path("/x", file("644", "s"), file("644", "s"))))
+                .containsExactly(List.of("/x: only in the regenerated"), List.of("/x: only in the original"), List.of());
+    }
+
+    @Test
+    void anAttributeIsADifferenceOnlyWhenItChanged() {
+        assertThat(List.of(FileDifferences.attribute("/x", "mode", "644", "755"),
+                FileDifferences.attribute("/x", "mode", "644", "644")))
+                .containsExactly(Optional.of("/x: mode 644 became 755"), Optional.empty());
+    }
+
+    @Test
+    void contentDiffersOnlyOutsideVolatilePaths() {
+        assertThat(List.of(FileDifferences.content("/etc/x", file("644", "a"), file("644", "b")),
+                FileDifferences.content("/tmp/x", file("644", "a"), file("644", "b")),
+                FileDifferences.content("/etc/x", file("644", "a"), file("644", "a"))))
+                .containsExactly(Optional.of("/etc/x: content differs"), Optional.empty(), Optional.empty());
     }
 
     private static FileEntry file(String mode, String sha256) {

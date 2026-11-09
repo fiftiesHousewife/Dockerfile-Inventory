@@ -80,4 +80,13 @@ class CombineTest {
                 () -> assertThat(Files.readAllLines(out.resolve("yaml.jsonl"))).hasSize(2),
                 () -> assertThat(out.resolve("yaml/y1")).hasContent("kind: Pod\n"));
     }
+
+    @Test
+    void theStoredBlobsAreTheFinishedFilesInTheFolder() throws IOException {
+        Path blobs = source("a", "payments/api", "abc").resolve("blobs");
+        Files.createDirectories(blobs.resolve("sub"));
+
+        assertThat(Combine.stored(blobs)).map(Path::getFileName).map(Path::toString)
+                .containsExactlyInAnyOrder("abc", "base");
+    }
 }

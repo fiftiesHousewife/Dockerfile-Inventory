@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final class Draft {
 
@@ -59,10 +60,10 @@ final class Draft {
     BaseImage baseIn(List<Draft> stages) {
         Map<String, Draft> byName = stages.stream().filter(s -> s.name != null)
                 .collect(Collectors.toMap(s -> s.name, Function.identity(), (first, second) -> second));
-        Draft current = this;
-        while (current.base == null) {
-            current = byName.get(current.fromStage);
-        }
-        return current.base;
+        return Stream.iterate(this, draft -> byName.get(draft.fromStage))
+                .filter(draft -> draft.base != null)
+                .findFirst()
+                .orElseThrow()
+                .base;
     }
 }

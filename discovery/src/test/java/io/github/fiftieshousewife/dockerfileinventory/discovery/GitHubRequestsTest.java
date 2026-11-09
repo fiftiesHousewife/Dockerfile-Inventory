@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
@@ -8,9 +9,6 @@ import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -21,11 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.net.ssl.SSLSession;
+import java.util.stream.Stream;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 class GitHubRequestsTest {
@@ -62,8 +62,10 @@ class GitHubRequestsTest {
             }
         });
 
-        assertThat(requests(3, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN")).rest(TREE)).isPresent();
-        assertThat(calls).hasValue(2);
+        Optional<JsonNode> tree = requests(3, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"))
+                .rest(TREE);
+
+        assertAll(() -> assertThat(tree).isPresent(), () -> assertThat(calls).hasValue(2));
     }
 
     @Test
@@ -91,8 +93,10 @@ class GitHubRequestsTest {
             }
         });
 
-        assertThat(requests(1, token).rest(TREE)).isPresent();
-        assertThat(server.authorizations).containsExactly("Bearer old", "Bearer new");
+        Optional<JsonNode> tree = requests(1, token).rest(TREE);
+
+        assertAll(() -> assertThat(tree).isPresent(),
+                () -> assertThat(server.authorizations).containsExactly("Bearer old", "Bearer new"));
     }
 
     @Test
@@ -109,9 +113,11 @@ class GitHubRequestsTest {
             RecordedGitHub.respond(exchange, 200, "tree.json");
         });
 
-        assertThat(paced.rest(TREE)).isPresent();
-        assertThat(pauses).singleElement().satisfies(pause -> assertThat(pause).isBetween(Duration.ofSeconds(9),
-                Duration.ofSeconds(10)));
+        Optional<JsonNode> tree = paced.rest(TREE);
+
+        assertAll(() -> assertThat(tree).isPresent(),
+                () -> assertThat(pauses).singleElement(InstanceOfAssertFactories.DURATION)
+                        .isBetween(Duration.ofSeconds(9), Duration.ofSeconds(10)));
     }
 
     @Test
@@ -173,8 +179,10 @@ class GitHubRequestsTest {
             }
         });
 
-        assertThat(requests(2, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN")).rest(TREE)).isPresent();
-        assertThat(calls).hasValue(2);
+        Optional<JsonNode> tree = requests(2, TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"))
+                .rest(TREE);
+
+        assertAll(() -> assertThat(tree).isPresent(), () -> assertThat(calls).hasValue(2));
     }
 
     @Test
@@ -215,62 +223,15 @@ class GitHubRequestsTest {
     void graphqlErrorsAreAPresentNonEmptyErrorsArray() {
         ObjectMapper json = new ObjectMapper();
 
-        assertThat(GitHubRequests.hasErrors(json.readTree("{\"errors\":[{\"message\":\"no\"}]}"))).isTrue();
-        assertThat(GitHubRequests.hasErrors(json.readTree("{\"errors\":[],\"data\":{}}"))).isFalse();
-        assertThat(GitHubRequests.hasErrors(json.readTree("{\"data\":{}}"))).isFalse();
+        assertThat(Stream.of("{\"errors\":[{\"message\":\"no\"}]}", "{\"errors\":[],\"data\":{}}", "{\"data\":{}}")
+                .map(text -> GitHubRequests.hasErrors(json.readTree(text)))).containsExactly(true, false, false);
     }
 
     @Test
     void cutsALongErrorBodyTo300Characters() {
-        GitHubException failure = GitHubRequests.failure(response(502, "x".repeat(400)));
+        GitHubException failure = GitHubRequests.failure(CannedResponse.of(502, "x".repeat(400)));
 
         assertThat(failure.getMessage())
                 .isEqualTo("GET https://ghe.example/ returned 502: " + "x".repeat(300));
-    }
-
-    private static HttpResponse<String> response(int status, String body) {
-        URI uri = URI.create("https://ghe.example/");
-        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
-        return new HttpResponse<>() {
-            @Override
-            public int statusCode() {
-                return status;
-            }
-
-            @Override
-            public HttpRequest request() {
-                return request;
-            }
-
-            @Override
-            public Optional<HttpResponse<String>> previousResponse() {
-                return Optional.empty();
-            }
-
-            @Override
-            public HttpHeaders headers() {
-                return HttpHeaders.of(Map.of(), (k, v) -> true);
-            }
-
-            @Override
-            public String body() {
-                return body;
-            }
-
-            @Override
-            public Optional<SSLSession> sslSession() {
-                return Optional.empty();
-            }
-
-            @Override
-            public URI uri() {
-                return uri;
-            }
-
-            @Override
-            public HttpClient.Version version() {
-                return HttpClient.Version.HTTP_1_1;
-            }
-        };
     }
 }

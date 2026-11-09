@@ -34,4 +34,11 @@ class RegeneratedTest {
         assertThat(Regenerated.localSources("FROM ubi9\nCOPY app.jar /opt/\nCOPY --from=x /a /b\n"))
                 .containsExactly("app.jar");
     }
+
+    @Test
+    void aDockerfileThatParsesIsItsTreeAndOneThatDoesNotIsRefused() {
+        assertAll(() -> assertThat(Regenerated.parsed("FROM ubi9\n").getStages()).hasSize(1),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> Regenerated.parsed("not a dockerfile\n"))
+                        .withMessage("the Dockerfile does not parse"));
+    }
 }

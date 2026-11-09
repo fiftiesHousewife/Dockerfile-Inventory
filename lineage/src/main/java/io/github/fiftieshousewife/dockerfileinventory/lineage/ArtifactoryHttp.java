@@ -44,9 +44,9 @@ final class ArtifactoryHttp implements Artifactory {
 
     @Override
     public List<String> dockerRepositories() {
-        List<String> keys = new ArrayList<>();
-        getJson("api/repositories?type=local&packageType=docker").forEach(r -> keys.add(r.path("key").asString()));
-        return keys;
+        return getJson("api/repositories?type=local&packageType=docker").valueStream()
+                .map(repository -> repository.path("key").asString())
+                .toList();
     }
 
     @Override
@@ -81,10 +81,15 @@ final class ArtifactoryHttp implements Artifactory {
     private Optional<DownloadStats> statsOf(String repository, String image, String tag, String file) {
         return client.get("api/storage/%s/%s/%s/%s?stats".formatted(repository, image, tag, file), "application/json")
                 .map(this::parse)
-                .filter(stats -> stats.has("downloadCount"))
-                .map(stats -> new DownloadStats(stats.path("downloadCount").asLong(),
-                        stats.path("lastDownloaded").asLong() > 0
-                                ? Instant.ofEpochMilli(stats.path("lastDownloaded").asLong()) : null));
+                .flatMap(ArtifactoryHttp::downloadStats);
+    }
+
+    static Optional<DownloadStats> downloadStats(JsonNode stats) {
+        long lastDownloaded = stats.path("lastDownloaded").asLong();
+        return stats.has("downloadCount")
+                ? Optional.of(new DownloadStats(stats.path("downloadCount").asLong(),
+                        lastDownloaded > 0 ? Instant.ofEpochMilli(lastDownloaded) : null))
+                : Optional.empty();
     }
 
     @Override

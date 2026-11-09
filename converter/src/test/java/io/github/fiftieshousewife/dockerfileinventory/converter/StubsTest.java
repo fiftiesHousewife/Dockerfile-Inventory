@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -36,5 +37,25 @@ class StubsTest {
         Files.writeString(context.resolve("target/lib/a.jar"), "jar");
 
         assertThat(Stubs.create(context, List.of("target/lib/*.jar"), "amd64")).isEmpty();
+    }
+
+    @Test
+    void aSourceAlreadyThereIsNotStubbedAndAMissingOneIsWrittenAndNamed() throws IOException {
+        Files.writeString(context.resolve("present.txt"), "here");
+
+        assertThat(List.of(Stubs.stubbed(context, "present.txt"), Stubs.stubbed(context, "lib/*.jar")))
+                .containsExactly(Optional.empty(), Optional.of("lib/stub.jar"));
+    }
+
+    @Test
+    void aDirectoryStubHoldsAnEmptyFileNamedStub() {
+        Stubs.write(context, "out/");
+
+        assertThat(context.resolve("out/stub")).isEmptyFile();
+    }
+
+    @Test
+    void aStubForASecondSourceThatTheFirstStubMatchesIsNotWrittenAgain() {
+        assertThat(Stubs.create(context, List.of("lib/*.jar", "lib/*.jar"), "amd64")).containsExactly("lib/stub.jar");
     }
 }

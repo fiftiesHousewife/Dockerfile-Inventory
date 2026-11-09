@@ -1,10 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 final class FileDifferences {
 
@@ -20,36 +21,38 @@ final class FileDifferences {
             SortedMap<String, FileEntry> regenerated) {
         TreeSet<String> paths = new TreeSet<>(original.keySet());
         paths.addAll(regenerated.keySet());
-        return paths.stream().flatMap(path -> {
-            FileEntry before = original.get(path);
-            FileEntry after = regenerated.get(path);
-            if (before == null || after == null) {
-                return List.of(path + ": only in the " + (before == null ? "regenerated" : "original")).stream();
-            }
-            return entry(path, before, after).stream();
-        }).toList();
+        return paths.stream().flatMap(path -> path(path, original.get(path), regenerated.get(path)).stream()).toList();
+    }
+
+    static List<String> path(String path, FileEntry before, FileEntry after) {
+        return before == null || after == null
+                ? List.of(path + ": only in the " + (before == null ? "regenerated" : "original"))
+                : entry(path, before, after);
     }
 
     static List<String> entry(String path, FileEntry before, FileEntry after) {
-        List<String> differences = new ArrayList<>();
-        attribute(differences, path, "type", before.type(), after.type());
-        attribute(differences, path, "mode", before.mode(), after.mode());
-        attribute(differences, path, "owner", before.uid() + ":" + before.gid(), after.uid() + ":" + after.gid());
-        attribute(differences, path, "link target", before.target(), after.target());
-        if (!volatileContent(path) && !Objects.equals(before.sha256(), after.sha256())) {
-            differences.add(path + ": content differs");
-        }
-        return differences;
+        return Stream.of(
+                        attribute(path, "type", before.type(), after.type()),
+                        attribute(path, "mode", before.mode(), after.mode()),
+                        attribute(path, "owner", before.uid() + ":" + before.gid(), after.uid() + ":" + after.gid()),
+                        attribute(path, "link target", before.target(), after.target()),
+                        content(path, before, after))
+                .flatMap(Optional::stream)
+                .toList();
+    }
+
+    static Optional<String> attribute(String path, String what, String before, String after) {
+        return Objects.equals(before, after) ? Optional.empty()
+                : Optional.of(path + ": " + what + " " + before + " became " + after);
+    }
+
+    static Optional<String> content(String path, FileEntry before, FileEntry after) {
+        return volatileContent(path) || Objects.equals(before.sha256(), after.sha256()) ? Optional.empty()
+                : Optional.of(path + ": content differs");
     }
 
     static boolean volatileContent(String path) {
         return VOLATILE_DIRECTORIES.stream().anyMatch(path::startsWith) || VOLATILE_FILES.stream()
                 .anyMatch(file -> file.startsWith("*") ? path.endsWith(file.substring(1)) : path.equals(file));
-    }
-
-    private static void attribute(List<String> differences, String path, String what, String before, String after) {
-        if (!Objects.equals(before, after)) {
-            differences.add(path + ": " + what + " " + before + " became " + after);
-        }
     }
 }

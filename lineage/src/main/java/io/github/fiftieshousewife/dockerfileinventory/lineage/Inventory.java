@@ -50,10 +50,12 @@ final class Inventory {
     }
 
     static void awaitAll(List<Future<Void>> futures) {
+        futures.forEach(Inventory::await);
+    }
+
+    static void await(Future<Void> future) {
         try {
-            for (Future<Void> future : futures) {
-                future.get();
-            }
+            future.get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while reading Artifactory", e);

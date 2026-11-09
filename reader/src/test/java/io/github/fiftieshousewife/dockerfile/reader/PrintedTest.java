@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfile.reader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
@@ -29,6 +30,12 @@ class PrintedTest {
 
         assertThat(printed.text(instruction(0))).isEqualTo("USER 1001");
         assertThat(printed.text(instruction(1))).isEqualTo("RUN make");
+    }
+
+    @Test
+    void afterTheFirstLineIsTheRestWithoutLeadingWhitespaceOrNothing() {
+        assertThat(List.of(Printed.afterFirstLine("# one\n\n  USER 0"), Printed.afterFirstLine("# only")))
+                .containsExactly("USER 0", "");
     }
 
     private static Docker.Instruction instruction(int index) {

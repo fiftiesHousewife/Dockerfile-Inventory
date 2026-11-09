@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -63,5 +64,18 @@ class ProxySettingsTest {
     void aMalformedProxyUrlIsRefusedNamingTheSetting() {
         assertThatThrownBy(() -> ProxySettings.from(Map.of("HTTPS_PROXY", "proxy.corp")))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("HTTPS_PROXY");
+    }
+
+    @Test
+    void aProxyWithoutAPortIsOn8080() {
+        assertThat(List.of(ProxySettings.address(URI.create("http://proxy.corp")),
+                ProxySettings.address(URI.create("http://proxy.corp:3128"))))
+                .containsExactly(InetSocketAddress.createUnresolved("proxy.corp", 8080),
+                        InetSocketAddress.createUnresolved("proxy.corp", 3128));
+    }
+
+    @Test
+    void credentialsDescribeTheirUserButNeverThePassword() {
+        assertThat(new ProxySettings.Credentials("me", "s3cr3t")).hasToString("Credentials[user=me]");
     }
 }

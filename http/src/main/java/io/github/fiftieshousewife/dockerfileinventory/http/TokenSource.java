@@ -68,7 +68,7 @@ public final class TokenSource {
         return fixed != null ? name + " (variable)" : name + "_FILE " + file;
     }
 
-    private void read() {
+    void read() {
         try {
             readAt = modified();
             String read = Files.readString(file).strip();

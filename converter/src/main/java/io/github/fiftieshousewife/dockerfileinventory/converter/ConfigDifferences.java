@@ -40,13 +40,13 @@ final class ConfigDifferences {
                 : Optional.of(what + text(original) + " became " + text(regenerated));
     }
 
-    private static Set<String> names(JsonNode original, JsonNode regenerated) {
+    static Set<String> names(JsonNode original, JsonNode regenerated) {
         Set<String> names = new TreeSet<>(original.propertyNames());
         names.addAll(regenerated.propertyNames());
         return names;
     }
 
-    private static String text(JsonNode node) {
+    static String text(JsonNode node) {
         return node == null ? "(none)" : node.toString();
     }
 }

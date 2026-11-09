@@ -7,7 +7,6 @@ import io.github.fiftieshousewife.dockerfile.model.Policy;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsParser;
 import io.github.fiftieshousewife.dockerfileinventory.facts.ParseResult;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,14 +46,9 @@ final class ConverterRun {
                 new GeneratedClasses(optedIn, files.locations(json), policy, allowList != null, files);
         Coverage coverage = new Coverage();
         FactsParser parser = new FactsParser();
-        List<Row> rows = new ArrayList<>();
-        for (Path blob : files.blobs()) {
-            rows.add(row(parser, blob, coverage, generated));
-        }
-        if (javaRoundTrip) {
-            rows = withJava(rows, JavaRoundTrip.check(candidates), coverage);
-        }
-        files.write("roundtrip.jsonl", jsonLines(rows));
+        List<Row> rows = files.blobs().stream().map(blob -> row(parser, blob, coverage, generated)).toList();
+        List<Row> written = javaRoundTrip ? withJava(rows, JavaRoundTrip.check(candidates), coverage) : rows;
+        files.write("roundtrip.jsonl", jsonLines(written));
         files.write("coverage.json", coverage.json(json));
     }
 

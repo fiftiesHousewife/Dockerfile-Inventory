@@ -60,9 +60,7 @@ public final class Combine {
             Files.createDirectories(out.resolve("blobs"));
             Map<String, List<String>> merged = FILES.stream().collect(Collectors.toMap(Function.identity(),
                     file -> lines(sources, file)));
-            for (Map.Entry<String, List<String>> file : merged.entrySet()) {
-                Files.write(out.resolve(file.getKey()), file.getValue(), StandardCharsets.UTF_8);
-            }
+            merged.forEach((file, lines) -> write(out.resolve(file), lines));
             int blobs = copyBlobs(sources, "blobs", out.resolve("blobs"));
             Files.createDirectories(out.resolve("yaml"));
             copyBlobs(sources, "yaml", out.resolve("yaml"));
@@ -80,19 +78,38 @@ public final class Combine {
 
     // Each blob once, by its SHA; a .part is a download a killed run left unfinished.
     static int copyBlobs(List<Path> sources, String folder, Path target) throws IOException {
-        for (Path source : sources.stream().filter(s -> Files.isDirectory(s.resolve(folder))).toList()) {
-            try (Stream<Path> blobs = Files.list(source.resolve(folder))) {
-                List<Path> stored = blobs.filter(b -> Files.isRegularFile(b) && !b.toString().endsWith(".part"))
-                        .toList();
-                for (Path blob : stored) {
-                    if (!Files.exists(target.resolve(blob.getFileName()))) {
-                        Files.copy(blob, target.resolve(blob.getFileName()));
-                    }
-                }
-            }
-        }
+        sources.stream()
+                .map(source -> source.resolve(folder))
+                .filter(Files::isDirectory)
+                .flatMap(directory -> stored(directory).stream())
+                .filter(blob -> !Files.exists(target.resolve(blob.getFileName())))
+                .forEach(blob -> copy(blob, target.resolve(blob.getFileName())));
         try (Stream<Path> stored = Files.list(target)) {
             return (int) stored.count();
+        }
+    }
+
+    static List<Path> stored(Path directory) {
+        try (Stream<Path> blobs = Files.list(directory)) {
+            return blobs.filter(b -> Files.isRegularFile(b) && !b.toString().endsWith(".part")).toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void copy(Path blob, Path target) {
+        try {
+            Files.copy(blob, target);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void write(Path file, List<String> lines) {
+        try {
+            Files.write(file, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

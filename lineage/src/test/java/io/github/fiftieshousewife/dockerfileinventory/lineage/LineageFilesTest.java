@@ -1,8 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -69,5 +72,28 @@ class LineageFilesTest {
 
         assertThat(LineageFiles.lines(file)).containsExactly("one", "two");
         assertThat(LineageFiles.lines(dir.resolve("missing.jsonl"))).isEmpty();
+    }
+
+    @Test
+    void nothingCanBeWrittenUnderARegularFile() throws IOException {
+        LineageFiles files = new LineageFiles(Files.writeString(dir.resolve("file"), "x"));
+        TagRow row = new TagRow("docker-local", "team/app", "1", null, null, Resolved.Reason.GONE, "x");
+
+        assertAll(() -> assertThatExceptionOfType(UncheckedIOException.class).isThrownBy(() -> files.record(row)),
+                () -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> files.write("lineage.jsonl", List.of())),
+                () -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> files.storeConfig("sha256:a", "{}")));
+    }
+
+    @Test
+    void aConfigOrListingThatIsAFolderCannotBeRead() throws IOException {
+        Files.createDirectories(dir.resolve("configs/sha256_a.json"));
+        LineageFiles files = new LineageFiles(dir);
+
+        assertAll(() -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> files.config("sha256:a")),
+                () -> assertThatExceptionOfType(UncheckedIOException.class)
+                        .isThrownBy(() -> LineageFiles.lines(dir)));
     }
 }

@@ -94,7 +94,7 @@ public record ProxySettings(Optional<InetSocketAddress> https, Optional<InetSock
         }
     }
 
-    private static InetSocketAddress address(URI uri) {
+    static InetSocketAddress address(URI uri) {
         return InetSocketAddress.createUnresolved(uri.getHost(), uri.getPort() < 0 ? 8080 : uri.getPort());
     }
 
