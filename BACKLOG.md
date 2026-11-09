@@ -64,6 +64,10 @@ and one line when its gate is met.
   library package name, a module descriptor exporting only its API, a Java release users can take, Javadoc, a
   compatibility check, a Central bundle, a release task instead of `scripts/release-parser.sh`, docs with tested
   examples; the owner's Central namespace, token and signing key.
+- Now (`docs/plans/deployment-manifests.md`, asked 9 Nov: plain workload YAML first, tied to Dockerfiles through
+  lineage, a verdict per workload): the validator reads deployment manifests. Slice 1 done 9 Nov: `Workloads` reads
+  workload YAML (templates unread). Next: discovery fetching YAML (measured on a survey the owner runs), then the pod
+  checks (`refused`), then the report.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

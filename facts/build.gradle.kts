@@ -18,6 +18,7 @@ dependencies {
     testCompileOnly(libs.jetbrains.annotations)
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
+    implementation(libs.jackson.yaml)
 }
 
 application {

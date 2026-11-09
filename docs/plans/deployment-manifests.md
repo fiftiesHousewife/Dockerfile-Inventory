@@ -1,6 +1,6 @@
 # Deployment manifests in the validator: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov.
+Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov.
 
 ## Why
 
@@ -23,7 +23,7 @@ or adds capabilities, the host paths, ports and volumes it mounts, its probes. T
 
 - **Which manifests** (asked 9 Nov): plain workload YAML as committed (`Deployment`, `StatefulSet`, `DaemonSet`,
   `ReplicaSet`, `Job`, `CronJob`, `Pod`, OpenShift's `DeploymentConfig`; several documents a file). Helm templates
-  and Kustomize overlays wait for later slices; a file holding `{{` is a template, counted as unread.
+  and Kustomize overlays wait for later slices; a file holding `{{` or `{%` is a template, counted as unread.
 - **Discovery** fetches YAML beside Dockerfiles: every `.yaml` and `.yml` outside what is never deployed (the
   directories `DockerfilePaths` leaves out, a chart's `templates/`, CI configuration: `.github/`, `.tekton/`,
   `.gitlab-ci`, `.ci-operator.yaml`), stored once by blob SHA; their locations in a manifest file of their own
@@ -57,3 +57,18 @@ or adds capabilities, the host paths, ports and volumes it mounts, its probes. T
 1. Plain workload YAML first; Helm and Kustomize later (9 Nov).
 2. A container is tied to its Dockerfile through lineage only; otherwise it stays unlinked (9 Nov).
 3. A verdict per workload, beside the images' (9 Nov).
+
+## Built, slice 1 (9 Nov)
+
+`Workloads.read` (facts, Jackson's YAML module, now in the version catalogue) and `Workload`: every document of a
+file, the eight kinds' pods where each keeps them, the pod's host network, PID, IPC and host paths and security
+context, each container's image, ports and host ports, probes, mounts and security context (an init container
+marked). The fixtures are the real workload YAML in the repositories cloned for the image comparisons
+(`fixtures/workloads/README.md`). Reading them taught two things: the external-secrets documentation wraps its
+manifests in Liquid's `{% raw %}` for its site, so `{%` marks a template as well as `{{`; and a documentation fragment
+with indented `...` where fields are left out is not YAML, so it is unread rather than read in part. None of the
+cloned repositories holds a plain workload that asks for privileges, so the security fields are tested on inline YAML;
+slice 2's estate will give real ones for the checks.
+
+Process: the Liquid check went in with its test rather than after seeing the test fail.
+

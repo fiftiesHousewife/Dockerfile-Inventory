@@ -36,6 +36,7 @@ jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "j
 # JSON for GitHub REST and GraphQL responses and the JSONL outputs.
 jackson-bom = { module = "tools.jackson:jackson-bom", version.ref = "jackson" }
 jackson-databind = { module = "tools.jackson.core:jackson-databind" }
+jackson-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml" }
 
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 
