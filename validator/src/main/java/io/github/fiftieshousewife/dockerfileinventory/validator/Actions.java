@@ -54,6 +54,8 @@ final class Actions {
                     + "is kept depends on the builder"),
             Map.entry(Check.H8, "use the file where it is copied (RUN --mount=type=bind) or in a build stage, since "
                     + "removing it later leaves it in the image"),
+            Map.entry(Check.H9, "set it for the build only (ARG DEBIAN_FRONTEND=noninteractive, or on the RUN that "
+                    + "needs it)"),
             Map.entry(Check.I1, "pin the packages' versions, or record why not"),
             Map.entry(Check.I2, "fix the Dockerfile so it parses"));
 

@@ -364,6 +364,7 @@ its line.
 | H6 | A `chown` or `chmod` in a later layer on files the final image copied in, which stores them twice (`COPY --chown`, `--chmod` would not) | Low |
 | H7 | A `chown` or `chmod` in a `RUN` inside a path a `VOLUME` declared earlier: Docker's legacy builder discards it, BuildKit keeps it | Low |
 | H8 | An `rm` of what a `COPY` or `ADD` in an earlier layer wrote: the layer still holds it | Low |
+| H9 | `ENV DEBIAN_FRONTEND` in the final image: a setting for the build left set in every container | Low |
 | I1 | Packages installed without a version | Info |
 | I2 | A Dockerfile the parser cannot read | Medium |
 
@@ -399,7 +400,7 @@ its path as `PROFILE`.
 
 With `RULES_DIR`, every rule finding becomes an action too, grouped into fixes like the checks', with the severity
 the profile's `rules` gives its rule ID (information when left out; both shipped profiles: S1, S2, S3, S5, S6, S7 and R2 drift; R3,
-H1, H3 to H8, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
+H1, H3 to H9, I1 and I2 information; S4, H2 and R1 off, as P1, P6 and P8 find the same). Rules add actions, not verdicts:
 the verdicts say how each image fares on the platform.
 
 | Check | What it finds | Under v2 | Under v1 |

@@ -171,3 +171,19 @@ Measured on the combined estate: 8 locations, every one read: private keys for i
 distribution's token server, Kubernetes' agnhost), `kubeconfig` in origin's GSSAPI test images, and `id_rsa`
 copied into betka's deployment image.
 
+## H9: a build-only value in ENV (9 Nov)
+
+The table's "`ENV` holding build-only values". Measured first: most build-looking variables in final images are
+docker-library's `*_VERSION`, `*_SHA256`, `*_URL` and `GPG_KEYS`, kept on purpose as a record of what was built, so
+a broad rule would mostly report choices. `BuildOnlyEnv` (rules, low; information in both shipped profiles) reports
+only `ENV DEBIAN_FRONTEND` in the final image, which Docker's FAQ advises against (it changes `apt` for whoever runs
+it in the container later); an `ARG`, or the variable on the `RUN`, does it for the build alone. Measured on the
+combined estate: 32 in 31 Dockerfiles, every one read and right (most in kata-containers' build and test images).
+
+## Left for the hierarchy and the footprint
+
+The rest of the table reads more than one Dockerfile (a deep chain, an application image used as a base, siblings
+repeating their first steps, many digests of one base, published intermediates, a smaller footprint) or the
+effective image (no `ENTRYPOINT` or `CMD` in a runnable image, which without lineage is mostly inherited). The rules
+read one Dockerfile at a time, so where these live is the next question.
+
