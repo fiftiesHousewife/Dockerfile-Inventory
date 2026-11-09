@@ -1,7 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.tools;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -12,23 +10,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 // What a run said of each Dockerfile, read from its stages' files.
 record RunOutcomes(List<Outcome> failures, List<Outcome> parsed, Map<String, String> roundTrips,
                    Map<String, Location> locations, Set<String> secrets) {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
     static final String TEMPLATE = "a template, not a Dockerfile";
 
     record Outcome(String blobSha, String parse, int unreadableRuns) {
     }
 
     record Location(String repository, String path, String commit) {
-
-        String line() {
-            return repository + "\t" + path + "\t" + commit;
-        }
     }
 
     static RunOutcomes read(Path run) {
@@ -60,12 +52,11 @@ record RunOutcomes(List<Outcome> failures, List<Outcome> parsed, Map<String, Str
                 : "fails";
     }
 
-    // Each blob's location that sorts first, so a run collects the same case every time.
+    // Each blob's first location in the manifest, as the bank's earlier cases were collected.
     static Map<String, Location> locations(Path manifest) {
         Map<String, Location> first = new HashMap<>();
-        rows(manifest).forEach(row -> first.merge(row.path("blobSha").asString(), new Location(
-                row.path("repository").asString(), row.path("path").asString(), row.path("commitSha").asString()),
-                (a, b) -> a.line().compareTo(b.line()) <= 0 ? a : b));
+        rows(manifest).forEach(row -> first.putIfAbsent(row.path("blobSha").asString(), new Location(
+                row.path("repository").asString(), row.path("path").asString(), row.path("commitSha").asString())));
         return first;
     }
 
@@ -75,10 +66,6 @@ record RunOutcomes(List<Outcome> failures, List<Outcome> parsed, Map<String, Str
     }
 
     private static Stream<JsonNode> rows(Path file) {
-        try {
-            return Files.readAllLines(file).stream().filter(line -> !line.isBlank()).map(JSON::readTree);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return Json.rows(file);
     }
 }

@@ -89,7 +89,8 @@ survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`
                     with the folders the earlier ones wrote); every stage's ...Main.run(env)
 tools/              the contributors' tools, not in the image: CorpusCollect (`./gradlew collectCorpus
                     --args=<run>`: the Dockerfiles a run found hard into testdata/corpus/dockerfiles; RunOutcomes,
-                    Workaround, CorpusCase)
+                    Workaround, CorpusCase), ImageCollect (`./gradlew collectImages --args=<run>`: a lineage run's
+                    images into testdata/corpus/images); Json (the bank's JSON, laid out as jq lays it out)
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
                     io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model
@@ -118,10 +119,8 @@ testdata/contracts/ the normal-form contracts between facts and lineage: real Do
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
                     outcome; facts', the converter's and lineage's corpus tests ratchet on it (its README)
-scripts/            lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published
-                    images), okd-select.sh (OKD images and their release index),
-                    corpus-collect-images.sh (the fixture bank's images from a lineage run), jcr-diagnose.sh,
-                    record-jcr-fixtures.sh
+scripts/            lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published images), okd-select.sh
+                    (OKD images and their release index), jcr-diagnose.sh, record-jcr-fixtures.sh
 LICENSE, NOTICE     Apache 2.0 for the project's own code, put in every published jar (a module with its own, as the
                     parser has, ships those instead)
 Containerfile       the image for a pod: every stage's distribution and a jlink'd JRE on UBI 9 minimal;

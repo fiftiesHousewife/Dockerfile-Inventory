@@ -1,7 +1,7 @@
 # The scripts as Java: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov; slice 2 in progress (the Dockerfile
-collector built).
+Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov; slice 2 in progress (the two corpus
+collectors built).
 
 ## Why
 
@@ -74,7 +74,13 @@ organisations instead, and runs discovery alone through Gradle with the CLI's lo
 `RunOutcomes` reads the run's five files, `Workaround` tells a retried file's workaround from its text, `CorpusCase`
 writes `expected.json` as jq printed the bank's earlier cases. Its tests run on a small run holding one of each kind,
 a secret and an existing case. Measured on `out/all` against the script, each into an empty folder: the same 129
-cases, 128 byte for byte; the one other is the empty file (`e69de29b`, at three locations), where the script's `sort
--u` kept a location by the platform's sort and the collector takes the one that sorts first. `corpus-collect.sh`
-deleted.
+cases, byte for byte (the script's `sort -u` keeps each blob's first location in the manifest, which the collector
+takes too). `corpus-collect.sh` deleted.
+
+`ImageCollect` (`./gradlew collectImages --args=<run>`): each placed image's trimmed config, the facts of every
+Dockerfile in the repository its source label names, and its link, now with `credited`, which the corpus test reads
+since 9 Nov. `Json` writes the bank's JSON as jq laid it out (every array element on its own line, `[]` and `{}`
+when empty), tested byte for byte on a committed case. Measured on OKD's lineage against the script: the same 34
+cases (an image pushed under two names takes the first the run recorded, as the script did), every `config.json` and
+`dockerfiles.jsonl` byte for byte, `expected.json` the same but for `credited`. `corpus-collect-images.sh` deleted.
 

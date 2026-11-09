@@ -16,3 +16,12 @@ tasks.register<JavaExec>("collectCorpus") {
     mainClass.set("io.github.fiftieshousewife.dockerfileinventory.tools.CorpusCollect")
     workingDir = rootDir
 }
+
+// ./gradlew collectImages --args=out/okd: the images a lineage run read, into the fixture bank.
+tasks.register<JavaExec>("collectImages") {
+    group = "tools"
+    description = "Collects a lineage run's images into testdata/corpus/images"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("io.github.fiftieshousewife.dockerfileinventory.tools.ImageCollect")
+    workingDir = rootDir
+}

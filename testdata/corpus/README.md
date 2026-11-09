@@ -23,15 +23,16 @@ secret-shaped value are never collected.
 | `retried-<kind>-*` (4 per kind) | files that parse only with a parser workaround: `json-comma`, `flag-default`, `arg-names`, `arg-empty`, `lone-backslash`, `comment-in-continuation`, `key-value-comment`, `other` |
 | `parsed-plain-*` | a plain file, the control |
 
-Collected from the combined run of 7 Nov (`docs/plans/combined-report.md`) with `scripts/corpus-collect.sh out/all`; since 9 Nov the collector is
-`./gradlew collectCorpus --args=out/all` (the `tools` module).
+Collected from the combined run of 7 Nov (`docs/plans/combined-report.md`) with `scripts/corpus-collect.sh out/all`;
+since 9 Nov the collector is `./gradlew collectCorpus --args=out/all` (the `tools` module).
 
 ## `images/<case>/`
 
 `config.json`, a real image config trimmed to labels, user, layers and history; `dockerfiles.jsonl`, the facts of every
 Dockerfile in the repository the image's source label names (the candidates the linker must choose among); and
 `expected.json`: the link's tier and the Dockerfiles it names. Collected from the OKD run (`docs/plans/okd-lineage.md`)
-with `scripts/corpus-collect-images.sh out/okd`: 26 OKD components, the OKD bases, `centos:stream10` and `stream9`, and
+with `scripts/corpus-collect-images.sh out/okd` (since 9 Nov `./gradlew collectImages --args=out/okd`, which also
+records `credited`): 26 OKD components, the OKD bases, `centos:stream10` and `stream9`, and
 the four sclorg images built with Buildah in the first demo.
 
 The curated fixtures beside each module's tests (`facts/src/test/resources/fixtures/dockerfiles/`, lineage's

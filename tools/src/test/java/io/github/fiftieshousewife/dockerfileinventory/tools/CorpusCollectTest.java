@@ -72,7 +72,7 @@ class CorpusCollectTest {
     }
 
     @Test
-    void aCaseHoldsTheDockerfileAndItsExpectationFromTheFirstLocation() throws IOException {
+    void aCaseHoldsTheDockerfileAndItsExpectationFromItsFirstLocationInTheManifest() throws IOException {
         new CorpusCollect(run, corpus, 4, 5).collect();
 
         JsonNode expected = new ObjectMapper().readTree(corpus.resolve("unreadable-run-dddddddd/expected.json")
@@ -80,7 +80,7 @@ class CorpusCollectTest {
         assertAll(
                 () -> assertThat(corpus.resolve("unreadable-run-dddddddd/Dockerfile"))
                         .hasContent("FROM ubi9\nRUN echo d\n"),
-                () -> assertThat(expected.path("source").path("repository").asString()).isEqualTo("team/a"),
+                () -> assertThat(expected.path("source").path("repository").asString()).isEqualTo("team/z"),
                 () -> assertThat(expected.path("why").asString()).isEqualTo("a RUN the shell reader cannot follow"),
                 () -> assertThat(expected.path("parse").asString()).isEqualTo("parsed"),
                 () -> assertThat(expected.path("unreadableRuns").asInt()).isEqualTo(1),
@@ -110,6 +110,6 @@ class CorpusCollectTest {
         new CorpusCollect(run, corpus, 4, 5).collect();
 
         assertThat(corpus.resolve("failed-ffffffff/expected.json")).content()
-                .startsWith("{\n  \"source\": {\n    \"repository\": \"team/a\",");
+                .startsWith("{\n  \"source\": {\n    \"repository\": \"team/z\",");
     }
 }
