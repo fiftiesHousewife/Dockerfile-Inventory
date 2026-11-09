@@ -149,14 +149,13 @@ and one line when its gate is met.
   decision, base-image route or DSL route.
   - Done: slice 1, `report` module and inputs; slice 2, exact passes; slice 3, near-duplicates (MinHash, LSH);
     slice 4, archetypes, k80 and k95; slice 5, base catalogue with the internal end-of-life list.
-  - Done: slice 6, CSV tables and DDL for Oracle (loading undecided).
+  - Done: slice 6, CSV tables and DDL; removed 9 Nov, when the report became a view of the catalogue.
   - Done: slice 7, the HTML dashboard.
   - Done: slice 8, `ReportRun` and `ReportMain`.
   - Done 6 Nov: a more visual dashboard (`docs/plans/report-visuals.md`): health strip with the owner's thresholds,
     archetype coverage curve, bases as bars by end-of-life status, stacked bars, archetype cards with an example
     Dockerfile (secret values hidden), info markers on every number and section, and the lineage section.
-  - Code complete. The gate (the written decision) needs real discovery and facts runs. Open: how the tables
-    reach Oracle (Q1).
+  - Code complete. The gate (the written decision) needs real discovery and facts runs.
 
 - Phase 3 — Quality rules. Plan (detect-only): `docs/plans/phase-3.md` (questions answered 6 Nov). Gate:
   false-positive rate per rule below threshold before auto-fix.

@@ -12,7 +12,7 @@ agreed (the decision paper is written by people from these numbers, not by the p
 
 | # | Question | Answer | What it changes |
 | --- | --- | --- | --- |
-| Q1 | How tables reach Oracle | Not decided | The report writes CSV tables and a DDL script; loading is left until the schema exists |
+| Q1 | How tables reach a database | Dropped 9 Nov | No tables are written: the report is a view of the catalogue (`report-from-catalogue.md`) |
 | Q2 | Dashboard | Both | A self-contained HTML page per run now, and the CSV tables for a dashboard tool later |
 | Q3 | Unit of the estate | Each Dockerfile location | Every manifest row (repository and path) weighs one; a Dockerfile copied into 40 repositories weighs 40 |
 | Q4 | End-of-life source | An internal list | Read from `EOL_LIST`, a CSV of `imagePath,tagPrefix,status,eolDate` (format assumed; say if yours differs) |
@@ -80,14 +80,8 @@ agreed (the decision paper is written by people from these numbers, not by the p
    As built: a tag prefix covers a tag only on a version boundary (`9` covers `9.4` and `9-1100`, not `91`). The
    image path follows Docker's host rule, as facts' `fromPath` does.
 
-6. **Tables.** CSV files for Oracle and a DDL script (Q1): `dockerfiles.csv`, `locations.csv`, `archetypes.csv`,
-   `bases.csv`, `images.csv` (from lineage when present). Values are escaped; nothing secret-shaped is written.
-   20. Each table's header and one row per record; commas, quotes and newlines escaped.
-   21. The DDL creates each table with the CSV's columns and types.
-
-   As built: four tables, `dockerfiles` (one row per blob, failures included with their message and the
-   `parse-failures` archetype), `locations`, `archetypes` and `bases`. `images` is left until loading is decided
-   (Q1), since lineage's own files already hold it. Text columns are `VARCHAR2(4000)`.
+6. **Tables.** Built 6 Nov as CSV files and a DDL script; removed 9 Nov, when the report became a view of the
+   catalogue (`report-from-catalogue.md`).
 
 7. **Dashboard.** `dashboard.html`, one self-contained page (no external scripts): files found, unique blobs,
    unique text-normal, unique signatures, k80 and k95, parse-failure and opaque-`RUN` rates, bases by family and
