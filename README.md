@@ -215,16 +215,17 @@ already holds.
 
 ### Trying lineage without an Artifactory
 
-`scripts/lineage-demo.sh` starts PostgreSQL and a local JFrog Container Registry (JCR 7.77) in Docker, builds images
-with Buildah from the CentOS Stream 9 Dockerfiles that discovery found (each at its scanned commit, each `FROM`
-pointed at the image built before it), pushes them, and runs lineage, the report and the rules against them. It
-needs Docker with 4 GB of memory or more, git, jq and curl, and a discovery and facts run to start from; the header
-of the script lists its settings. By default it builds one chain (CentOS Stream 9, `s2i-core`, `s2i-base`, Python
+`./gradlew lineageDemo` starts PostgreSQL and a local JFrog Container Registry (JCR 7.77) in Docker, builds images with
+Buildah from the CentOS Stream 9 Dockerfiles that discovery found (each at its scanned commit, each `FROM` pointed at
+the image built before it), pushes them, and runs lineage, the report and the rules against them. It needs Docker with 4
+GB of memory or more and git, and a discovery and facts run to start from; `LineageDemo`'s Javadoc lists its settings.
+Rerun, it reuses the running containers, the repository and the clones; when JCR will not make the repository, it says
+how to in the UI, and a rerun goes on. By default it builds one chain (CentOS Stream 9, `s2i-core`, `s2i-base`, Python
 3.12, nginx 1.24); `SCOPE=all` builds every `Dockerfile.c9s`, which takes hours when amd64 is emulated.
 
 On a first run JCR's Docker API stays off until JFrog's JCR licence agreement is accepted: read it, then run with
 `ACCEPT_JCR_EULA=yes` to accept it through the API. If another program holds port 8082, set `JCR_PORT`.
-`scripts/jcr-diagnose.sh` shows why JCR is not answering: memory, its logs, which ports answer, and what its Docker
+`./gradlew jcrDiagnose` shows why JCR is not answering: memory, its logs, which ports answer, and what its Docker
 API replies.
 
 To try lineage on images someone else built, OKD's published images can be copied in unchanged instead:
@@ -235,7 +236,7 @@ GHE_API_URL=https://github.com/openshift GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth
     RELEASE_INDEX=out/okd/releases.csv OUT_DIR=out/okd/discovery ./gradlew :discovery:run
 DISCOVERY_DIR=out/okd/discovery OUT_DIR=out/okd/facts ./gradlew :facts:run
 MIRROR=out/okd/mirror.txt DISCOVERY_DIR=out/okd/discovery FACTS_DIR=out/okd/facts OUT=out/okd \
-    scripts/lineage-demo.sh
+    ./gradlew lineageDemo
 ```
 
 `selectOkd` (`--args="<release> <output directory>"`, default `5.0.0-okd-scos.5 out/okd`) picks about 30 images (the

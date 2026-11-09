@@ -1,7 +1,6 @@
 # The scripts as Java: plan
 
-Status: planned 9 Nov; the questions answered 9 Nov; slice 1 built 9 Nov; slice 2 built 9 Nov; slice 3 (the container
-demo) next.
+Status: planned 9 Nov; the questions answered 9 Nov; built 9 Nov: `scripts/` holds only `inventory`.
 
 ## Why
 
@@ -112,4 +111,21 @@ expects them back: all 22 replies and `index.tsv`, byte for byte. Not tried agai
 
 This session's network reaches neither GitHub's clones nor quay.io, so pieces 2 and 3 are tested on their commands
 and on a loopback JCR; the end-to-end run is the owner's.
+
+Built 9 Nov:
+
+- `JcrContainers` (the containers, through `Commands`, which the tests record), `JcrApi` (the API, tested on a
+  loopback JCR), `LineageDemo` (the run: the setup in the script's order, then the images, then lineage, report and
+  rules in this process), `DemoImages` (skopeo copies; Buildah builds, each step its own container on a shared
+  store, so no script runs inside Buildah's container either). Where the script waited at the keyboard for a
+  repository made by hand, the demo now says how and a rerun goes on. A port in use is found by trying to bind it,
+  not with `lsof`.
+- `JcrDiagnose` (`./gradlew jcrDiagnose`): the script's sections; tokens in replies hidden.
+- Tried against the JCR and PostgreSQL still running from the last demo: `registry()` reused both containers,
+  started nothing, found `docker-local`, and made a read token (never printed); `JcrApi`'s calls agreed with the
+  real JCR; `JcrRecord` recorded 139 replies, every one of the committed fixtures among them byte for byte (the
+  catalogue and CentOS's tags have grown since 6 Nov); `jcrDiagnose` ran whole, the token shown `(hidden)`.
+- Not tried here: copying from quay.io and cloning from GitHub, which this session's network does not reach, so the
+  image steps are tested on their commands; the end-to-end run is the owner's.
+- `lineage-demo.sh` and `jcr-diagnose.sh` deleted.
 

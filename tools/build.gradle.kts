@@ -5,6 +5,9 @@ plugins {
 
 dependencies {
     implementation(project(":http"))
+    implementation(project(":lineage"))
+    implementation(project(":report"))
+    implementation(project(":rules"))
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
 }
@@ -42,5 +45,23 @@ tasks.register<JavaExec>("recordJcrFixtures") {
     description = "Records the local JCR's replies as lineage's test fixtures"
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("io.github.fiftieshousewife.dockerfileinventory.tools.JcrRecord")
+    workingDir = rootDir
+}
+
+// ./gradlew lineageDemo: lineage end to end on a laptop, against a local JFrog Container Registry.
+tasks.register<JavaExec>("lineageDemo") {
+    group = "tools"
+    description = "Runs lineage end to end against a local JCR in Docker"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("io.github.fiftieshousewife.dockerfileinventory.tools.LineageDemo")
+    workingDir = rootDir
+}
+
+// ./gradlew jcrDiagnose: why the demo's local JCR is not answering.
+tasks.register<JavaExec>("jcrDiagnose") {
+    group = "tools"
+    description = "Says why the lineage demo's local JCR is not answering"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("io.github.fiftieshousewife.dockerfileinventory.tools.JcrDiagnose")
     workingDir = rootDir
 }

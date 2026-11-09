@@ -92,7 +92,9 @@ tools/              the contributors' tools, not in the image: CorpusCollect (`.
                     Workaround, CorpusCase), ImageCollect (`./gradlew collectImages --args=<run>`: a lineage run's
                     images into testdata/corpus/images); OkdSelect (`./gradlew selectOkd`: an OKD release's images for a
                     lineage run, from quay.io: OkdChoice, Quay, QuayHttp), JcrRecord (`./gradlew recordJcrFixtures`:
-                    a local JCR's replies as lineage's fixtures); Json (the bank's JSON, laid out as jq
+                    a local JCR's replies as lineage's fixtures), LineageDemo (`./gradlew lineageDemo`: lineage end
+                    to end on a local JCR in Docker: BuildPlan, JcrContainers, JcrApi, DemoImages, Commands),
+                    JcrDiagnose (`./gradlew jcrDiagnose`); Json (the bank's JSON, laid out as jq
                     lays it out)
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
@@ -122,7 +124,7 @@ testdata/contracts/ the normal-form contracts between facts and lineage: real Do
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
                     outcome; facts', the converter's and lineage's corpus tests ratchet on it (its README)
-scripts/            lineage-demo.sh (a local JCR: Buildah builds, or MIRROR= published images), jcr-diagnose.sh
+scripts/            inventory, the image's entry point (`inventory <stage>`); no other scripts: tools are Java
 LICENSE, NOTICE     Apache 2.0 for the project's own code, put in every published jar (a module with its own, as the
                     parser has, ships those instead)
 Containerfile       the image for a pod: every stage's distribution and a jlink'd JRE on UBI 9 minimal;

@@ -64,14 +64,11 @@ and one line when its gate is met.
   library package name, a module descriptor exporting only its API, a Java release users can take, Javadoc, a
   compatibility check, a Central bundle, a release task instead of `scripts/release-parser.sh`, docs with tested
   examples; the owner's Central namespace, token and signing key.
-- Now (asked 8 Nov, `docs/plans/scripts-to-java.md`, questions answered 9 Nov): the remaining shell scripts replaced
-  by Java, the container's entry point aside. Slice 1 done 9 Nov: the survey takes several organisations and merges
-  them (`Combine`), `discover.sh` and `combine.sh` gone. Slice 2 in progress: the `tools` module, its two corpus
-  collectors built 9 Nov (`./gradlew collectCorpus`, `collectImages`, each writing what its script did, byte for
-  byte). The OKD picker (`./gradlew selectOkd`) built 9 Nov: the same
-  seven files as the script on the stored data, its live run against quay.io left to the owner. The JCR fixture recorder
-  (`./gradlew recordJcrFixtures`) built 9 Nov: replaying the committed fixtures, it records them again byte for byte.
-  Next: the container demo (`lineage-demo.sh`, `jcr-diagnose.sh`).
+- Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
+  only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
+  `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and
+  `jcrDiagnose`, each checked against what its script wrote, or against the local JCR. Left to the owner: `selectOkd`
+  live on quay.io, and `lineageDemo` end to end (it needs quay.io or GitHub).
 - Next (planned 7 Nov, `docs/plans/fifteen-thousand.md`): grow the public estate to about 15,000 locations from
   Red Hat-style organisations (RedHatInsights, stolostron, ...); discovery runs by the owner.
 - Phase 0 — Discovery. Plan: `docs/plans/phase-0.md`. Gate: every repository has an outcome; release-index
