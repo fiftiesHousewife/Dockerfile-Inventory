@@ -24,7 +24,9 @@ final class Archetypes {
                 .mapToObj(i -> archetype(i + 1, sorted.get(i), dockerfiles, locations))
                 .toList();
         int total = sorted.stream().mapToInt(Group::locations).sum();
-        return new Ranking(archetypes, total, covering(sorted, total, 80), covering(sorted, total, 95));
+        List<Integer> counts = sorted.stream().map(Group::locations).toList();
+        return new Ranking(archetypes, total, Coverage.fewestCovering(counts, total, 80),
+                Coverage.fewestCovering(counts, total, 95));
     }
 
     static Archetype archetype(int rank, Group group, Map<String, Dockerfile> dockerfiles,
@@ -45,16 +47,5 @@ final class Archetypes {
                 .max(Comparator.comparingInt((String sha) -> locations.getOrDefault(sha, List.of()).size())
                         .thenComparing(Comparator.reverseOrder()))
                 .orElseThrow();
-    }
-
-    static int covering(List<Group> sorted, int total, int percent) {
-        long covered = 0;
-        for (int i = 0; i < sorted.size(); i++) {
-            covered += sorted.get(i).locations();
-            if (covered * 100 >= (long) percent * total) {
-                return i + 1;
-            }
-        }
-        return sorted.size();
     }
 }

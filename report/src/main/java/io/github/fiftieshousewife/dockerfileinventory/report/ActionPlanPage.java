@@ -4,12 +4,12 @@ import static io.github.fiftieshousewife.dockerfileinventory.report.Html.count;
 import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// The validator's plan: how the images fare under the profile, then the fixes by urgency, then per repository.
 final class ActionPlanPage {
 
     static final int SHOWN = 250;
@@ -30,19 +30,31 @@ final class ActionPlanPage {
     }
 
     static String body(ActionPlanView view, Set<String> catalogued) {
-        int hidden = view.fixes().size() - SHOWN;
-        Map<String, ActionPlanView.Where> places = new HashMap<>();
-        view.actions().forEach(a -> a.where().stream().findFirst().ifPresent(w -> places.putIfAbsent(a.blobSha(), w)));
         return lead(view) + "<p class=\"note\">" + escape(view.plan().describes()) + "</p>"
-                + "<h2>Fixes, most urgent first</h2><div class=\"scroll\"><table><tr><th>Severity</th><th>Check</th>"
+                + fixes(view, catalogued) + repositories(view.plan().repositories());
+    }
+
+    static String fixes(ActionPlanView view, Set<String> catalogued) {
+        int hidden = view.fixes().size() - SHOWN;
+        Map<String, ActionPlanView.Where> places = firstPlaces(view.actions());
+        return "<h2>Fixes, most urgent first</h2><div class=\"scroll\"><table><tr><th>Severity</th><th>Check</th>"
                 + "<th>What to change</th><th>Why</th><th>Dockerfile to change</th><th class=\"num\">Copies</th>"
                 + "<th class=\"num\">Built on them</th><th class=\"num\">Locations</th></tr>"
                 + view.fixes().stream().limit(SHOWN).map(f -> row(f, places.get(f.representative()), catalogued))
                 .collect(Collectors.joining())
                 + "</table></div>"
-                + (hidden > 0 ? "<p>and " + count(hidden) + " more in the validator's fixes.jsonl.</p>" : "")
-                + "<h2>By repository</h2><div class=\"scroll\"><table><tr><th>Repository</th><th class=\"num\">Actions"
-                + "</th></tr>" + view.plan().repositories().entrySet().stream()
+                + (hidden > 0 ? "<p>and " + count(hidden) + " more in the validator's fixes.jsonl.</p>" : "");
+    }
+
+    static Map<String, ActionPlanView.Where> firstPlaces(List<ActionPlanView.PlannedAction> actions) {
+        Map<String, ActionPlanView.Where> places = new HashMap<>();
+        actions.forEach(a -> a.where().stream().findFirst().ifPresent(w -> places.putIfAbsent(a.blobSha(), w)));
+        return places;
+    }
+
+    static String repositories(Map<String, Integer> repositories) {
+        return "<h2>By repository</h2><div class=\"scroll\"><table><tr><th>Repository</th><th class=\"num\">Actions"
+                + "</th></tr>" + repositories.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
                         .thenComparing(Map.Entry.comparingByKey()))
                 .map(e -> "<tr><td>" + escape(e.getKey()) + "</td><td class=\"num\">" + count(e.getValue())
@@ -50,15 +62,18 @@ final class ActionPlanPage {
                 .collect(Collectors.joining()) + "</table></div>";
     }
 
-    private static String row(ActionPlanView.PlannedFix fix, ActionPlanView.Where place, Set<String> catalogued) {
-        String sha = fix.representative();
-        String name = place == null ? sha : place.repository() + " " + place.path();
+    static String row(ActionPlanView.PlannedFix fix, ActionPlanView.Where place, Set<String> catalogued) {
         return "<tr><td>" + escape(fix.severity().toLowerCase(Locale.ROOT)) + " ("
                 + escape(fix.certainty().toLowerCase(Locale.ROOT)) + ")</td><td>" + escape(fix.check())
                 + "</td><td>" + escape(fix.what()) + "</td><td>" + escape(String.join("; ", fix.because()))
-                + "</td><td>" + (catalogued.contains(sha) ? "<a href=\"dockerfiles/" + escape(sha) + ".html\">"
-                + escape(name) + "</a>" : escape(name)) + "</td><td class=\"num\">" + count(fix.copies().size())
-                + "</td><td class=\"num\">" + count(fix.inheriting().size()) + "</td><td class=\"num\">"
-                + count(fix.locations()) + "</td></tr>";
+                + "</td><td>" + dockerfile(fix.representative(), place, catalogued) + "</td><td class=\"num\">"
+                + count(fix.copies().size()) + "</td><td class=\"num\">" + count(fix.inheriting().size())
+                + "</td><td class=\"num\">" + count(fix.locations()) + "</td></tr>";
+    }
+
+    static String dockerfile(String sha, ActionPlanView.Where place, Set<String> catalogued) {
+        String name = place == null ? sha : place.repository() + " " + place.path();
+        return catalogued.contains(sha) ? "<a href=\"dockerfiles/" + escape(sha) + ".html\">" + escape(name) + "</a>"
+                : escape(name);
     }
 }

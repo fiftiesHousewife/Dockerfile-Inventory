@@ -5,17 +5,15 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tools.jackson.databind.ObjectMapper;
 
 final class CatalogueRun {
 
     static final String PATH = "catalogue/dockerfiles.jsonl";
-
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -30,35 +28,25 @@ final class CatalogueRun {
     }
 
     static void write(Inputs inputs, Path outDir, CatalogueSettings settings) {
-        Path lineageDir = inputs.lineageDir();
         Map<String, List<CatalogueEntry.Place>> places = CatalogueEntries.places(inputs.discoveryDir());
-        List<CatalogueEntry> parsed = JsonLines.read(inputs.factsDir().resolve("facts.jsonl")).stream()
-                .map(row -> CatalogueEntries.of(row, places.get(row.path("blobSha").asString())))
+        List<CatalogueEntry> parsed = parsed(inputs.factsDir(), places);
+        EntryPlacer placer = new EntryPlacer(parsed, inputs, settings);
+        writeLines(outDir, Stream.concat(parsed.stream().map(placer::placed),
+                unparsed(inputs.factsDir(), places).stream()).toList());
+    }
+
+    static List<CatalogueEntry> parsed(Path factsDir, Map<String, List<CatalogueEntry.Place>> places) {
+        return JsonLines.read(factsDir.resolve("facts.jsonl")).stream()
+                .map(row -> CatalogueEntries.of(row, places.get(row.path("blobSha").asString()))).toList();
+    }
+
+    static List<CatalogueEntry> unparsed(Path factsDir, Map<String, List<CatalogueEntry.Place>> places) {
+        return JsonLines.read(factsDir.resolve("parse-failures.jsonl")).stream()
+                .map(failure -> CatalogueEntries.unparsed(failure, places.get(failure.path("blobSha").asString())))
                 .toList();
-        Map<String, CatalogueLinks.Links> links = CatalogueLinks.of(parsed, lineageDir);
-        Hierarchies hierarchies = new Hierarchies(lineageDir == null ? Map.of()
-                : RegistryImages.read(lineageDir),
-                settings.staleAfterMonths(), settings.layerLimit(),
-                lineageDir == null ? Map.of() : RegistryImages.pushesByName(lineageDir));
-        Set<String> archived = Unmaintained.archivedRepositories(inputs.discoveryDir());
-        Map<String, Conversions.Conversion> conversions = Conversions.read(inputs.converterDir());
-        Map<String, Siblings.Found> siblings = Siblings.of(inputs.nearDuplicates());
-        Map<String, CatalogueEntry> bySha = CatalogueEntries.bySha(parsed);
-        BaseLags baseLags = new BaseLags(lineageDir == null ? Map.of() : RegistryImages.tagsByImage(lineageDir));
-        List<CatalogueEntry> entries = new ArrayList<>(parsed.stream()
-                .map(entry -> {
-                    Footprint.Found footprint = Footprint.through(entry.blobSha(), bySha, links, settings.footprints());
-                    return entry.placed(new Placement(links.get(entry.blobSha()), footprint,
-                            Runtimes.inherited(footprint.through(), bySha),
-                            hierarchies.of(entry, bySha, footprint.through(), archived),
-                            new Actions(ReleaseScope.of(entry.locations()),
-                                    Reaches.of(entry.blobSha(), bySha, links, hierarchies.imagesBelow(entry.blobSha())),
-                                    Conversions.of(conversions, entry.blobSha()),
-                                    Siblings.of(siblings, entry.blobSha()), baseLag(entry, baseLags))));
-                })
-                .toList());
-        JsonLines.read(inputs.factsDir().resolve("parse-failures.jsonl")).forEach(failure -> entries.add(
-                CatalogueEntries.unparsed(failure, places.get(failure.path("blobSha").asString()))));
+    }
+
+    static void writeLines(Path outDir, List<CatalogueEntry> entries) {
         try {
             Files.createDirectories(outDir.resolve("catalogue"));
             Files.writeString(outDir.resolve(PATH), entries.stream()
@@ -67,12 +55,6 @@ final class CatalogueRun {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    static BaseLags.BaseLag baseLag(CatalogueEntry entry, BaseLags baseLags) {
-        CatalogueEntry.StageEntry base = CatalogueLinks.finalBaseStage(entry);
-        return base == null || base.baseTag() == null ? null
-                : baseLags.of(base.baseName() + ":" + base.baseTag()).orElse(null);
     }
 
     static String hideSecretShapesMissedUpstream(String line) {

@@ -13,7 +13,6 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-// Every HTML page of the report, by its path under OUT_DIR, drawn from the catalogue and the archetypes.
 final class Pages {
 
     static final int PER_PAGE = 250;

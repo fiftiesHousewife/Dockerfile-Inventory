@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.JsonNode;
@@ -113,5 +114,25 @@ class CatalogueRunTest {
     void aSecretShapedValueThatReachedALineIsHiddenBeforeItIsWritten() {
         assertThat(CatalogueRun.hideSecretShapesMissedUpstream("{\"note\":\"AKIAABCDEFGHIJKLMNOP\"}"))
                 .doesNotContain("AKIA");
+    }
+
+    @Test
+    void eachParsedDockerfileIsAnEntryWithItsPlaces() {
+        List<CatalogueEntry> parsed = CatalogueRun.parsed(FIXTURES, CatalogueEntries.places(FIXTURES));
+
+        assertThat(parsed).singleElement().satisfies(entry -> assertThat(entry.locations()).hasSize(2));
+    }
+
+    @Test
+    void withoutParseFailuresThereAreNoUnparsedEntries() {
+        assertThat(CatalogueRun.unparsed(FIXTURES, Map.of())).isEmpty();
+    }
+
+    @Test
+    void theEntriesAreWrittenOnePerLine(@TempDir Path out) {
+        CatalogueRun.writeLines(out, List.of(Entries.unparsed("aaa", "team/a"), Entries.unparsed("bbb", "team/b")));
+
+        assertThat(JsonLines.read(out.resolve(CatalogueRun.PATH))).extracting(line -> line.path("blobSha").asString())
+                .containsExactly("aaa", "bbb");
     }
 }

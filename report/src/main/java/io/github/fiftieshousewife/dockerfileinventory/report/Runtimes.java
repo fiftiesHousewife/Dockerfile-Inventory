@@ -1,12 +1,15 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
-import java.util.ArrayList;
+import static java.util.stream.Collectors.toMap;
+
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 final class Runtimes {
 
@@ -36,54 +39,60 @@ final class Runtimes {
     static List<Found> of(List<CatalogueEntry.StageEntry> stages, List<CatalogueEntry.PackageEntry> packages,
             Map<String, String> environment) {
         Set<Integer> finals = new HashSet<>(finalStages(stages));
-        List<Found> found = new ArrayList<>();
-        stages.stream().filter(s -> s.baseName() != null).forEach(s -> EVIDENCE.forEach((runtime, e) -> {
-            if (e.base().matcher(lastSegment(s.baseName())).find()) {
-                add(found, runtime, finals.contains(s.index()), "stage " + s.index() + " base " + s.baseName());
-            }
-        }));
-        packages.forEach(p -> EVIDENCE.forEach((runtime, e) -> {
-            if (e.pkg().matcher(p.name()).matches()) {
-                add(found, runtime, finals.contains(p.stage()), "stage " + p.stage() + " installs " + p.name());
-            }
-        }));
-        environment.keySet().forEach(name -> EVIDENCE.forEach((runtime, e) -> {
-            if (e.environment().contains(name)) {
-                add(found, runtime, true, "environment " + name);
-            }
-        }));
-        return found;
+        Stream<Found> evidence = Stream.of(
+                stages.stream().filter(stage -> stage.baseName() != null).flatMap(stage -> fromBase(stage, finals)),
+                packages.stream().flatMap(installed -> fromPackage(installed, finals)),
+                environment.keySet().stream().flatMap(Runtimes::fromEnvironment)).flatMap(found -> found);
+        return firstOf(evidence, found -> List.of(found.runtime(), found.where()));
+    }
+
+    static Stream<Found> fromBase(CatalogueEntry.StageEntry stage, Set<Integer> finals) {
+        return EVIDENCE.entrySet().stream()
+                .filter(runtime -> runtime.getValue().base().matcher(lastSegment(stage.baseName())).find())
+                .map(runtime -> found(runtime.getKey(), finals.contains(stage.index()),
+                        "stage " + stage.index() + " base " + stage.baseName()));
+    }
+
+    static Stream<Found> fromPackage(CatalogueEntry.PackageEntry installed, Set<Integer> finals) {
+        return EVIDENCE.entrySet().stream()
+                .filter(runtime -> runtime.getValue().pkg().matcher(installed.name()).matches())
+                .map(runtime -> found(runtime.getKey(), finals.contains(installed.stage()),
+                        "stage " + installed.stage() + " installs " + installed.name()));
+    }
+
+    static Stream<Found> fromEnvironment(String name) {
+        return EVIDENCE.entrySet().stream().filter(runtime -> runtime.getValue().environment().contains(name))
+                .map(runtime -> found(runtime.getKey(), true, "environment " + name));
+    }
+
+    static Found found(String runtime, boolean inFinal, String evidence) {
+        return new Found(runtime, inFinal ? "final" : "build", evidence);
     }
 
     static List<Found> inherited(List<String> ancestors, Map<String, CatalogueEntry> bySha) {
-        List<Found> found = new ArrayList<>();
-        ancestors.stream().map(bySha::get)
-                .filter(ancestor -> ancestor.build() != null)
-                .forEach(ancestor -> of(ancestor.build().stages(), ancestor.build().packages(),
-                        ancestor.image().environment()).stream().filter(f -> "final".equals(f.where()))
-                        .filter(f -> found.stream().noneMatch(seen -> seen.runtime().equals(f.runtime())))
-                        .forEach(f -> found.add(new Found(f.runtime(), "inherited",
-                                "from " + ancestor.blobSha() + ": " + f.evidence()))));
-        return found;
+        return firstOf(ancestors.stream().map(bySha::get).filter(ancestor -> ancestor.build() != null)
+                .flatMap(Runtimes::inheritedFrom), Found::runtime);
+    }
+
+    static Stream<Found> inheritedFrom(CatalogueEntry ancestor) {
+        return of(ancestor.build().stages(), ancestor.build().packages(), ancestor.image().environment()).stream()
+                .filter(found -> "final".equals(found.where()))
+                .map(found -> new Found(found.runtime(), "inherited", "from " + ancestor.blobSha() + ": "
+                        + found.evidence()));
+    }
+
+    static List<Found> firstOf(Stream<Found> found, Function<Found, Object> key) {
+        return List.copyOf(found.collect(toMap(key, each -> each, (first, later) -> first, LinkedHashMap::new))
+                .values());
     }
 
     static List<Integer> finalStages(List<CatalogueEntry.StageEntry> stages) {
-        List<Integer> indexes = new ArrayList<>();
-        CatalogueEntry.StageEntry stage = stages.isEmpty() ? null : stages.getLast();
-        while (stage != null && !indexes.contains(stage.index())) {
-            indexes.add(stage.index());
-            String parent = stage.fromStage();
-            stage = parent == null ? null
-                    : stages.stream().filter(s -> parent.equals(s.name())).findFirst().orElse(null);
-        }
-        return indexes;
-    }
-
-    private static void add(List<Found> found, String runtime, boolean inFinal, String evidence) {
-        String where = inFinal ? "final" : "build";
-        if (found.stream().noneMatch(f -> f.runtime().equals(runtime) && f.where().equals(where))) {
-            found.add(new Found(runtime, where, evidence));
-        }
+        Set<Integer> seen = new HashSet<>();
+        return Stream.iterate(stages.isEmpty() ? null : stages.getLast(),
+                        stage -> stage != null && seen.add(stage.index()),
+                        stage -> stage.fromStage() == null ? null
+                                : CatalogueLinks.stageNamed(stages, stage.fromStage()))
+                .map(CatalogueEntry.StageEntry::index).toList();
     }
 
     private static String lastSegment(String image) {

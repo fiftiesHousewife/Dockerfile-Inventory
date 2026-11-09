@@ -5,7 +5,6 @@ import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// One Dockerfile's catalogue entry made readable; it sits in dockerfiles/, beside the other Dockerfiles' pages.
 final class DockerfilePage {
 
     private DockerfilePage() {
@@ -13,7 +12,8 @@ final class DockerfilePage {
 
     static String body(CatalogueEntry entry) {
         String places = table(List.of("Repository", "Path", "Scope", "Last changed"), entry.locations().stream()
-                .map(p -> List.of(p.repository(), p.path(), p.scope(), p.lastChanged() == null ? "" : p.lastChanged()))
+                .map(place -> List.of(place.repository(), place.path(), place.scope(),
+                        place.lastChanged() == null ? "" : place.lastChanged()))
                 .toList());
         if (entry.parseError() != null) {
             return "<h2>Where it is</h2>" + places + "<h2>Did not parse</h2><p>" + escape(entry.parseError()) + "</p>";
@@ -30,23 +30,26 @@ final class DockerfilePage {
     }
 
     static String actions(CatalogueEntry entry) {
-        Actions a = entry.actions();
-        if (a == null) {
+        Actions actions = entry.actions();
+        if (actions == null) {
             return "";
         }
-        return "<h2>Actions</h2><ul><li>Release scope: " + escape(String.valueOf(a.releaseScope())) + "</li>"
-                + "<li>A fix reaches " + a.reach().dockerfiles() + " Dockerfiles in " + a.reach().repositories()
-                + " repositories and " + a.reach().images() + " images</li>"
-                + "<li>Converts: " + escape(a.conversion().roundTrip()) + "</li>"
-                + (a.baseLag() == null ? "" : "<li>Base " + escape(a.baseLag().base()) + ": "
-                        + escape(a.baseLag().tag()) + ", newest " + escape(a.baseLag().newestTag()) + "</li>")
-                + "<li>Near-duplicates: " + a.nearDuplicates().count() + " "
-                + a.nearDuplicates().blobShas().stream().map(DockerfilePage::link).collect(Collectors.joining(" "))
-                + "</li></ul>";
+        return "<h2>Actions</h2><ul><li>Release scope: " + escape(String.valueOf(actions.releaseScope())) + "</li>"
+                + "<li>A fix reaches " + actions.reach().dockerfiles() + " Dockerfiles in "
+                + actions.reach().repositories() + " repositories and " + actions.reach().images() + " images</li>"
+                + "<li>Converts: " + escape(actions.conversion().roundTrip()) + "</li>" + baseLag(actions.baseLag())
+                + "<li>Near-duplicates: " + actions.nearDuplicates().count() + " " + actions.nearDuplicates()
+                .blobShas().stream().map(DockerfilePage::link).collect(Collectors.joining(" ")) + "</li></ul>";
     }
 
-    private static String linked(List<CatalogueLinks.Link> links) {
-        return links.isEmpty() ? "none" : links.stream().map(l -> link(l.blobSha()) + " (" + escape(l.source()) + ")")
+    static String baseLag(BaseLags.BaseLag lag) {
+        return lag == null ? "" : "<li>Base " + escape(lag.base()) + ": " + escape(lag.tag()) + ", newest "
+                + escape(lag.newestTag()) + "</li>";
+    }
+
+    static String linked(List<CatalogueLinks.Link> links) {
+        return links.isEmpty() ? "none" : links.stream()
+                .map(link -> link(link.blobSha()) + " (" + escape(link.source()) + ")")
                 .collect(Collectors.joining(", "));
     }
 
@@ -55,7 +58,7 @@ final class DockerfilePage {
     }
 
     static String table(List<String> headings, List<List<String>> rows) {
-        return "<div class=\"scroll\"><table><tr>" + headings.stream().map(h -> "<th>" + escape(h) + "</th>")
+        return "<div class=\"scroll\"><table><tr>" + headings.stream().map(name -> "<th>" + escape(name) + "</th>")
                 .collect(Collectors.joining()) + "</tr>" + rows.stream().map(row -> "<tr>" + row.stream()
                         .map(cell -> "<td>" + escape(cell) + "</td>").collect(Collectors.joining()) + "</tr>")
                 .collect(Collectors.joining()) + "</table></div>";

@@ -10,7 +10,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// The summary's numbers for a set of catalogue entries: the estate or one organisation.
 record EstateFigures(int dockerfiles, int unparsed, int locations, int images, int organisations,
                      Map<Integer, Integer> depths, Map<String, Integer> layerBands, int overLimit, int root,
                      int lowPort, int toolchain, Map<String, Integer> footprints, Map<String, Integer> runtimes,

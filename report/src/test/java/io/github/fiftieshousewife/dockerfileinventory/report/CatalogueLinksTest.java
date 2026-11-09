@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
@@ -95,6 +96,82 @@ class CatalogueLinksTest {
                 List.of(), List.of(), 0, 0, 0, Map.of(), List.of()), null, null, null, null, null);
 
         assertThat(CatalogueLinks.finalBase(entry)).isEqualTo("ubi9/ubi");
+    }
+
+    @Test
+    void withoutLineageEveryPairIsInferred() {
+        List<CatalogueLinks.Pair> pairs = CatalogueLinks.pairs(List.of(BASE, CORE), null);
+
+        assertThat(pairs).extracting(CatalogueLinks.Pair::source).containsExactly("inferred");
+    }
+
+    @Test
+    void eachDockerfileOfAChildImageIsPairedWithEachOfItsParentImage() {
+        assertThat(CatalogueLinks.lineagePairs("sha256:c", "sha256:p",
+                Map.of("sha256:c", List.of("c1", "c2"), "sha256:p", List.of("p1"))))
+                .extracting(CatalogueLinks.Pair::child, CatalogueLinks.Pair::parent)
+                .containsExactly(tuple("c1", "p1"), tuple("c2", "p1"));
+    }
+
+    @Test
+    void theFirstDockerfileToNameAnImageKeepsTheName() {
+        CatalogueEntry again = entry("ddd", "quay.io/centos/centos:stream9", Map.of("name", "sclorg/s2i-core-c9s"));
+
+        assertThat(CatalogueLinks.named(List.of(BASE, again)).get("sclorg/s2i-core-c9s"))
+                .isEqualTo(new CatalogueLinks.Named("aaa", "name"));
+    }
+
+    @Test
+    void aBlankOrMissingLabelNamesNothing() {
+        assertAll(
+                () -> assertThat(CatalogueLinks.hasText(null)).isFalse(),
+                () -> assertThat(CatalogueLinks.hasText(" ")).isFalse(),
+                () -> assertThat(CatalogueLinks.hasText("app")).isTrue());
+    }
+
+    @Test
+    void aDockerfileBuiltOnTheImageItNamesIsNotItsOwnParent() {
+        CatalogueEntry self = entry("eee", "example/self:1", Map.of("name", "example/self"));
+
+        assertThat(CatalogueLinks.inferred(self, CatalogueLinks.named(List.of(self)))).isEmpty();
+    }
+
+    @Test
+    void aStageIsFoundByItsNameAndAnUnknownNameFindsNone() {
+        List<CatalogueEntry.StageEntry> stages = APP.build().stages();
+
+        assertAll(
+                () -> assertThat(CatalogueLinks.stageNamed(List.of(stage("build", "ubi9/ubi", null)), "build"))
+                        .isNotNull(),
+                () -> assertThat(CatalogueLinks.stageNamed(stages, "absent")).isNull());
+    }
+
+    @Test
+    void stagesBuiltOnEachOtherInACircleHaveNoBase() {
+        CatalogueEntry entry = withStages(List.of(stage("a", null, "b"), stage("b", null, "a")));
+
+        assertThat(CatalogueLinks.finalBaseStage(entry)).isNull();
+    }
+
+    @Test
+    void aDockerfileWithoutStagesHasNoBase() {
+        assertThat(CatalogueLinks.finalBase(withStages(List.of()))).isNull();
+    }
+
+    @Test
+    void depthFollowsTheFirstParentUntilTheTop() {
+        assertThat(CatalogueLinks.depth("c", Map.of("c", List.of(new CatalogueLinks.Link("b", "inferred", "")),
+                "b", List.of(new CatalogueLinks.Link("a", "inferred", ""))))).isEqualTo(2);
+    }
+
+    private static CatalogueEntry.StageEntry stage(String name, String base, String fromStage) {
+        return new CatalogueEntry.StageEntry(0, name, base, null, null, false, fromStage, List.of(), 0, 0, 0, 0, 0,
+                List.of(), List.of(), List.of());
+    }
+
+    private static CatalogueEntry withStages(List<CatalogueEntry.StageEntry> stages) {
+        return new CatalogueEntry("x", List.of(), false, APP.image(), new CatalogueEntry.Build(stages, List.of(),
+                List.of(), 0, 0, 0, Map.of(), List.of()), null, null, null, null, null);
     }
 
     static CatalogueEntry entry(String sha, String base, Map<String, String> labels) {

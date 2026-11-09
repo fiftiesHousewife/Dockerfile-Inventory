@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class CatalogueEntriesTest {
 
@@ -113,5 +114,19 @@ class CatalogueEntriesTest {
                 () -> assertThat(build.opaqueRuns()).isZero(),
                 () -> assertThat(build.instructions()).containsEntry("COPY", 1).containsEntry("ENV", 1)
                         .containsEntry("HEALTHCHECK", 1));
+    }
+
+    @Test
+    void aMissingOrNullCommandIsNone() {
+        assertAll(
+                () -> assertThat(CatalogueEntries.command(ROW.path("absent"))).isNull(),
+                () -> assertThat(CatalogueEntries.command(ROW.path("config").path("nothing"))).isNull());
+    }
+
+    @Test
+    void aCommandKeepsItsFormAndArguments() {
+        assertThat(CatalogueEntries.command(new ObjectMapper().readTree(
+                "{\"form\":\"EXEC\",\"arguments\":[\"run\"]}")))
+                .isEqualTo(new CatalogueEntry.Command("EXEC", List.of("run")));
     }
 }

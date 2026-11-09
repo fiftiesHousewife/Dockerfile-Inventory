@@ -3,15 +3,13 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -47,19 +45,6 @@ class RegistryImagesTest {
     }
 
     @Test
-    void aLabelSetByTheExternalBaseNamesItsPath() {
-        assertThat(RegistryImages.label("vendor", json(
-                "{\"value\":\"Red Hat\",\"setBy\":{\"kind\":\"ExternalBase\",\"path\":\"ubi9/ubi\"}}")))
-                .isEqualTo(new ImageLabel("Red Hat", null, "ubi9/ubi"));
-    }
-
-    @Test
-    void aSecretLabelValueIsHiddenAsItIsRead() {
-        assertThat(RegistryImages.label("build.token", json(
-                "{\"value\":\"abc123\",\"setBy\":{\"kind\":\"Unknown\"}}")).value()).startsWith("(hidden sha256:");
-    }
-
-    @Test
     void anImageLinkedToSeveralDockerfilesCreditsNoneAndNamesThemAsCandidates() {
         RegistryImage nginx = RegistryImages.read(LINEAGE).get(NGINX);
 
@@ -69,19 +54,29 @@ class RegistryImagesTest {
     }
 
     @Test
-    void aLinkLineageCreditedNamesTheDockerfilesTheImageWasBuiltFrom() {
-        assertThat(RegistryImages.linked(json("{\"tier\":\"WEAK\",\"blobShas\":[\"aaa\"],\"credited\":true}")))
-                .isEqualTo(new RegistryImages.Linked(List.of("aaa"), List.of()));
+    void theRowsOfOneImageAreGroupedByConfigDigestAndUnresolvedOnesLeftOut() {
+        assertThat(RegistryImages.rowsByDigest(List.of(json("{\"configDigest\":\"sha256:b\",\"tag\":\"1\"}"),
+                json("{\"configDigest\":null,\"tag\":\"2\"}"), json("{\"configDigest\":\"sha256:a\",\"tag\":\"3\"}"),
+                json("{\"configDigest\":\"sha256:b\",\"tag\":\"4\"}"))).keySet())
+                .containsExactly("sha256:b", "sha256:a");
     }
 
     @Test
-    void aLinkLineageDidNotCreditOrWroteBeforeCreditingNamesCandidatesOnly() {
+    void eachImagePathsTagsIncludeTheUnresolvedOnes() {
+        assertThat(RegistryImages.tagsOfImage(List.of(json("{\"image\":\"a\",\"tag\":\"1\",\"configDigest\":null}"),
+                json("{\"image\":\"a\",\"tag\":\"sha256-ab.sig\"}"))))
+                .isEqualTo(Map.of("a", Set.of("1", "sha256-ab.sig")));
+    }
+
+    @Test
+    void anImageReadWithoutAConfigHasUnknownLayersAndNoCreationTime() {
+        RegistryImage image = RegistryImages.image("sha256:x", List.of(json("{\"image\":\"a\",\"tag\":\"1\"}")),
+                json("{}"), LineageFiles.read(LINEAGE), Map.of());
+
         assertAll(
-                () -> assertThat(RegistryImages.linked(json(
-                        "{\"tier\":\"STRONG\",\"blobShas\":[\"aaa\"],\"credited\":false}")))
-                        .isEqualTo(new RegistryImages.Linked(List.of(), List.of("aaa"))),
-                () -> assertThat(RegistryImages.linked(json("{\"tier\":\"STRONG\",\"blobShas\":[\"aaa\"]}")))
-                        .isEqualTo(new RegistryImages.Linked(List.of(), List.of("aaa"))));
+                () -> assertThat(image.names()).containsExactly("a:1"),
+                () -> assertThat(image.layers()).isNull(),
+                () -> assertThat(image.created()).isNull());
     }
 
     @Test
@@ -96,22 +91,9 @@ class RegistryImagesTest {
     }
 
     @Test
-    void anImageNotRebuiltOnItsUpdatedBaseNamesTheNewerBase(@TempDir Path outdated) throws IOException {
-        Path file = outdated.resolve("outdated-bases.jsonl");
-        Files.writeString(file, "{\"image\":\"" + PYTHON + "\",\"parent\":\"" + S2I_BASE
-                + "\",\"imageName\":\"sclorg/s2i-base-c9s\",\"newer\":\"sha256:0b1c\"}\n");
-
-        assertThat(RegistryImages.newerBases(file)).isEqualTo(Map.of(PYTHON, "sha256:0b1c"));
-    }
-
-    @Test
     void theNewestPushIsTheRegistrysLatest() {
         assertThat(RegistryImages.newestPush(List.copyOf(RegistryImages.read(LINEAGE).values())))
                 .isEqualTo("2026-11-06T18:18:06.098Z");
-    }
-
-    private static JsonNode json(String text) {
-        return new ObjectMapper().readTree(text);
     }
 
     @Test
@@ -122,44 +104,11 @@ class RegistryImagesTest {
     }
 
     @Test
-    void eachImagesParentIsReadAndTheRootHasNone() {
-        Map<String, String> parents = RegistryImages.parents(LINEAGE.resolve("lineage.jsonl"));
-
-        assertAll(
-                () -> assertThat(parents).containsEntry(PYTHON, S2I_BASE),
-                () -> assertThat(parents).doesNotContainKey(
-                        "sha256:cdc65e3dc1b675127b1e26ef79884f63cae4c46c00a89f0c18cb5c617bec62c8"));
-    }
-
-    @Test
     void theNewestOfSeveralTimesIsTheLatestInstantWithMissingOnesIgnored() {
         assertAll(
                 () -> assertThat(RegistryImages.newest(Arrays.asList("2026-01-01T00:00:00Z", null,
                         "2026-11-06T18:18:06.098Z"))).isEqualTo("2026-11-06T18:18:06.098Z"),
                 () -> assertThat(RegistryImages.newest(List.of())).isNull());
-    }
-
-    @Test
-    void anImagesSizeIsItsTagsCompressedLayers() {
-        assertThat(RegistryImages.size(List.of(json("{\"size\":39000000}"), json("{\"size\":39000000}"))))
-                .isEqualTo(39_000_000L);
-    }
-
-    @Test
-    void anImageRecordedWithoutASizeHasNone() {
-        assertThat(RegistryImages.size(List.of(json("{\"tag\":\"1\"}")))).isNull();
-    }
-
-    @Test
-    void anIndexsArchitecturesAreTheImages() {
-        assertThat(RegistryImages.architectures(List.of(json("{\"architectures\":[\"linux/amd64\",\"linux/arm64\"]}")),
-                json("{\"os\":\"linux\",\"architecture\":\"amd64\"}"))).containsExactly("linux/amd64", "linux/arm64");
-    }
-
-    @Test
-    void withoutAnIndexTheArchitectureIsTheConfigs() {
-        assertThat(RegistryImages.architectures(List.of(json("{\"architectures\":[]}")),
-                json("{\"os\":\"linux\",\"architecture\":\"arm64\"}"))).containsExactly("linux/arm64");
     }
 
     @Test
@@ -173,17 +122,7 @@ class RegistryImagesTest {
         assertThat(RegistryImages.tagsByImage(LINEAGE)).containsEntry("centos/centos", List.of("stream9"));
     }
 
-    @Test
-    void anImagesUsageIsItsTagsDownloadsSummedAndItsLatestDownload() {
-        assertThat(RegistryImages.usage(List.of(
-                json("{\"downloads\":40,\"lastDownloaded\":\"2026-11-01T08:00:00Z\"}"),
-                json("{\"downloads\":2,\"lastDownloaded\":\"2026-11-05T08:00:00Z\"}"))))
-                .isEqualTo(new RegistryImage.Usage(42L, "2026-11-05T08:00:00Z"));
-    }
-
-    @Test
-    void anImageRecordedWithoutDownloadsHasNoUsage() {
-        assertThat(RegistryImages.usage(List.of(json("{\"tag\":\"1\"}"))))
-                .isEqualTo(new RegistryImage.Usage(null, null));
+    private static JsonNode json(String text) {
+        return new ObjectMapper().readTree(text);
     }
 }

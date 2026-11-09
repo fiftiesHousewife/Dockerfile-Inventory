@@ -1,7 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +10,8 @@ final class Reaches {
 
     record Reach(int dockerfiles, int repositories, int locations, int images) {
     }
+
+    private static final CatalogueLinks.Links NO_LINKS = new CatalogueLinks.Links(List.of(), List.of(), 0);
 
     private Reaches() {
     }
@@ -27,14 +27,13 @@ final class Reaches {
 
     static Set<String> below(String sha, Map<String, CatalogueLinks.Links> links) {
         Set<String> below = new LinkedHashSet<>();
-        Deque<String> next = new ArrayDeque<>(List.of(sha));
-        while (!next.isEmpty()) {
-            CatalogueLinks.Links found = links.get(next.pop());
-            if (found != null) {
-                found.children().stream().map(CatalogueLinks.Link::blobSha)
-                        .filter(child -> !Objects.equals(child, sha) && below.add(child)).forEach(next::push);
-            }
-        }
+        addChildren(sha, sha, links, below);
         return below;
+    }
+
+    static void addChildren(String sha, String top, Map<String, CatalogueLinks.Links> links, Set<String> below) {
+        links.getOrDefault(sha, NO_LINKS).children().stream().map(CatalogueLinks.Link::blobSha)
+                .filter(child -> !Objects.equals(child, top) && below.add(child))
+                .forEach(child -> addChildren(child, top, links, below));
     }
 }

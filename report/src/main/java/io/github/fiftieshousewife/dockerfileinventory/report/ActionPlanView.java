@@ -10,7 +10,6 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-// The validator's output as the report reads it: action-plan.json, actions.jsonl and fixes.jsonl.
 record ActionPlanView(Plan plan, List<PlannedAction> actions, List<PlannedFix> fixes) {
 
     private static final ObjectMapper JSON = JsonMapper.builder()

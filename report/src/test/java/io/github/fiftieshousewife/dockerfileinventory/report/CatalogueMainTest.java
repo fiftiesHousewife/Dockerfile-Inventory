@@ -29,4 +29,13 @@ class CatalogueMainTest {
         assertThatIllegalStateException().isThrownBy(() -> CatalogueMain.run(Map.of("OUT_DIR", out.toString())))
                 .withMessage("FACTS_DIR is not set");
     }
+
+    @Test
+    void theOptionalLineageAndConverterDirectoriesAreRead(@TempDir Path converter) {
+        CatalogueMain.run(Map.of("FACTS_DIR", EstateTest.FIXTURES.toString(), "DISCOVERY_DIR",
+                EstateTest.FIXTURES.toString(), "OUT_DIR", out.toString(), "LINEAGE_DIR",
+                RegistryImagesTest.LINEAGE.toString(), "CONVERTER_DIR", converter.toString()));
+
+        assertThat(out.resolve(CatalogueRun.PATH)).exists();
+    }
 }

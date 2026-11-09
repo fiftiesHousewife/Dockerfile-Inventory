@@ -36,16 +36,6 @@ class HierarchiesTest {
     }
 
     @Test
-    void anImagesChainRunsFromItselfToTheRootWithEachStepsOwnLayers() {
-        List<Hierarchies.Step> chain = hierarchies(RegistryImages.read(LINEAGE), 40).chain(PYTHON);
-
-        assertAll(
-                () -> assertThat(chain).extracting(Hierarchies.Step::configDigest)
-                        .containsExactly(PYTHON, S2I_BASE, S2I_CORE, CENTOS),
-                () -> assertThat(chain).extracting(Hierarchies.Step::ownLayers).containsExactly(1, 1, 1, 2));
-    }
-
-    @Test
     void anImageIsBlockedByAnUnmaintainedStepAboveIt() {
         Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
         RegistryImage base = images.get(S2I_BASE);
@@ -114,19 +104,6 @@ class HierarchiesTest {
     }
 
     @Test
-    void aStepWhoseImageOrParentLayersAreUnknownHasUnknownOwnLayers() {
-        Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
-        RegistryImage base = images.get(S2I_BASE);
-        images.put(S2I_BASE, new RegistryImage(base.configDigest(), base.names(), base.parent(), base.blobShas(),
-                null, base.created(), base.lastPushed(), null, base.labels(), base.candidates(), base.size(),
-                base.architectures(),
-                base.provenance(), base.usage()));
-
-        assertThat(hierarchies(images, 40).chain(PYTHON)).extracting(Hierarchies.Step::ownLayers)
-                .containsExactly(null, null, 1, 2);
-    }
-
-    @Test
     void anImageWithUnknownLayersLeavesTheLayersDeclared() {
         Map<String, RegistryImage> images = new HashMap<>(RegistryImages.read(LINEAGE));
         RegistryImage python = images.get(PYTHON);
@@ -138,13 +115,6 @@ class HierarchiesTest {
 
         assertThat(hierarchies(images, 40).of(entry, Map.of(), List.of(), Set.of()).layers().counted())
                 .isEqualTo("declared");
-    }
-
-    @Test
-    void theRootInheritsNoLayers() {
-        Map<String, RegistryImage> images = RegistryImages.read(LINEAGE);
-
-        assertThat(hierarchies(images, 40).parentLayers(images.get(CENTOS))).isZero();
     }
 
     @Test
@@ -222,5 +192,33 @@ class HierarchiesTest {
                 () -> assertThat(built.cadence().daysAfterParent()).isZero(),
                 () -> assertThat(built.provenance()).isEqualTo(new Provenance(false, false, false)),
                 () -> assertThat(built.usage()).isEqualTo(new RegistryImage.Usage(null, null)));
+    }
+
+    @Test
+    void eachDockerfileNamesTheImagesBuiltFromIt() {
+        Map<String, RegistryImage> images = RegistryImages.read(LINEAGE);
+
+        assertThat(Hierarchies.bySha(images.values(), RegistryImage::blobShas, RegistryImage::configDigest))
+                .containsEntry(PYTHON_DOCKERFILE, List.of(PYTHON));
+    }
+
+    @Test
+    void eachImageNamesItsChildrenAndTheRootIsNoonesChild() {
+        Map<String, List<String>> children = Hierarchies.childrenOf(RegistryImages.read(LINEAGE).values());
+
+        assertAll(
+                () -> assertThat(children.get(S2I_BASE)).containsExactly(PYTHON),
+                () -> assertThat(children.values()).noneMatch(list -> list.contains(CENTOS)));
+    }
+
+    @Test
+    void theImagesBelowADockerfileAreEveryDescendantOfTheImagesBuiltFromIt() {
+        assertThat(hierarchies(RegistryImages.read(LINEAGE), 40)
+                .imagesBelow("84d379564c82cd28d8d358b5f94373bb49f0fb70")).isEqualTo(1);
+    }
+
+    @Test
+    void aDockerfileNoImageWasBuiltFromHasNoImagesBelow() {
+        assertThat(hierarchies(RegistryImages.read(LINEAGE), 40).imagesBelow("aaa")).isZero();
     }
 }

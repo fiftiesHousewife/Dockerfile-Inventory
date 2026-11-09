@@ -42,4 +42,26 @@ class DockerfilePageTest {
     void aDockerfileThatDidNotParseSaysWhy() {
         assertThat(DockerfilePage.body(unparsed("aaa", "payments/web"))).contains("payments/web", "mismatched input");
     }
+
+    @Test
+    void noLinksReadAsNone() {
+        assertThat(DockerfilePage.linked(List.of())).isEqualTo("none");
+    }
+
+    @Test
+    void eachLinkNamesItsSource() {
+        assertThat(DockerfilePage.linked(List.of(new CatalogueLinks.Link("aaa", "lineage", ""),
+                new CatalogueLinks.Link("bbb", "inferred", "")))).contains("aaa", "(lineage), ", "bbb", "(inferred)");
+    }
+
+    @Test
+    void aBaseThatIsNotBehindHasNoLagLine() {
+        assertThat(DockerfilePage.baseLag(null)).isEmpty();
+    }
+
+    @Test
+    void aBaseBehindItsNewestTagSaysBoth() {
+        assertThat(DockerfilePage.baseLag(new BaseLags.BaseLag("ubi9/ubi", "9.4", "9.6")))
+                .isEqualTo("<li>Base ubi9/ubi: 9.4, newest 9.6</li>");
+    }
 }
