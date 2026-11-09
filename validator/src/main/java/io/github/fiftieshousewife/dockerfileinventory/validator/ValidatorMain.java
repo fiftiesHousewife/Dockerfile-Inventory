@@ -21,7 +21,13 @@ public final class ValidatorMain {
         System.out.println("Action plan written to " + out.resolve("action-plan.json"));
     }
 
-    static Path run(Map<String, String> env) {
+    /**
+     * Writes the action plan with the given settings, as {@link #main} does with the environment's.
+     *
+     * @param env the settings
+     * @return the output directory
+     */
+    public static Path run(Map<String, String> env) {
         Path out = Path.of(required(env, "OUT_DIR"));
         Profile profile = Profile.of(env.getOrDefault("PROFILE", Profile.DEFAULT));
         new ValidatorRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),

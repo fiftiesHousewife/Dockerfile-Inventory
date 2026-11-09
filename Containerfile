@@ -1,6 +1,6 @@
-# The pipeline as one image for a pod on OpenShift: `inventory <stage>` runs discovery, facts, lineage, catalogue,
-# report, rules, validator or converter, configured from the environment as the README says. Build with Buildah or
-# Podman:
+# The pipeline as one image for a pod on OpenShift: `inventory survey [--try] <organisation URL>` runs a whole survey;
+# `inventory <stage>` runs discovery, facts, lineage, catalogue, report, rules, validator or converter alone,
+# configured from the environment as the README says. Build with Buildah or Podman:
 #   buildah build -t dockerfile-inventory -f Containerfile .
 # Behind a firewall, pass the Maven mirror the build should use: --build-arg INVENTORY_MIRROR=https://...
 # Pin the two base images by digest in the pipeline that builds this (rule R1); the tags here are for a first build.
@@ -14,9 +14,9 @@ WORKDIR /src
 COPY . .
 RUN INVENTORY_MIRROR="${INVENTORY_MIRROR}" ./gradlew --no-daemon -q -x verifyUpToDate \
         :discovery:installDist :facts:installDist :lineage:installDist :report:installDist :rules:installDist \
-        :validator:installDist :converter:installDist \
+        :validator:installDist :converter:installDist :survey:installDist \
     && mkdir -p /opt/inventory \
-    && for stage in discovery facts lineage report rules validator converter; do \
+    && for stage in discovery facts lineage report rules validator converter survey; do \
            cp -r "$stage/build/install/$stage" /opt/inventory/; \
        done \
     && modules=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 25 \

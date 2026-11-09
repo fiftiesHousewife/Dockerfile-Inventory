@@ -28,7 +28,12 @@ public final class LineageMain {
         run(System.getenv());
     }
 
-    static void run(Map<String, String> env) {
+    /**
+     * Runs lineage with the given settings, as {@link #main} does with the environment's.
+     *
+     * @param env the settings
+     */
+    public static void run(Map<String, String> env) {
         Path out = Path.of(required(env, "OUT_DIR"));
         String url = env.get("ARTIFACTORY_URL");
         if (url != null && !url.isBlank()) {

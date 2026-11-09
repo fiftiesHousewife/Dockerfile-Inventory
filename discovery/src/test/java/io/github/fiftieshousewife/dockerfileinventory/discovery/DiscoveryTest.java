@@ -99,6 +99,21 @@ class DiscoveryTest {
     }
 
     @Test
+    void aTryStopsScanningOnceEnoughRepositoriesHeldADockerfile() {
+        var org = new FakeGitHub();
+        IntStream.range(0, 6).forEach(i -> org.repository("pay", repo("pay/r" + i, A))
+                .tree("pay/r" + i, A, i % 2 == 0 ? tree(file("Dockerfile", "same")) : tree()));
+        org.blob("same", "FROM ubi9\n");
+
+        Discovery.Summary summary = new Discovery(org, ReleaseIndex.empty(), new DiscoveryOutput(out), 1, List.of(),
+                2).run();
+
+        assertAll(
+                () -> assertThat(org.treeCalls).containsExactly("pay/r0", "pay/r1", "pay/r2"),
+                () -> assertThat(summary.scanned()).isEqualTo(3));
+    }
+
+    @Test
     void namedOrganisationsAreTheOnlyOnesScanned() {
         gitHub.repository("ops", repo("ops/tools", A)).tree("ops/tools", A, tree(file("Dockerfile", "same")));
 

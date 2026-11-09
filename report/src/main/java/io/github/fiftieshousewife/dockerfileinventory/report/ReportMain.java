@@ -15,7 +15,15 @@ public final class ReportMain {
 
     /** Writes the report under {@code OUT_DIR}; fails before reading anything if a required setting is missing. */
     public static void main(String[] args) {
-        Map<String, String> env = System.getenv();
+        run(System.getenv());
+    }
+
+    /**
+     * Writes the report with the given settings, as {@link #main} does with the environment's.
+     *
+     * @param env the settings
+     */
+    public static void run(Map<String, String> env) {
         String lineage = env.get("LINEAGE_DIR");
         String converter = env.get("CONVERTER_DIR");
         String validator = env.get("VALIDATOR_DIR");

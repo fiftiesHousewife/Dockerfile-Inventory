@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +22,8 @@ final class Discovery {
     private final ChangeFetch changeFetch;
     private final DiscoveryOutput output;
     private final List<String> organizations;
+    private final int concurrency;
+    private final int tryRepositories;
 
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency) {
         this(gitHub, releases, output, concurrency, List.of());
@@ -28,7 +31,15 @@ final class Discovery {
 
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
               List<String> organizations) {
+        this(gitHub, releases, output, concurrency, organizations, 0);
+    }
+
+    // tryRepositories: stop once that many scanned repositories held a Dockerfile; 0 scans every one.
+    Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
+              List<String> organizations, int tryRepositories) {
         this.gitHub = gitHub;
+        this.concurrency = concurrency;
+        this.tryRepositories = tryRepositories;
         this.scans = new Scans(new RepoScan(gitHub, releases), output, concurrency);
         this.blobFetch = new BlobFetch(gitHub, output);
         this.changeFetch = new ChangeFetch(gitHub, output);
@@ -39,7 +50,7 @@ final class Discovery {
     Summary run() {
         List<Repository> repositories = repositories();
         List<Repository> todo = unfinished(repositories, output.finishedRepositories());
-        List<RepoScan.Result> results = scans.scanAll(todo);
+        List<RepoScan.Result> results = tryRepositories > 0 ? scanUntilEnough(todo) : scans.scanAll(todo);
         int failed = (int) results.stream().filter(r -> !r.outcome().status().isFinal()).count();
 
         List<Located> manifest = output.manifest();
@@ -53,6 +64,18 @@ final class Discovery {
         return new Summary(repositories.size(), repositories.size() - todo.size(), results.size() - failed, failed,
                 manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges.recorded(),
                 lastChanges.problems());
+    }
+
+    List<RepoScan.Result> scanUntilEnough(List<Repository> todo) {
+        List<RepoScan.Result> results = new ArrayList<>();
+        for (int from = 0; from < todo.size() && withDockerfiles(results) < tryRepositories; from += concurrency) {
+            results.addAll(scans.scanAll(todo.subList(from, Math.min(from + concurrency, todo.size()))));
+        }
+        return results;
+    }
+
+    static long withDockerfiles(List<RepoScan.Result> results) {
+        return results.stream().filter(result -> result.outcome().dockerfiles() > 0).count();
     }
 
     List<Repository> repositories() {

@@ -1,5 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
@@ -53,5 +57,14 @@ class DiscoveryMainTest {
 
         assertThat(DiscoveryMain.releases(null).size()).isZero();
         assertThat(DiscoveryMain.releases(csv.toString()).size()).isEqualTo(1);
+    }
+
+    @Test
+    void aTryLimitIsAPositiveWholeNumberAndWithoutOneEveryRepositoryIsScanned() {
+        assertAll(
+                () -> assertThat(DiscoveryMain.tryRepositories(Map.of())).isZero(),
+                () -> assertThat(DiscoveryMain.tryRepositories(Map.of("TRY_REPOSITORIES", "10"))).isEqualTo(10),
+                () -> assertThatThrownBy(() -> DiscoveryMain.tryRepositories(Map.of("TRY_REPOSITORIES", "ten")))
+                        .hasMessage("TRY_REPOSITORIES must be a positive whole number, not ten"));
     }
 }

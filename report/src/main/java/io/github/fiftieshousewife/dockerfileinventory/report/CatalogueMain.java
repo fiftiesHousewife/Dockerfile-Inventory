@@ -20,7 +20,13 @@ public final class CatalogueMain {
         System.out.println("Catalogue written to " + out.resolve(CatalogueRun.PATH));
     }
 
-    static Path run(Map<String, String> env) {
+    /**
+     * Writes the catalogue with the given settings, as {@link #main} does with the environment's.
+     *
+     * @param env the settings
+     * @return the output directory
+     */
+    public static Path run(Map<String, String> env) {
         Path facts = Path.of(ReportMain.required(env, "FACTS_DIR"));
         Path discovery = Path.of(ReportMain.required(env, "DISCOVERY_DIR"));
         Path out = Path.of(ReportMain.required(env, "OUT_DIR"));

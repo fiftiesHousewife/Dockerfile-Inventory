@@ -57,4 +57,10 @@ class ReportMainTest {
         assertThat(ReportMain.catalogueSettings(Map.of("FOOTPRINTS", file.toString())).footprints()
                 .classify("registry.ci.openshift.org/ocp/5.0:base-rhel9")).isEqualTo("full");
     }
+
+    @Test
+    void theSettingsGivenAreTheOnesReadAndAMissingOneIsRefusedByName() {
+        assertThatThrownBy(() -> ReportMain.run(Map.of("OUT_DIR", "/o")))
+                .isInstanceOf(IllegalStateException.class).hasMessage("FACTS_DIR is not set");
+    }
 }

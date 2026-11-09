@@ -34,6 +34,27 @@ for access):
   published images linked to the Dockerfiles that built them
 - [bitnami](https://claude.ai/artifact/1wnH7fkxBzUTo2M1eA6SBH): 266 Dockerfiles on one pattern
 
+## Survey an organisation
+
+One command runs the whole survey: discovery, the facts, lineage (when `ARTIFACTORY_URL` is set), the catalogue,
+the rules, the OpenShift validator and the report, each stage reading what the one before wrote. Try it first:
+
+```bash
+export GHE_TOKEN_FILE=~/secrets/ghe-token                          # or GHE_TOKEN; e.g. GHE_TOKEN=$(gh auth token)
+./gradlew -q :survey:run --args="--try https://github.example.com/acme"   # 10 repositories with a Dockerfile
+./gradlew -q :survey:run --args="https://github.example.com/acme"         # every repository
+```
+
+A try writes to `out/acme-try/`, the full run to `out/acme/` (`OUT_DIR` overrides), one folder per stage; the last
+line says where the report's `index.html` is. A try proves the token, the network and the proxy in a few minutes
+and shows a real report; it stops once ten repositories holding a Dockerfile are found (a few more when they come in
+the same batch). The URL is a GitHub Enterprise Server host with the organisation (`https://ghe.example.com/acme`),
+`https://github.com/acme`, or `https://acme.ghe.com`. Every other setting below is passed on to the stage that
+reads it, so the same environment configures a proxy, a CA bundle, Artifactory or a profile. A rerun of a full run
+resumes discovery where it stopped. In the image: `inventory survey [--try] <URL>`.
+
+The sections after this one run each stage alone, for a pod job per stage or to rerun one.
+
 ## Requirements
 
 - JDK 25, the newest long-term-support release. Gradle downloads it if it is not installed.
@@ -84,7 +105,8 @@ podman run --rm -e GHE_API_URL -e GHE_TOKEN_FILE=/secrets/ghe-token -v ./out:/wo
     -v ./secrets:/secrets:ro,Z -e OUT_DIR=/work/out/discovery dockerfile-inventory discovery
 ```
 
-`inventory <stage>` runs `discovery`, `facts`, `lineage`, `catalogue`, `report`, `rules`, `validator` or `converter`, with the settings below
+`inventory survey [--try] <URL>` runs a whole survey (above); `inventory <stage>` runs `discovery`, `facts`,
+`lineage`, `catalogue`, `report`, `rules`, `validator` or `converter` alone, with the settings below
 from the environment; `JAVA_OPTS` (default `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`) is passed to Java.
 Mount the token as a file and set `GHE_TOKEN_FILE` or `ARTIFACTORY_TOKEN_FILE`, so a rotated secret is picked up.
 
@@ -105,6 +127,7 @@ export OUT_DIR=/data/inventory                     # keep it between runs: a rer
 export ORGANIZATIONS=payments,platform             # optional: only these (default: the URL's org, else all)
 export RELEASE_INDEX=/data/releases.csv            # optional: owner/repo,commitSha per line
 export CONCURRENCY=8                               # optional: parallel repository scans
+export TRY_REPOSITORIES=10                         # optional: stop once this many repositories held a Dockerfile
 ./gradlew :discovery:run
 ```
 

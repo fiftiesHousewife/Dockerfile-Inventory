@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * Runs the rules from the environment: {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR}
@@ -12,10 +13,18 @@ public final class RulesMain {
     }
 
     public static void main(String[] args) {
-        Path out = Path.of(required("OUT_DIR", System.getenv("OUT_DIR")));
-        new RulesRun(Path.of(required("DISCOVERY_DIR", System.getenv("DISCOVERY_DIR"))),
-                optional(System.getenv("LINEAGE_DIR")), optional(System.getenv("ALLOW_LIST")),
-                optional(System.getenv("EOL_LIST")), out).run();
+        run(System.getenv());
+    }
+
+    /**
+     * Runs the rules with the given settings, as {@link #main} does with the environment's.
+     *
+     * @param env the settings
+     */
+    public static void run(Map<String, String> env) {
+        Path out = Path.of(required("OUT_DIR", env.get("OUT_DIR")));
+        new RulesRun(Path.of(required("DISCOVERY_DIR", env.get("DISCOVERY_DIR"))), optional(env.get("LINEAGE_DIR")),
+                optional(env.get("ALLOW_LIST")), optional(env.get("EOL_LIST")), out).run();
         System.out.println("Findings written to " + out.resolve("findings.jsonl"));
     }
 

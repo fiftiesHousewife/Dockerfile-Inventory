@@ -11,7 +11,8 @@ import java.util.Map;
 /**
  * Runs discovery as a pod job, configured only from the environment so the token never touches a file:
  * {@code GHE_API_URL} (a GHE Server host, {@code https://github.com/MyOrg} or {@code https://myco.ghe.com}),
- * {@code GHE_TOKEN}, {@code OUT_DIR}, and optionally {@code ORGANIZATIONS}, {@code RELEASE_INDEX}, {@code CONCURRENCY}.
+ * {@code GHE_TOKEN}, {@code OUT_DIR}, and optionally {@code ORGANIZATIONS}, {@code RELEASE_INDEX}, {@code CONCURRENCY}
+ * and {@code TRY_REPOSITORIES} (stop once that many repositories held a Dockerfile).
  */
 public final class DiscoveryMain {
 
@@ -20,7 +21,16 @@ public final class DiscoveryMain {
 
     /** Scans the estate into {@code OUT_DIR}; rerun against the same directory, it resumes. */
     public static void main(String[] args) throws IOException {
-        Map<String, String> env = System.getenv();
+        run(System.getenv());
+    }
+
+    /**
+     * Scans the estate with the given settings, as {@link #main} does with the environment's.
+     *
+     * @param env the settings
+     * @throws IOException when the release index cannot be read
+     */
+    public static void run(Map<String, String> env) throws IOException {
         ReleaseIndex releases = releases(env.get("RELEASE_INDEX"));
         GitHubApi api = GitHubApi.from(required(env, "GHE_API_URL"));
         HttpSettings settings = HttpSettings.from(env);
@@ -30,8 +40,19 @@ public final class DiscoveryMain {
         int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", "8"));
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
         var discovery = new Discovery(gitHub, releases, output, concurrency,
-                organizations(env.getOrDefault("ORGANIZATIONS", ""), api));
+                organizations(env.getOrDefault("ORGANIZATIONS", ""), api), tryRepositories(env));
         System.out.println(discovery.run());
+    }
+
+    static int tryRepositories(Map<String, String> env) {
+        String value = env.get("TRY_REPOSITORIES");
+        if (value == null) {
+            return 0;
+        }
+        if (!value.matches("[1-9][0-9]{0,6}")) {
+            throw new IllegalStateException("TRY_REPOSITORIES must be a positive whole number, not " + value);
+        }
+        return Integer.parseInt(value);
     }
 
     static ReleaseIndex releases(String path) throws IOException {

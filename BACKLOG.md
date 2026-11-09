@@ -33,6 +33,9 @@ and one line when its gate is met.
 - Done 9 Nov (`docs/plans/report-from-catalogue.md`): the report rebuilt as a view of the catalogue: summary and
   organisations, hierarchy, blocked images, a page per Dockerfile, one archetype ranking; the CSV tables, DDL, bases
   and lineage pages and `EOL_LIST` gone.
+- Done 9 Nov (`docs/plans/survey-command.md`, asked 9 Nov): `survey [--try] <organisation URL>`, every stage in
+  order in one command; a try stops after ten repositories with a Dockerfile. Waiting: a try on a real
+  organisation with the owner's token.
 - Now: the validator, slice 1 built 9 Nov: the module, both OpenShift profiles, checks P1 to P10 on facts, verdicts,
   actions by urgency and by repository, `action-plan.json`, `actions.jsonl`, `verdicts.jsonl`. The report's page and
   the tagged ratchet (`./gradlew validate`) built 9 Nov. Done 9 Nov (`docs/plans/link-credit-in-lineage.md`, asked
