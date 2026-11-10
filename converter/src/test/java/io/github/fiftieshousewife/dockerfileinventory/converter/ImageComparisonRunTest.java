@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +46,8 @@ class ImageComparisonRunTest {
         assertAll(
                 () -> assertThat(result).isEqualTo(new ImageComparison.Result("abc", true, null, true, List.of(),
                         List.of(), List.of(), true, List.of())),
-                () -> assertThat(builder.calls).containsExactly("Dockerfile@images/app",
+                () -> assertThat(builder.calls.getFirst()).isEqualTo("Dockerfile@images/app"),
+                () -> assertThat(builder.calls.subList(1, 3)).containsExactlyInAnyOrder(
                         "regenerated.Dockerfile@images/app", "Dockerfile@images/app"));
     }
 
@@ -53,8 +57,10 @@ class ImageComparisonRunTest {
 
         new ImageComparisonRun(builder, work, "arm64").compare("abc", ORIGINAL, checkout, "images/app/Dockerfile");
 
-        assertThat(builder.calls).containsExactly("Dockerfile@images/app", "Dockerfile@",
-                "regenerated.Dockerfile@", "Dockerfile@");
+        assertAll(
+                () -> assertThat(builder.calls.subList(0, 2)).containsExactly("Dockerfile@images/app", "Dockerfile@"),
+                () -> assertThat(builder.calls.subList(2, 4)).containsExactlyInAnyOrder("regenerated.Dockerfile@",
+                        "Dockerfile@"));
     }
 
     @Test
@@ -103,6 +109,34 @@ class ImageComparisonRunTest {
                 "FROM ubi9\nRUN --mount=type=secret,id=downloads_url make\n", checkout, "images/app/Dockerfile");
 
         assertThat(builder.secretsGiven).containsOnly(List.of("downloads_url"));
+    }
+
+    @Test
+    void theRegeneratedAndControlBuildsRunTogether() {
+        CountDownLatch controlStarted = new CountDownLatch(1);
+        FakeBuilder builder = new FakeBuilder((dockerfile, context) -> true) {
+            @Override
+            public BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
+                if (tag.endsWith(":control")) {
+                    controlStarted.countDown();
+                } else if (tag.endsWith(":regenerated") && !awaited(controlStarted)) {
+                    return BuildOutcome.FAILED;
+                }
+                return super.build(dockerfile, context, tag, log, secrets);
+            }
+        };
+
+        assertThat(new ImageComparisonRun(builder, work, "arm64").compare("abc", ORIGINAL, checkout,
+                "images/app/Dockerfile").built()).isTrue();
+    }
+
+    private static boolean awaited(CountDownLatch latch) {
+        try {
+            return latch.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     @Test
@@ -195,9 +229,9 @@ class ImageComparisonRunTest {
 
         private final BiPredicate<Path, Path> builds;
         private final BuildOutcome otherwise;
-        private final List<String> calls = new ArrayList<>();
-        private final List<List<String>> secretsGiven = new ArrayList<>();
-        private final List<String> removed = new ArrayList<>();
+        private final List<String> calls = Collections.synchronizedList(new ArrayList<>());
+        private final List<List<String>> secretsGiven = Collections.synchronizedList(new ArrayList<>());
+        private final List<String> removed = Collections.synchronizedList(new ArrayList<>());
 
         FakeBuilder(BiPredicate<Path, Path> builds) {
             this.builds = builds;

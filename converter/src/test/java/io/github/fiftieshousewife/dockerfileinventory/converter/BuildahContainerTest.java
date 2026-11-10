@@ -75,7 +75,7 @@ class BuildahContainerTest {
     }
 
     @Test
-    void afterAPairWhatAKilledBuildLeftIsCleared() {
+    void atTheRunsEndWhatAKilledBuildLeftIsCleared() {
         assertThat(container.clearingCommands()).containsExactly(
                 List.of("docker", "exec", "inventory-compare", "buildah", "rm", "--all"),
                 List.of("docker", "exec", "inventory-compare", "buildah", "rmi", "--prune"));

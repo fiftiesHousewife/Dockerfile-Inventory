@@ -123,7 +123,7 @@ converter/          stage 5: Dockerfile -> model (through reader) -> Dockerfile,
                     RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles; JavaRoundTrip,
                     InMemoryCompiler; Phase 5b: ImageComparisonRun (Builder; BuildahContainer, Checkouts with
                     CloneSource, Processes), DockerfileSelection, Regenerated, LocalSources, Stubs, TarListing,
-                    FileEntry, ImageComparison, ConfigDifferences, FileDifferences
+                    FileEntry, ImageComparison, ConfigDifferences, FileDifferences, ImageComparisons (several at once, timed)
 testdata/contracts/ the normal-form contracts between facts and lineage: real Dockerfiles against the history of
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected

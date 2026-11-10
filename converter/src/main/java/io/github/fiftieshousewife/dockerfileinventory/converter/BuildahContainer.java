@@ -87,7 +87,6 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     @Override
     public void remove(List<String> tags) {
         tags.forEach(tag -> Processes.logged(removeCommand(tag), work.resolve("remove.log")));
-        clearingCommands().forEach(command -> Processes.logged(command, work.resolve("remove.log")));
     }
 
     List<List<String>> clearingCommands() {
@@ -124,6 +123,7 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
 
     @Override
     public void close() {
+        clearingCommands().forEach(command -> Processes.logged(command, work.resolve("remove.log")));
         Processes.output(List.of("docker", "rm", "-f", NAME));
     }
 

@@ -500,6 +500,7 @@ export GHE_API_URL=... GHE_TOKEN_FILE=...                # optional: where to cl
 export REGISTRY_AUTH_FILE=~/auth.json                    # optional: a login for bases behind one
 export REGISTRIES_CONF=~/registries.conf                 # optional: public names pulled through a mirror
 export BUILD_TIMEOUT=10                                  # optional: minutes one build may take (default 10)
+export IMAGE_ROUND_TRIP_PARALLEL=4                       # optional: Dockerfiles built at once (default 4)
 ./gradlew imageRoundTrip                              # where Docker runs: built twice and compared
 ```
 
@@ -520,8 +521,10 @@ files that record when they were built (package databases, logs, caches, Python 
 `/etc/machine-id`), nor the build container's hostname; those files are still checked to exist with the same mode
 and owner. The original is also built a second time, as a control: a difference the two builds of the original
 show too (a certificate generated at build time, a binary that embeds its build date) is set aside as noise and
-listed, and only what remains counts. The test fails on any pair that built and differs; a pair that did
-not build (a base behind a login, say) is reported, not failed. Images are pulled and built only, never pushed.
+listed, and only what remains counts. The test fails on any pair that differs and on any Dockerfile that did not
+build, saying why, so every sample on the list must build. `IMAGE_ROUND_TRIP_PARALLEL` Dockerfiles are built at once
+(those sharing a checkout one after another), and each Dockerfile's regenerated and control builds run together;
+each result gives its seconds, and the run its total. Images are pulled and built only, never pushed.
 
 | File | Contents |
 | --- | --- |

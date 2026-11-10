@@ -5,6 +5,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.SortedMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import tools.jackson.databind.JsonNode;
 
 final class ImageComparisonRun {
@@ -74,15 +77,21 @@ final class ImageComparisonRun {
 
     ImageComparison.Result regeneratedAndCompared(String sha, Path dockerfile, Path regenerated, Context context,
             Inputs inputs) {
-        BuildOutcome outcome = builder.build(regenerated, context.directory(), tag(sha, "regenerated"),
-                work.resolve(sha).resolve("regenerated-build.log"), inputs.secrets());
+        BuildOutcome outcome;
+        boolean controlled;
+        try (ExecutorService together = Executors.newVirtualThreadPerTaskExecutor()) {
+            CompletableFuture<BuildOutcome> control = CompletableFuture.supplyAsync(() -> builder.build(dockerfile,
+                    context.directory(), tag(sha, "control"), work.resolve(sha).resolve("control-build.log"),
+                    inputs.secrets()), together);
+            outcome = builder.build(regenerated, context.directory(), tag(sha, "regenerated"),
+                    work.resolve(sha).resolve("regenerated-build.log"), inputs.secrets());
+            controlled = control.join() == BuildOutcome.BUILT;
+        }
         if (outcome != BuildOutcome.BUILT) {
             return ImageComparison.notBuilt(sha, outcome == BuildOutcome.TIMED_OUT
                     ? "the regenerated Dockerfile took longer than BUILD_TIMEOUT; see regenerated-build.log"
                     : "the regenerated Dockerfile does not build where the original does; see regenerated-build.log");
         }
-        boolean controlled = builder.build(dockerfile, context.directory(), tag(sha, "control"),
-                work.resolve(sha).resolve("control-build.log"), inputs.secrets()) == BuildOutcome.BUILT;
         return compared(sha, context.stubs(), controlled);
     }
 

@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -39,20 +38,26 @@ class ImageRoundTripTest {
         Map<String, JsonNode> locations = manifest.stream().collect(Collectors.toMap(
                 row -> row.path("blobSha").asString(), Function.identity(), (first, second) -> first));
 
-        List<ImageComparison.Result> results = new ArrayList<>();
         Checkouts checkouts = new Checkouts(OUT.resolve("src"), CloneSource.from(System.getenv()));
+        long start = System.nanoTime();
+        List<ImageComparisons.Timed> timed;
         try (BuildahContainer buildah = BuildahContainer.start(OUT.resolve("src"), OUT.resolve("work"),
                 System.getenv())) {
             ImageComparisonRun run = new ImageComparisonRun(buildah, OUT.resolve("work"), buildah.arch());
-            shas.forEach(sha -> results.add(compare(sha, locations.get(sha), discovery, checkouts, run)));
+            timed = ImageComparisons.run(shas, sha -> checkoutOf(locations.get(sha)),
+                    ImageComparisons.parallel(System.getenv()),
+                    sha -> compare(sha, locations.get(sha), discovery, checkouts, run), System::nanoTime);
         }
-        Files.writeString(OUT.resolve("comparison.jsonl"), results.stream().map(JSON::writeValueAsString)
+        Files.writeString(OUT.resolve("comparison.jsonl"), timed.stream().map(JSON::writeValueAsString)
                 .collect(Collectors.joining("\n", "", "\n")));
-        results.forEach(result -> System.out.println(summary(result)));
+        timed.forEach(t -> System.out.println(summary(t.result()) + " (" + t.seconds() + "s)"));
+        System.out.println("    " + shas.size() + " Dockerfiles in " + Math.round((System.nanoTime() - start) / 1e9)
+                + "s, " + ImageComparisons.parallel(System.getenv()) + " at once");
+        List<ImageComparison.Result> results = timed.stream().map(ImageComparisons.Timed::result).toList();
 
         assertAll(Stream.concat(
-                Stream.<Executable>of(() -> assertThat(results).as("pairs built")
-                        .anyMatch(ImageComparison.Result::built)),
+                results.stream().<Executable>map(result -> () -> assertThat(result.built())
+                        .as(result.blobSha() + " not built: " + result.failure()).isTrue()),
                 results.stream().filter(ImageComparison.Result::built).map(result -> () -> assertThat(result.same())
                         .as(result.blobSha() + ": " + result.config() + " " + result.files()).isTrue())));
     }
@@ -70,6 +75,11 @@ class ImageRoundTripTest {
         } catch (IllegalStateException | UncheckedIOException | IOException e) {
             return ImageComparison.notBuilt(sha, "cannot check out: " + e.getMessage());
         }
+    }
+
+    private static String checkoutOf(JsonNode location) {
+        return location == null ? "" : location.path("repository").asString() + "@"
+                + location.path("commitSha").asString();
     }
 
     private static boolean dockerRuns() {

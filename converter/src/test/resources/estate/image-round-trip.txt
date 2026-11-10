@@ -3,8 +3,9 @@
 # commit, another member of the family that can. One per line, "owner/repository path" or a blob SHA; point
 # IMAGE_ROUND_TRIP_DOCKERFILES at a file like this one to build others.
 
-# bitnami application image
-bitnami/containers bitnami/notation/1/debian-12/Dockerfile
+# bitnami application image: minideb, install_packages, a prebuilt binary onto scratch (bitnami/containers' own use
+# RUN --mount=type=secret,...,env=..., which Buildah 1.43.5 refuses)
+bitnami/charts-syncer Dockerfile
 # OLM file-based catalog, on the public opm image (the largest archetype's base needs a registry.redhat.io login;
 # network-observability-operator's pre-built cache step fails on arm64)
 openshift/operator-framework-olm staging/operator-registry/fbc-dir/file-based-catalog.Dockerfile
