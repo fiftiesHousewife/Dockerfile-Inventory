@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class DockerfilePageTest {
@@ -63,5 +64,13 @@ class DockerfilePageTest {
     void aBaseBehindItsNewestTagSaysBoth() {
         assertThat(DockerfilePage.baseLag(new BaseLags.BaseLag("ubi9/ubi", "9.4", "9.6")))
                 .isEqualTo("<li>Base ubi9/ubi: 9.4, newest 9.6</li>");
+    }
+
+    @Test
+    void theOthersBuiltByTheSameRecipeAreSplitByWhetherTheyStartTheSameProgram() {
+        String body = DockerfilePage.actions(entry(), Map.of("aaa", "/manager", "ddd", "/operator"));
+
+        assertThat(body).contains("Same recipe, same program: 0", "Same recipe, another program: 1",
+                "href=\"ddd.html\"");
     }
 }

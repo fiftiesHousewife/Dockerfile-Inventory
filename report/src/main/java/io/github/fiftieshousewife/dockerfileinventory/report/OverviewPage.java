@@ -56,7 +56,8 @@ final class OverviewPage {
 
     static String shares(EstateFigures f, String list) {
         double all = Math.max(1, f.dockerfiles());
-        return "<table><tr><th>Final image</th><th class=\"num\">Dockerfiles</th><th class=\"num\">Share</th></tr>"
+        return "<table class=\"tally\"><tr><th>Final image</th><th class=\"num\">Dockerfiles</th>"
+                + "<th class=\"num\">Share</th></tr>"
                 + EstateFigures.largestFirst(Map.of("Runs as root", f.root(), "Exposes a port below 1024",
                         f.lowPort(), "Ships a toolchain", f.toolchain())).entrySet().stream()
                 .map(e -> share(labelled(e.getKey(), e.getValue() == 0 ? null : list), e.getValue(), all))

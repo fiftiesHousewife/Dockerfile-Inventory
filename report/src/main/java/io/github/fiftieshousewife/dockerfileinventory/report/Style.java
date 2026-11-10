@@ -25,6 +25,7 @@ final class Style {
             p { margin: 0 0 10px; } p.lead { font-size: 16px; }
             details.section > summary { cursor: pointer; list-style-position: outside; margin-left: 1em; }
             details.section > summary h2 { display: inline; }
+            details.section { margin-top: 28px; }
             .note, p.legend { color: var(--muted); font-size: 13px; }
             ul { margin: 0 0 10px; padding-left: 20px; } li { margin: 2px 0; }
             table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
@@ -53,7 +54,7 @@ final class Style {
             nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 16px;
                        border-bottom: 1px solid var(--line); }
             table.tally { table-layout: fixed; }
-            table.tally th:first-child { width: 50%; } table.tally th.num { width: 15%; }
+            table.tally th:first-child { width: 50%; } table.tally th:nth-child(2) { width: 15%; }
             nav.tabs a { padding: 6px 12px; border-radius: 6px 6px 0 0; color: var(--muted); text-decoration: none; }
             nav.tabs a.current { color: var(--fg); background: var(--tile); font-weight: 600; }
             .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }

@@ -8,7 +8,8 @@ final class About {
     }
 
     static final Map<String, String> TEXT = Map.of("Archetypes",
-            "An archetype is a family of Dockerfiles that build essentially the same image "
-            + "(same base, nearly the same packages, user and ports) even when their text differs. Few archetypes "
-            + "covering many Dockerfiles means a few maintained templates could replace them.");
+            "An archetype is a family of Dockerfiles built by the same recipe (the same base, nearly the same "
+            + "packages, user and ports) even when their text differs, whatever program each one starts. Few "
+            + "archetypes covering many Dockerfiles means a few maintained templates could replace them, with the "
+            + "program as a parameter.");
 }

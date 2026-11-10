@@ -28,6 +28,8 @@ final class Pages {
         Map<String, String> pages = new LinkedHashMap<>();
         Set<String> catalogued = entries.stream().map(CatalogueEntry::blobSha).collect(Collectors.toSet());
         List<String> organisations = List.copyOf(byOrganisation.keySet());
+        Map<String, String> programs = entries.stream().filter(entry -> Programs.of(entry) != null)
+                .collect(Collectors.toMap(CatalogueEntry::blobSha, Programs::of, (a, b) -> a));
         pages.put("index.html", Page.render("Dockerfile estate", "", Tabs.render(organisations, null, "")
                 + plan.map(p -> ActionPlanPage.lead(p)
                 + "<p><a href=\"openshift.html\">Action plan for OpenShift</a></p>").orElse("")
@@ -44,22 +46,23 @@ final class Pages {
                 Breakdowns.of(within))));
         pages.put("hierarchy.html", Page.render("Hierarchy", "", HierarchyPage.body(entries)));
         pages.put("blocked.html", Page.render("Blocked", "", BlockedPage.body(entries)));
-        pages.putAll(ranking(rows, catalogued));
+        pages.putAll(ranking(rows, catalogued, programs));
         Map<String, List<ActionPlanView.PlannedWorkload>> running = plan.map(p -> Deployments.byDockerfile(
                 p.workloads())).orElse(Map.of());
         entries.forEach(entry -> pages.put("dockerfiles/" + entry.blobSha() + ".html", Page.render(
                 entry.locations().getFirst().repository() + "/" + entry.locations().getFirst().path(), "../",
-                DockerfilePage.body(entry) + Deployments.section(entry.blobSha(),
+                DockerfilePage.body(entry, programs) + Deployments.section(entry.blobSha(),
                         running.getOrDefault(entry.blobSha(), List.of())))));
         return pages;
     }
 
-    static Map<String, String> ranking(ArchetypeRows archetypes, Set<String> catalogued) {
+    static Map<String, String> ranking(ArchetypeRows archetypes, Set<String> catalogued,
+                                       Map<String, String> programs) {
         List<Row> rows = archetypes.rows();
         int count = Math.max(1, (rows.size() + PER_PAGE - 1) / PER_PAGE);
         return IntStream.rangeClosed(1, count).boxed().collect(Collectors.toMap(Pages::rankingPath,
                 page -> Page.render("Archetypes", "", intro(archetypes) + pager(page, rows.size(), PER_PAGE)
-                        + ArchetypeTable.render(rows, (page - 1) * PER_PAGE, page * PER_PAGE, catalogued, "")
+                        + ArchetypeTable.render(rows, (page - 1) * PER_PAGE, page * PER_PAGE, catalogued, programs, "")
                         + pager(page, rows.size(), PER_PAGE)),
                 (a, b) -> a, LinkedHashMap::new));
     }
@@ -67,7 +70,8 @@ final class Pages {
     static String intro(ArchetypeRows rows) {
         return "<p class=\"lead\">" + escape(About.TEXT.get("Archetypes")) + "</p><p>" + count(rows.rows().size())
                 + " archetypes, largest first; " + count(rows.k80()) + " cover 80% of locations. Each links to the "
-                + "page of one of its Dockerfiles, which lists its near-duplicates.</p>"
+                + "page of one of its Dockerfiles, which lists the others built by the same recipe: an archetype is a "
+                + "recipe, and Programs counts the different things its Dockerfiles start.</p>"
                 + ArchetypeTable.apart(rows.apart());
     }
 

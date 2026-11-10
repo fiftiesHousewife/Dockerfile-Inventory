@@ -20,23 +20,24 @@ final class ArchetypeTable {
     private ArchetypeTable() {
     }
 
-    static String render(List<Row> rows, int from, int to, Set<String> pages, String up) {
+    static String render(List<Row> rows, int from, int to, Set<String> pages, Map<String, String> programs,
+                         String up) {
         int largest = rows.stream().mapToInt(Row::locations).max().orElse(1);
         return "<div class=\"scroll\"><table><tr><th class=\"num\">Rank</th><th>Archetype</th>"
                 + "<th class=\"num\">Locations</th><th></th><th class=\"num\">Files</th><th>Organisations</th>"
-                + "<th>Largest repository</th></tr>"
+                + "<th>Largest repository</th><th class=\"num\">Programs</th></tr>"
                 + rows.subList(Math.min(from, rows.size()), Math.min(to, rows.size())).stream()
-                .map(r -> row(r, largest, pages, up)).collect(Collectors.joining())
+                .map(r -> row(r, largest, pages, programs, up)).collect(Collectors.joining())
                 + "</table></div>";
     }
 
-    static String row(Row row, int largest, Set<String> pages, String up) {
+    static String row(Row row, int largest, Set<String> pages, Map<String, String> programs, String up) {
         Map.Entry<String, Integer> repository = row.repositories().entrySet().iterator().next();
         return "<tr><td class=\"num\">" + row.rank() + "</td><td>" + name(row, pages, up) + "</td><td class=\"num\">"
                 + count(row.locations()) + "</td><td>" + meter((double) row.locations() / largest) + "</td>"
                 + "<td class=\"num\">" + count(row.files()) + "</td><td>" + chips(row.organisations()) + "</td><td>"
                 + escape(repository.getKey()) + ", " + percent((double) repository.getValue() / row.locations())
-                + "</td></tr>";
+                + "</td><td class=\"num\">" + count(Programs.distinct(row.blobShas(), programs)) + "</td></tr>";
     }
 
     static String name(Row row, Set<String> pages, String up) {

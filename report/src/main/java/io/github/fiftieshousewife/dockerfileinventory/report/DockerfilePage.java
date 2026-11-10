@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 final class DockerfilePage {
@@ -11,6 +12,10 @@ final class DockerfilePage {
     }
 
     static String body(CatalogueEntry entry) {
+        return body(entry, Map.of());
+    }
+
+    static String body(CatalogueEntry entry, Map<String, String> programs) {
         String places = table(List.of("Repository", "Path", "Scope", "Last changed"), entry.locations().stream()
                 .map(place -> List.of(place.repository(), place.path(), place.scope(),
                         place.lastChanged() == null ? "" : place.lastChanged()))
@@ -20,7 +25,7 @@ final class DockerfilePage {
         }
         return "<h2>Where it is</h2>" + places + DockerfileSections.image(entry) + DockerfileSections.stages(entry)
                 + DockerfileSections.packages(entry) + links(entry) + DockerfileSections.images(entry)
-                + actions(entry);
+                + actions(entry, programs);
     }
 
     static String links(CatalogueEntry entry) {
@@ -29,7 +34,7 @@ final class DockerfilePage {
                 + "</p>";
     }
 
-    static String actions(CatalogueEntry entry) {
+    static String actions(CatalogueEntry entry, Map<String, String> programs) {
         Actions actions = entry.actions();
         if (actions == null) {
             return "";
@@ -38,8 +43,15 @@ final class DockerfilePage {
                 + "<li>A fix reaches " + actions.reach().dockerfiles() + " Dockerfiles in "
                 + actions.reach().repositories() + " repositories and " + actions.reach().images() + " images</li>"
                 + "<li>Converts: " + escape(actions.conversion().roundTrip()) + "</li>" + baseLag(actions.baseLag())
-                + "<li>Near-duplicates: " + actions.nearDuplicates().count() + " " + actions.nearDuplicates()
-                .blobShas().stream().map(DockerfilePage::link).collect(Collectors.joining(" ")) + "</li></ul>";
+                + recipe(Programs.split(programs.get(entry.blobSha()), actions.nearDuplicates().blobShas(), programs))
+                + "</ul>";
+    }
+
+    static String recipe(Programs.Split split) {
+        return "<li>Same recipe, same program: " + split.same().size() + " " + split.same().stream()
+                .map(DockerfilePage::link).collect(Collectors.joining(" ")) + "</li><li>Same recipe, another program: "
+                + split.other().size() + " " + split.other().stream().map(DockerfilePage::link)
+                .collect(Collectors.joining(" ")) + "</li>";
     }
 
     static String baseLag(BaseLags.BaseLag lag) {
