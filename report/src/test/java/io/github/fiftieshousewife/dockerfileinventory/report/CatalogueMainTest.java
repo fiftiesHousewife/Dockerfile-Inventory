@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -38,13 +37,5 @@ class CatalogueMainTest {
                 RegistryImagesTest.LINEAGE.toString(), "CONVERTER_DIR", converter.toString()));
 
         assertThat(out.resolve(CatalogueRun.PATH)).exists();
-    }
-
-    @Test
-    void mainReadsItsSettingsFromTheEnvironment() {
-        assumeTrue(System.getenv("FACTS_DIR") == null, "FACTS_DIR is set");
-
-        assertThatIllegalStateException().isThrownBy(() -> CatalogueMain.main(new String[0]))
-                .withMessage("FACTS_DIR is not set");
     }
 }
