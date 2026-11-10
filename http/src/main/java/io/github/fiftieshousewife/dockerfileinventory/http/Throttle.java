@@ -1,10 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.http;
 
 import java.time.Duration;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
 
@@ -19,8 +15,6 @@ public final class Throttle {
     /** No limit: for tests and tools that call a fake. */
     public static final Throttle NONE = new Throttle(Double.POSITIVE_INFINITY, System::nanoTime, Sleeper.REAL);
 
-    static final int FIRST_CALLS = 20;
-    static final long MINUTE = Duration.ofMinutes(1).toNanos();
     static final long BETWEEN_CHANGES = Duration.ofSeconds(10).toNanos();
     static final double FLOOR = 1.0 / 16;
 
@@ -28,8 +22,7 @@ public final class Throttle {
     private final LongSupplier nanos;
     private final Sleeper sleeper;
     private final Object lock = new Object();
-    private final List<Long> first = new ArrayList<>();
-    private final Deque<long[]> lastMinute = new ArrayDeque<>();
+    private final Latencies latencies = new Latencies();
     private double rate;
     private long next = Long.MIN_VALUE;
     private long changed = Long.MIN_VALUE;
@@ -114,13 +107,7 @@ public final class Throttle {
     public void record(Duration took, int status) {
         synchronized (lock) {
             long now = nanos.getAsLong();
-            if (first.size() < FIRST_CALLS) {
-                first.add(took.toNanos());
-            }
-            lastMinute.addLast(new long[] {now, took.toNanos()});
-            while (lastMinute.peekFirst()[0] < now - MINUTE) {
-                lastMinute.removeFirst();
-            }
+            latencies.add(now, took);
             if (changed != Long.MIN_VALUE && now - changed < BETWEEN_CHANGES) {
                 return;
             }
@@ -132,26 +119,17 @@ public final class Throttle {
         }
     }
 
-    private double target(int status) {
-        if (status == 429 || status == 503 || slow(2)) {
+    double target(int status) {
+        if (status == 429 || status == 503 || latencies.slowerThan(2)) {
             return Math.max(setting * FLOOR, rate / 2);
         }
-        return rate < setting && first.size() == FIRST_CALLS && !slow(1.5) ? Math.min(setting, rate * 2) : rate;
-    }
-
-    private boolean slow(double times) {
-        return first.size() == FIRST_CALLS
-                && median(lastMinute.stream().map(call -> call[1]).toList()) > times * median(first);
+        boolean prompt = latencies.known() && !latencies.slowerThan(1.5);
+        return rate < setting && prompt ? Math.min(setting, rate * 2) : rate;
     }
 
     double rate() {
         synchronized (lock) {
             return rate;
         }
-    }
-
-    static long median(List<Long> values) {
-        List<Long> sorted = values.stream().sorted().toList();
-        return sorted.get(sorted.size() / 2);
     }
 }

@@ -138,10 +138,12 @@ class ThrottleTest {
     }
 
     @Test
-    void theMedianIsTheMiddleValue() {
+    void theTargetHalvesOnARateLimitAndKeepsTheRateOtherwise() {
+        Throttle throttle = throttle(10);
+
         assertAll(
-                () -> assertThat(Throttle.median(List.of(5L, 1L, 3L))).isEqualTo(3),
-                () -> assertThat(Throttle.median(List.of(4L, 1L, 3L, 2L))).isEqualTo(3));
+                () -> assertThat(throttle.target(429)).isEqualTo(5),
+                () -> assertThat(throttle.target(200)).isEqualTo(10));
     }
 
     @Test

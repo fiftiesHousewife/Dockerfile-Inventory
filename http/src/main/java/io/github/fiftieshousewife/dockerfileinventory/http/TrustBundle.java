@@ -71,7 +71,7 @@ public final class TrustBundle {
         return Arrays.asList(onlyX509(factory).getAcceptedIssuers());
     }
 
-    private static X509TrustManager onlyX509(TrustManagerFactory factory) {
+    static X509TrustManager onlyX509(TrustManagerFactory factory) {
         return Arrays.stream(factory.getTrustManagers()).filter(X509TrustManager.class::isInstance)
                 .map(X509TrustManager.class::cast).findFirst()
                 .orElseThrow(() -> new IllegalStateException("the JDK offers no X.509 trust manager"));

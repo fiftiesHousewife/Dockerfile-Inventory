@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -71,5 +73,13 @@ class TokenSourceTest {
 
         assertThatThrownBy(source::read).isInstanceOf(IllegalStateException.class)
                 .hasMessage("GHE_TOKEN_FILE is empty: " + file);
+    }
+
+    @Test
+    void aValueIsPresentUnlessMissingOrBlank() {
+        assertAll(
+                () -> assertThat(TokenSource.present("t0ken")).contains("t0ken"),
+                () -> assertThat(TokenSource.present(" ")).isEmpty(),
+                () -> assertThat(TokenSource.present(null)).isEqualTo(Optional.empty()));
     }
 }
