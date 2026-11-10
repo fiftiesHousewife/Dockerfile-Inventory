@@ -11,8 +11,9 @@ bitnami/charts-syncer Dockerfile
 openshift/operator-framework-olm staging/operator-registry/fbc-dir/file-based-catalog.Dockerfile
 # Go operator built in a builder stage, on public UBI images (the largest needs a registry.ci.openshift.org login)
 openshift/aws-load-balancer-operator Dockerfile
-# language runtime built from source (Alpine; the Debian representative's security mirror served bad sums)
-docker-library/php 8.4/alpine3.23/fpm/Dockerfile
+# built from source on Alpine: haproxy (php, the language runtime once here, took 7 to 11 minutes compiling PHP three
+# times; memcached runs its test suite in the build)
+docker-library/haproxy 3.2/alpine/Dockerfile
 # minimal root file system assembled with rpm --root, copied onto scratch
 openshift/external-secrets Dockerfile.ubi
 # prebuilt binary added onto a base

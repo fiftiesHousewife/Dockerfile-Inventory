@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
+import java.util.function.Supplier;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -80,8 +81,18 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     @Override
     public BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
         RunFiles.writeFile(work.resolve(EMPTY_SECRET), "");
-        int exitStatus = Processes.exitStatus(buildCommand(dockerfile, context, tag, secrets), log, Map.of());
-        return BuildOutcome.of(exitStatus, RunFiles.read(log));
+        return retried(() -> BuildOutcome.of(Processes.exitStatus(buildCommand(dockerfile, context, tag, secrets),
+                log, Map.of()), RunFiles.read(log)), log);
+    }
+
+    BuildOutcome retried(Supplier<BuildOutcome> attempt, Path log) {
+        BuildOutcome first = attempt.get();
+        if (first != BuildOutcome.FAILED || !BuildOutcome.fetchFailed(RunFiles.read(log))) {
+            return first;
+        }
+        RunFiles.writeFile(log.resolveSibling(log.getFileName().toString().replace(".log", ".first.log")),
+                RunFiles.read(log));
+        return attempt.get();
     }
 
     @Override

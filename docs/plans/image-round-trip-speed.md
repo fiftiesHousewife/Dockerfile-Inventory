@@ -77,3 +77,10 @@ which `Stubs` left unexpanded, so the stub missed the glob. `LocalSources` now e
 defaults and `ENV` values set before it in its stage (`${NAME:-default}` too, the platform's arguments kept for
 `Stubs`); charts-syncer is then the same, on its stub, in 24 seconds.
 
+Then (asked 10 Nov: "lets remove the very slow one and substitute a faster one", "yes add the retry"): php gives way
+to `docker-library/haproxy` 3.2 on Alpine, built from source with a smoke test, 51 seconds on Buildah against about
+155 for each php build (memcached, tried first, runs its test suite in the build). A build that fails on a download
+(`BuildOutcome.fetchFailed`: TLS, connection and resolution errors, hash-sum mismatches, curl's network exits) is
+tried once more (`BuildahContainer.retried`), after php's original failed on Alpine's CDN with "TLS: unspecified
+error" in a run where every other sample was the same.
+

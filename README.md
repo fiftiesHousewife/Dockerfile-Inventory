@@ -522,7 +522,8 @@ files that record when they were built (package databases, logs, caches, Python 
 and owner. The original is also built a second time, as a control: a difference the two builds of the original
 show too (a certificate generated at build time, a binary that embeds its build date) is set aside as noise and
 listed, and only what remains counts. The test fails on any pair that differs and on any Dockerfile that did not
-build, saying why, so every sample on the list must build. `IMAGE_ROUND_TRIP_PARALLEL` Dockerfiles are built at once
+build, saying why, so every sample on the list must build; a build whose download failed on the network or a
+mirror (a TLS or connection error, a hash-sum mismatch) is tried once more, its first log kept as `*.first.log`. `IMAGE_ROUND_TRIP_PARALLEL` Dockerfiles are built at once
 (those sharing a checkout one after another), and each Dockerfile's regenerated and control builds run together;
 each result gives its seconds, and the run its total. Images are pulled and built only, never pushed.
 
