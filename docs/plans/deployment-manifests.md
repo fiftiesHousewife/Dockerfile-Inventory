@@ -193,6 +193,8 @@ Questions:
    each Artifactory repository's image path and tag and the config digest (not the manifest digest a `@sha256`
    reference names). Match on the image path and tag alone, whatever registry host the manifest names, or only when the
    host is the Artifactory being read?
+   Answered 10 Nov: on the image path and tag alone, whatever the host; manifests often name a mirror or an alias
+   of the same registry.
 2. A floating tag (`latest`, or none). Link it to the image that tag points at when lineage read it, or leave it
    unlinked since the cluster may pull another?
 3. The pod findings as actions. Into `actions.jsonl` and `fixes.jsonl` beside the images' (each naming the YAML file
