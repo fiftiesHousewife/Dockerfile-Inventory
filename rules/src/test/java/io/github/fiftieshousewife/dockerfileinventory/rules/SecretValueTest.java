@@ -76,20 +76,22 @@ class SecretValueTest {
         Subject subject = Subjects.of("FROM ubi9\nENV A_TOKEN=abc B_PASSWORD=def\nUSER 1001\n");
         List<Docker.Instruction> instructions = subject.file().getStages().getFirst().getInstructions();
 
-        assertThat(new SecretValue().findings(subject, 2, instructions.get(0)))
-                .extracting(Finding::message)
-                .containsExactly("ENV A_TOKEN has a secret-shaped value", "ENV B_PASSWORD has a secret-shaped value");
-        assertThat(new SecretValue().findings(subject, 3, instructions.get(1))).isEmpty();
+        assertAll(
+                () -> assertThat(new SecretValue().findings(subject, 2, instructions.get(0)))
+                        .extracting(Finding::message).containsExactly("ENV A_TOKEN has a secret-shaped value",
+                                "ENV B_PASSWORD has a secret-shaped value"),
+                () -> assertThat(new SecretValue().findings(subject, 3, instructions.get(1))).isEmpty());
     }
 
     @Test
     void checkKeepsTheLineAndTheHashOfASecretValue() {
         Subject subject = Subjects.of("FROM ubi9\nARG API_TOKEN=abc\n");
 
-        assertThat(new SecretValue().check(subject, 2, "ARG", "API_TOKEN", argValue(subject))).hasValueSatisfying(
-                f -> assertThat(f).isEqualTo(new Finding("S2", Severity.CRITICAL, "blob", 2,
-                        "ARG API_TOKEN has a secret-shaped value", SecretValue.sha256("abc"), List.of())));
-        assertThat(new SecretValue().check(subject, 2, "ARG", "GREETING", argValue(subject))).isEmpty();
+        assertAll(
+                () -> assertThat(new SecretValue().check(subject, 2, "ARG", "API_TOKEN", argValue(subject)))
+                        .hasValue(new Finding("S2", Severity.CRITICAL, "blob", 2,
+                                "ARG API_TOKEN has a secret-shaped value", SecretValue.sha256("abc"), List.of())),
+                () -> assertThat(new SecretValue().check(subject, 2, "ARG", "GREETING", argValue(subject))).isEmpty());
     }
 
     @ParameterizedTest

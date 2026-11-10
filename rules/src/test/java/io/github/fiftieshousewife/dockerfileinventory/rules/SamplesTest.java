@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +16,10 @@ class SamplesTest {
     void roundRobinTakesOneFromEachGroupInTurnUpToTheLimit() {
         List<List<String>> groups = List.of(List.of("a1", "a2", "a3"), List.of("b1"), List.of("c1", "c2"));
 
-        assertThat(Samples.roundRobin(groups, 10)).containsExactly("a1", "b1", "c1", "a2", "c2", "a3");
-        assertThat(Samples.roundRobin(groups, 4)).containsExactly("a1", "b1", "c1", "a2");
-        assertThat(Samples.roundRobin(List.of(), 4)).isEmpty();
+        assertAll(
+                () -> assertThat(Samples.roundRobin(groups, 10)).containsExactly("a1", "b1", "c1", "a2", "c2", "a3"),
+                () -> assertThat(Samples.roundRobin(groups, 4)).containsExactly("a1", "b1", "c1", "a2"),
+                () -> assertThat(Samples.roundRobin(List.of(), 4)).isEmpty());
     }
 
     @Test
@@ -25,11 +27,12 @@ class SamplesTest {
         Map<String, List<Location>> locations = Map.of("a", List.of(new Location("pay/api", "Dockerfile"),
                 new Location("ops/base", "Dockerfile"), new Location("pay/web", "Dockerfile")));
 
-        assertThat(Samples.byOrganisation(List.of(finding("a", 2)), locations)).satisfies(rows -> {
-            assertThat(rows.keySet()).containsExactly("ops", "pay");
-            assertThat(rows.get("pay")).containsExactly("S3,HIGH,pay/api,Dockerfile,a,2,m,\r\n",
-                    "S3,HIGH,pay/web,Dockerfile,a,2,m,\r\n");
-        });
+        Map<String, List<String>> rows = Samples.byOrganisation(List.of(finding("a", 2)), locations);
+
+        assertAll(
+                () -> assertThat(rows.keySet()).containsExactly("ops", "pay"),
+                () -> assertThat(rows.get("pay")).containsExactly("S3,HIGH,pay/api,Dockerfile,a,2,m,\r\n",
+                        "S3,HIGH,pay/web,Dockerfile,a,2,m,\r\n"));
     }
 
     @Test

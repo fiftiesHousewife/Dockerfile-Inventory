@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,10 +13,13 @@ class UnversionedPackagesTest {
     void i1ReportsInstalledPackagesWithoutAVersion() {
         Rule i1 = new UnversionedPackages();
 
-        assertThat(i1.check(Subjects.of("FROM ubi9\nRUN dnf install -y git-2.43.5 tar curl\n"))).singleElement()
-                .satisfies(f -> assertThat(f.message()).contains("tar, curl").doesNotContain("git"));
-        assertThat(i1.check(Subjects.of("FROM debian\nRUN apt-get install -y git=1:2.39 curl=7.88\n"))).isEmpty();
-        assertThat(i1.check(Subjects.of("FROM ubi9\nRUN dnf clean all\n"))).isEmpty();
+        assertAll(
+                () -> assertThat(i1.check(Subjects.of("FROM ubi9\nRUN dnf install -y git-2.43.5 tar curl\n")))
+                        .singleElement().extracting(Finding::message).asString().contains("tar, curl")
+                        .doesNotContain("git"),
+                () -> assertThat(i1.check(Subjects.of("FROM debian\nRUN apt-get install -y git=1:2.39 curl=7.88\n")))
+                        .isEmpty(),
+                () -> assertThat(i1.check(Subjects.of("FROM ubi9\nRUN dnf clean all\n"))).isEmpty());
     }
 
     @Test

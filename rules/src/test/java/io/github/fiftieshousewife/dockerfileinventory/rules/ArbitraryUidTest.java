@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -19,22 +20,22 @@ class ArbitraryUidTest {
     @Test
     void s4ReportsARootNamedOrUnresolvedEffectiveUserNamingTheGroupThatSetIt() {
         Map<String, String> texts = Map.of("app-df", "FROM base\nRUN chgrp -R 0 /app && chmod -R g=u /app\n");
+        List<Finding> root = s4.check(image("root", BASE), texts::get);
 
-        assertThat(s4.check(image("root", BASE), texts::get)).singleElement().satisfies(f -> {
-            assertThat(f.blobSha()).isEqualTo("app-df");
-            assertThat(f.contributing()).containsExactly("base-df");
-            assertThat(f.message()).contains("root");
-        });
-        assertThat(s4.check(image("appuser", APP), texts::get)).hasSize(1);
-        assertThat(s4.check(image("${UID}", APP), texts::get)).hasSize(1);
+        assertAll(
+                () -> assertThat(root).hasSize(1),
+                () -> assertThat(root.getFirst().blobSha()).isEqualTo("app-df"),
+                () -> assertThat(root.getFirst().contributing()).containsExactly("base-df"),
+                () -> assertThat(root.getFirst().message()).contains("root"),
+                () -> assertThat(s4.check(image("appuser", APP), texts::get)).hasSize(1),
+                () -> assertThat(s4.check(image("${UID}", APP), texts::get)).hasSize(1));
     }
 
     @Test
     void s4SaysRootWhenNoUserIsSetAndNamesNoGroupWhenNoImageSetIt() {
-        assertThat(s4.check(image(null, null), b -> null)).singleElement().satisfies(f -> {
-            assertThat(f.message()).isEqualTo("image app runs as root user root (none set)");
-            assertThat(f.contributing()).isEmpty();
-        });
+        assertThat(s4.check(image(null, null), b -> null)).singleElement()
+                .extracting(Finding::message, Finding::contributing)
+                .containsExactly("image app runs as root user root (none set)", List.of());
     }
 
     @Test
@@ -45,12 +46,13 @@ class ArbitraryUidTest {
                 "app-df", "FROM base\nCOPY --chown=1001:0 app.jar /opt/app/\n");
         Map<String, String> without = Map.of("base-df", "FROM ubi\nUSER 1001\n", "app-df", "FROM base\nRUN make\n");
 
-        assertThat(s4.check(image("1001", BASE), withChgrp::get)).isEmpty();
-        assertThat(s4.check(image("1001:0", BASE), withChown::get)).isEmpty();
-        assertThat(s4.check(image("1001", BASE), without::get)).singleElement().satisfies(f -> {
-            assertThat(f.message()).contains("group 0");
-            assertThat(f.contributing()).containsExactly("app-df");
-        });
+        assertAll(
+                () -> assertThat(s4.check(image("1001", BASE), withChgrp::get)).isEmpty(),
+                () -> assertThat(s4.check(image("1001:0", BASE), withChown::get)).isEmpty(),
+                () -> assertThat(s4.check(image("1001", BASE), without::get)).singleElement()
+                        .extracting(Finding::message).asString().contains("group 0"),
+                () -> assertThat(s4.check(image("1001", BASE), without::get)).singleElement()
+                        .extracting(Finding::contributing).isEqualTo(List.of("app-df")));
     }
 
     @ParameterizedTest

@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,7 +10,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,17 +44,17 @@ class RulesRunTest {
     void writesFindingsPerDockerfileAndSkipsRulesWhoseInputsAreMissing() throws IOException {
         new RulesRun(discovery, null, null, null, null, out).run();
 
-        assertThat(lines("findings.jsonl"))
-                .extracting(f -> f.path("rule").asString() + "@" + f.path("blobSha").asString())
-                .contains("R1@a", "S3@a", "R3@a", "S2@secret", "I2@bad")
-                .doesNotContain("R1@secret", "R3@secret");
         JsonNode rates = JSON.readTree(out.resolve("rates.json").toFile());
-        SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(rates.path("skipped")).extracting(JsonNode::asString)
-                    .containsExactly("R2", "R4", "S1", "S4");
-            softly.assertThat(rates.path("rules").path("S3").path("findings").asInt()).isEqualTo(1);
-            softly.assertThat(rates.path("rules").path("S3").path("locations").asInt()).isEqualTo(3);
-        });
+
+        assertAll(
+                () -> assertThat(lines("findings.jsonl"))
+                        .extracting(f -> f.path("rule").asString() + "@" + f.path("blobSha").asString())
+                        .contains("R1@a", "S3@a", "R3@a", "S2@secret", "I2@bad")
+                        .doesNotContain("R1@secret", "R3@secret"),
+                () -> assertThat(rates.path("skipped")).extracting(JsonNode::asString)
+                        .containsExactly("R2", "R4", "S1", "S4"),
+                () -> assertThat(rates.path("rules").path("S3").path("findings").asInt()).isEqualTo(1),
+                () -> assertThat(rates.path("rules").path("S3").path("locations").asInt()).isEqualTo(3));
     }
 
     @Test
@@ -70,9 +70,10 @@ class RulesRunTest {
         List<String> first = Files.readAllLines(out.resolve("samples/S3.csv"));
         new RulesRun(discovery, null, null, null, null, out).run();
 
-        assertThat(Files.readAllLines(out.resolve("samples/S3.csv"))).isEqualTo(first);
-        assertThat(first.subList(1, 3)).extracting(line -> line.split(",")[2].split("/")[0])
-                .containsExactlyInAnyOrder("payments", "platform");
+        assertAll(
+                () -> assertThat(Files.readAllLines(out.resolve("samples/S3.csv"))).isEqualTo(first),
+                () -> assertThat(first.subList(1, 3)).extracting(line -> line.split(",")[2].split("/")[0])
+                        .containsExactlyInAnyOrder("payments", "platform"));
     }
 
     @Test
@@ -98,10 +99,11 @@ class RulesRunTest {
 
         new RulesRun(discovery, lineage, null, null, null, out).run();
 
-        assertThat(lines("findings.jsonl")).filteredOn(f -> f.path("rule").asString().equals("S4"))
-                .singleElement().satisfies(f -> assertThat(f.path("blobSha").asString()).isEqualTo("a"));
-        assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("skipped"))
-                .extracting(JsonNode::asString).containsExactly("R2", "R4", "S1");
+        assertAll(
+                () -> assertThat(lines("findings.jsonl")).filteredOn(f -> f.path("rule").asString().equals("S4"))
+                        .singleElement().extracting(f -> f.path("blobSha").asString()).isEqualTo("a"),
+                () -> assertThat(JSON.readTree(out.resolve("rates.json").toFile()).path("skipped"))
+                        .extracting(JsonNode::asString).containsExactly("R2", "R4", "S1"));
     }
 
     @Test
@@ -128,9 +130,10 @@ class RulesRunTest {
 
     @Test
     void listIsReadOnlyWhenAPathIsGiven() {
-        assertThat(RulesRun.list(null)).isNull();
-        assertThat(RulesRun.list(Path.of("src/test/resources/fixtures/allow.csv")).lookup("ubi9/ubi", "9"))
-                .isPresent();
+        assertAll(
+                () -> assertThat(RulesRun.list(null)).isNull(),
+                () -> assertThat(RulesRun.list(Path.of("src/test/resources/fixtures/allow.csv"))
+                        .lookup("ubi9/ubi", "9")).isPresent());
     }
 
     @Test
@@ -165,9 +168,11 @@ class RulesRunTest {
         RulesRun run = new RulesRun(discovery, null, null, null, null, out);
         Finding finding = new Finding("H2", Severity.LOW, "a", 3, "m", null, List.of("b"));
 
-        assertThat(run.jsonLines(List.of(finding))).isEqualTo("{\"rule\":\"H2\",\"severity\":\"LOW\",\"blobSha\":\"a\","
-                + "\"line\":3,\"message\":\"m\",\"valueHash\":null,\"contributing\":[\"b\"]}\n");
-        assertThat(run.jsonLines(List.of())).isEmpty();
+        assertAll(
+                () -> assertThat(run.jsonLines(List.of(finding))).isEqualTo("{\"rule\":\"H2\",\"severity\":\"LOW\","
+                        + "\"blobSha\":\"a\",\"line\":3,\"message\":\"m\",\"valueHash\":null,"
+                        + "\"contributing\":[\"b\"]}\n"),
+                () -> assertThat(run.jsonLines(List.of())).isEmpty());
     }
 
     private List<JsonNode> lines(String file) throws IOException {

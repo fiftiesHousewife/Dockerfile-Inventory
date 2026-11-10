@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -26,11 +27,13 @@ class PassesTest {
 
     @Test
     void signatureGroupsCarryTheirMembersPackagesAndFamilyAndFailuresFormOneGroup() {
-        assertThat(Passes.signatureGroups(ESTATE)).containsExactly(
-                new Group("sig-1", List.of("a", "a-cosmetic", "b-same-function"), 6, Set.of("git"), "ubi-minimal"),
-                new Group("sig-2", List.of("c"), 4, Set.of("git"), "ubi-minimal"),
-                new Group("parse-failures", List.of("bad-1", "bad-2"), 3, Set.of(), "parse-failures"));
-        assertThat(Passes.family(new Base("${BASE}", null, null))).isEqualTo("unresolved");
+        assertAll(
+                () -> assertThat(Passes.signatureGroups(ESTATE)).containsExactly(
+                        new Group("sig-1", List.of("a", "a-cosmetic", "b-same-function"), 6, Set.of("git"),
+                                "ubi-minimal"),
+                        new Group("sig-2", List.of("c"), 4, Set.of("git"), "ubi-minimal"),
+                        new Group("parse-failures", List.of("bad-1", "bad-2"), 3, Set.of(), "parse-failures")),
+                () -> assertThat(Passes.family(new Base("${BASE}", null, null))).isEqualTo("unresolved"));
     }
 
     @Test
@@ -58,25 +61,29 @@ class PassesTest {
 
     @Test
     void failureGroupsAreOneGroupPerKindTogetherOrOnePerFileApart() {
-        assertThat(Passes.failureGroups(ESTATE, true))
-                .containsExactly(new Group("parse-failures", List.of("bad-1", "bad-2"), 3, Set.of(), "parse-failures"));
-        assertThat(Passes.failureGroups(ESTATE, false)).containsExactly(
-                new Group("bad-1", List.of("bad-1"), 1, Set.of(), "parse-failures"),
-                new Group("bad-2", List.of("bad-2"), 2, Set.of(), "parse-failures"));
+        assertAll(
+                () -> assertThat(Passes.failureGroups(ESTATE, true)).containsExactly(
+                        new Group("parse-failures", List.of("bad-1", "bad-2"), 3, Set.of(), "parse-failures")),
+                () -> assertThat(Passes.failureGroups(ESTATE, false)).containsExactly(
+                        new Group("bad-1", List.of("bad-1"), 1, Set.of(), "parse-failures"),
+                        new Group("bad-2", List.of("bad-2"), 2, Set.of(), "parse-failures")));
     }
 
     @Test
     void aFailureIsATemplateWhenItsMessageSaysSo() {
-        assertThat(Passes.kind(new Failure("t", Tallies.TEMPLATE + " (x)", List.of()))).isEqualTo("templates");
-        assertThat(Passes.kind(failure("b", 1))).isEqualTo("parse-failures");
+        assertAll(
+                () -> assertThat(Passes.kind(new Failure("t", Tallies.TEMPLATE + " (x)", List.of())))
+                        .isEqualTo("templates"),
+                () -> assertThat(Passes.kind(failure("b", 1))).isEqualTo("parse-failures"));
     }
 
     @Test
     void theFamilyIsTheLastPathSegmentOfTheBaseName() {
-        assertThat(Passes.family(new Base("registry.example.com/ubi9/ubi-minimal", "9", null)))
-                .isEqualTo("ubi-minimal");
-        assertThat(Passes.family(new Base("alpine", null, null))).isEqualTo("alpine");
-        assertThat(Passes.family(new Base(null, null, null))).isEmpty();
+        assertAll(
+                () -> assertThat(Passes.family(new Base("registry.example.com/ubi9/ubi-minimal", "9", null)))
+                        .isEqualTo("ubi-minimal"),
+                () -> assertThat(Passes.family(new Base("alpine", null, null))).isEqualTo("alpine"),
+                () -> assertThat(Passes.family(new Base(null, null, null))).isEmpty());
     }
 
     @Test

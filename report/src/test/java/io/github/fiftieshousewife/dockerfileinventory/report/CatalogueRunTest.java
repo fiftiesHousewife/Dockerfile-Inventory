@@ -120,7 +120,7 @@ class CatalogueRunTest {
     void eachParsedDockerfileIsAnEntryWithItsPlaces() {
         List<CatalogueEntry> parsed = CatalogueRun.parsed(FIXTURES, CatalogueEntries.places(FIXTURES));
 
-        assertThat(parsed).singleElement().satisfies(entry -> assertThat(entry.locations()).hasSize(2));
+        assertThat(parsed).singleElement().extracting(entry -> entry.locations().size()).isEqualTo(2);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -20,10 +21,12 @@ class BaseListTest {
 
     @Test
     void entryReadsTwoOrFourFieldsLeavingMissingOnesEmptyOrNull() {
-        assertThat(BaseList.entry(" ubi9/ubi , 9 ")).isEqualTo(new BaseList.Entry("ubi9/ubi", "9", null, null));
-        assertThat(BaseList.entry("alpine")).isEqualTo(new BaseList.Entry("alpine", "", null, null));
-        assertThat(BaseList.entry("ubi9/ubi,9.2,eol,2025-11-30"))
-                .isEqualTo(new BaseList.Entry("ubi9/ubi", "9.2", "eol", "2025-11-30"));
+        assertAll(
+                () -> assertThat(BaseList.entry(" ubi9/ubi , 9 "))
+                        .isEqualTo(new BaseList.Entry("ubi9/ubi", "9", null, null)),
+                () -> assertThat(BaseList.entry("alpine")).isEqualTo(new BaseList.Entry("alpine", "", null, null)),
+                () -> assertThat(BaseList.entry("ubi9/ubi,9.2,eol,2025-11-30"))
+                        .isEqualTo(new BaseList.Entry("ubi9/ubi", "9.2", "eol", "2025-11-30")));
     }
 
     @Test
@@ -31,10 +34,11 @@ class BaseListTest {
         BaseList list = new BaseList(List.of(new BaseList.Entry("ubi", "", null, null),
                 new BaseList.Entry("ubi", "9", null, null), new BaseList.Entry("ubi", "9.2", null, null)));
 
-        assertThat(list.lookup("ubi", "9.2.1")).hasValueSatisfying(e -> assertThat(e.tagPrefix()).isEqualTo("9.2"));
-        assertThat(list.lookup("ubi", "9.4")).hasValueSatisfying(e -> assertThat(e.tagPrefix()).isEqualTo("9"));
-        assertThat(list.lookup("ubi", null)).hasValueSatisfying(e -> assertThat(e.tagPrefix()).isEmpty());
-        assertThat(list.lookup("alpine", "3")).isEmpty();
+        assertAll(
+                () -> assertThat(list.lookup("ubi", "9.2.1")).map(BaseList.Entry::tagPrefix).hasValue("9.2"),
+                () -> assertThat(list.lookup("ubi", "9.4")).map(BaseList.Entry::tagPrefix).hasValue("9"),
+                () -> assertThat(list.lookup("ubi", null)).map(BaseList.Entry::tagPrefix).hasValue(""),
+                () -> assertThat(list.lookup("alpine", "3")).isEmpty());
     }
 
     @ParameterizedTest
