@@ -1,21 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.survey;
 
-import io.github.fiftieshousewife.dockerfileinventory.converter.ConverterMain;
-import io.github.fiftieshousewife.dockerfileinventory.discovery.Combine;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.Confirmation;
-import io.github.fiftieshousewife.dockerfileinventory.discovery.DiscoveryMain;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.RunStopped;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.SelectionNotFound;
-import io.github.fiftieshousewife.dockerfileinventory.facts.FactsMain;
-import io.github.fiftieshousewife.dockerfileinventory.lineage.LineageMain;
-import io.github.fiftieshousewife.dockerfileinventory.report.CatalogueMain;
-import io.github.fiftieshousewife.dockerfileinventory.report.ReportMain;
-import io.github.fiftieshousewife.dockerfileinventory.rules.RulesMain;
-import io.github.fiftieshousewife.dockerfileinventory.validator.ValidatorMain;
 import java.io.PrintStream;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -25,46 +14,12 @@ import org.slf4j.LoggerFactory;
  * Surveys organisations: {@code survey [--try] <organisation URL>...} runs every stage in order into
  * {@code out/<organisation>/} ({@code out/<organisation>-try/} for a try, which stops after ten repositories holding a
  * Dockerfile; several organisations are each discovered, merged, then surveyed as one estate in
- * {@code out/<a>+<b>/}), and says where the report is. The token comes from {@code GHE_TOKEN_FILE} or {@code GHE_TOKEN};
- * lineage runs when {@code ARTIFACTORY_URL} is set; every other stage's setting is passed on.
+ * {@code out/<a>+<b>/}), and says where the report is. The token comes from {@code GHE_TOKEN_FILE} or
+ * {@code GHE_TOKEN}; lineage runs when {@code ARTIFACTORY_URL} is set; every other stage's setting is passed on.
  */
 public final class SurveyMain {
 
     private static final Logger LOG = LoggerFactory.getLogger(SurveyMain.class);
-
-    static final String USAGE = "usage: survey [--try] <organisation URL>..., e.g. survey --try "
-            + "https://github.com/acme";
-
-    interface Runner {
-        void run(Map<String, String> env) throws Exception;
-    }
-
-    static final Map<String, Runner> RUNNERS = Map.of(
-            "discovery", DiscoveryMain::run,
-            "combine", SurveyMain::combine,
-            "facts", FactsMain::run,
-            "lineage", LineageMain::run,
-            "catalogue", CatalogueMain::run,
-            "rules", RulesMain::run,
-            "validator", ValidatorMain::run,
-            "converter", ConverterMain::run,
-            "report", ReportMain::run);
-
-    record Arguments(List<String> urls, boolean trial) {
-
-        Arguments {
-            urls = List.copyOf(urls);
-        }
-    }
-
-    static final class StageFailed extends Exception {
-
-        private static final long serialVersionUID = 1L;
-
-        StageFailed(String stage, Exception cause) {
-            super(stage + " failed: " + String.valueOf(cause.getMessage()).lines().findFirst().orElse(""), cause);
-        }
-    }
 
     private SurveyMain() {
     }
@@ -75,7 +30,7 @@ public final class SurveyMain {
      * @param args {@code [--try] <organisation URL>}
      */
     public static void main(String... args) {
-        int exit = run(args, System.getenv(), RUNNERS, System.err);
+        int exit = run(args, System.getenv(), Stages.RUNNERS, System.err);
         if (exit != 0) {
             System.exit(exit);
         }
@@ -102,80 +57,32 @@ public final class SurveyMain {
      *     3 when stopped on purpose
      */
     public static int run(List<String> args, Map<String, String> env, Confirmation confirmation) {
-        return run(args.toArray(String[]::new), env, runners(confirmation), System.err);
+        return run(args.toArray(String[]::new), env, Stages.runners(confirmation), System.err);
     }
 
-    static Map<String, Runner> runners(Confirmation confirmation) {
-        Map<String, Runner> runners = new HashMap<>(RUNNERS);
-        runners.put("discovery", env -> DiscoveryMain.run(env, confirmation));
-        return runners;
-    }
-
-    static int run(String[] args, Map<String, String> env, Map<String, Runner> runners, PrintStream err) {
+    static int run(String[] args, Map<String, String> env, Map<String, Stages.Runner> runners, PrintStream err) {
         Arguments arguments;
         try {
-            arguments = arguments(args);
+            arguments = Arguments.of(args);
         } catch (IllegalArgumentException e) {
             err.println(e.getMessage());
             return 2;
         }
         try {
-            Path report = survey(arguments, env, runners);
+            Path report = Stages.survey(arguments, env, runners);
             LOG.info("survey: the report is {}", report.toAbsolutePath());
             return 0;
         } catch (StageFailed e) {
-            err.println("survey: " + (e.getCause() instanceof RunStopped stop ? stop.getMessage() : explained(e)));
-            return switch (e.getCause()) {
-                case SelectionNotFound notFound -> 2;
-                case RunStopped stopped -> 3;
-                default -> 1;
-            };
+            err.println("survey: " + (e.getCause() instanceof RunStopped stop ? stop.getMessage() : e.explained()));
+            return exitCode(e);
         }
     }
 
-    static Path survey(Arguments arguments, Map<String, String> env, Map<String, Runner> runners)
-            throws StageFailed {
-        List<Survey.Step> steps = Survey.steps(arguments.urls(), arguments.trial(), env);
-        for (Survey.Step step : steps) {
-            runStage(step, runners);
-        }
-        return Path.of(steps.getLast().env().get("OUT_DIR"), "index.html");
-    }
-
-    static void runStage(Survey.Step step, Map<String, Runner> runners) throws StageFailed {
-        LOG.info("survey: {} into {}", step.stage(), step.env().get("OUT_DIR"));
-        try {
-            runners.get(step.stage()).run(step.env());
-        } catch (Exception e) {
-            throw new StageFailed(step.stage(), e);
-        }
-    }
-
-    static String explained(StageFailed failure) {
-        return failure.getMessage() + (failure.getMessage().contains(" returned 401")
-                ? "; GitHub refused the token: give one that can read the organisation as GHE_TOKEN or GHE_TOKEN_FILE"
-                + " (with the GitHub CLI, `env -u GITHUB_TOKEN gh auth token`, so a GITHUB_TOKEN set elsewhere is not"
-                + " taken instead)" : "");
-    }
-
-    static void combine(Map<String, String> env) {
-        LOG.info("{}", combined(Combine.of(Arrays.stream(env.get("COMBINE_SOURCES").split(",")).map(Path::of)
-                .toList(), Path.of(env.get("OUT_DIR")))));
-    }
-
-    static String combined(Combine.Summary merged) {
-        return "survey: combined " + merged.locations() + " locations, " + merged.repositories() + " repositories, "
-                + merged.blobs() + " Dockerfiles" + (merged.repeated().isEmpty() ? ""
-                : "; in more than one organisation, so counted twice: " + String.join(", ", merged.repeated()));
-    }
-
-    static Arguments arguments(String... args) {
-        List<String> words = List.of(args);
-        boolean trial = words.contains("--try");
-        List<String> rest = words.stream().filter(word -> !word.equals("--try")).toList();
-        if (rest.isEmpty() || rest.stream().anyMatch(word -> word.startsWith("-"))) {
-            throw new IllegalArgumentException(USAGE);
-        }
-        return new Arguments(rest, trial);
+    static int exitCode(StageFailed failure) {
+        return switch (failure.getCause()) {
+            case SelectionNotFound notFound -> 2;
+            case RunStopped stopped -> 3;
+            default -> 1;
+        };
     }
 }

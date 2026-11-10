@@ -41,14 +41,13 @@ final class Survey {
                 + selected(env) + (trial ? "-try" : ""));
     }
 
-    // A selection's run is kept apart from the whole organisation's: named for the repositories and strings it keeps.
     static String selected(Map<String, String> env) {
         List<String> parts = Stream.concat(listed(env.get("REPOSITORIES")).map(name -> name.substring(
                 name.indexOf('/') + 1)), listed(env.get("REPOSITORY_NAME_CONTAINS"))).toList();
         return parts.isEmpty() ? "" : "-" + String.join("+", parts);
     }
 
-    private static Stream<String> listed(String value) {
+    static Stream<String> listed(String value) {
         return value == null ? Stream.empty() : Stream.of(value.split(",")).map(String::strip)
                 .filter(part -> !part.isEmpty());
     }
@@ -75,7 +74,6 @@ final class Survey {
                 : Map.of("GHE_API_URL", url);
     }
 
-    // Each stage is told every earlier stage's folder, and reads those it knows.
     static Step step(Map<String, String> env, String root, Map<String, String> dirs, String stage,
                      Map<String, String> own) {
         Step step = new Step(stage, merged(env, dirs, with(own, "OUT_DIR", root + "/" + stage)));
