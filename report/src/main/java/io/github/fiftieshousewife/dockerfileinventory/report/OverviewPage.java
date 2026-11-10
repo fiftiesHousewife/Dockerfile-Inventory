@@ -22,10 +22,12 @@ final class OverviewPage {
                 + tile("Images", count(f.images()))
                 + tile("Locations", count(f.locations())) + tile("Organisations", count(f.organisations()))
                 + tile("Did not parse", count(f.unparsed())) + "</div>"
-                + "<h2>Chains and layers</h2><p>How many estate Dockerfiles each stands on, and how many layers it"
-                + " carries; " + count(f.overLimit()) + " over the layer limit. <a href=\"" + up
-                + "hierarchy.html\">The hierarchy</a></p>"
-                + table("Depth", f.depths()) + table("Layers", f.layerBands())
+                + "<h2>Chains and layers</h2><p>How many of the estate's own images each Dockerfile is built on top"
+                + " of: 0 is built straight on an outside base (ubi9, alpine), 1 on an image another estate Dockerfile"
+                + " makes, 2 on one built on another, and so on; a fix to a base is rebuilt down every level beneath"
+                + " it. Then how many layers each carries; " + count(f.overLimit()) + " over the layer limit. <a href=\""
+                + up + "hierarchy.html\">The hierarchy</a></p>"
+                + table("Estate images beneath it", f.depths()) + table("Layers", f.layerBands())
                 + "<h2>Unmaintained</h2><p>" + count(f.blockedImages())
                 + " images stand on an unmaintained one. <a href=\"" + up + "blocked.html\">What blocks them</a></p>"
                 + table("Why", f.unmaintained())

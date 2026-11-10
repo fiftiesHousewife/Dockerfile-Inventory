@@ -18,7 +18,7 @@ final class Page {
                         + "hierarchy.html\">Hierarchy</a><a href=\"" + up + "blocked.html\">Blocked</a><a href=\""
                         + up + "archetypes.html\">Archetypes</a></nav>",
                 "<main><h1>" + escape(title) + "</h1>",
-                body,
+                Sections.foldable(body),
                 "</main></body></html>", "");
     }
 }

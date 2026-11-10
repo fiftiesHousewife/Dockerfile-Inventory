@@ -22,7 +22,9 @@ final class Style {
                 outline-offset: 2px; }
             h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
             h2 { font-size: 18px; margin: 36px 0 8px; } h3 { font-size: 15px; margin: 20px 0 6px; }
-            p { margin: 0 0 10px; max-width: 78ch; } p.lead { font-size: 16px; }
+            p { margin: 0 0 10px; } p.lead { font-size: 16px; }
+            details.section > summary { cursor: pointer; list-style-position: outside; margin-left: 1em; }
+            details.section > summary h2 { display: inline; }
             .note, p.legend { color: var(--muted); font-size: 13px; }
             ul { margin: 0 0 10px; padding-left: 20px; } li { margin: 2px 0; }
             table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
