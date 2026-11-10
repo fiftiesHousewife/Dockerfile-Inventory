@@ -44,6 +44,17 @@ class PagesTest {
     }
 
     @Test
+    void withWorkloadsTheSummaryCountsThemAndTheirPageListsThem() {
+        Map<String, String> pages = Pages.all(new CatalogueView(List.of()),
+                ArchetypeRows.of(ArchetypeRowsTest.RANKING, ArchetypeRowsTest.ESTATE),
+                Optional.of(ActionPlanPageTest.WORKLOADS));
+
+        assertAll(
+                () -> assertThat(pages.get("index.html")).contains("Of 21 workloads, 15 would be refused admission"),
+                () -> assertThat(pages.get("openshift.html")).contains("Workloads, worst first"));
+    }
+
+    @Test
     void anArchetypeLinksToTheDockerfilePageOfOneOfItsFiles() {
         assertThat(pages().get("archetypes.html")).contains("href=\"dockerfiles/a1.html\"");
     }

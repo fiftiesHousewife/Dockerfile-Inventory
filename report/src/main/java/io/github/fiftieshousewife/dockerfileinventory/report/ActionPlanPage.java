@@ -26,19 +26,38 @@ final class ActionPlanPage {
                 + "something, and " + count(verdicts.getOrDefault("runs", 0)) + " run as they are; "
                 + count(plan.notRunnable()) + " not judged (metadata-only bundles). Their " + count(plan.actions())
                 + " actions come to " + count(plan.fixes()) + " fixes: the same change to an archetype's copies is one "
-                + "fix to its template.</p>";
+                + "fix to its template.</p>" + workloads(plan);
+    }
+
+    static final Map<String, String> WORKLOAD_VERDICTS = Map.of("refused", " would be refused admission",
+            "breaks", " would break", "drift", " drift", "information", " need only the deployment to supply "
+                    + "something", "runs", " run as they are");
+
+    static String workloads(ActionPlanView.Plan plan) {
+        if (plan.workloads() == null) {
+            return "";
+        }
+        List<String> parts = plan.workloadVerdicts().entrySet().stream()
+                .map(e -> count(e.getValue()) + WORKLOAD_VERDICTS.get(e.getKey())).toList();
+        return "<p>Of " + count(plan.workloads()) + " workloads, " + inWords(parts) + ".</p>";
+    }
+
+    static String inWords(List<String> parts) {
+        return parts.size() == 1 ? parts.getFirst()
+                : String.join(", ", parts.subList(0, parts.size() - 1)) + " and " + parts.getLast();
     }
 
     static String body(ActionPlanView view, Set<String> catalogued) {
         return lead(view) + "<p class=\"note\">" + escape(view.plan().describes()) + "</p>"
-                + fixes(view, catalogued) + repositories(view.plan().repositories());
+                + fixes(view, catalogued) + WorkloadTable.render(view.workloads(), catalogued)
+                + repositories(view.plan().repositories());
     }
 
     static String fixes(ActionPlanView view, Set<String> catalogued) {
         int hidden = view.fixes().size() - SHOWN;
         Map<String, ActionPlanView.Where> places = firstPlaces(view.actions());
         return "<h2>Fixes, most urgent first</h2><div class=\"scroll\"><table><tr><th>Severity</th><th>Check</th>"
-                + "<th>What to change</th><th>Why</th><th>Dockerfile to change</th><th class=\"num\">Copies</th>"
+                + "<th>What to change</th><th>Why</th><th>File to change</th><th class=\"num\">Copies</th>"
                 + "<th class=\"num\">Built on them</th><th class=\"num\">Locations</th></tr>"
                 + view.fixes().stream().limit(SHOWN).map(f -> row(f, places.get(f.representative()), catalogued))
                 .collect(Collectors.joining())

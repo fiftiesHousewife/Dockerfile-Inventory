@@ -233,3 +233,35 @@ image-inspector's `:latest`), 4 run; 41 pod actions; 12 containers unlinked for 
 (Kustomize patches and templates). Linking is tested on a lineage fixture made by hand; a survey with both lineage and
 workloads will measure it.
 
+## Slice 4: the report (planned and built 10 Nov)
+
+Why: the plan holds the workloads' verdicts and actions, but the OpenShift page shows neither, and its lead counts
+images only (no `refused`).
+
+Design:
+
+- `ActionPlanView` reads `workload-verdicts.jsonl` when the validator wrote one, and the plan's `workloads` and
+  `workloadVerdicts`.
+- The lead adds a sentence when there are workloads: how many would be refused admission, break, drift and run.
+- The OpenShift page gains a "Workloads, worst first" table (`WorkloadTable`): the verdict; kind, name and namespace;
+  the YAML's first location; each container with its image, the Dockerfiles it runs (linked to their pages when
+  catalogued, flagged when the tag floats) or why it is unlinked; the findings. At most `ActionPlanPage.SHOWN` rows.
+- The fixes table's column becomes "File to change": a pod fix names its YAML.
+- Without workloads, every page is as before.
+
+Tests, in order: `ActionPlanView` reading a validator folder with workloads (and one without); the lead's workload
+sentence; `WorkloadTable`'s rows (a linked container, an unlinked one, a floating one, the order); the page with and
+without workloads; the report run on the fixture writing the section.
+
+Questions: none. The slices above already put workloads on the OpenShift page; a Dockerfile's page listing the
+workloads that run it is left for later.
+
+## Built, slice 4 (10 Nov)
+
+`ActionPlanView` reads `workload-verdicts.jsonl` (`PlannedWorkload`, `PlannedContainer`, `PlannedFinding`) and the
+plan's workload counts; `ActionPlanPage.workloads` writes the lead's sentence; `WorkloadTable` the table, worst first
+then by name. Fixture: the validator's output on the owner's survey, trimmed (`report/src/test/resources/fixtures/
+validator-workloads`). On that survey the summary reads "Of 21 workloads, 15 would be refused admission, 2 would break
+and 4 run as they are", and the OpenShift page lists the 21. The fixes table's column is "File to change"; otherwise
+the pages without workloads are as before.
+

@@ -73,7 +73,10 @@ and one line when its gate is met.
   run. Slice 3b done 10 Nov: containers linked to Dockerfiles through lineage (path and tag, whatever the host), the
   manifest answering P9, D7 and P11 for floating images and bases (breaks), the pod findings as actions; on the
   combined estate 1,172 bases move from P8 to P11 and 238 images from drift to breaks; on the owner's survey 2
-  workloads break on a floating image. Next: the report showing workloads; linking measured on a survey with lineage.
+  workloads break on a floating image. Slice 4 done 10 Nov: the
+  OpenShift page and the summary show the workloads (lead sentence, a table worst first with containers and links).
+  Next: linking measured on a survey with both lineage and workloads; a Dockerfile's page listing the workloads that
+  run it.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

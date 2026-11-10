@@ -1,0 +1,23 @@
+{
+  "profile": "openshift-4-restricted-v2",
+  "describes": "OpenShift 4.11 and later, every namespace as shipped with no grants: the restricted-v2 SCC runs an arbitrary UID in group 0, drops every capability, forbids privilege escalation and requires the RuntimeDefault seccomp profile.",
+  "images": 75,
+  "notRunnable": 0,
+  "verdicts": {
+    "breaks": 65,
+    "drift": 7,
+    "runs": 3
+  },
+  "actions": 430,
+  "fixes": 356,
+  "repositories": {
+    "openshift/basic-authentication-provider-example": 10,
+    "openshift/docker-registry-extensions": 8
+  },
+  "workloads": 21,
+  "workloadVerdicts": {
+    "refused": 15,
+    "breaks": 2,
+    "runs": 4
+  }
+}
