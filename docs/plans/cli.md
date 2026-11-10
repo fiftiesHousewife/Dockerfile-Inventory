@@ -156,3 +156,16 @@ and exit status are tested on the installed distribution. Run by hand on the own
 reads it as `./gradlew :facts:run` did. Not yet: the stages still print with `System.out` (slice 2); the zip and the
 plain jar's publication belong to the publication plan.
 
+## Built, slice 2 (10 Nov)
+
+Every stage logs through SLF4J (`slf4j-api`); the libraries do not log. The CLI binds Log4j 2 (`log4j-slf4j2-impl`,
+`log4j-core`, `log4j-layout-template-json`): `log4j2.xml` writes to stderr, a timestamped line with the level or, with
+`LOG_FORMAT=json`, Elastic's common schema one object a line; OpenRewrite and JGit at warn and above. `Logging` reads
+`LOG_LEVEL`, `LOG_FORMAT`, `LOG4J_CONFIG`, `--quiet` and `--verbose` (anywhere on the command line) and sets them as
+system properties before anything logs; a bad level or format exits 2. At debug, discovery's and lineage's senders log
+each call, failure and wait (`HttpLog`: method, host and path; never the query or a header). The stages lost their
+own launchers: `docker-inventory <stage>` is the one way to run one. The credential each organisation is read with is
+logged in slice 5, when there is a choice.
+
+Not test-first, owned: `Logging`'s tests were written beside it rather than run red first.
+

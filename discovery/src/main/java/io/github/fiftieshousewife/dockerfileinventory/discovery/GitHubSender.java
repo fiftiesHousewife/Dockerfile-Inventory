@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpLog;
 import io.github.fiftieshousewife.dockerfileinventory.http.RatePacing;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
@@ -12,8 +13,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class GitHubSender {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GitHubSender.class);
 
     private final HttpClient http;
     private final TokenSource token;
@@ -49,9 +54,14 @@ final class GitHubSender {
     }
 
     Optional<HttpResponse<String>> exchange(HttpRequest request, int attempt) {
+        long start = System.nanoTime();
         try {
-            return Optional.of(http.send(request, HttpResponse.BodyHandlers.ofString()));
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            LOG.atDebug().setMessage(() -> HttpLog.call(request, response.statusCode(),
+                    Duration.ofNanos(System.nanoTime() - start))).log();
+            return Optional.of(response);
         } catch (IOException e) {
+            LOG.atDebug().setMessage(() -> HttpLog.failed(request, e)).log();
             pause(retries.afterError(e, attempt)
                     .orElseThrow(() -> new GitHubException(request.method() + " " + request.uri() + " failed", e)),
                     request);
@@ -81,6 +91,7 @@ final class GitHubSender {
     }
 
     void pause(Duration wait, HttpRequest request) {
+        LOG.atDebug().setMessage(() -> HttpLog.waiting(request, wait)).log();
         try {
             sleeper.sleep(wait);
         } catch (InterruptedException e) {

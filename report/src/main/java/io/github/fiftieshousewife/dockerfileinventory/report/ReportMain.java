@@ -2,6 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.nio.file.Path;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The report job's entry point. It takes its settings from the environment, as the OpenShift job sets them:
@@ -9,6 +11,8 @@ import java.util.Map;
  * {@code VALIDATOR_DIR}, {@code STALE_AFTER_MONTHS}, {@code LAYER_LIMIT} and {@code FOOTPRINTS}.
  */
 public final class ReportMain {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ReportMain.class);
 
     private ReportMain() {
     }
@@ -31,7 +35,7 @@ public final class ReportMain {
         new ReportRun(Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
                 lineage == null ? null : Path.of(lineage), converter == null ? null : Path.of(converter),
                 validator == null ? null : Path.of(validator), catalogueSettings(env), out).run();
-        System.out.println("Report written to " + out.resolve("index.html"));
+        LOG.info("report: report written to {}", out.resolve("index.html"));
     }
 
     static CatalogueSettings catalogueSettings(Map<String, String> env) {

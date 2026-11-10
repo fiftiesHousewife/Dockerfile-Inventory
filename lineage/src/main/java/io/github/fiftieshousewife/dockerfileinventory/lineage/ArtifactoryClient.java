@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.HttpLog;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
@@ -12,8 +13,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class ArtifactoryClient {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ArtifactoryClient.class);
 
     private static final int ABBREVIATED_LENGTH = 300;
 
@@ -89,9 +94,14 @@ final class ArtifactoryClient {
     }
 
     Optional<HttpResponse<String>> exchange(HttpRequest request, int attempt) {
+        long start = System.nanoTime();
         try {
-            return Optional.of(http.send(request, HttpResponse.BodyHandlers.ofString()));
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            LOG.atDebug().setMessage(() -> HttpLog.call(request, response.statusCode(),
+                    Duration.ofNanos(System.nanoTime() - start))).log();
+            return Optional.of(response);
         } catch (IOException e) {
+            LOG.atDebug().setMessage(() -> HttpLog.failed(request, e)).log();
             pause(retries.afterError(e, attempt)
                     .orElseThrow(() -> new ArtifactoryException("GET " + request.uri() + " failed", e)), request);
             return Optional.empty();
@@ -102,6 +112,7 @@ final class ArtifactoryClient {
     }
 
     void pause(Duration wait, HttpRequest request) {
+        LOG.atDebug().setMessage(() -> HttpLog.waiting(request, wait)).log();
         try {
             sleeper.sleep(wait);
         } catch (InterruptedException e) {

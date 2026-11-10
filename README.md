@@ -56,6 +56,11 @@ It exits 0 when done, 1 when a stage fails (its last line says which and why), a
 anything runs (an unknown command or argument, a required setting left out); what the validator finds never changes
 the exit status.
 
+Logs go to stderr, one timestamped line an event: `LOG_LEVEL` (`error`, `warn`, `info` by default, `debug`) or
+`--quiet` (errors only) and `--verbose` (debug: each call to GitHub or Artifactory, its status and time, and each wait;
+never a token, a header or a query) set how much; `LOG_FORMAT=json` writes one JSON object a line (Elastic's common
+schema) for a log collector; `LOG4J_CONFIG` names a Log4j 2 configuration of your own.
+
 A try writes to `out/acme-try/`, the full run to `out/acme/`, several organisations to `out/acme+beta/` (`OUT_DIR`
 overrides), one folder per stage; the last
 line says where the report's `index.html` is. A try proves the token, the network and the proxy in a few minutes
@@ -119,7 +124,7 @@ export ORGANIZATIONS=payments,platform             # optional: only these (defau
 export RELEASE_INDEX=/data/releases.csv            # optional: owner/repo,commitSha per line
 export CONCURRENCY=8                               # optional: parallel repository scans
 export TRY_REPOSITORIES=10                         # optional: stop once this many repositories held a Dockerfile
-./gradlew :discovery:run
+docker-inventory discovery
 ```
 
 Each repository is scanned at the commit the release index names. A repository with no entry is scanned at
@@ -155,7 +160,7 @@ says which).
 ```bash
 export DISCOVERY_DIR=/data/inventory     # discovery's OUT_DIR
 export OUT_DIR=/data/facts
-./gradlew :facts:run
+docker-inventory facts
 ```
 
 Each distinct Dockerfile is parsed once; a rerun parses only new ones.
@@ -187,7 +192,7 @@ export OUT_DIR=/data/lineage                  # keep it between runs: a rerun re
 export CONCURRENCY=16                         # optional: images read at once
 export LINK_THRESHOLD=0.8                     # optional: the score a weak link needs to credit an image (0 to 1)
 export LINK_MARGIN=0.05                       # optional: how far it must beat the runner-up (0 to 1)
-./gradlew :lineage:run
+docker-inventory lineage
 ```
 
 Every tag of every image in every local Docker repository is read once (`linux/amd64` only); each image config is
@@ -229,8 +234,8 @@ To try lineage on images someone else built, OKD's published images can be copie
 ```bash
 ./gradlew selectOkd                         # one OKD release on quay.io -> out/okd/mirror.txt, releases.csv
 GHE_API_URL=https://github.com/openshift GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token) \
-    RELEASE_INDEX=out/okd/releases.csv OUT_DIR=out/okd/discovery ./gradlew :discovery:run
-DISCOVERY_DIR=out/okd/discovery OUT_DIR=out/okd/facts ./gradlew :facts:run
+    RELEASE_INDEX=out/okd/releases.csv OUT_DIR=out/okd/discovery docker-inventory discovery
+DISCOVERY_DIR=out/okd/discovery OUT_DIR=out/okd/facts docker-inventory facts
 MIRROR=out/okd/mirror.txt DISCOVERY_DIR=out/okd/discovery FACTS_DIR=out/okd/facts OUT=out/okd \
     ./gradlew lineageDemo
 ```
@@ -252,10 +257,10 @@ export STALE_AFTER_MONTHS=12                  # optional: an image unpublished t
 export LAYER_LIMIT=40                         # optional: an image with more layers is flagged
 export FOOTPRINTS=/data/footprints.csv        # optional: footprint rules tried before the built-in ones
 export OUT_DIR=/data/report
-./gradlew :report:run
+docker-inventory report
 ```
 
-With the validator, run the catalogue first: the report distribution's `bin/catalogue` (`./gradlew :report:installDist`)
+With the validator, run the catalogue first: `docker-inventory catalogue`
 takes the same settings, without `VALIDATOR_DIR`, and writes only `catalogue/dockerfiles.jsonl`, `archetypes.jsonl`
 and `passes.json`, which the validator reads; the report then writes the same files again with its pages.
 
@@ -331,7 +336,7 @@ export ALLOW_LIST=/data/approved-bases.csv    # optional: imagePath,tagPrefix (r
 export EOL_LIST=/data/eol.csv                 # optional: imagePath,tagPrefix,status,eolDate (rule R2)
 export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for R4 (over the estate)
 export OUT_DIR=/data/rules
-./gradlew :rules:run
+docker-inventory rules
 ```
 
 Detect-only: nothing is changed. Each distinct Dockerfile is checked once; a rule whose input is missing is
@@ -382,7 +387,7 @@ export LINEAGE_DIR=/data/lineage              # optional: the users images run a
 export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for fixes and their reach
 export RULES_DIR=/data/rules                  # optional: the rules stage's OUT_DIR, whose findings become actions
 export OUT_DIR=/data/validator
-./gradlew :validator:run
+docker-inventory validator
 ```
 
 The validator reads each Dockerfile's facts as the platform in `PROFILE` would run its image, and says what will
@@ -456,7 +461,7 @@ export OPT_IN=/data/opt-in.txt                # optional: owner/repo per line; o
 export ALLOW_LIST=/data/approved-bases.csv    # optional: approved bases, for the TODO list
 export OUT_DIR=/data/converter
 export JAVA_ROUND_TRIP=true                   # default; false skips compiling a class per Dockerfile
-./gradlew :converter:run
+docker-inventory converter
 ```
 
 Every distinct Dockerfile is converted to the builder model faithfully, so the generated class reproduces the

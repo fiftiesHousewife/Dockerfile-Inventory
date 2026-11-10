@@ -2,6 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import java.nio.file.Path;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Runs the rules from the environment: {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code LINEAGE_DIR}
@@ -9,6 +11,8 @@ import java.util.Map;
  * whole estate, from the catalogue stage's output). Detect-only: nothing is changed.
  */
 public final class RulesMain {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RulesMain.class);
 
     private RulesMain() {
     }
@@ -27,7 +31,7 @@ public final class RulesMain {
         new RulesRun(Path.of(required("DISCOVERY_DIR", env.get("DISCOVERY_DIR"))), optional(env.get("LINEAGE_DIR")),
                 optional(env.get("ALLOW_LIST")), optional(env.get("EOL_LIST")),
                 optional(env.get("CATALOGUE_DIR")), out).run();
-        System.out.println("Findings written to " + out.resolve("findings.jsonl"));
+        LOG.info("rules: findings written to {}", out.resolve("findings.jsonl"));
     }
 
     static Path optional(String value) {

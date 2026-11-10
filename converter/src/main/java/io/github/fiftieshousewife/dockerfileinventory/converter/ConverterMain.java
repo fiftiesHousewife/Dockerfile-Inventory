@@ -2,6 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import java.nio.file.Path;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The converter's entry point. Settings come from the environment:
@@ -9,6 +11,8 @@ import java.util.Map;
  * and {@code ALLOW_LIST} (approved bases, for the generated TODOs).
  */
 public final class ConverterMain {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConverterMain.class);
 
     private ConverterMain() {
     }
@@ -28,7 +32,7 @@ public final class ConverterMain {
         new ConverterRun(Path.of(required("DISCOVERY_DIR", env.get("DISCOVERY_DIR"))),
                 optional(env.get("OPT_IN")), optional(env.get("ALLOW_LIST")), out,
                 javaRoundTrip(env.get("JAVA_ROUND_TRIP"))).run();
-        System.out.println("Conversions written to " + out);
+        LOG.info("converter: conversions written to {}", out);
     }
 
     static boolean javaRoundTrip(String value) {

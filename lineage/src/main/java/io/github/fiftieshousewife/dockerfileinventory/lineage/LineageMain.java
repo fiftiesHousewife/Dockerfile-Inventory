@@ -8,6 +8,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Runs lineage from the environment, so the job's pod needs only its variables: {@code OUT_DIR}, {@code FACTS_DIR},
@@ -17,6 +19,8 @@ import java.util.Map;
  * so a change to linking can be tried without Artifactory.
  */
 public final class LineageMain {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LineageMain.class);
 
     private static final String DEFAULT_CONCURRENCY = "16";
 
@@ -39,14 +43,14 @@ public final class LineageMain {
         if (url != null && !url.isBlank()) {
             HttpSettings settings = HttpSettings.from(env);
             TokenSource token = TokenSource.from(env, "ARTIFACTORY_TOKEN");
-            System.out.println("lineage: " + url + ", token from " + token + ", " + settings);
+            LOG.info("lineage: {}, token from {}, {}", url, token, settings);
             Artifactory artifactory = new ArtifactoryHttp(URI.create(url), settings, token);
             int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", DEFAULT_CONCURRENCY));
             new Inventory(artifactory, new LineageFiles(out), concurrency).run();
         }
         new Analysis(out, Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
                 linkRule(env)).run();
-        System.out.println(read(out.resolve("rates.json")));
+        LOG.info("lineage: {}", read(out.resolve("rates.json")));
     }
 
     private static String read(Path file) {

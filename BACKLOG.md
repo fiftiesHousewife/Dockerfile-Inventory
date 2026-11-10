@@ -93,6 +93,8 @@ and one line when its gate is met.
   with a confirm step and a ceiling; GitHub Apps beside tokens, per organisation.
   Slice 1 done 10 Nov: `docker-inventory` with every stage and the survey (the converter added), help, version,
   exit statuses, near-miss settings; everything on Java 21.
+  Slice 2 done 10 Nov: logs through SLF4J, Log4j 2 in the distribution (levels, `--quiet`, `--verbose`, JSON),
+  each HTTP call at debug; the stages' own launchers removed.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

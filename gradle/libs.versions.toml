@@ -10,6 +10,7 @@ jspecify = "1.0.1"
 spotbugs-plugin = "6.5.13"
 spotbugs = "4.10.5"
 slf4j = "2.0.20"
+log4j = "2.25.2"
 versions-plugin = "0.67.0"
 # Read by settings.gradle.kts, whose plugins block cannot use this catalogue.
 foojay-resolver = "1.0.0"
@@ -54,6 +55,10 @@ foojay-resolver = { module = "org.gradle.toolchains:foojay-resolver", version.re
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
+# The CLI's logging: every module logs through slf4j-api; the distribution binds Log4j 2.
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+log4j-layout-template-json = { module = "org.apache.logging.log4j:log4j-layout-template-json", version.ref = "log4j" }
 
 [plugins]
 spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs-plugin" }

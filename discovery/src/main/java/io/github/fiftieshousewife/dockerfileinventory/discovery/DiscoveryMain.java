@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Runs discovery as a pod job, configured only from the environment so the token never touches a file:
@@ -15,6 +17,8 @@ import java.util.Map;
  * and {@code TRY_REPOSITORIES} (stop once that many repositories held a Dockerfile).
  */
 public final class DiscoveryMain {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DiscoveryMain.class);
 
     private DiscoveryMain() {
     }
@@ -35,13 +39,13 @@ public final class DiscoveryMain {
         GitHubApi api = GitHubApi.from(required(env, "GHE_API_URL"));
         HttpSettings settings = HttpSettings.from(env);
         TokenSource token = TokenSource.from(env, "GHE_TOKEN");
-        System.out.println("discovery: " + api.base() + ", token from " + token + ", " + settings);
+        LOG.info("discovery: {}, token from {}, {}", api.base(), token, settings);
         GitHub gitHub = new GitHubHttp(api, settings, token);
         int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", "8"));
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
         var discovery = new Discovery(gitHub, releases, output, concurrency,
                 organizations(env.getOrDefault("ORGANIZATIONS", ""), api), tryRepositories(env));
-        System.out.println(discovery.run());
+        LOG.info("discovery: {}", discovery.run());
     }
 
     static int tryRepositories(Map<String, String> env) {

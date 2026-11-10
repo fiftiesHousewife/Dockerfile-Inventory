@@ -25,7 +25,18 @@ public final class DockerInventory {
      * @param args the command and its arguments
      */
     public static void main(String... args) {
-        System.exit(run(List.of(args), System.getenv(), System.out, System.err, Commands.ALL));
+        System.exit(launch(List.of(args), System.getenv(), System.out, System.err));
+    }
+
+    // The logging settings become system properties before anything logs, or Log4j starts without them.
+    static int launch(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+        try {
+            Logging.of(args, env).properties().forEach(System::setProperty);
+        } catch (UsageError e) {
+            err.println(e.getMessage());
+            return USAGE;
+        }
+        return run(Logging.withoutFlags(args), env, out, err, Commands.ALL);
     }
 
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,

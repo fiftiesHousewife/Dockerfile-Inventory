@@ -5,6 +5,14 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.slf4j.api)
+    runtimeOnly(libs.log4j.slf4j2.impl)
+    runtimeOnly(libs.log4j.core)
+    runtimeOnly(libs.log4j.layout.template.json)
+    testImplementation(libs.log4j.core)
+    testImplementation(platform(libs.jackson.bom))
+    testImplementation(libs.jackson.databind)
+    testRuntimeOnly(libs.log4j.layout.template.json)
     implementation(project(":survey"))
     implementation(project(":discovery"))
     implementation(project(":facts"))

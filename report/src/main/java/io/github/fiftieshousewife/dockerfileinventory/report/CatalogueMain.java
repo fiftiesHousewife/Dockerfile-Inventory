@@ -2,6 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.nio.file.Path;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The catalogue job's entry point: the report's catalogue, archetypes and passes without its pages, so the validator
@@ -11,13 +13,15 @@ import java.util.Map;
  */
 public final class CatalogueMain {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CatalogueMain.class);
+
     private CatalogueMain() {
     }
 
     /** Writes the catalogue under {@code OUT_DIR}; fails before reading anything if a required setting is missing. */
     public static void main(String[] args) {
         Path out = run(System.getenv());
-        System.out.println("Catalogue written to " + out.resolve(CatalogueRun.PATH));
+        LOG.info("catalogue: catalogue written to {}", out.resolve(CatalogueRun.PATH));
     }
 
     /**

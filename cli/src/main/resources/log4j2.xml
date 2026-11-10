@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The distribution's logs, all on stderr: DockerInventory sets the level (LOG_LEVEL, quiet, verbose) and the format
+     (LOG_FORMAT) as system properties before Log4j starts; LOG4J_CONFIG replaces this file. -->
+<Configuration status="warn">
+  <Appenders>
+    <Select>
+      <SystemPropertyArbiter propertyName="docker-inventory.log.format" propertyValue="json">
+        <Console name="stderr" target="SYSTEM_ERR" follow="true">
+          <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
+        </Console>
+      </SystemPropertyArbiter>
+      <DefaultArbiter>
+        <Console name="stderr" target="SYSTEM_ERR" follow="true">
+          <PatternLayout pattern="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level %msg%n"/>
+        </Console>
+      </DefaultArbiter>
+    </Select>
+  </Appenders>
+  <Loggers>
+    <Logger name="org.openrewrite" level="warn"/>
+    <Logger name="org.eclipse.jgit" level="warn"/>
+    <Root level="${sys:docker-inventory.log.level:-info}">
+      <AppenderRef ref="stderr"/>
+    </Root>
+  </Loggers>
+</Configuration>

@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Surveys organisations: {@code survey [--try] <organisation URL>...} runs every stage in order into
@@ -23,6 +25,8 @@ import java.util.Map;
  * lineage runs when {@code ARTIFACTORY_URL} is set; every other stage's setting is passed on.
  */
 public final class SurveyMain {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SurveyMain.class);
 
     static final String USAGE = "usage: survey [--try] <organisation URL>..., e.g. survey --try "
             + "https://github.com/acme";
@@ -94,7 +98,7 @@ public final class SurveyMain {
         }
         try {
             Path report = survey(arguments, env, runners);
-            System.out.println("survey: the report is " + report.toAbsolutePath());
+            LOG.info("survey: the report is {}", report.toAbsolutePath());
             return 0;
         } catch (StageFailed e) {
             err.println("survey: " + explained(e));
@@ -112,7 +116,7 @@ public final class SurveyMain {
     }
 
     static void runStage(Survey.Step step, Map<String, Runner> runners) throws StageFailed {
-        System.out.println("survey: " + step.stage() + " into " + step.env().get("OUT_DIR"));
+        LOG.info("survey: {} into {}", step.stage(), step.env().get("OUT_DIR"));
         try {
             runners.get(step.stage()).run(step.env());
         } catch (Exception e) {
@@ -128,7 +132,7 @@ public final class SurveyMain {
     }
 
     static void combine(Map<String, String> env) {
-        System.out.println(combined(Combine.of(Arrays.stream(env.get("COMBINE_SOURCES").split(",")).map(Path::of)
+        LOG.info("{}", combined(Combine.of(Arrays.stream(env.get("COMBINE_SOURCES").split(",")).map(Path::of)
                 .toList(), Path.of(env.get("OUT_DIR")))));
     }
 

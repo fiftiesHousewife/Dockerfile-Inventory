@@ -2,6 +2,8 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 
 import java.nio.file.Path;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The validator job's entry point. It takes its settings from the environment: {@code FACTS_DIR},
@@ -12,13 +14,15 @@ import java.util.Map;
  */
 public final class ValidatorMain {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ValidatorMain.class);
+
     private ValidatorMain() {
     }
 
     /** Writes the action plan under {@code OUT_DIR}; fails before reading anything if a setting is missing or bad. */
     public static void main(String[] args) {
         Path out = run(System.getenv());
-        System.out.println("Action plan written to " + out.resolve("action-plan.json"));
+        LOG.info("validator: action plan written to {}", out.resolve("action-plan.json"));
     }
 
     /**
