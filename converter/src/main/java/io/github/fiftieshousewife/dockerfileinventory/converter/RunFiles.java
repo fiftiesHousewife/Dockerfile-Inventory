@@ -69,13 +69,6 @@ final class RunFiles {
     }
 
     void write(String file, String text) {
-        try {
-            Path target = outDir.resolve(file);
-            Path folder = outDir.resolve(file.contains("/") ? file.substring(0, file.lastIndexOf('/')) : "");
-            Files.createDirectories(folder);
-            Files.writeString(target, text, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        writeFile(outDir.resolve(file), text);
     }
 }

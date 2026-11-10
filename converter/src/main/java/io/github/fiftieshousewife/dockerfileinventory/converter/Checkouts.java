@@ -26,7 +26,6 @@ final class Checkouts {
             Processes.logged(List.of("git", "-C", at, "submodule", "update", "-q", "--init", "--recursive"),
                     directory.resolveSibling(commit + "-submodules.log"), git);
         }
-        // The last comparison's stubs are untracked files.
         Processes.output(List.of("git", "-C", at, "clean", "-q", "-f", "-d", "-x"));
         return directory;
     }

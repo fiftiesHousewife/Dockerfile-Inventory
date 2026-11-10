@@ -45,7 +45,7 @@ final class TarListing {
                 type.equals("f") ? sha256(content) : null);
     }
 
-    // find's %y letters, so listings from either source compare alike.
+    // find's %y letters.
     static String type(TarArchiveEntry entry) {
         if (entry.isDirectory()) {
             return "d";
@@ -62,7 +62,6 @@ final class TarListing {
         return entry.isFIFO() ? "p" : "f";
     }
 
-    // The caller opened the stream and closes it; closing the tar reader must not.
     private static InputStream unclosed(InputStream stream) {
         return new FilterInputStream(stream) {
             @Override

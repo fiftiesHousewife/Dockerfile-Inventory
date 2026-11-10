@@ -9,7 +9,6 @@ import java.util.stream.Stream;
 
 final class FileDifferences {
 
-    // Files that hold the time they were built in their content: two builds minutes apart differ there anyway.
     static final List<String> VOLATILE_DIRECTORIES = List.of("/var/lib/rpm/", "/var/lib/dnf/", "/var/lib/dpkg/",
             "/var/lib/apt/", "/var/log/", "/var/cache/", "/root/.cache/", "/tmp/");
     static final List<String> VOLATILE_FILES = List.of("/etc/ld.so.cache", "/etc/machine-id", "*.pyc");

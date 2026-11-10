@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -53,5 +55,35 @@ class ProcessesTest {
                         .isThrownBy(() -> Processes.output(missing)),
                 () -> assertThatExceptionOfType(UncheckedIOException.class)
                         .isThrownBy(() -> Processes.exitStatus(missing, logs.resolve("log"), Map.of())));
+    }
+
+    @Test
+    void anInterruptedWaitIsRefusedWithItsCommandLineAndKeepsTheInterrupt() {
+        Thread.currentThread().interrupt();
+
+        assertAll(
+                () -> assertThatIllegalStateException()
+                        .isThrownBy(() -> Processes.output(List.of("sh", "-c", "exec >&-; sleep 1")))
+                        .withMessage("interrupted: sh -c exec >&-; sleep 1"),
+                () -> assertThat(Thread.interrupted()).isTrue());
+    }
+
+    @Test
+    void anInterruptedLoggedCommandIsRefusedWithItsCommandLine(@TempDir Path logs) {
+        Thread.currentThread().interrupt();
+
+        assertAll(
+                () -> assertThatIllegalStateException()
+                        .isThrownBy(() -> Processes.exitStatus(List.of("sleep", "1"), logs.resolve("log"), Map.of()))
+                        .withMessage("interrupted: sleep 1"),
+                () -> assertThat(Thread.interrupted()).isTrue());
+    }
+
+    @Test
+    void aLogThatCannotBeMadeIsAnInputOutputFailure(@TempDir Path logs) throws IOException {
+        Files.writeString(logs.resolve("file"), "");
+
+        assertThatExceptionOfType(UncheckedIOException.class).isThrownBy(() -> Processes.exitStatus(
+                List.of("true"), logs.resolve("file/log"), Map.of()));
     }
 }

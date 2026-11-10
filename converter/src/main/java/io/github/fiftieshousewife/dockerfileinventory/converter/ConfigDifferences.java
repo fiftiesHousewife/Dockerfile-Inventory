@@ -10,9 +10,7 @@ import tools.jackson.databind.JsonNode;
 
 final class ConfigDifferences {
 
-    // Written by the builder at build time, so two builds of one Dockerfile differ in them.
     static final Set<String> BUILD_TIME_LABELS = Set.of("io.buildah.version", "org.opencontainers.image.created");
-    // The build container's name, random each build.
     static final Set<String> BUILD_TIME_FIELDS = Set.of("Hostname");
     private static final String LABELS = "Labels";
 
