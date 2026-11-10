@@ -130,7 +130,9 @@ final class Commands {
             concat(List.of(SELECTION, GITHUB, List.of(
                     Setting.optional("ARTIFACTORY_URL", "Artifactory's base URL; lineage runs when set"),
                     Setting.requiredWith(ARTIFACTORY_RATE.name(), "ARTIFACTORY_URL", ARTIFACTORY_RATE.description()),
-                    Setting.optional("OUT_DIR", "out/<organisation>", "the output folder")), NETWORK)),
+                    Setting.optional("OUT_DIR", "out/<organisation>", "the output folder"),
+                    Setting.optional("SURVEY_URLS", "the organisations to survey as one estate when given none, "
+                            + "comma-separated (github.urls)")), NETWORK)),
             true, (args, env) -> SurveyMain.run(surveyArguments(args, env), env, asking(env)));
 
     static final List<Command> ALL = List.of(SURVEY, DISCOVERY, FACTS, LINEAGE, CATALOGUE, REPORT, RULES, VALIDATOR,
@@ -143,12 +145,12 @@ final class Commands {
         return Prompt.confirmation(env, System.console() != null, System.out);
     }
 
-    // A settings file's github.url is the organisation a survey given none surveys.
+    // A survey given no organisation surveys the settings file's group (github.urls), else its github.url.
     static List<String> surveyArguments(List<String> args, Map<String, String> env) {
         boolean named = args.stream().anyMatch(arg -> !arg.startsWith("-"));
-        String url = env.get("GHE_API_URL");
-        return named || url == null || url.isBlank() ? args
-                : Stream.concat(args.stream(), Stream.of(url)).toList();
+        List<String> urls = Stream.of(env.getOrDefault("SURVEY_URLS", env.getOrDefault("GHE_API_URL", ""))
+                .split(",")).map(String::strip).filter(url -> !url.isEmpty()).toList();
+        return named ? args : Stream.concat(args.stream(), urls.stream()).toList();
     }
 
     static List<Setting> concat(List<List<Setting>> lists) {

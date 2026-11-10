@@ -122,6 +122,18 @@ platform: openshift-4-restricted-v2
 docker-inventory survey --settings acme.yaml
 ```
 
+To survey a group of organisations as one estate, with one combined report, list them under `github.urls` in place of
+`url`:
+
+```yaml
+github:
+  urls:
+    - https://github.example.com/acme
+    - https://github.example.com/beta
+  tokenFile: ~/secrets/ghe-token
+  load: gentle
+```
+
 Behind a proxy with a corporate CA:
 
 ```bash

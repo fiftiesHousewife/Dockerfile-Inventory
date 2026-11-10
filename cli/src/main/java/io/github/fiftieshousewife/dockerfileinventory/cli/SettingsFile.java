@@ -26,6 +26,9 @@ final class SettingsFile {
     private static Map<String, String> server(String prefix, String url) {
         Map<String, String> keys = new LinkedHashMap<>();
         keys.put("url", url);
+        if (prefix.equals("GHE")) {
+            keys.put("urls", "SURVEY_URLS");
+        }
         keys.put("tokenFile", prefix + "_TOKEN_FILE");
         keys.put("load", prefix + "_LOAD");
         keys.put("requestsPerSecond", prefix + "_MAX_REQUESTS_PER_SECOND");
@@ -74,8 +77,13 @@ final class SettingsFile {
                 throw new UsageError(source + ": " + key + " is not a setting (" + String.join(", ", keys.keySet()
                         .stream().map(k -> name + "." + k).toList()) + ")");
             }
-            env.put(keys.get(entry.getKey()), entry.getValue().asString());
+            env.put(keys.get(entry.getKey()), value(entry.getValue()));
         });
+    }
+
+    static String value(JsonNode node) {
+        return node.isArray() ? String.join(",", node.valueStream().map(JsonNode::asString).toList())
+                : node.asString();
     }
 
     static Map<String, String> merged(Map<String, String> file, Map<String, String> environment) {

@@ -48,7 +48,9 @@ class CommandsTest {
                 () -> assertThat(Commands.surveyArguments(List.of("https://g/b"), Map.of("GHE_API_URL",
                         "https://g/a"))).containsExactly("https://g/b"),
                 () -> assertThat(Commands.surveyArguments(List.of("--try"), Map.of()))
-                        .containsExactly("--try"));
+                        .containsExactly("--try"),
+                () -> assertThat(Commands.surveyArguments(List.of(), Map.of("SURVEY_URLS", "https://g/a,https://g/b",
+                        "GHE_API_URL", "https://g/c"))).containsExactly("https://g/a", "https://g/b"));
     }
 
     @Test

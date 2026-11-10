@@ -33,8 +33,8 @@ class SettingsFileTest {
     void anUnknownKeyIsRefusedByNameWithTheKeysThereAre() {
         assertThatThrownBy(() -> SettingsFile.parse("github:\n  uri: x\n", "s.yaml"))
                 .isInstanceOf(UsageError.class)
-                .hasMessage("s.yaml: github.uri is not a setting (github.url, github.tokenFile, github.load, "
-                        + "github.requestsPerSecond, github.concurrency)");
+                .hasMessage("s.yaml: github.uri is not a setting (github.url, github.urls, github.tokenFile, "
+                        + "github.load, github.requestsPerSecond, github.concurrency)");
     }
 
     @Test
@@ -55,5 +55,16 @@ class SettingsFileTest {
     void theEnvironmentOverridesTheFile() {
         assertThat(SettingsFile.merged(Map.of("PROFILE", "a", "OUT_DIR", "b"), Map.of("PROFILE", "c")))
                 .isEqualTo(Map.of("PROFILE", "c", "OUT_DIR", "b"));
+    }
+
+    @Test
+    void aGroupOfOrganisationsIsListedUnderGithubUrls() {
+        assertThat(SettingsFile.parse("""
+                github:
+                  urls:
+                    - https://ghe.example.com/acme
+                    - https://ghe.example.com/beta
+                """, "s.yaml")).isEqualTo(Map.of("SURVEY_URLS",
+                "https://ghe.example.com/acme,https://ghe.example.com/beta"));
     }
 }
