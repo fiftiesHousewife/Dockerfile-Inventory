@@ -2,8 +2,8 @@
 
 Status: planned 7 Nov; questions answered 7 Nov. S1 done 7 Nov (every instruction on the combined estate typed);
 S2 done 8 Nov (ten goldens, one per family); S3 done 8 Nov (every passing Dockerfile's class rebuilds it); S4
-built 8 Nov as the tagged test `./gradlew imageRoundTrip` (see "Round-trip tests on any estate"), its full run the
-owner's.
+built 8 Nov as the tagged test `./gradlew imageRoundTrip` (see "Round-trip tests on any estate"); its full run
+10 Nov: nine of ten the same, one original not built (a mirror's hash-sum mismatch), none different.
 
 The owner asked for the DSL to be made completely ready. It works: an immutable model, one renderer, policy-enforcing
 builders, four goldens passing every rule, and a converter that round-trips 5,149 of the combined estate's 5,250 files
@@ -400,6 +400,11 @@ noise is set aside, two not built in their original (bitnami's download step; th
 --cache-only`, which exits 1 building its cache on arm64). Then: Buildah 1.37 refused bitnami's `--mount=type=secret,...,env=`,
 so the container moved to Buildah 1.43.5, after which bitnami fails only on the Debian mirror's hash-sum mismatches
 from this network; the catalog stand-in is now `operator-framework-olm`'s file-based catalog, the same.
+
+Measured 10 Nov, the full run on the owner's machine (Docker Desktop, Buildah 1.43.5, the default ten): 18 minutes 50
+seconds; nine the same (four on stubs for binaries the build would compile, 0 to 9 differences set aside as the
+control build's noise), one not built in its original: bitnami's `notation` again, on the Debian mirror's hash-sum
+mismatch (`libkrb5support0`), a fetch failure before any regenerated build. No pair differs.
 
 ## Tests, in order (S1; S2-S4 after their questions)
 

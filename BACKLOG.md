@@ -22,7 +22,8 @@ and one line when its gate is met.
   archetypes, one per family; S3, the Java round trip (all 5,149 passing Dockerfiles' classes rebuild them); S4,
   building and comparing images (Phase 5b), as the tagged tests `./gradlew roundTrip` and
   `./gradlew imageRoundTrip`, their Dockerfiles, GitHub and registries settable for a corporate estate, no script.
-  Next: the owner's full `./gradlew imageRoundTrip` on the default list's buildable examples.
+  Full `./gradlew imageRoundTrip` 10 Nov: nine of the default ten build the same image from the regenerated text,
+  none differ; bitnami's `notation` original fails on the Debian mirror's hash-sum mismatch.
 - Now (asked 8 Nov, `docs/plans/catalogue.md`): the catalogue of every Dockerfile, `catalogue/dockerfiles.jsonl`.
   Built: image, stages, copies, permissions, unusual steps, packages, runtimes (inherited too), links, footprint,
   hierarchy (layers, chains, unmaintained, `blockedBy`, `LAYER_LIMIT`, `STALE_AFTER_MONTHS`), each location's last
