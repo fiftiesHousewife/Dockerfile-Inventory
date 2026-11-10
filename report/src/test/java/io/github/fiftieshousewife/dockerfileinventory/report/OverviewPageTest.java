@@ -46,4 +46,13 @@ class OverviewPageTest {
         assertThat(java.util.List.of(shares.indexOf("Ships a toolchain"), shares.indexOf("Runs as root"),
                 shares.indexOf("Exposes a port below 1024"))).isSorted();
     }
+
+    @Test
+    void eachHeadlineFigureLinksToWhereItIsShownInFull() {
+        String body = OverviewPage.body(FIGURES, List.of("payments", "platform"), "");
+
+        assertThat(body).contains("<a class=\"tile\" href=\"archetypes.html\"><div class=\"value\">2</div>",
+                "<a class=\"tile\" href=\"hierarchy.html\">", "<a class=\"tile\" href=\"#organisations\">",
+                "<a class=\"tile\" href=\"unparsed.html\">");
+    }
 }

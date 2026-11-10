@@ -47,7 +47,15 @@ final class Style {
             .health .icon { display: inline-block; width: 1.2em; text-align: center; }
             .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;
                      margin: 18px 0 8px; }
-            .tile { background: var(--tile); border-radius: 8px; padding: 10px 12px; }
+            .tile { background: var(--tile); border-radius: 8px; padding: 10px 12px; color: inherit;
+                    text-decoration: none; }
+            a.tile:hover { outline: 2px solid var(--line); }
+            nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 16px;
+                       border-bottom: 1px solid var(--line); }
+            table.tally { table-layout: fixed; }
+            table.tally th:first-child { width: 50%; } table.tally th.num { width: 15%; }
+            nav.tabs a { padding: 6px 12px; border-radius: 6px 6px 0 0; color: var(--muted); text-decoration: none; }
+            nav.tabs a.current { color: var(--fg); background: var(--tile); font-weight: 600; }
             .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
             .tile .label { font-size: 13px; color: var(--muted); }
             .health.good .icon { color: var(--good); } .health.watch .icon { color: var(--watch); }

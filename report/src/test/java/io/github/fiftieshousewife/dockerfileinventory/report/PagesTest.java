@@ -80,9 +80,11 @@ class PagesTest {
         pages.forEach((path, html) -> {
             Matcher links = HREF.matcher(html);
             while (links.find()) {
-                String target = Path.of(path).resolveSibling(links.group(1)).normalize().toString();
-                assertThat(pages.containsKey(target) || DATA.contains(target))
-                        .as("%s links to %s", path, links.group(1)).isTrue();
+                String link = links.group(1);
+                String target = Path.of(path).resolveSibling(link).normalize().toString();
+                assertThat(link.startsWith("#") ? html.contains("id=\"" + link.substring(1) + "\"")
+                        : pages.containsKey(target) || DATA.contains(target))
+                        .as("%s links to %s", path, link).isTrue();
             }
         });
     }

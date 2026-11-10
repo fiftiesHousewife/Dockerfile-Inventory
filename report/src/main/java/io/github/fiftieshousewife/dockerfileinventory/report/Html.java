@@ -19,6 +19,11 @@ final class Html {
         return String.format(Locale.ROOT, "%.1f%%", share * 100);
     }
 
+    static String tile(String label, String value, String href) {
+        return "<a class=\"tile\" href=\"" + href + "\"><div class=\"value\">" + value + "</div><div class=\"label\">"
+                + escape(label) + info(label) + "</div></a>";
+    }
+
     static String tile(String label, String value) {
         return "<div class=\"tile\"><div class=\"value\">" + value + "</div><div class=\"label\">"
                 + escape(label) + info(label) + "</div></div>";

@@ -18,15 +18,17 @@ final class OverviewPage {
     }
 
     static String body(EstateFigures f, List<String> organisations, String up) {
-        return "<div class=\"tiles\">" + tile("Dockerfiles", count(f.dockerfiles()))
-                + tile("Images", count(f.images()))
-                + tile("Locations", count(f.locations())) + tile("Organisations", count(f.organisations()))
-                + tile("Did not parse", count(f.unparsed())) + "</div>"
+        return "<div class=\"tiles\">" + tile("Dockerfiles", count(f.dockerfiles()), up + "archetypes.html")
+                + tile("Images", count(f.images()), up + "hierarchy.html")
+                + tile("Locations", count(f.locations()), up + "archetypes.html")
+                + tile("Organisations", count(f.organisations()), organisations.isEmpty() ? up + "index.html"
+                        : "#organisations")
+                + tile("Did not parse", count(f.unparsed()), up + "unparsed.html") + "</div>"
                 + "<h2>Chains and layers</h2><p>How many of the estate's own images each Dockerfile is built on top"
                 + " of: 0 is built straight on an outside base (ubi9, alpine), 1 on an image another estate Dockerfile"
                 + " makes, 2 on one built on another, and so on; a fix to a base is rebuilt down every level beneath"
-                + " it. Then how many layers each carries; " + count(f.overLimit()) + " over the layer limit. <a href=\""
-                + up + "hierarchy.html\">The hierarchy</a></p>"
+                + " it. Then how many layers each carries; " + count(f.overLimit())
+                + " over the layer limit. <a href=\"" + up + "hierarchy.html\">The hierarchy</a></p>"
                 + table("Estate images beneath it", f.depths()) + table("Layers", f.layerBands())
                 + "<h2>Unmaintained</h2><p>" + count(f.blockedImages())
                 + " images stand on an unmaintained one. <a href=\"" + up + "blocked.html\">What blocks them</a></p>"
@@ -35,7 +37,7 @@ final class OverviewPage {
                 + "<h2>Footprints</h2>" + table("Footprint", f.footprints())
                 + "<h2>Language runtimes</h2>" + table("Runtime", f.runtimes())
                 + "<h2>Unusual steps</h2>" + table("Step", f.unusual())
-                + "<h2>More</h2><ul><li><a href=\"" + up + "archetypes.html\">Archetypes</a></li>"
+                + "<h2>More</h2><ul id=\"organisations\"><li><a href=\"" + up + "archetypes.html\">Archetypes</a></li>"
                 + organisations.stream().map(o -> "<li><a href=\"orgs/" + escape(o) + ".html\">" + escape(o)
                         + "</a></li>").collect(Collectors.joining())
                 + DATA.stream().map(file -> "<li><a href=\"" + up + file + "\">" + file + "</a></li>")
@@ -57,7 +59,7 @@ final class OverviewPage {
 
     static <K> String table(String heading, Map<K, Integer> counts) {
         int largest = counts.values().stream().mapToInt(Integer::intValue).max().orElse(1);
-        return "<table><tr><th>" + escape(heading) + "</th><th class=\"num\">Count</th><th></th></tr>"
+        return "<table class=\"tally\"><tr><th>" + escape(heading) + "</th><th class=\"num\">Count</th><th></th></tr>"
                 + counts.entrySet().stream().map(e -> "<tr><td>" + escape(String.valueOf(e.getKey()))
                         + "</td><td class=\"num\">" + count(e.getValue()) + "</td><td>"
                         + meter((double) e.getValue() / largest) + "</td></tr>").collect(Collectors.joining())
