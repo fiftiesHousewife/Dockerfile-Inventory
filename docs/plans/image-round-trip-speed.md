@@ -84,3 +84,6 @@ to `docker-library/haproxy` 3.2 on Alpine, built from source with a smoke test, 
 tried once more (`BuildahContainer.retried`), after php's original failed on Alpine's CDN with "TLS: unspecified
 error" in a run where every other sample was the same.
 
+Measured 10 Nov, the owner's run of the new ten: all ten the same, none retried, in 453 seconds (7 minutes 33,
+from 18 minutes 45 this morning); the longest are haproxy (294s, four at once) and alizer's Quarkus build (286s).
+

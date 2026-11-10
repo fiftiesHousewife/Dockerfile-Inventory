@@ -26,7 +26,8 @@ and one line when its gate is met.
   none differ; bitnami's `notation` original fails on the Debian mirror's hash-sum mismatch. Then
   (`docs/plans/image-round-trip-speed.md`): notation replaced by `bitnami/charts-syncer` (Buildah refuses
   bitnami/containers' `env=` secret mounts), every sample now required to build, four Dockerfiles at once and each
-  one's regenerated and control builds together: the nine with checkouts 17:33 -> 11:14.
+  one's regenerated and control builds together: the nine with checkouts 17:33 -> 11:14. php replaced by haproxy (built from
+  source in 51s), a build failing on a download retried once: the ten all the same in 7:33 (from 18:45).
 - Now (asked 8 Nov, `docs/plans/catalogue.md`): the catalogue of every Dockerfile, `catalogue/dockerfiles.jsonl`.
   Built: image, stages, copies, permissions, unusual steps, packages, runtimes (inherited too), links, footprint,
   hierarchy (layers, chains, unmaintained, `blockedBy`, `LAYER_LIMIT`, `STALE_AFTER_MONTHS`), each location's last
