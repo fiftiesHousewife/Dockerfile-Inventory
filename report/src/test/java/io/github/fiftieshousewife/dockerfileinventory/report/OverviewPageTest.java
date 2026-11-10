@@ -25,7 +25,7 @@ class OverviewPageTest {
         assertAll(
                 () -> assertThat(body).contains("<div class=\"value\">2</div><div class=\"label\">Dockerfiles"),
                 () -> assertThat(body).contains("Runs as root", "Exposes a port below 1024", "Ships a toolchain"),
-                () -> assertThat(body).contains("java (final)", "VOLUME", "over 40"),
+                () -> assertThat(body).contains("java (shipped)", "VOLUME", "over 40"),
                 () -> assertThat(body).contains("not published for a while"),
                 () -> assertThat(body).contains("href=\"hierarchy.html\"", "href=\"blocked.html\"",
                         "href=\"archetypes.html\"", "href=\"orgs/payments.html\"",

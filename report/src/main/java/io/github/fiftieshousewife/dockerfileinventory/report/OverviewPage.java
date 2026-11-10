@@ -18,6 +18,11 @@ final class OverviewPage {
     }
 
     static String body(EstateFigures f, List<String> organisations, String up) {
+        return body(f, organisations, up, null);
+    }
+
+    // lists: where the rows' lists are, relative to this page; null for none.
+    static String body(EstateFigures f, List<String> organisations, String up, String lists) {
         return "<div class=\"tiles\">" + tile("Dockerfiles", count(f.dockerfiles()), up + "archetypes.html")
                 + tile("Images", count(f.images()), up + "hierarchy.html")
                 + tile("Locations", count(f.locations()), up + "archetypes.html")
@@ -29,14 +34,15 @@ final class OverviewPage {
                 + " makes, 2 on one built on another, and so on; a fix to a base is rebuilt down every level beneath"
                 + " it. Then how many layers each carries; " + count(f.overLimit())
                 + " over the layer limit. <a href=\"" + up + "hierarchy.html\">The hierarchy</a></p>"
-                + table("Estate images beneath it", f.depths()) + table("Layers", f.layerBands())
+                + table("Estate images beneath it", f.depths(), in(lists, "depth"))
+                + table("Layers", f.layerBands(), in(lists, "layers"))
                 + "<h2>Unmaintained</h2><p>" + count(f.blockedImages())
                 + " images stand on an unmaintained one. <a href=\"" + up + "blocked.html\">What blocks them</a></p>"
-                + table("Why", f.unmaintained())
-                + "<h2>The final image</h2>" + shares(f)
-                + "<h2>Footprints</h2>" + table("Footprint", f.footprints())
-                + "<h2>Language runtimes</h2>" + table("Runtime", f.runtimes())
-                + "<h2>Unusual steps</h2>" + table("Step", f.unusual())
+                + table("Why", f.unmaintained(), null)
+                + "<h2>The final image</h2>" + shares(f, in(lists, "final-image"))
+                + "<h2>Footprints</h2>" + table("Footprint", f.footprints(), in(lists, "footprint"))
+                + "<h2>Language runtimes</h2>" + table("Runtime", f.runtimes(), in(lists, "runtime"))
+                + "<h2>Unusual steps</h2>" + table("Step", f.unusual(), in(lists, "unusual"))
                 + "<h2>More</h2><ul id=\"organisations\"><li><a href=\"" + up + "archetypes.html\">Archetypes</a></li>"
                 + organisations.stream().map(o -> "<li><a href=\"orgs/" + escape(o) + ".html\">" + escape(o)
                         + "</a></li>").collect(Collectors.joining())
@@ -45,22 +51,42 @@ final class OverviewPage {
     }
 
     static String shares(EstateFigures f) {
+        return shares(f, null);
+    }
+
+    static String shares(EstateFigures f, String list) {
         double all = Math.max(1, f.dockerfiles());
         return "<table><tr><th>Final image</th><th class=\"num\">Dockerfiles</th><th class=\"num\">Share</th></tr>"
                 + EstateFigures.largestFirst(Map.of("Runs as root", f.root(), "Exposes a port below 1024",
                         f.lowPort(), "Ships a toolchain", f.toolchain())).entrySet().stream()
-                .map(e -> share(e.getKey(), e.getValue(), all)).collect(Collectors.joining()) + "</table>";
+                .map(e -> share(labelled(e.getKey(), e.getValue() == 0 ? null : list), e.getValue(), all))
+                .collect(Collectors.joining())
+                + "</table>";
     }
 
     private static String share(String label, int n, double all) {
-        return "<tr><td>" + escape(label) + "</td><td class=\"num\">" + count(n) + "</td><td class=\"num\">"
+        return "<tr><td>" + label + "</td><td class=\"num\">" + count(n) + "</td><td class=\"num\">"
                 + percent(n / all) + "</td></tr>";
     }
 
+    private static String in(String lists, String section) {
+        return lists == null ? null : lists + section + "/";
+    }
+
+    // A row's label, linked to the list of the Dockerfiles it counts when there is one; escaped.
+    static String labelled(String label, String list) {
+        return list == null ? escape(label) : "<a href=\"" + list + Drilldowns.slug(label) + ".html\">"
+                + escape(label) + "</a>";
+    }
+
     static <K> String table(String heading, Map<K, Integer> counts) {
+        return table(heading, counts, null);
+    }
+
+    static <K> String table(String heading, Map<K, Integer> counts, String list) {
         int largest = counts.values().stream().mapToInt(Integer::intValue).max().orElse(1);
         return "<table class=\"tally\"><tr><th>" + escape(heading) + "</th><th class=\"num\">Count</th><th></th></tr>"
-                + counts.entrySet().stream().map(e -> "<tr><td>" + escape(String.valueOf(e.getKey()))
+                + counts.entrySet().stream().map(e -> "<tr><td>" + labelled(String.valueOf(e.getKey()), list)
                         + "</td><td class=\"num\">" + count(e.getValue()) + "</td><td>"
                         + meter((double) e.getValue() / largest) + "</td></tr>").collect(Collectors.joining())
                 + "</table>";

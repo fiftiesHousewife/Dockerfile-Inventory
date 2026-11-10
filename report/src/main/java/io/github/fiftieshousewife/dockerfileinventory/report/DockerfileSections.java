@@ -59,7 +59,7 @@ final class DockerfileSections {
                         installed.name(), installed.versioned() ? "yes" : "no", installed.cleaned() ? "yes" : "no"))
                         .toList())
                 + "<p>Runtimes: " + escape(entry.build().runtimes().stream()
-                        .map(runtime -> runtime.runtime() + " (" + runtime.where() + ")").distinct()
+                        .map(Runtimes::label).distinct()
                         .collect(Collectors.joining(", "))) + "</p>";
     }
 

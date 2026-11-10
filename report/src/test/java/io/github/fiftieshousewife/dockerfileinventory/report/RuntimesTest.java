@@ -118,4 +118,14 @@ class RuntimesTest {
     void aDockerfileWithoutStagesHasNoFinalStages() {
         assertThat(Runtimes.finalStages(List.of())).isEmpty();
     }
+
+    @Test
+    void aRuntimeIsLabelledByWhetherItShipsIsOnlyForTheBuildOrComesFromItsBase() {
+        assertAll(
+                () -> assertThat(Runtimes.label(new Runtimes.Found("go", "build", "e"))).isEqualTo("go (build only)"),
+                () -> assertThat(Runtimes.label(new Runtimes.Found("python", "final", "e")))
+                        .isEqualTo("python (shipped)"),
+                () -> assertThat(Runtimes.label(new Runtimes.Found("node", "inherited", "e")))
+                        .isEqualTo("node (from its base)"));
+    }
 }

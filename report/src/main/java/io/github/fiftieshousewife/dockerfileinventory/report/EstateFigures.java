@@ -15,13 +15,14 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
                      int lowPort, int toolchain, Map<String, Integer> footprints, Map<String, Integer> runtimes,
                      Map<String, Integer> unusual, Map<String, Integer> unmaintained, int blockedImages) {
 
-    private static final List<String> BANDS = List.of("1-5", "6-10", "11-20", "21-40", "over 40");
+    static final List<String> BANDS = List.of("1-5", "6-10", "11-20", "21-40", "over 40");
     private static final Pattern TOOLCHAIN = Pattern.compile(
             "gcc|gcc-c\\+\\+|g\\+\\+|make|cmake|git|binutils|build-essential|golang|maven|gradle|.*-devel|.*-dev");
 
     static EstateFigures of(List<CatalogueEntry> entries) {
         List<CatalogueEntry> parsed = entries.stream().filter(e -> e.parseError() == null).toList();
         List<Hierarchies.BuiltImage> images = parsed.stream().flatMap(e -> e.hierarchy().images().stream()).toList();
+        Map<String, Map<String, List<CatalogueEntry>>> rows = Breakdowns.of(parsed);
         return new EstateFigures(parsed.size(), entries.size() - parsed.size(),
                 entries.stream().mapToInt(e -> e.locations().size()).sum(),
                 (int) images.stream().map(Hierarchies.BuiltImage::configDigest).distinct().count(),
@@ -29,17 +30,18 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
                 tally(parsed.stream().map(e -> e.links().depth()).toList()),
                 bands(parsed.stream().map(e -> e.hierarchy().layers().total()).toList()),
                 (int) parsed.stream().filter(e -> e.hierarchy().layers().overLimit()).count(),
-                (int) parsed.stream().filter(e -> "ROOT".equals(e.image().userKind())).count(),
-                (int) parsed.stream().filter(e -> lowPort(e.image().ports())).count(),
-                (int) parsed.stream().filter(e -> toolchain(e.build())).count(),
-                largestFirst(tally(parsed.stream().map(e -> e.footprint().footprint()).toList())),
-                largestFirst(tally(parsed.stream().flatMap(e -> e.build().runtimes().stream()
-                        .map(r -> r.runtime() + " (" + r.where() + ")").distinct()).toList())),
-                largestFirst(tally(parsed.stream().flatMap(e -> e.build().stages().stream()
-                        .flatMap(s -> s.unusual().stream()).distinct()).toList())),
+                size(rows, "final-image", Breakdowns.FINAL_IMAGE.get(0)),
+                size(rows, "final-image", Breakdowns.FINAL_IMAGE.get(1)),
+                size(rows, "final-image", Breakdowns.FINAL_IMAGE.get(2)),
+                Breakdowns.counts(rows.get("footprint")), Breakdowns.counts(rows.get("runtime")),
+                Breakdowns.counts(rows.get("unusual")),
                 largestFirst(unmaintained(parsed, images)),
                 (int) images.stream().filter(i -> !i.blockedBy().isEmpty())
                         .map(Hierarchies.BuiltImage::configDigest).distinct().count());
+    }
+
+    private static int size(Map<String, Map<String, List<CatalogueEntry>>> rows, String section, String label) {
+        return rows.get(section).getOrDefault(label, List.of()).size();
     }
 
     static Map<String, Integer> unmaintained(List<CatalogueEntry> parsed, List<Hierarchies.BuiltImage> images) {

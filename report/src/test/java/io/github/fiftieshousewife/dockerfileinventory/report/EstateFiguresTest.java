@@ -58,7 +58,7 @@ class EstateFiguresTest {
 
         assertAll(
                 () -> assertThat(figures.footprints()).containsEntry("full", 1).containsEntry("minimal", 1),
-                () -> assertThat(figures.runtimes()).containsExactly(Map.entry("java (final)", 1)),
+                () -> assertThat(figures.runtimes()).containsExactly(Map.entry("java (shipped)", 1)),
                 () -> assertThat(figures.unusual()).containsEntry("VOLUME", 1).containsEntry("ADD", 1));
     }
 

@@ -32,7 +32,7 @@ class DockerfilePageTest {
 
         assertAll(
                 () -> assertThat(body).contains("payments/api", "Dockerfile"),
-                () -> assertThat(body).contains("ubi9/ubi:9.6", "python3", "VOLUME", "python (final)"),
+                () -> assertThat(body).contains("ubi9/ubi:9.6", "python3", "VOLUME", "python (shipped)"),
                 () -> assertThat(body).contains("href=\"bbb.html\"", "href=\"ccc.html\"", "href=\"ddd.html\""),
                 () -> assertThat(body).contains("sha256:app:1", "sha256:old:1", "not published since 2024-01-01"),
                 () -> assertThat(body).contains("released", "passed"));
