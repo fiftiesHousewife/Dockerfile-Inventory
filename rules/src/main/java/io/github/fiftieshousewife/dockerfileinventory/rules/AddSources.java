@@ -19,6 +19,10 @@ record AddSources(List<String> flags, List<String> sources, String destination) 
                 : new AddSources(flags, written.subList(0, written.size() - 1), written.getLast());
     }
 
+    boolean absoluteDestination() {
+        return destination != null && destination.startsWith("/") && !destination.contains("$");
+    }
+
     static boolean remote(String source) {
         return source.startsWith("http://") || source.startsWith("https://") || source.startsWith("git@");
     }

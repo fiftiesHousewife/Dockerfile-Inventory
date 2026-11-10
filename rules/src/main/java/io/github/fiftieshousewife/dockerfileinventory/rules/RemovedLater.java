@@ -69,12 +69,11 @@ final class RemovedLater implements Rule {
     }
 
     static List<String> landed(AddSources read) {
-        String destination = read.destination();
-        if (destination == null || !destination.startsWith("/") || destination.contains("$")) {
+        if (!read.absoluteDestination()) {
             return List.of();
         }
-        boolean directory = destination.endsWith("/") || read.sources().size() > 1;
-        String base = TrailingSlash.removed(destination);
+        boolean directory = read.destination().endsWith("/") || read.sources().size() > 1;
+        String base = TrailingSlash.removed(read.destination());
         return read.sources().stream()
                 .map(source -> directory && !name(source).equals(".") ? base + "/" + name(source) : base).toList();
     }

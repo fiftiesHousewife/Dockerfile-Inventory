@@ -48,10 +48,7 @@ final class ArchetypeTable {
     }
 
     static String chips(Map<String, Integer> organisations) {
-        return organisations.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
-                        .thenComparing(Map.Entry.comparingByKey()))
-                .limit(CHIPS)
+        return EstateFigures.largestFirst(organisations).entrySet().stream().limit(CHIPS)
                 .map(e -> "<span class=\"chip\">" + escape(e.getKey()) + " " + count(e.getValue()) + "</span>")
                 .collect(Collectors.joining(" "))
                 + (organisations.size() > CHIPS ? " and " + (organisations.size() - CHIPS) + " more" : "");

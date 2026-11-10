@@ -64,8 +64,7 @@ final class ActionPlanPage {
 
     static String repositories(Map<String, Integer> repositories, Set<String> withPages) {
         return "<h2>By repository</h2>" + Html.scrollTable("<th>Repository</th><th class=\"num\">Actions</th>",
-                repositories.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
-                                .thenComparing(Map.Entry.comparingByKey()))
+                EstateFigures.largestFirst(repositories).entrySet().stream()
                         .map(e -> "<tr><td>" + repository(e.getKey(), withPages) + "</td><td class=\"num\">"
                                 + count(e.getValue()) + "</td></tr>")
                         .collect(Collectors.joining()));

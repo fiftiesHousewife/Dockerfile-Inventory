@@ -14,6 +14,7 @@ final class WritablePaths implements PlatformCheck {
     private static final Pattern FIX_PERMISSIONS = Pattern.compile("(?:^|[\\s/])fix-permissions\\s+([/$]\\S+)");
     private static final Pattern VARIABLE = Pattern.compile("\\$\\{?(\\w+)}?");
     private static final Pattern CLAUSE = Pattern.compile("([ugoa]*)([+=])([rwxXstugo]*)");
+    private static final List<String> UNCHECKED = List.of("/", "/tmp");
 
     @Override
     public Check id() {
@@ -47,11 +48,11 @@ final class WritablePaths implements PlatformCheck {
         Subject.Config config = image.config();
         List<Written> paths = new ArrayList<>();
         config.volumes().forEach(volume -> paths.add(new Written("VOLUME", volume)));
-        if (config.workdir() != null && !List.of("/", "/tmp").contains(config.workdir())) {
+        if (config.workdir() != null && !UNCHECKED.contains(config.workdir())) {
             paths.add(new Written("WORKDIR", config.workdir()));
         }
         String home = config.environment().get("HOME");
-        if (home != null && !List.of("/", "/tmp").contains(home)) {
+        if (home != null && !UNCHECKED.contains(home)) {
             paths.add(new Written("HOME", home));
         }
         return paths;
@@ -70,15 +71,22 @@ final class WritablePaths implements PlatformCheck {
 
     static boolean makesGroupWritable(Subject image) {
         return !fixedPermissions(image.steps()).isEmpty() || image.finalStages().stream().anyMatch(stage ->
-                stage.permissions().stream().anyMatch(p -> p.command().equals("chmod") && groupWrite(p.setting()))
-                        || stage.copies().stream().anyMatch(c -> c.chmod() != null && groupWrite(c.chmod())));
+                stage.permissions().stream().anyMatch(WritablePaths::groupWrites)
+                        || stage.copies().stream().anyMatch(WritablePaths::groupWrites));
     }
 
     static boolean writable(Subject.Stage stage, String path, Map<String, String> environment) {
-        return stage.permissions().stream().anyMatch(p -> p.command().equals("chmod") && groupWrite(p.setting())
-                && covers(p, path, environment))
-                || stage.copies().stream().anyMatch(c -> c.chmod() != null && groupWrite(c.chmod())
+        return stage.permissions().stream().anyMatch(p -> groupWrites(p) && covers(p, path, environment))
+                || stage.copies().stream().anyMatch(c -> groupWrites(c)
                 && under(path, expanded(c.destination(), environment)));
+    }
+
+    static boolean groupWrites(Subject.Permission permission) {
+        return permission.command().equals("chmod") && groupWrite(permission.setting());
+    }
+
+    static boolean groupWrites(Subject.Copy copy) {
+        return copy.chmod() != null && groupWrite(copy.chmod());
     }
 
     static boolean covers(Subject.Permission permission, String path, Map<String, String> environment) {
