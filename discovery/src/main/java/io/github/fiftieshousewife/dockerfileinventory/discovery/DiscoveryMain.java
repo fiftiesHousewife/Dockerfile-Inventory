@@ -36,6 +36,17 @@ public final class DiscoveryMain {
      * @throws IOException when the release index cannot be read
      */
     public static void run(Map<String, String> env) throws IOException {
+        run(env, Confirmation.ALWAYS);
+    }
+
+    /**
+     * Scans the estate, asking after the first pass whether to fetch.
+     *
+     * @param env the settings
+     * @param confirmation asked once the listing and tree walks are done
+     * @throws IOException when the release index cannot be read
+     */
+    public static void run(Map<String, String> env, Confirmation confirmation) throws IOException {
         ReleaseIndex releases = releases(env.get("RELEASE_INDEX"));
         GitHubApi api = GitHubApi.from(required(env, "GHE_API_URL"));
         HttpSettings settings = HttpSettings.from(env);
@@ -46,8 +57,20 @@ public final class DiscoveryMain {
         int concurrency = Integer.parseInt(env.getOrDefault("GHE_CONCURRENCY", "8"));
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
         var discovery = new Discovery(gitHub, releases, output, concurrency,
-                organizations(env.getOrDefault("ORGANIZATIONS", ""), api), tryRepositories(env));
+                organizations(env.getOrDefault("ORGANIZATIONS", ""), api), tryRepositories(env), Selection.from(env),
+                maxDockerfiles(env), confirmation);
         LOG.info("discovery: {}", discovery.run());
+    }
+
+    static int maxDockerfiles(Map<String, String> env) {
+        String value = env.get("MAX_DOCKERFILES");
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        if (!value.strip().matches("[1-9][0-9]{0,8}")) {
+            throw new IllegalStateException("MAX_DOCKERFILES must be a positive whole number, not " + value);
+        }
+        return Integer.parseInt(value.strip());
     }
 
     static int tryRepositories(Map<String, String> env) {

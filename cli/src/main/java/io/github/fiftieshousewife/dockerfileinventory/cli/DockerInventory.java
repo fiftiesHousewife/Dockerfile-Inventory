@@ -1,7 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.cli;
 
+import io.github.fiftieshousewife.dockerfileinventory.discovery.RunStopped;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.SelectionNotFound;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -9,13 +12,15 @@ import java.util.stream.Collectors;
 
 /**
  * The {@code docker-inventory} command: {@code survey} runs every stage in order; each stage also runs alone. Settings
- * come from the environment. Exits 0 when done, 1 when a stage fails, 2 on a usage error found before anything runs.
+ * come from the environment. Exits 0 when done, 1 when a stage fails, 2 on a usage error found before anything is
+ * fetched, 3 when stopped on purpose (declined, or over the ceiling on Dockerfiles).
  */
 public final class DockerInventory {
 
     static final int DONE = 0;
     static final int FAILED = 1;
     static final int USAGE = 2;
+    static final int STOPPED = 3;
 
     private DockerInventory() {
     }
@@ -36,8 +41,10 @@ public final class DockerInventory {
             Flags flags = Flags.of(args);
             Logging.of(flags.rest(), env).properties().forEach(System::setProperty);
             Map<String, String> file = flags.settings().map(Path::of).map(SettingsFile::read).orElse(Map.of());
-            return run(Logging.withoutFlags(flags.rest()), Load.expanded(SettingsFile.merged(file, env),
-                    flags.load()), out, err, commands);
+            Map<String, String> settings = new HashMap<>(SettingsFile.merged(file, env));
+            settings.putAll(flags.environment());
+            return run(Logging.withoutFlags(flags.rest()), Load.expanded(settings, flags.load()), out, err,
+                    commands);
         } catch (UsageError e) {
             err.println(e.getMessage());
             return USAGE;
@@ -81,9 +88,12 @@ public final class DockerInventory {
         }
         try {
             return command.runner().run(args, env);
-        } catch (UsageError e) {
+        } catch (UsageError | SelectionNotFound e) {
             err.println(command.name() + ": " + e.getMessage());
             return USAGE;
+        } catch (RunStopped e) {
+            err.println(command.name() + ": " + e.getMessage());
+            return STOPPED;
         } catch (Exception e) {
             err.println(command.name() + " failed: " + firstLine(e));
             return FAILED;

@@ -38,6 +38,10 @@ final class DiscoveryOutput {
         }
     }
 
+    Path dir() {
+        return dir;
+    }
+
     synchronized void record(RepoScan.Result result) {
         append("manifest.jsonl", result.dockerfiles());
         append("yaml.jsonl", result.yaml());

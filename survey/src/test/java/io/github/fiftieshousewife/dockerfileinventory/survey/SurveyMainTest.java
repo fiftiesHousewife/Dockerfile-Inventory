@@ -6,6 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.discovery.Combine;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.Confirmation;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.RunStopped;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.SelectionNotFound;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -137,5 +140,31 @@ class SurveyMainTest {
                 root.resolve("discovery").toString()));
 
         assertThat(root.resolve("discovery/manifest.jsonl")).isRegularFile();
+    }
+
+    @Test
+    void aSelectionMatchingNothingIsAUsageErrorAndAStopOnPurposeExitsThree() {
+        PrintStream err = new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8);
+        Map<String, SurveyMain.Runner> notFound = new HashMap<>(SurveyMain.RUNNERS);
+        notFound.put("discovery", env -> {
+            throw new SelectionNotFound("no repository payments/gone");
+        });
+        Map<String, SurveyMain.Runner> stopped = new HashMap<>(SurveyMain.RUNNERS);
+        stopped.put("discovery", env -> {
+            throw new RunStopped("stopped before fetching");
+        });
+
+        assertAll(
+                () -> assertThat(SurveyMain.run(new String[] {"https://github.com/acme"}, Map.of(), notFound, err))
+                        .isEqualTo(2),
+                () -> assertThat(SurveyMain.run(new String[] {"https://github.com/acme"}, Map.of(), stopped, err))
+                        .isEqualTo(3));
+    }
+
+    @Test
+    void theConfirmationGoesToDiscovery() {
+        Confirmation declining = pass -> false;
+
+        assertThat(SurveyMain.runners(declining)).containsOnlyKeys(SurveyMain.RUNNERS.keySet());
     }
 }

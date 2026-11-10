@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.RunStopped;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.SelectionNotFound;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -181,5 +183,24 @@ final class DockerInventoryTest {
                 () -> assertThat(DockerInventory.run(discovery, List.of(), Map.of(), System.out, errors, List.of()))
                         .isEqualTo(2),
                 () -> assertThat(err()).contains("discovery: GHE_TOKEN is required: a token"));
+    }
+
+    @Test
+    void aSelectionMatchingNothingIsAUsageErrorAndAStopOnPurposeExitsThree() {
+        Command notFound = new Command("discovery", "finds", List.of(), env -> {
+            throw new SelectionNotFound("no repository pay/gone");
+        });
+        Command stopped = new Command("discovery", "finds", List.of(), env -> {
+            throw new RunStopped("stopped before fetching");
+        });
+        PrintStream errors = new PrintStream(err, true, StandardCharsets.UTF_8);
+
+        assertAll(
+                () -> assertThat(DockerInventory.run(notFound, List.of(), Map.of(), System.out, errors, List.of()))
+                        .isEqualTo(2),
+                () -> assertThat(DockerInventory.run(stopped, List.of(), Map.of(), System.out, errors, List.of()))
+                        .isEqualTo(3),
+                () -> assertThat(err()).contains("discovery: no repository pay/gone",
+                        "discovery: stopped before fetching"));
     }
 }

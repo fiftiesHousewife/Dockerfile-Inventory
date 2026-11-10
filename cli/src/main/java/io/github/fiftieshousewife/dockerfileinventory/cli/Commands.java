@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.cli;
 
 import io.github.fiftieshousewife.dockerfileinventory.converter.ConverterMain;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.Confirmation;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.DiscoveryMain;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsMain;
 import io.github.fiftieshousewife.dockerfileinventory.lineage.LineageMain;
@@ -31,6 +32,14 @@ final class Commands {
     static final Setting ARTIFACTORY_RATE = Setting.required("ARTIFACTORY_MAX_REQUESTS_PER_SECOND", "the most calls "
             + "to Artifactory a second; or --load gentle (5) or normal (20)");
 
+    static final List<Setting> SELECTION = List.of(
+            Setting.optional("REPOSITORIES", "only these repositories, owner/name, comma-separated (--repository)"),
+            Setting.optional("REPOSITORY_NAME_CONTAINS", "only repositories whose name holds one of these, "
+                    + "comma-separated (--repository-name-contains)"),
+            Setting.optional("MAX_DOCKERFILES", "stop after the first pass when it finds more distinct Dockerfiles "
+                    + "(--max-dockerfiles)"),
+            Setting.optional("ASSUME_YES", "true goes on after the first pass without asking (--yes)"));
+
     static final List<Setting> GITHUB = List.of(GITHUB_RATE,
             Setting.optional("GHE_LOAD", "gentle or normal: fills in the rate and concurrency left unset"),
             Setting.requiredUnless("GHE_TOKEN", "GHE_TOKEN_FILE", "a token that can read the organisations (or "
@@ -45,8 +54,8 @@ final class Commands {
                     Setting.optional("RELEASE_INDEX", "a file of owner/repo,commitSha lines: the released commits"),
                     Setting.optional("GHE_CONCURRENCY", "8", "repositories scanned at once"),
                     Setting.optional("TRY_REPOSITORIES", "stop once this many repositories held a Dockerfile")),
-                    GITHUB, NETWORK)),
-            DiscoveryMain::run);
+                    SELECTION, GITHUB, NETWORK)),
+            env -> DiscoveryMain.run(env, asking(env)));
 
     static final Command FACTS = new Command("facts", "reads each Dockerfile into facts",
             List.of(Setting.required("DISCOVERY_DIR", "discovery's output folder"),
@@ -118,16 +127,20 @@ final class Commands {
 
     static final Command SURVEY = new Command("survey",
             "runs every stage in order: survey [--try] <organisation URL>...",
-            concat(List.of(GITHUB, List.of(Setting.optional("ARTIFACTORY_URL", "Artifactory's base URL; lineage runs "
-                    + "when set"), Setting.requiredWith(ARTIFACTORY_RATE.name(), "ARTIFACTORY_URL",
-                    ARTIFACTORY_RATE.description()), Setting.optional("OUT_DIR", "out/<organisation>",
-                    "the output folder")), NETWORK)),
-            true, (args, env) -> SurveyMain.run(surveyArguments(args, env), env));
+            concat(List.of(SELECTION, GITHUB, List.of(
+                    Setting.optional("ARTIFACTORY_URL", "Artifactory's base URL; lineage runs when set"),
+                    Setting.requiredWith(ARTIFACTORY_RATE.name(), "ARTIFACTORY_URL", ARTIFACTORY_RATE.description()),
+                    Setting.optional("OUT_DIR", "out/<organisation>", "the output folder")), NETWORK)),
+            true, (args, env) -> SurveyMain.run(surveyArguments(args, env), env, asking(env)));
 
     static final List<Command> ALL = List.of(SURVEY, DISCOVERY, FACTS, LINEAGE, CATALOGUE, REPORT, RULES, VALIDATOR,
             CONVERTER);
 
     private Commands() {
+    }
+
+    static Confirmation asking(Map<String, String> env) {
+        return Prompt.confirmation(env, System.console() != null, System.out);
     }
 
     // A settings file's github.url is the organisation a survey given none surveys.

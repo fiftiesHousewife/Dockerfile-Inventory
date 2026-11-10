@@ -38,7 +38,19 @@ final class Survey {
 
     static String root(List<String> urls, boolean trial, Map<String, String> env) {
         return env.getOrDefault("OUT_DIR", "out/" + String.join("+", urls.stream().map(Survey::folder).toList())
-                + (trial ? "-try" : ""));
+                + selected(env) + (trial ? "-try" : ""));
+    }
+
+    // A selection's run is kept apart from the whole organisation's: named for the repositories and strings it keeps.
+    static String selected(Map<String, String> env) {
+        List<String> parts = Stream.concat(listed(env.get("REPOSITORIES")).map(name -> name.substring(
+                name.indexOf('/') + 1)), listed(env.get("REPOSITORY_NAME_CONTAINS"))).toList();
+        return parts.isEmpty() ? "" : "-" + String.join("+", parts);
+    }
+
+    private static Stream<String> listed(String value) {
+        return value == null ? Stream.empty() : Stream.of(value.split(",")).map(String::strip)
+                .filter(part -> !part.isEmpty());
     }
 
     static List<Step> discoveries(List<String> urls, boolean trial, Map<String, String> env, String root,

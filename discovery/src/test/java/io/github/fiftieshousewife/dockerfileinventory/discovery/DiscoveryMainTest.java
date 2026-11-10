@@ -67,4 +67,13 @@ class DiscoveryMainTest {
                 () -> assertThatThrownBy(() -> DiscoveryMain.tryRepositories(Map.of("TRY_REPOSITORIES", "ten")))
                         .hasMessage("TRY_REPOSITORIES must be a positive whole number, not ten"));
     }
+
+    @Test
+    void theCeilingOnDockerfilesIsAPositiveWholeNumberOrNone() {
+        assertAll(
+                () -> assertThat(DiscoveryMain.maxDockerfiles(Map.of())).isZero(),
+                () -> assertThat(DiscoveryMain.maxDockerfiles(Map.of("MAX_DOCKERFILES", "500"))).isEqualTo(500),
+                () -> assertThatThrownBy(() -> DiscoveryMain.maxDockerfiles(Map.of("MAX_DOCKERFILES", "lots")))
+                        .hasMessage("MAX_DOCKERFILES must be a positive whole number, not lots"));
+    }
 }

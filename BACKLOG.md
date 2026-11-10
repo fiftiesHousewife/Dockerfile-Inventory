@@ -97,6 +97,8 @@ and one line when its gate is met.
   each HTTP call at debug; the stages' own launchers removed.
   Slice 3 done 10 Nov: a required rate per server (or `--load gentle|normal`), a throttle that slows with the
   server, a YAML settings file.
+  Slice 4 done 10 Nov: `--repository`, `--repository-name-contains`, a first pass with its summary, likely time
+  and question, `--yes`, `--max-dockerfiles`, exit 3.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

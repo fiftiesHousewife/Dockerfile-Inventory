@@ -51,6 +51,24 @@ On GitHub.com or GitHub Enterprise Cloud, the URL is the organisation's:
 GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token) docker-inventory survey --try --load gentle https://github.com/openshift
 ```
 
+Scan part of an organisation: one repository, or every one whose name holds a word. After listing the repositories
+and their files, it says how many Dockerfiles it found and how long the rest will take, and asks before fetching:
+
+```bash
+docker-inventory survey --load gentle --repository acme/payments-api https://github.example.com/acme
+docker-inventory survey --load gentle --repository-name-contains billing https://github.example.com/acme
+```
+
+```
+42 repositories selected, 37 with Dockerfiles: 118 Dockerfiles, 96 distinct
+260 more calls to GitHub at 2 a second, then the other stages: about 3 minutes
+output in out/acme-billing
+Continue? [y/N]
+```
+
+In a script, `--yes` goes on without asking, and `--max-dockerfiles 500` stops (exit 3) when the first pass finds
+more, so a selection that is wider than meant never runs.
+
 Link the images in Artifactory too (lineage runs whenever `ARTIFACTORY_URL` is set):
 
 ```bash
@@ -124,7 +142,8 @@ docker-inventory survey --load gentle https://github.example.com/acme
 Settings come from the environment, or a `--settings` YAML file (the environment wins); a rate in calls a second
 (`GHE_MAX_REQUESTS_PER_SECOND`, `ARTIFACTORY_MAX_REQUESTS_PER_SECOND`) or a `--load` is required for a command that
 calls either server. The exit status is 0 when done, 1 when a stage failed (the last line says which
-and why), and 2 for a usage error found before anything runs. Logs go to stderr: `--quiet`, `--verbose`, or
+and why), 2 for a usage error found before anything is fetched (a selection that matches nothing included), and 3
+when stopped on purpose (no at the question, or over `--max-dockerfiles`). Logs go to stderr: `--quiet`, `--verbose`, or
 `LOG_LEVEL`, and `LOG_FORMAT=json`.
 
 ## Read more

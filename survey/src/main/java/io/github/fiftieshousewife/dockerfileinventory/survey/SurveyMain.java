@@ -2,7 +2,10 @@ package io.github.fiftieshousewife.dockerfileinventory.survey;
 
 import io.github.fiftieshousewife.dockerfileinventory.converter.ConverterMain;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.Combine;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.Confirmation;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.DiscoveryMain;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.RunStopped;
+import io.github.fiftieshousewife.dockerfileinventory.discovery.SelectionNotFound;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsMain;
 import io.github.fiftieshousewife.dockerfileinventory.lineage.LineageMain;
 import io.github.fiftieshousewife.dockerfileinventory.report.CatalogueMain;
@@ -12,6 +15,7 @@ import io.github.fiftieshousewife.dockerfileinventory.validator.ValidatorMain;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -85,7 +89,26 @@ public final class SurveyMain {
      * @return 0 when the report is written, 1 when a stage failed, 2 when the arguments are wrong
      */
     public static int run(List<String> args, Map<String, String> env) {
-        return run(args.toArray(String[]::new), env, RUNNERS, System.err);
+        return run(args, env, Confirmation.ALWAYS);
+    }
+
+    /**
+     * Runs the survey, asking after discovery's first pass whether to fetch.
+     *
+     * @param args {@code [--try] <organisation URL>...}
+     * @param env the settings
+     * @param confirmation asked once discovery has listed the repositories and walked their trees
+     * @return 0 when the report is written, 1 when a stage failed, 2 when the arguments or the selection are wrong,
+     *     3 when stopped on purpose
+     */
+    public static int run(List<String> args, Map<String, String> env, Confirmation confirmation) {
+        return run(args.toArray(String[]::new), env, runners(confirmation), System.err);
+    }
+
+    static Map<String, Runner> runners(Confirmation confirmation) {
+        Map<String, Runner> runners = new HashMap<>(RUNNERS);
+        runners.put("discovery", env -> DiscoveryMain.run(env, confirmation));
+        return runners;
     }
 
     static int run(String[] args, Map<String, String> env, Map<String, Runner> runners, PrintStream err) {
@@ -101,8 +124,12 @@ public final class SurveyMain {
             LOG.info("survey: the report is {}", report.toAbsolutePath());
             return 0;
         } catch (StageFailed e) {
-            err.println("survey: " + explained(e));
-            return 1;
+            err.println("survey: " + (e.getCause() instanceof RunStopped stop ? stop.getMessage() : explained(e)));
+            return switch (e.getCause()) {
+                case SelectionNotFound notFound -> 2;
+                case RunStopped stopped -> 3;
+                default -> 1;
+            };
         }
     }
 

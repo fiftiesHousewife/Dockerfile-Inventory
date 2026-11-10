@@ -26,6 +26,9 @@ final class Discovery {
     private final List<String> organizations;
     private final int concurrency;
     private final int tryRepositories;
+    private final Selection selection;
+    private final int maxDockerfiles;
+    private final Confirmation confirmation;
 
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency) {
         this(gitHub, releases, output, concurrency, List.of());
@@ -36,10 +39,21 @@ final class Discovery {
         this(gitHub, releases, output, concurrency, organizations, 0);
     }
 
-    // tryRepositories: stop once that many scanned repositories held a Dockerfile; 0 scans every one.
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
               List<String> organizations, int tryRepositories) {
+        this(gitHub, releases, output, concurrency, organizations, tryRepositories, Selection.ALL, 0,
+                Confirmation.ALWAYS);
+    }
+
+    // tryRepositories: stop once that many scanned repositories held a Dockerfile; 0 scans every one.
+    // maxDockerfiles: stop after the first pass when it finds more distinct ones; 0 for no ceiling.
+    Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
+              List<String> organizations, int tryRepositories, Selection selection, int maxDockerfiles,
+              Confirmation confirmation) {
         this.gitHub = gitHub;
+        this.selection = selection;
+        this.maxDockerfiles = maxDockerfiles;
+        this.confirmation = confirmation;
         this.concurrency = concurrency;
         this.tryRepositories = tryRepositories;
         this.scans = new Scans(new RepoScan(gitHub, releases), output, concurrency);
@@ -51,7 +65,7 @@ final class Discovery {
     }
 
     Summary run() {
-        List<Repository> repositories = repositories();
+        List<Repository> repositories = selection.of(repositories());
         List<Repository> todo = unfinished(repositories, output.finishedRepositories());
         List<RepoScan.Result> results = tryRepositories > 0 ? scanUntilEnough(todo) : scans.scanAll(todo);
         int failed = (int) results.stream().filter(r -> !r.outcome().status().isFinal()).count();
@@ -59,17 +73,42 @@ final class Discovery {
         List<Located> manifest = output.manifest();
         Map<String, Located> byBlob = firstByBlob(manifest);
         Set<String> reported = output.reportedBlobs();
-        BlobFetch.Fetched fetched = blobFetch.fetch(
-                missing(byBlob.values(), sha -> output.hasBlob(sha) || reported.contains(sha)));
+        List<BlobRequest> blobs = missing(byBlob.values(), sha -> output.hasBlob(sha) || reported.contains(sha));
         List<Located> yaml = output.yaml();
-        BlobFetch.Fetched fetchedYaml = yamlFetch.fetch(missing(firstByBlob(yaml).values(),
-                sha -> output.hasYaml(sha) || reported.contains(sha)));
-        ChangeFetch.Fetched lastChanges = changeFetch.fetch(unchanged(manifest, output.changes().stream()
-                .map(c -> new ChangeRequest(c.repository(), c.commitSha(), c.path())).collect(Collectors.toSet())));
+        List<BlobRequest> yamls = missing(firstByBlob(yaml).values(),
+                sha -> output.hasYaml(sha) || reported.contains(sha));
+        List<ChangeRequest> changes = unchanged(manifest, output.changes().stream()
+                .map(c -> new ChangeRequest(c.repository(), c.commitSha(), c.path())).collect(Collectors.toSet()));
+        goOn(firstPass(repositories.size(), manifest, byBlob.size(),
+                batches(blobs.size()) + batches(yamls.size()) + batches(changes.size())));
+
+        BlobFetch.Fetched fetched = blobFetch.fetch(blobs);
+        BlobFetch.Fetched fetchedYaml = yamlFetch.fetch(yamls);
+        ChangeFetch.Fetched lastChanges = changeFetch.fetch(changes);
 
         return new Summary(repositories.size(), repositories.size() - todo.size(), results.size() - failed, failed,
                 manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges.recorded(),
                 lastChanges.problems(), yaml.size(), fetchedYaml.stored());
+    }
+
+    FirstPass firstPass(int repositories, List<Located> manifest, int distinct, int callsLeft) {
+        return new FirstPass(repositories, (int) manifest.stream().map(Located::repository).distinct().count(),
+                manifest.size(), distinct, callsLeft, output.dir().toString());
+    }
+
+    void goOn(FirstPass pass) {
+        if (maxDockerfiles > 0 && pass.distinct() > maxDockerfiles) {
+            throw new RunStopped("found " + pass.distinct() + " distinct Dockerfiles, more than MAX_DOCKERFILES "
+                    + maxDockerfiles + ": narrow the selection or raise it");
+        }
+        if (!confirmation.proceed(pass)) {
+            throw new RunStopped("stopped before fetching: the first pass is kept in the output folder, and a rerun "
+                    + "starts from it");
+        }
+    }
+
+    static int batches(int requests) {
+        return (requests + BlobFetch.BATCH - 1) / BlobFetch.BATCH;
     }
 
     List<RepoScan.Result> scanUntilEnough(List<Repository> todo) {

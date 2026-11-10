@@ -4,11 +4,13 @@ import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHu
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.repo;
 import static io.github.fiftieshousewife.dockerfileinventory.discovery.FakeGitHub.tree;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -211,5 +213,62 @@ class DiscoveryTest {
 
     private Discovery discovery() {
         return new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4);
+    }
+
+    private Discovery discovery(Selection selection, int maxDockerfiles, Confirmation confirmation) {
+        return new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4, List.of(), 0, selection,
+                maxDockerfiles, confirmation);
+    }
+
+    @Test
+    void afterTheFirstPassTheRunIsSummedUpAndAskedToGoOn() {
+        List<FirstPass> asked = new ArrayList<>();
+
+        discovery(Selection.ALL, 0, pass -> asked.add(pass)).run();
+
+        assertThat(asked).containsExactly(new FirstPass(2, 2, 3, 2, 2, out.toString()));
+    }
+
+    @Test
+    void declinedTheRunStopsBeforeFetchingAnythingAndKeepsItsFirstPass() {
+        assertAll(
+                () -> assertThatThrownBy(() -> discovery(Selection.ALL, 0, pass -> false).run())
+                        .isInstanceOf(RunStopped.class).hasMessageContaining("first pass is kept"),
+                () -> assertThat(gitHub.blobCalls).isEmpty(),
+                () -> assertThat(new DiscoveryOutput(out).manifest()).hasSize(3));
+    }
+
+    @Test
+    void moreDistinctDockerfilesThanTheCeilingStopsTheRunBeforeAsking() {
+        List<FirstPass> asked = new ArrayList<>();
+
+        assertAll(
+                () -> assertThatThrownBy(() -> discovery(Selection.ALL, 1, pass -> asked.add(pass)).run())
+                        .isInstanceOf(RunStopped.class)
+                        .hasMessage("found 2 distinct Dockerfiles, more than MAX_DOCKERFILES 1: narrow the selection "
+                                + "or raise it"),
+                () -> assertThat(asked).isEmpty(),
+                () -> assertThat(gitHub.blobCalls).isEmpty());
+    }
+
+    @Test
+    void aSelectionScansOnlyTheRepositoriesItKeeps() {
+        discovery(new Selection(List.of("pay/worker"), List.of()), 0, Confirmation.ALWAYS).run();
+
+        assertThat(gitHub.treeCalls).allMatch(call -> call.startsWith("pay/worker"));
+    }
+
+    @Test
+    void aSelectionTheListingDoesNotHoldStopsTheRunBeforeAnyTreeIsWalked() {
+        assertAll(
+                () -> assertThatThrownBy(() -> discovery(new Selection(List.of("pay/gone"), List.of()), 0,
+                        Confirmation.ALWAYS).run()).isInstanceOf(SelectionNotFound.class),
+                () -> assertThat(gitHub.treeCalls).isEmpty());
+    }
+
+    @Test
+    void theCallsLeftAreTheBatchesOfFiftyForTheBlobsTheYamlAndTheLastChanges() {
+        assertThat(Discovery.batches(0) + Discovery.batches(1) + Discovery.batches(50) + Discovery.batches(51))
+                .isEqualTo(4);
     }
 }

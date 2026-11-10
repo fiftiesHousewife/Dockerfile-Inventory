@@ -46,6 +46,8 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
                     ChangeFetch and GraphQlHistory: each location's last change, in batches of 50
                     GitHub (interface) / GitHubHttp, GitHubRequests (sending, errors), GraphQlRepositories,
                     GraphQlBlobs, RestTrees; GitHubApi (the three URL forms); RateLimit; ReleaseIndex
+                    Selection (--repository, --repository-name-contains), FirstPass, Confirmation, RunStopped,
+                    SelectionNotFound: the question between the tree walks and the fetches
                     DockerfilePaths: what counts as a Dockerfile (not source, templates, images, grammars, symlinks,
                     vendor/ or test inputs)
 facts/              stage 1: blobs -> rewrite-docker -> ImageFacts, steps, normal-form hashes, rates
@@ -93,7 +95,7 @@ validator/          stage 3c: facts -> each image judged through a platform prof
                     linked through lineage, P9 answered by the manifest); FloatingBase (P11)
 cli/                the docker-inventory command (`DockerInventory`): Commands (each command and the settings it reads,
                     required ones checked before it runs), Command, Setting, Help, NearMisses (a setting's typo), Flags (--settings, --load), SettingsFile (the YAML),
-                    Load (the gentle and normal presets), Logging,
+                    Load (the gentle and normal presets), Logging, Prompt (the question after discovery's first pass),
                     Version (from the build); the `docker-inventory` distribution (`installDist`), tested as installed
 survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`), Survey (the stages in order, each
                     with the folders the earlier ones wrote); every stage's ...Main.run(env)

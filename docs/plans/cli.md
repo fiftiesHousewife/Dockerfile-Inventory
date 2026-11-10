@@ -201,3 +201,38 @@ that calls a server requires its rate before it runs (2), and the tokens are req
 (`Setting.requiredWith`, `requiredUnless`, shown in the help). Tried with the installed command: a settings file with
 no token gets as far as discovery's token check; without a load, 2 naming the setting; a token in the file, 2.
 
+## Slice 4 in detail (10 Nov)
+
+- `--repository` and `--repository-name-contains` (repeatable) become `REPOSITORIES` and `REPOSITORY_NAME_CONTAINS`
+  (comma-separated), so a selection also works through the environment. Discovery's `Selection` keeps a repository
+  named exactly (`owner/name`, any case) or whose name holds one of the strings (any case). A named repository the
+  organisations' listing does not hold, or a selection that keeps nothing, stops discovery after the listing, before
+  any tree is walked: `SelectionNotFound`, exit 2.
+- The first pass is the listing and the tree walks (resumable, as now); then `FirstPass`: repositories selected, those
+  holding Dockerfiles, locations, distinct Dockerfiles, and GitHub calls left (blobs, YAML and last changes, 50 a
+  call). Over `MAX_DOCKERFILES` (`--max-dockerfiles`; distinct Dockerfiles), or declined, discovery stops: `RunStopped`,
+  exit 3. A library caller confirms everything; the CLI asks.
+- The estimate: GitHub's calls left at its rate, plus the later stages' seconds per distinct Dockerfile, measured on
+  the combined estate. Artifactory is not estimated: lineage learns how many images there are by listing them.
+- `--yes` skips the question; without a terminal and without `--yes`, `survey` and `discovery` exit 2 before running.
+- A selection's run writes to `out/<organisation>-<text>` (`-<name>` for a repository, joined with `+`).
+
+Tests, in order: `Selection`; discovery stopping on a missing name and on nothing kept; `FirstPass` and its calls left;
+discovery asking after the first pass and stopping when declined or over the ceiling; the survey's folder for a
+selection; the CLI's flags, its question and answer, `--yes`, no terminal, and the exit statuses 2 and 3.
+
+## Built, slice 4 (10 Nov)
+
+Discovery: `Selection` (`REPOSITORIES`, `REPOSITORY_NAME_CONTAINS`) keeps the listed repositories it names or whose
+name holds a string, any case, and throws `SelectionNotFound` for a name not listed or a selection keeping nothing,
+before any tree is walked. After the tree walks, `FirstPass` (repositories, those with Dockerfiles, locations, distinct
+ones, GitHub calls left, the output folder) goes to a `Confirmation`; over `MAX_DOCKERFILES`, or declined, `RunStopped`,
+with the first pass kept for a rerun. `DiscoveryMain.run(env, confirmation)` and `SurveyMain.run(args, env,
+confirmation)`; the survey maps the two stops to 2 and 3 and names a selection's folder (`out/payments-billing`). The
+CLI: `--repository`, `--repository-name-contains` (both repeatable), `--max-dockerfiles` and `--yes` become those
+settings (and `ASSUME_YES`); `Prompt` prints the summary and the likely time (GitHub's calls left at its rate, 10 s,
+and 14 ms per distinct Dockerfile, measured on the combined estate: facts 11 s, catalogue 2 s, rules 11 s, validator
+1 s, converter 45 s, report 3 s for 5,250) and asks; without a terminal and without `--yes` it exits 2 before running.
+Tried with the installed command: no terminal, 2; a bad ceiling, 2; the settings in `discovery --help`. Not tried
+here: a real first pass and question against GitHub (no token in this session); the owner's run is the test.
+

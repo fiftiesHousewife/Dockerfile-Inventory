@@ -123,4 +123,15 @@ class SurveyTest {
                         dirs)).extracting(Survey.Step::stage).containsExactly("discovery"),
                 () -> assertThat(dirs).containsEntry("DISCOVERY_DIR", "out/acme/discovery"));
     }
+
+    @Test
+    void aSelectionsRunHasItsOwnFolderNamedForWhatItSelects() {
+        List<String> urls = List.of("https://github.com/payments");
+
+        assertAll(
+                () -> assertThat(Survey.root(urls, false, Map.of("REPOSITORY_NAME_CONTAINS", "billing")))
+                        .isEqualTo("out/payments-billing"),
+                () -> assertThat(Survey.root(urls, true, Map.of("REPOSITORIES", "payments/api,payments/web",
+                        "REPOSITORY_NAME_CONTAINS", "billing"))).isEqualTo("out/payments-api+web+billing-try"));
+    }
 }
