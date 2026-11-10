@@ -4,6 +4,7 @@ import io.github.fiftieshousewife.dockerfile.model.Raw;
 import io.github.fiftieshousewife.dockerfile.model.Run;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfile.model.Instruction;
 import io.github.fiftieshousewife.dockerfile.model.PackageInstall;
@@ -32,14 +33,15 @@ class ConvertCommandsTest {
 
     @Test
     void aRunWithAFlagTheModelLacksOrInExecFormStaysRawAsPrinted() {
-        assertThat(ConvertCommands.run(run("RUN --device=/dev/fuse make"), "printed"))
-                .isEqualTo(new Raw("printed", "RUN with flag --device"));
-        assertThat(List.of(run("RUN [\"grep\", \"\\d+\"]"), run("RUN <<EOF bash\necho hi\nEOF\n"),
-                run("RUN <<-EOF\n\techo hi\nEOF\n")))
-                .map(run -> ConvertCommands.run(run, "printed"))
-                .containsExactly(new Raw("printed", "RUN in exec form that is not JSON"),
-                        new Raw("printed", "RUN with a heredoc that is not one plain script"),
-                        new Raw("printed", "RUN with a heredoc that is not one plain script"));
+        assertAll(
+                () -> assertThat(ConvertCommands.run(run("RUN --device=/dev/fuse make"), "printed"))
+                        .isEqualTo(new Raw("printed", "RUN with flag --device")),
+                () -> assertThat(List.of(run("RUN [\"grep\", \"\\d+\"]"), run("RUN <<EOF bash\necho hi\nEOF\n"),
+                        run("RUN <<-EOF\n\techo hi\nEOF\n")))
+                        .map(run -> ConvertCommands.run(run, "printed"))
+                        .containsExactly(new Raw("printed", "RUN in exec form that is not JSON"),
+                                new Raw("printed", "RUN with a heredoc that is not one plain script"),
+                                new Raw("printed", "RUN with a heredoc that is not one plain script")));
     }
 
     @Test
@@ -93,8 +95,11 @@ class ConvertCommandsTest {
 
     @Test
     void decodedReadsAQuotedOrBareWordAsAJsonString() {
-        assertThat(List.of("\"a\\\"b\"", "bare")).map(ConvertCommands::decoded).containsExactly("a\"b", "bare");
-        assertThatThrownBy(() -> ConvertCommands.decoded("\"\\d\"")).isInstanceOf(JacksonException.class);
+        assertAll(
+                () -> assertThat(List.of("\"a\\\"b\"", "bare")).map(ConvertCommands::decoded).containsExactly("a\"b",
+                        "bare"),
+                () -> assertThatThrownBy(() -> ConvertCommands.decoded("\"\\d\""))
+                        .isInstanceOf(JacksonException.class));
     }
 
     private static Docker.Run run(String line) {

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,10 +32,12 @@ class FactsRunTest {
     void writesFactsForEachBlobAndRecordsFailures() throws IOException {
         new FactsRun(discovery, out).run();
 
-        assertThat(Files.readAllLines(out.resolve("facts.jsonl"))).singleElement()
-                .satisfies(line -> assertThat(line).contains("\"blobSha\":\"good\"").contains("\"signatureHash\""));
-        assertThat(Files.readAllLines(out.resolve("parse-failures.jsonl"))).singleElement()
-                .satisfies(line -> assertThat(line).contains("\"blobSha\":\"bad\""));
+        assertAll(
+                () -> assertThat(Files.readAllLines(out.resolve("facts.jsonl"))).singleElement()
+                        .satisfies(line -> assertThat(line).contains("\"blobSha\":\"good\"")
+                                .contains("\"signatureHash\"")),
+                () -> assertThat(Files.readAllLines(out.resolve("parse-failures.jsonl"))).singleElement()
+                        .satisfies(line -> assertThat(line).contains("\"blobSha\":\"bad\"")));
     }
 
     @Test
@@ -62,8 +65,9 @@ class FactsRunTest {
 
         FactsRun.Summary again = new FactsRun(discovery, out).run();
 
-        assertThat(again).isEqualTo(new FactsRun.Summary(0, 0, 2));
-        assertThat(Files.readAllLines(out.resolve("facts.jsonl"))).hasSize(1);
+        assertAll(
+                () -> assertThat(again).isEqualTo(new FactsRun.Summary(0, 0, 2)),
+                () -> assertThat(Files.readAllLines(out.resolve("facts.jsonl"))).hasSize(1));
     }
 
     @Test
@@ -91,17 +95,16 @@ class FactsRunTest {
 
         new FactsRun(discovery, out).run();
 
-        assertThat(rates()).satisfies(rates -> {
-            assertThat(rates.blobs()).isEqualTo(4);
-            assertThat(rates.parseFailures()).isEqualTo(1);
-            assertThat(rates.parseFailureRate()).isEqualTo(0.25);
-            assertThat(rates.runs()).isEqualTo(3);
-            assertThat(rates.opaqueRuns()).isEqualTo(1);
-            assertThat(rates.opaqueRunRate()).isCloseTo(1.0 / 3, Offset.offset(1e-9));
-            assertThat(rates.unresolvedFromByOrganisation()).isEqualTo(Map.of("platform", 1));
-            assertThat(rates.buildKitFeatures()).isEqualTo(Map.of("run-mount", 1, "syntax-directive", 1));
-            assertThat(rates.otherShellRuns()).isEqualTo(1);
-        });
+        assertAll(
+                () -> assertThat(rates().blobs()).isEqualTo(4),
+                () -> assertThat(rates().parseFailures()).isEqualTo(1),
+                () -> assertThat(rates().parseFailureRate()).isEqualTo(0.25),
+                () -> assertThat(rates().runs()).isEqualTo(3),
+                () -> assertThat(rates().opaqueRuns()).isEqualTo(1),
+                () -> assertThat(rates().opaqueRunRate()).isCloseTo(1.0 / 3, Offset.offset(1e-9)),
+                () -> assertThat(rates().unresolvedFromByOrganisation()).isEqualTo(Map.of("platform", 1)),
+                () -> assertThat(rates().buildKitFeatures()).isEqualTo(Map.of("run-mount", 1, "syntax-directive", 1)),
+                () -> assertThat(rates().otherShellRuns()).isEqualTo(1));
     }
 
     @Test
@@ -110,21 +113,21 @@ class FactsRunTest {
 
         new FactsRun(discovery, out).run();
 
-        assertThat(rates()).satisfies(rates -> {
-            assertThat(rates.blobs()).isEqualTo(3);
-            assertThat(rates.templates()).isEqualTo(1);
-            assertThat(rates.parseFailures()).isEqualTo(1);
-            assertThat(rates.parseFailureRate()).isEqualTo(0.5);
-        });
+        assertAll(
+                () -> assertThat(rates().blobs()).isEqualTo(3),
+                () -> assertThat(rates().templates()).isEqualTo(1),
+                () -> assertThat(rates().parseFailures()).isEqualTo(1),
+                () -> assertThat(rates().parseFailureRate()).isEqualTo(0.5));
     }
 
     @Test
     void recordAppendsAParsedBlobToFactsAndAFailedOneToFailures() throws IOException {
         FactsRun run = new FactsRun(discovery, out);
 
-        assertThat(run.record("x", "FROM ubi9\n")).isTrue();
-        assertThat(run.record("y", "not a dockerfile\n")).isFalse();
-        assertThat(run.recorded()).containsExactlyInAnyOrder("x", "y");
+        assertAll(
+                () -> assertThat(run.record("x", "FROM ubi9\n")).isTrue(),
+                () -> assertThat(run.record("y", "not a dockerfile\n")).isFalse(),
+                () -> assertThat(run.recorded()).containsExactlyInAnyOrder("x", "y"));
     }
 
     @Test
@@ -147,8 +150,9 @@ class FactsRunTest {
 
     @Test
     void aBlobNamedPartIsStillBeingWritten() {
-        assertThat(FactsRun.stillBeingWritten(Path.of("abc.part"))).isTrue();
-        assertThat(FactsRun.stillBeingWritten(Path.of("abc"))).isFalse();
+        assertAll(
+                () -> assertThat(FactsRun.stillBeingWritten(Path.of("abc.part"))).isTrue(),
+                () -> assertThat(FactsRun.stillBeingWritten(Path.of("abc"))).isFalse());
     }
 
     @Test

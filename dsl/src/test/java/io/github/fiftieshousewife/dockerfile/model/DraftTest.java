@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -23,8 +24,9 @@ class DraftTest {
         List<Instruction> before = draft.instructions();
         draft.add(new Workdir("/app"));
 
-        assertThat(before).isEmpty();
-        assertThat(draft.instructions()).containsExactly(new Workdir("/app"));
+        assertAll(
+                () -> assertThat(before).isEmpty(),
+                () -> assertThat(draft.instructions()).containsExactly(new Workdir("/app")));
     }
 
     @Test
@@ -46,7 +48,8 @@ class DraftTest {
         Draft middle = new Draft("mid", null, "deps");
         Draft last = new Draft(null, null, "mid");
 
-        assertThat(last.baseIn(List.of(first, second, middle, last))).isEqualTo(UBI);
-        assertThat(first.baseIn(List.of(first))).isEqualTo(ALPINE);
+        assertAll(
+                () -> assertThat(last.baseIn(List.of(first, second, middle, last))).isEqualTo(UBI),
+                () -> assertThat(first.baseIn(List.of(first))).isEqualTo(ALPINE));
     }
 }

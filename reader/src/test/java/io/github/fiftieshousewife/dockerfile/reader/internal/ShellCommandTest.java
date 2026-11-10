@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfile.reader.internal.ShellToken.Word;
 import java.util.HashMap;
@@ -34,8 +35,9 @@ class ShellCommandTest {
 
         ShellCommand command = command(assignments, word("A=1"), word("make"), word("X=2"));
 
-        assertThat(assignments).containsExactly(Map.entry("A", "1"));
-        assertThat(command.take()).containsExactly("make", "X=2");
+        assertAll(
+                () -> assertThat(assignments).containsExactly(Map.entry("A", "1")),
+                () -> assertThat(command.take()).containsExactly("make", "X=2"));
     }
 
     @Test
@@ -61,15 +63,17 @@ class ShellCommandTest {
     void firstWordIsFalseForAnEmptyCommand() {
         ShellCommand command = new ShellCommand();
 
-        assertThat(command.firstWordIs("case")).isFalse();
-        assertThat(command.isEmpty()).isTrue();
+        assertAll(
+                () -> assertThat(command.firstWordIs("case")).isFalse(),
+                () -> assertThat(command.isEmpty()).isTrue());
     }
 
     @Test
     void takeEmptiesTheCommand() {
         ShellCommand command = command(new HashMap<>(), word("a"), word("b"));
 
-        assertThat(command.take()).containsExactly("a", "b");
-        assertThat(command.isEmpty()).isTrue();
+        assertAll(
+                () -> assertThat(command.take()).containsExactly("a", "b"),
+                () -> assertThat(command.isEmpty()).isTrue());
     }
 }

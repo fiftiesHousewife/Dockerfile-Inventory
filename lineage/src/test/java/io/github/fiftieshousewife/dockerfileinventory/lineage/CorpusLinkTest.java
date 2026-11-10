@@ -35,7 +35,8 @@ class CorpusLinkTest {
         Resolved.Node image = new Resolved.Node(name,
                 ImageConfig.parse(Files.readString(dir.resolve("config.json"))).orElseThrow());
 
-        Link link = LinkRule.DEFAULT.credit(Links.of(List.of(image), Map.of(name, new Parent.Root()), dockerfiles(dir), Set.of()))
+        Link link = LinkRule.DEFAULT.credit(Links.of(List.of(image), Map.of(name, new Parent.Root()), dockerfiles(dir),
+                Set.of()))
                 .get(name);
 
         List<String> blobShas = new ArrayList<>();

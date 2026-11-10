@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,11 +74,10 @@ class LinksTest {
 
         Map<String, Link> links = Links.of(images, parents, dockerfiles, Set.of("team/base", "team/app"));
 
-        assertThat(links).satisfies(l -> {
-            assertThat(l.get("orphan").parentMissing()).isTrue();
-            assertThat(l.get("on-external").parentMissing()).isFalse();
-            assertThat(l.get("with-parent").parentMissing()).isFalse();
-        });
+        assertAll(
+                () -> assertThat(links.get("orphan").parentMissing()).isTrue(),
+                () -> assertThat(links.get("on-external").parentMissing()).isFalse(),
+                () -> assertThat(links.get("with-parent").parentMissing()).isFalse());
     }
 
     @Test
@@ -106,10 +106,11 @@ class LinksTest {
 
     @Test
     void anExactGroupIsStrongWhenAnyDockerfileIsReleasedAndListsItsBlobsSorted() {
-        assertThat(Links.exact(List.of(dockerfile("b", "ubi9", false), dockerfile("a", "ubi9", true))))
-                .isEqualTo(new Link(Link.Tier.STRONG, List.of("a", "b"), false));
-        assertThat(Links.exact(List.of(dockerfile("a", "ubi9", false))))
-                .isEqualTo(new Link(Link.Tier.PROBABLE, List.of("a"), false));
+        assertAll(
+                () -> assertThat(Links.exact(List.of(dockerfile("b", "ubi9", false), dockerfile("a", "ubi9", true))))
+                        .isEqualTo(new Link(Link.Tier.STRONG, List.of("a", "b"), false)),
+                () -> assertThat(Links.exact(List.of(dockerfile("a", "ubi9", false))))
+                        .isEqualTo(new Link(Link.Tier.PROBABLE, List.of("a"), false)));
     }
 
     @Test
@@ -136,12 +137,11 @@ class LinksTest {
                 Set.of("team/base"));
         Link linked = new Link(Link.Tier.PROBABLE, List.of("df"), false);
 
-        assertThat(links).satisfies(l -> {
-            assertThat(l.parentMissing(new Parent.Root(), linked)).isTrue();
-            assertThat(l.parentMissing(null, linked)).isTrue();
-            assertThat(l.parentMissing(new Parent.Of("base"), linked)).isFalse();
-            assertThat(l.parentMissing(new Parent.Root(), Link.NONE)).isFalse();
-        });
+        assertAll(
+                () -> assertThat(links.parentMissing(new Parent.Root(), linked)).isTrue(),
+                () -> assertThat(links.parentMissing(null, linked)).isTrue(),
+                () -> assertThat(links.parentMissing(new Parent.Of("base"), linked)).isFalse(),
+                () -> assertThat(links.parentMissing(new Parent.Root(), Link.NONE)).isFalse());
     }
 
     @Test
@@ -150,9 +150,11 @@ class LinksTest {
         Links links = new Links(List.of(image), List.of(dockerfile("df", "team/base", false, "RUN make")),
                 Set.of("team/base"));
 
-        assertThat(links.link(image, new Parent.Root())).isEqualTo(new Link(Link.Tier.PROBABLE, List.of("df"), true));
-        assertThat(links.matched(image, List.of(instruction("RUN make"))))
-                .isEqualTo(new Link(Link.Tier.PROBABLE, List.of("df"), false));
+        assertAll(
+                () -> assertThat(links.link(image, new Parent.Root())).isEqualTo(new Link(Link.Tier.PROBABLE,
+                        List.of("df"), true)),
+                () -> assertThat(links.matched(image, List.of(instruction("RUN make"))))
+                        .isEqualTo(new Link(Link.Tier.PROBABLE, List.of("df"), false)));
     }
 
     static Resolved.Node image(String digest, String fromComment, String... steps) {

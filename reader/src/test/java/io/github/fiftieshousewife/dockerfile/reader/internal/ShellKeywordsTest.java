@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +34,9 @@ class ShellKeywordsTest {
         ShellKeywords.dropFunctionHeader(braced);
         ShellKeywords.dropFunctionHeader(bare);
 
-        assertThat(braced).containsExactly("apk", "add", "git");
-        assertThat(bare).isEmpty();
+        assertAll(
+                () -> assertThat(braced).containsExactly("apk", "add", "git"),
+                () -> assertThat(bare).isEmpty());
     }
 
     @Test
@@ -54,9 +56,11 @@ class ShellKeywordsTest {
 
     @Test
     void aForLoopWithoutInOrOverWordsOnlyTheBuildKnowsAssignsNothing() {
-        assertThat(ShellKeywords.forAssignment(List.of("for", "p"), Map.of())).isEmpty();
-        assertThat(ShellKeywords.forAssignment(List.of("for", "p", "do"), Map.of())).isEmpty();
-        assertThat(ShellKeywords.forAssignment(List.of("for", "f", "in", "/etc/*.conf"), Map.of())).isEmpty();
+        assertAll(
+                () -> assertThat(ShellKeywords.forAssignment(List.of("for", "p"), Map.of())).isEmpty(),
+                () -> assertThat(ShellKeywords.forAssignment(List.of("for", "p", "do"), Map.of())).isEmpty(),
+                () -> assertThat(ShellKeywords.forAssignment(List.of("for", "f", "in", "/etc/*.conf"), Map.of()))
+                        .isEmpty());
     }
 
     @ParameterizedTest

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.Test;
 
@@ -19,11 +20,12 @@ class ShellScanTest {
     void doubledConsumesARepeatedCharacterOnly() {
         ShellScan scan = new ShellScan("&&|");
 
-        assertThat(scan.doubled('&')).isTrue();
-        assertThat(scan.at).isEqualTo(1);
-        assertThat(scan.doubled('|')).isTrue();
-        assertThat(scan.doubled('|')).isFalse();
-        assertThat(scan.at).isEqualTo(2);
+        assertAll(
+                () -> assertThat(scan.doubled('&')).isTrue(),
+                () -> assertThat(scan.at).isEqualTo(1),
+                () -> assertThat(scan.doubled('|')).isTrue(),
+                () -> assertThat(scan.doubled('|')).isFalse(),
+                () -> assertThat(scan.at).isEqualTo(2));
     }
 
     @Test
@@ -32,11 +34,10 @@ class ShellScanTest {
 
         scan.appendThrough(5);
 
-        assertThat(scan).satisfies(s -> {
-            assertThat(s.word).hasToString("`date`");
-            assertThat(s.at).isEqualTo(5);
-            assertThat(s.unreadable).isFalse();
-        });
+        assertAll(
+                () -> assertThat(scan.word).hasToString("`date`"),
+                () -> assertThat(scan.at).isEqualTo(5),
+                () -> assertThat(scan.unreadable).isFalse());
     }
 
     @Test
@@ -54,11 +55,12 @@ class ShellScanTest {
         scan.word.append("abc");
         scan.quoted = true;
 
-        assertThat(scan.takeWord()).isEqualTo("abc");
-        assertThat(scan).satisfies(s -> {
-            assertThat(s.word).isEmpty();
-            assertThat(s.quoted).isFalse();
-        });
+        assertAll(
+                () -> assertThat(scan.takeWord()).isEqualTo("abc"),
+                () -> assertThat(scan).satisfies(s -> {
+                    assertThat(s.word).isEmpty();
+                    assertThat(s.quoted).isFalse();
+                }));
     }
 
     @Test

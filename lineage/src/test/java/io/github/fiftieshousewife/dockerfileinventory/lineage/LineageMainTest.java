@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -47,10 +48,12 @@ class LineageMainTest {
 
     @Test
     void aMissingOrBlankRequiredSettingIsAnErrorNamingIt() {
-        assertThatIllegalStateException().isThrownBy(() -> LineageMain.required(Map.of(), "OUT_DIR"))
-                .withMessage("OUT_DIR is not set");
-        assertThatIllegalStateException().isThrownBy(() -> LineageMain.required(Map.of("OUT_DIR", " "), "OUT_DIR"))
-                .withMessage("OUT_DIR is not set");
+        assertAll(
+                () -> assertThatIllegalStateException().isThrownBy(() -> LineageMain.required(Map.of(), "OUT_DIR"))
+                        .withMessage("OUT_DIR is not set"),
+                () -> assertThatIllegalStateException().isThrownBy(() -> LineageMain.required(Map.of("OUT_DIR", " "),
+                        "OUT_DIR"))
+                        .withMessage("OUT_DIR is not set"));
     }
 
     @Test
@@ -60,8 +63,9 @@ class LineageMainTest {
         LineageMain.run(Map.of("OUT_DIR", out.toString(), "FACTS_DIR", facts.toString(),
                 "DISCOVERY_DIR", discovery.toString(), "ARTIFACTORY_URL", ""));
 
-        assertThat(out.resolve("rates.json")).exists();
-        assertThat(out.resolve("images.jsonl")).doesNotExist();
+        assertAll(
+                () -> assertThat(out.resolve("rates.json")).exists(),
+                () -> assertThat(out.resolve("images.jsonl")).doesNotExist());
     }
 
     @Test

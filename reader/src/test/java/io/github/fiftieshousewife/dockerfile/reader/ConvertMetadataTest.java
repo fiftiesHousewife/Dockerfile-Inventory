@@ -7,6 +7,7 @@ import io.github.fiftieshousewife.dockerfile.model.Raw;
 import io.github.fiftieshousewife.dockerfile.model.Run;
 import io.github.fiftieshousewife.dockerfile.model.Volume;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfile.model.CommandForm;
 import io.github.fiftieshousewife.dockerfile.model.Instruction;
@@ -56,13 +57,14 @@ class ConvertMetadataTest {
         Map<String, String> options = new LinkedHashMap<>();
         options.put("interval", "30s");
         options.put("timeout", "3s");
-        assertThat(instructions).containsExactly(
-                new Healthcheck(options, List.of("curl", "-f", "http://localhost/"), CommandForm.EXEC),
-                new Healthcheck(Map.of(), List.of("curl -f http://localhost/ || exit 1"),
-                        CommandForm.SHELL),
-                Healthcheck.NONE);
-        assertThat(((Healthcheck) instructions.getFirst()).options().keySet())
-                .containsExactly("interval", "timeout");
+        assertAll(
+                () -> assertThat(instructions).containsExactly(
+                        new Healthcheck(options, List.of("curl", "-f", "http://localhost/"), CommandForm.EXEC),
+                        new Healthcheck(Map.of(), List.of("curl -f http://localhost/ || exit 1"),
+                                CommandForm.SHELL),
+                        Healthcheck.NONE),
+                () -> assertThat(((Healthcheck) instructions.getFirst()).options().keySet())
+                        .containsExactly("interval", "timeout"));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -20,8 +21,9 @@ class ExpansionsTest {
 
     @Test
     void aWordWithADollarParenthesisOrABacktickHoldsACommandSubstitution() {
-        assertThat(Expansions.holdsCommandSubstitution("$(uname -m)")).isTrue();
-        assertThat(Expansions.holdsCommandSubstitution("`id -u`")).isTrue();
-        assertThat(Expansions.holdsCommandSubstitution("${ARCH}")).isFalse();
+        assertAll(
+                () -> assertThat(Expansions.holdsCommandSubstitution("$(uname -m)")).isTrue(),
+                () -> assertThat(Expansions.holdsCommandSubstitution("`id -u`")).isTrue(),
+                () -> assertThat(Expansions.holdsCommandSubstitution("${ARCH}")).isFalse());
     }
 }

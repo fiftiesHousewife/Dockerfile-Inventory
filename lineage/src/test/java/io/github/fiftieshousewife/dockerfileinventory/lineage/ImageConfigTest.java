@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -13,8 +14,10 @@ class ImageConfigTest {
 
     @Test
     void textThatIsNotJsonReadsAsNothing() {
-        assertThat(ImageConfig.json("{")).isEmpty();
-        assertThat(ImageConfig.json("{\"a\": 1}")).hasValueSatisfying(node -> assertThat(node.has("a")).isTrue());
+        assertAll(
+                () -> assertThat(ImageConfig.json("{")).isEmpty(),
+                () -> assertThat(ImageConfig.json("{\"a\": 1}")).hasValueSatisfying(node -> assertThat(node.has("a"))
+                        .isTrue()));
     }
 
     @Test
@@ -32,11 +35,13 @@ class ImageConfigTest {
 
     @Test
     void ofReadsAConfigWithoutAConfigSection() {
-        assertThat(ImageConfig.of(JSON.readTree("{\"rootfs\": {\"diff_ids\": [\"L1\"]}}"))).satisfies(config -> {
-            assertThat(config.diffIds()).containsExactly("L1");
-            assertThat(config.user()).isNull();
-            assertThat(config.env()).isEmpty();
-        });
+        assertAll(
+                () -> assertThat(ImageConfig.of(JSON.readTree("{\"rootfs\": {\"diff_ids\": [\"L1\"]}}")).diffIds())
+                        .containsExactly("L1"),
+                () -> assertThat(ImageConfig.of(JSON.readTree("{\"rootfs\": {\"diff_ids\": [\"L1\"]}}")).user())
+                        .isNull(),
+                () -> assertThat(ImageConfig.of(JSON.readTree("{\"rootfs\": {\"diff_ids\": [\"L1\"]}}")).env())
+                        .isEmpty());
     }
 
     @Test
@@ -69,25 +74,29 @@ class ImageConfigTest {
 
     @Test
     void textThatIsNotJsonOrHasNoRootfsIsUnreadable() {
-        assertThat(ImageConfig.parse("not json")).isEmpty();
-        assertThat(ImageConfig.parse("{\"config\": {}}")).isEmpty();
+        assertAll(
+                () -> assertThat(ImageConfig.parse("not json")).isEmpty(),
+                () -> assertThat(ImageConfig.parse("{\"config\": {}}")).isEmpty());
     }
 
     @Test
     void readsEnvWorkingDirEntrypointCmdAndOnBuild() {
-        assertThat(ImageConfig.parse(Fixtures.artifactory("config-full.json"))).hasValueSatisfying(config -> {
-            assertThat(config.env()).containsExactly(
-                    Map.entry("PATH", "/opt/app-root/bin:/usr/bin"), Map.entry("APP_ROOT", "/opt/app-root"),
-                    Map.entry("EMPTY", ""));
-            assertThat(config.workingDir()).isEqualTo("/opt/app-root/src");
-            assertThat(config.entrypoint()).containsExactly("container-entrypoint");
-            assertThat(config.cmd()).containsExactly("/bin/sh", "-c", "$STI_SCRIPTS_PATH/usage");
-            assertThat(config.onBuild()).containsExactly("RUN make");
-        });
-        assertThat(ImageConfig.parse(Fixtures.artifactory("config-bare.json"))).hasValueSatisfying(config -> {
-            assertThat(config.workingDir()).isNull();
-            assertThat(config.entrypoint()).isEmpty();
-            assertThat(config.onBuild()).isEmpty();
-        });
+        assertAll(
+                () -> assertThat(ImageConfig.parse(Fixtures.artifactory("config-full.json")))
+                        .hasValueSatisfying(config -> {
+                    assertThat(config.env()).containsExactly(
+                            Map.entry("PATH", "/opt/app-root/bin:/usr/bin"), Map.entry("APP_ROOT", "/opt/app-root"),
+                            Map.entry("EMPTY", ""));
+                    assertThat(config.workingDir()).isEqualTo("/opt/app-root/src");
+                    assertThat(config.entrypoint()).containsExactly("container-entrypoint");
+                    assertThat(config.cmd()).containsExactly("/bin/sh", "-c", "$STI_SCRIPTS_PATH/usage");
+                    assertThat(config.onBuild()).containsExactly("RUN make");
+                }),
+                () -> assertThat(ImageConfig.parse(Fixtures.artifactory("config-bare.json")))
+                        .hasValueSatisfying(config -> {
+                    assertThat(config.workingDir()).isNull();
+                    assertThat(config.entrypoint()).isEmpty();
+                    assertThat(config.onBuild()).isEmpty();
+                }));
     }
 }

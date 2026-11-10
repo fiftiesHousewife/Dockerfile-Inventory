@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,9 +37,10 @@ class StepsTest {
             dockerfile = new String(Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        assertThat(steps(dockerfile)).containsExactlyElementsOf(expected);
-        assertThat(NormalForms.fromPath(FactExtractorTest.facts(dockerfile).base()))
-                .isEqualTo(contract.path("fromPath").asString());
+        assertAll(
+                () -> assertThat(steps(dockerfile)).containsExactlyElementsOf(expected),
+                () -> assertThat(NormalForms.fromPath(FactExtractorTest.facts(dockerfile).base()))
+                        .isEqualTo(contract.path("fromPath").asString()));
     }
 
     @Test
@@ -144,9 +146,10 @@ class StepsTest {
             dockerfile = new String(Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        assertThat(steps(dockerfile)).containsExactlyElementsOf(expected);
-        assertThat(NormalForms.fromPath(FactExtractorTest.facts(dockerfile).base()))
-                .isEqualTo(contract.path("fromPath").asString());
+        assertAll(
+                () -> assertThat(steps(dockerfile)).containsExactlyElementsOf(expected),
+                () -> assertThat(NormalForms.fromPath(FactExtractorTest.facts(dockerfile).base()))
+                        .isEqualTo(contract.path("fromPath").asString()));
     }
 
     @Test
@@ -187,14 +190,16 @@ class StepsTest {
 
     @Test
     void destinationIsTheLastArgumentAfterAnyFlagsOrTheLastArrayElement() {
-        assertThat(Steps.destination("--chown=1:0 --link a b /opt/")).isEqualTo("/opt/");
-        assertThat(Steps.destination("--chown=1:0 [\"a b\", \"/c d/\"]")).isEqualTo("/c d/");
+        assertAll(
+                () -> assertThat(Steps.destination("--chown=1:0 --link a b /opt/")).isEqualTo("/opt/"),
+                () -> assertThat(Steps.destination("--chown=1:0 [\"a b\", \"/c d/\"]")).isEqualTo("/c d/"));
     }
 
     @Test
     void pairKeysAreTheSortedKeysOrALegacyPairsOnlyKey() {
-        assertThat(Steps.pairKeys("b=1 a=\"x y\"")).isEqualTo("a b");
-        assertThat(Steps.pairKeys("\"MAINTAINER\" someone <a@b>")).isEqualTo("MAINTAINER");
+        assertAll(
+                () -> assertThat(Steps.pairKeys("b=1 a=\"x y\"")).isEqualTo("a b"),
+                () -> assertThat(Steps.pairKeys("\"MAINTAINER\" someone <a@b>")).isEqualTo("MAINTAINER"));
     }
 
     @Test
@@ -208,8 +213,9 @@ class StepsTest {
     void earlierStageIsNoneForATaggedBaseOrAnUnnamedImage() {
         List<Docker.Stage> stages = Parsed.file("FROM a AS base\nFROM base:1\nFROM other\n").getStages();
 
-        assertThat(Steps.earlierStage(stages.get(1).getFrom(), stages.subList(0, 1))).isEqualTo(-1);
-        assertThat(Steps.earlierStage(stages.get(2).getFrom(), stages.subList(0, 2))).isEqualTo(-1);
+        assertAll(
+                () -> assertThat(Steps.earlierStage(stages.get(1).getFrom(), stages.subList(0, 1))).isEqualTo(-1),
+                () -> assertThat(Steps.earlierStage(stages.get(2).getFrom(), stages.subList(0, 2))).isEqualTo(-1));
     }
 
     @Test

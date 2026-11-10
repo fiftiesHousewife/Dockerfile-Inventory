@@ -61,16 +61,17 @@ class AnalysisTest {
     void writesEachImagesParentLinkAndEffectiveProperties() throws IOException {
         new Analysis(out, facts, discovery, LinkRule.DEFAULT).run();
 
-        assertThat(byDigest("lineage.jsonl")).satisfies(lineage -> {
-            assertThat(lineage.get("app").path("parent").path("configDigest").asString()).isEqualTo("base");
-            assertThat(lineage.get("base").path("parent").path("configDigest").asString()).isEqualTo("ubi");
-            assertThat(lineage.get("ubi").path("parent").path("kind").asString()).isEqualTo("Root");
-        });
-        assertThat(byDigest("links.jsonl")).satisfies(links -> {
-            assertThat(links.get("app").path("tier").asString()).isEqualTo("STRONG");
-            assertThat(links.get("base").path("tier").asString()).isEqualTo("PROBABLE");
-            assertThat(links.get("stray").path("tier").asString()).isEqualTo("NONE");
-        });
+        assertAll(
+                () -> assertThat(byDigest("lineage.jsonl").get("app").path("parent").path("configDigest").asString())
+                        .isEqualTo("base"),
+                () -> assertThat(byDigest("lineage.jsonl").get("base").path("parent").path("configDigest").asString())
+                        .isEqualTo("ubi"),
+                () -> assertThat(byDigest("lineage.jsonl").get("ubi").path("parent").path("kind").asString())
+                        .isEqualTo("Root"));
+        assertAll(
+                () -> assertThat(byDigest("links.jsonl").get("app").path("tier").asString()).isEqualTo("STRONG"),
+                () -> assertThat(byDigest("links.jsonl").get("base").path("tier").asString()).isEqualTo("PROBABLE"),
+                () -> assertThat(byDigest("links.jsonl").get("stray").path("tier").asString()).isEqualTo("NONE"));
         JsonNode user = byDigest("effective.jsonl").get("app").path("user");
         assertSoftly(softly -> {
             softly.assertThat(user.path("value").asString()).isEqualTo("1001");
@@ -102,9 +103,10 @@ class AnalysisTest {
     void writesGapsExternalBasesAndOutdatedBases() throws IOException {
         new Analysis(out, facts, discovery, LinkRule.DEFAULT).run();
 
-        assertThat(byDigest("gaps.jsonl")).containsOnlyKeys("stray");
-        assertThat(byDigest("external-bases.jsonl")).containsOnlyKeys("ubi");
-        assertThat(Files.readAllLines(out.resolve("outdated-bases.jsonl"))).isEmpty();
+        assertAll(
+                () -> assertThat(byDigest("gaps.jsonl")).containsOnlyKeys("stray"),
+                () -> assertThat(byDigest("external-bases.jsonl")).containsOnlyKeys("ubi"),
+                () -> assertThat(Files.readAllLines(out.resolve("outdated-bases.jsonl"))).isEmpty());
     }
 
     @Test
@@ -223,7 +225,8 @@ class AnalysisTest {
         LineageFiles files = new LineageFiles(out);
         files.storeConfig("bad", "not json");
 
-        assertThat(new Analysis(out, facts, discovery, LinkRule.DEFAULT).images(new TreeSet<>(List.of("base", "bad", "missing"))))
+        assertThat(new Analysis(out, facts, discovery, LinkRule.DEFAULT).images(new TreeSet<>(List.of("base", "bad",
+                "missing"))))
                 .extracting(Resolved.Node::configDigest).containsExactly("base");
     }
 

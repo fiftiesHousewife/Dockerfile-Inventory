@@ -4,6 +4,7 @@ import io.github.fiftieshousewife.dockerfile.model.Copy;
 import io.github.fiftieshousewife.dockerfile.model.CopyHeredoc;
 import io.github.fiftieshousewife.dockerfile.model.Raw;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,7 +49,8 @@ class ConvertCopyTest {
         assertThat(List.of("COPY --chmod=644 <<EOF /etc/x\nhello\nEOF", "COPY --exclude=*.md a /b", "COPY [\"a\", /b]",
                 "COPY a", "COPY [\"/b\"]"))
                 .map(text -> ((Raw) ConvertCopy.copy(text)).reason())
-                .containsExactly("COPY with flags, several heredocs or <<-", "COPY with flag --exclude", "COPY in JSON form that is not JSON",
+                .containsExactly("COPY with flags, several heredocs or <<-", "COPY with flag --exclude",
+                        "COPY in JSON form that is not JSON",
                         "COPY without a source and a destination", "COPY without a source and a destination");
     }
 
@@ -69,10 +71,13 @@ class ConvertCopyTest {
     @Test
     void anUnknownFlagIsTheFirstThatTakesNoKnownValueAndIsNoKnownBareFlag() {
         List<String> valued = List.of("--from=", "--chown=");
-        assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--link", "--link=false"), valued, List.of("--link")))
-                .contains("--link=false");
-        assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--chown=1", "--link"), valued, List.of("--link")))
-                .isEmpty();
+        assertAll(
+                () -> assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--link", "--link=false"), valued,
+                        List.of("--link")))
+                        .contains("--link=false"),
+                () -> assertThat(ConvertCopy.unknownFlag(List.of("--from=a", "--chown=1", "--link"), valued,
+                        List.of("--link")))
+                        .isEmpty());
     }
 
     @Test
@@ -90,7 +95,8 @@ class ConvertCopyTest {
 
     @Test
     void aFlagsValueIsTheLastGivenOrNullWhenAbsent() {
-        assertThat(ConvertCopy.flag(List.of("--from=a", "--from=b"), "--from=")).isEqualTo("b");
-        assertThat(ConvertCopy.flag(List.of("--from=a"), "--chown=")).isNull();
+        assertAll(
+                () -> assertThat(ConvertCopy.flag(List.of("--from=a", "--from=b"), "--from=")).isEqualTo("b"),
+                () -> assertThat(ConvertCopy.flag(List.of("--from=a"), "--chown=")).isNull());
     }
 }

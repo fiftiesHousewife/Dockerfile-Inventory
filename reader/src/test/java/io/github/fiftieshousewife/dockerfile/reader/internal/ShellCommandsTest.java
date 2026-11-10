@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfile.reader.internal.ShellToken.FunctionParens;
 import io.github.fiftieshousewife.dockerfile.reader.internal.ShellToken.Operator;
@@ -24,10 +25,9 @@ class ShellCommandsTest {
         ShellCommands read = ShellCommands.read(List.of(word("A=1"), word("make"), Operator.AND_OR, word("true")))
                 .orElseThrow();
 
-        assertThat(read).satisfies(r -> {
-            assertThat(r.assignments()).containsExactly(Map.entry("A", "1"));
-            assertThat(r.commands()).containsExactly(List.of("make"), List.of("true"));
-        });
+        assertAll(
+                () -> assertThat(read.assignments()).containsExactly(Map.entry("A", "1")),
+                () -> assertThat(read.commands()).containsExactly(List.of("make"), List.of("true")));
     }
 
     @Test
@@ -65,10 +65,9 @@ class ShellCommandsTest {
                 Operator.SEMICOLON, word("do"), word("echo"), word("$p"), Operator.SEMICOLON, word("done")))
                 .orElseThrow();
 
-        assertThat(read).satisfies(r -> {
-            assertThat(r.assignments()).containsExactly(Map.entry("p", "a b"));
-            assertThat(r.commands()).containsExactly(List.of("echo", "$p"));
-        });
+        assertAll(
+                () -> assertThat(read.assignments()).containsExactly(Map.entry("p", "a b")),
+                () -> assertThat(read.commands()).containsExactly(List.of("echo", "$p")));
     }
 
     @Test

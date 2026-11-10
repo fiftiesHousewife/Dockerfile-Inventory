@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfile.reader.internal.KeyValuePairs.Pair;
 import java.util.ArrayList;
@@ -25,9 +26,10 @@ class KeyValuePairsTest {
 
     @Test
     void anUnquotedValueIsItselfAndAQuotedOneLosesItsOuterQuotes() {
-        assertThat(KeyValuePairs.unquoted("\"9\"")).isEqualTo("9");
-        assertThat(KeyValuePairs.unquoted("'a b'")).isEqualTo("a b");
-        assertThat(KeyValuePairs.unquoted("plain")).isEqualTo("plain");
+        assertAll(
+                () -> assertThat(KeyValuePairs.unquoted("\"9\"")).isEqualTo("9"),
+                () -> assertThat(KeyValuePairs.unquoted("'a b'")).isEqualTo("a b"),
+                () -> assertThat(KeyValuePairs.unquoted("plain")).isEqualTo("plain"));
     }
 
     @Test
@@ -38,14 +40,16 @@ class KeyValuePairsTest {
 
     @Test
     void pairSplitsAtTheFirstEqualsOutsideQuotes() {
-        assertThat(KeyValuePairs.pair("\"a=b\"=c=d")).isEqualTo(new Pair("a=b", "c=d"));
-        assertThat(KeyValuePairs.pair("flag")).isEqualTo(new Pair("flag", null));
+        assertAll(
+                () -> assertThat(KeyValuePairs.pair("\"a=b\"=c=d")).isEqualTo(new Pair("a=b", "c=d")),
+                () -> assertThat(KeyValuePairs.pair("flag")).isEqualTo(new Pair("flag", null)));
     }
 
     @Test
     void firstUnquotedEqualsSkipsQuotedAndEscapedOnes() {
-        assertThat(KeyValuePairs.firstUnquotedEquals("'a=b'\\==c")).isEqualTo(7);
-        assertThat(KeyValuePairs.firstUnquotedEquals("abc")).isEqualTo(-1);
+        assertAll(
+                () -> assertThat(KeyValuePairs.firstUnquotedEquals("'a=b'\\==c")).isEqualTo(7),
+                () -> assertThat(KeyValuePairs.firstUnquotedEquals("abc")).isEqualTo(-1));
     }
 
     @Test
@@ -62,8 +66,9 @@ class KeyValuePairsTest {
         word.append("a");
         KeyValuePairs.addIfAny(words, word);
 
-        assertThat(words).containsExactly("a");
-        assertThat(word).isEmpty();
+        assertAll(
+                () -> assertThat(words).containsExactly("a"),
+                () -> assertThat(word).isEmpty());
     }
 
     @Test

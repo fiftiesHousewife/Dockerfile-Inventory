@@ -84,8 +84,10 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 1).run();
 
-        assertThat(files.tags()).hasSize(3).allSatisfy(row -> assertThat(row.configDigest()).isEqualTo(CONFIG_C));
-        assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1);
+        assertAll(
+                () -> assertThat(files.tags()).hasSize(3).allSatisfy(row -> assertThat(row.configDigest())
+                        .isEqualTo(CONFIG_C)),
+                () -> assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1));
     }
 
     @Test
@@ -99,9 +101,10 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 1).run();
 
-        assertThat(artifactory.manifestCalls).hasValue(manifestsBefore);
-        assertThat(files.tags()).hasSize(1);
-        assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1);
+        assertAll(
+                () -> assertThat(artifactory.manifestCalls).hasValue(manifestsBefore),
+                () -> assertThat(files.tags()).hasSize(1),
+                () -> assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1));
     }
 
     @Test
@@ -115,8 +118,9 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 8).run();
 
-        assertThat(files.tags()).hasSize(20).extracting(TagRow::image).doesNotHaveDuplicates();
-        assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1);
+        assertAll(
+                () -> assertThat(files.tags()).hasSize(20).extracting(TagRow::image).doesNotHaveDuplicates(),
+                () -> assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1));
     }
 
     @Test
@@ -155,11 +159,12 @@ class InventoryTest {
         LineageFiles files = new LineageFiles(out);
         Inventory inventory = new Inventory(artifactory, files, 1);
 
-        assertThat(inventory.fetch("docker-local", "team/app", "sha256:gone"))
-                .contains(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:gone"));
-        assertThat(inventory.fetch("docker-local", "team/app", "sha256:bad"))
-                .contains(new Resolved.Skipped(Resolved.Reason.UNREADABLE_CONFIG, "sha256:bad"));
-        assertThat(files.hasConfig("sha256:bad")).isFalse();
+        assertAll(
+                () -> assertThat(inventory.fetch("docker-local", "team/app", "sha256:gone"))
+                        .contains(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:gone")),
+                () -> assertThat(inventory.fetch("docker-local", "team/app", "sha256:bad"))
+                        .contains(new Resolved.Skipped(Resolved.Reason.UNREADABLE_CONFIG, "sha256:bad")),
+                () -> assertThat(files.hasConfig("sha256:bad")).isFalse());
     }
 
     @Test
@@ -168,8 +173,10 @@ class InventoryTest {
         LineageFiles files = new LineageFiles(out);
         files.storeConfig(CONFIG_C, "{}");
 
-        assertThat(new Inventory(artifactory, files, 1).config("docker-local", "team/app", CONFIG_C)).isEmpty();
-        assertThat(artifactory.blobCalls).isEmpty();
+        assertAll(
+                () -> assertThat(new Inventory(artifactory, files, 1).config("docker-local", "team/app", CONFIG_C))
+                        .isEmpty(),
+                () -> assertThat(artifactory.blobCalls).isEmpty());
     }
 
     @Test

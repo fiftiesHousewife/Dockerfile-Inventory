@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 import org.junit.jupiter.api.Test;
@@ -19,9 +20,10 @@ class ValuesTest {
 
     @Test
     void unquoteLeavesAnUnquotedOrHalfQuotedValueAlone() {
-        assertThat(Values.unquote("\"open")).isEqualTo("\"open");
-        assertThat(Values.unquote("\"")).isEqualTo("\"");
-        assertThat(Values.unquote("plain")).isEqualTo("plain");
+        assertAll(
+                () -> assertThat(Values.unquote("\"open")).isEqualTo("\"open"),
+                () -> assertThat(Values.unquote("\"")).isEqualTo("\""),
+                () -> assertThat(Values.unquote("plain")).isEqualTo("plain"));
     }
 
     @Test

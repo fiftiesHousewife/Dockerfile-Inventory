@@ -63,10 +63,11 @@ class ImageNodesTest {
     void aNodeIsTheParsedConfigOrGoneWhenTheBlobIsMissing() {
         FakeArtifactory artifactory = new FakeArtifactory().blob(CONFIG_C, "config.json");
 
-        assertThat(ImageNodes.node(artifactory, "docker-local", "team/app", CONFIG_C))
-                .isInstanceOf(Resolved.Node.class);
-        assertThat(ImageNodes.node(artifactory, "docker-local", "team/app", CONFIG_D))
-                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, CONFIG_D));
+        assertAll(
+                () -> assertThat(ImageNodes.node(artifactory, "docker-local", "team/app", CONFIG_C))
+                        .isInstanceOf(Resolved.Node.class),
+                () -> assertThat(ImageNodes.node(artifactory, "docker-local", "team/app", CONFIG_D))
+                        .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, CONFIG_D)));
     }
 
     @Test
@@ -77,14 +78,15 @@ class ImageNodesTest {
                 .blob(CONFIG_C, "config.json")
                 .blob(CONFIG_D, "config-bare.json");
 
-        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "1.0"))
-                .isInstanceOfSatisfying(Resolved.Node.class, node -> {
-                    assertThat(node.configDigest()).isEqualTo(CONFIG_C);
-                    assertThat(node.config().user()).isEqualTo("1001");
-                });
-        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/oci", "2.0"))
-                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
-                        .isEqualTo(CONFIG_D));
+        assertAll(
+                () -> assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "1.0"))
+                        .isInstanceOfSatisfying(Resolved.Node.class, node -> {
+                            assertThat(node.configDigest()).isEqualTo(CONFIG_C);
+                            assertThat(node.config().user()).isEqualTo("1001");
+                        }),
+                () -> assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/oci", "2.0"))
+                        .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
+                                .isEqualTo(CONFIG_D)));
     }
 
     @Test
@@ -98,12 +100,13 @@ class ImageNodesTest {
                 .blob(CONFIG_C, "config.json")
                 .blob(CONFIG_D, "config-bare.json");
 
-        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "multi"))
-                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
-                        .isEqualTo(CONFIG_C));
-        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/oci", "multi"))
-                .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
-                        .isEqualTo(CONFIG_D));
+        assertAll(
+                () -> assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "multi"))
+                        .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
+                                .isEqualTo(CONFIG_C)),
+                () -> assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/oci", "multi"))
+                        .isInstanceOfSatisfying(Resolved.Node.class, node -> assertThat(node.configDigest())
+                                .isEqualTo(CONFIG_D)));
     }
 
     @Test
@@ -130,12 +133,13 @@ class ImageNodesTest {
                 .manifest("docker-local", "team/app", "multi", DOCKER_LIST, "manifest-list.json")
                 .manifest("docker-local", "team/app", "1.0", DOCKER_MANIFEST, "manifest-image.json");
 
-        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "gone"))
-                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "docker-local/team/app:gone"));
-        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "multi"))
-                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64)));
-        assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "1.0"))
-                .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, CONFIG_C));
+        assertAll(
+                () -> assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "gone"))
+                        .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "docker-local/team/app:gone")),
+                () -> assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "multi"))
+                        .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:" + "1".repeat(64))),
+                () -> assertThat(ImageNodes.resolve(artifactory, "docker-local", "team/app", "1.0"))
+                        .isEqualTo(new Resolved.Skipped(Resolved.Reason.GONE, CONFIG_C)));
     }
 
     @Test

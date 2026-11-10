@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -22,69 +23,79 @@ class PolicyCheckTest {
 
     @Test
     void userSaysWhetherNoUserWasSetOrWhichOneWasRefused() {
-        assertThat(PolicyCheck.user(null)).hasValueSatisfying(breach -> assertThat(breach.message())
-                .isEqualTo("the final stage sets no USER"));
-        assertThat(PolicyCheck.user("root")).hasValueSatisfying(breach -> assertThat(breach.message())
-                .isEqualTo("the final user root is not a numeric, non-root UID"));
-        assertThat(PolicyCheck.user("1001:0")).isEmpty();
+        assertAll(
+                () -> assertThat(PolicyCheck.user(null)).hasValueSatisfying(breach -> assertThat(breach.message())
+                        .isEqualTo("the final stage sets no USER")),
+                () -> assertThat(PolicyCheck.user("root")).hasValueSatisfying(breach -> assertThat(breach.message())
+                        .isEqualTo("the final user root is not a numeric, non-root UID")),
+                () -> assertThat(PolicyCheck.user("1001:0")).isEmpty());
     }
 
     @Test
     void numericNonRootReadsTheUidBeforeAnyGroup() {
-        assertThat(PolicyCheck.numericNonRoot("1001")).isTrue();
-        assertThat(PolicyCheck.numericNonRoot("1001:0")).isTrue();
-        assertThat(PolicyCheck.numericNonRoot("0:0")).isFalse();
-        assertThat(PolicyCheck.numericNonRoot(":0")).isFalse();
-        assertThat(PolicyCheck.numericNonRoot("app")).isFalse();
-        assertThat(PolicyCheck.numericNonRoot(null)).isFalse();
+        assertAll(
+                () -> assertThat(PolicyCheck.numericNonRoot("1001")).isTrue(),
+                () -> assertThat(PolicyCheck.numericNonRoot("1001:0")).isTrue(),
+                () -> assertThat(PolicyCheck.numericNonRoot("0:0")).isFalse(),
+                () -> assertThat(PolicyCheck.numericNonRoot(":0")).isFalse(),
+                () -> assertThat(PolicyCheck.numericNonRoot("app")).isFalse(),
+                () -> assertThat(PolicyCheck.numericNonRoot(null)).isFalse());
     }
 
     @Test
     void approvalIsABreachOnlyForABaseOffTheList() {
-        assertThat(PolicyCheck.approval(ImageBuilderTest.POLICY, PINNED)).isEmpty();
-        assertThat(PolicyCheck.approval(ImageBuilderTest.POLICY, new BaseImage("alpine", "3.20", null)))
-                .hasValueSatisfying(breach -> assertThat(breach).isEqualTo(new PolicyViolation.Breach("S1",
-                        "base alpine:3.20 is not on the approved list")));
+        assertAll(
+                () -> assertThat(PolicyCheck.approval(ImageBuilderTest.POLICY, PINNED)).isEmpty(),
+                () -> assertThat(PolicyCheck.approval(ImageBuilderTest.POLICY, new BaseImage("alpine", "3.20", null)))
+                        .hasValueSatisfying(breach -> assertThat(breach).isEqualTo(new PolicyViolation.Breach("S1",
+                                "base alpine:3.20 is not on the approved list"))));
     }
 
     @Test
     void pinNamesTheBuildArgumentThatStandsInForADigest() {
-        assertThat(PolicyCheck.pin(PINNED)).isEmpty();
-        assertThat(PolicyCheck.pin(new BaseImage("busybox", null, null))).hasValueSatisfying(breach ->
-                assertThat(breach.message()).isEqualTo("base busybox is not pinned by digest"));
-        assertThat(PolicyCheck.pin(new BaseImage("busybox", null, "sha256:$SHA"))).hasValueSatisfying(breach ->
-                assertThat(breach.message()).isEqualTo("base busybox is pinned only by a build argument (SHA)"));
+        assertAll(
+                () -> assertThat(PolicyCheck.pin(PINNED)).isEmpty(),
+                () -> assertThat(PolicyCheck.pin(new BaseImage("busybox", null, null))).hasValueSatisfying(breach ->
+                        assertThat(breach.message()).isEqualTo("base busybox is not pinned by digest")),
+                () -> assertThat(PolicyCheck.pin(new BaseImage("busybox", null, "sha256:$SHA")))
+                        .hasValueSatisfying(breach ->
+                        assertThat(breach.message())
+                                .isEqualTo("base busybox is pinned only by a build argument (SHA)")));
     }
 
     @Test
     void instructionReportsAShellFormEntrypointAndAnUncleanedInstall() {
-        assertThat(PolicyCheck.instruction(new Raw("RUN yum install -y git", "copied")))
-                .extracting(PolicyViolation.Breach::rule).containsExactly("H1");
-        assertThat(PolicyCheck.instruction(new User("1001"))).isEmpty();
+        assertAll(
+                () -> assertThat(PolicyCheck.instruction(new Raw("RUN yum install -y git", "copied")))
+                        .extracting(PolicyViolation.Breach::rule).containsExactly("H1"),
+                () -> assertThat(PolicyCheck.instruction(new User("1001"))).isEmpty());
     }
 
     @Test
     void shellFormEntrypointIsARawEntrypointNotWrittenAsAJsonArray() {
-        assertThat(PolicyCheck.shellFormEntrypoint(new Raw("ENTRYPOINT ./run.sh", "legacy")))
-                .contains("ENTRYPOINT ./run.sh");
-        assertThat(PolicyCheck.shellFormEntrypoint(new Raw("ENTRYPOINT  [\"./run.sh\"]", "copied")))
-                .isEmpty();
-        assertThat(PolicyCheck.shellFormEntrypoint(new Raw("CMD ./run.sh", "legacy"))).isEmpty();
-        assertThat(PolicyCheck.shellFormEntrypoint(new Entrypoint(List.of("./run.sh")))).isEmpty();
+        assertAll(
+                () -> assertThat(PolicyCheck.shellFormEntrypoint(new Raw("ENTRYPOINT ./run.sh", "legacy")))
+                        .contains("ENTRYPOINT ./run.sh"),
+                () -> assertThat(PolicyCheck.shellFormEntrypoint(new Raw("ENTRYPOINT  [\"./run.sh\"]", "copied")))
+                        .isEmpty(),
+                () -> assertThat(PolicyCheck.shellFormEntrypoint(new Raw("CMD ./run.sh", "legacy"))).isEmpty(),
+                () -> assertThat(PolicyCheck.shellFormEntrypoint(new Entrypoint(List.of("./run.sh")))).isEmpty());
     }
 
     @Test
     void aTypedShellFormEntrypointIsOneTooWrittenAsDockerfileText() {
-        assertThat(PolicyCheck.shellFormEntrypoint(
-                new Entrypoint(List.of("exec java -jar app.jar"), CommandForm.SHELL)))
-                .contains("ENTRYPOINT exec java -jar app.jar");
-        assertThat(PolicyCheck.shellFormEntrypoint(new Cmd(List.of("./run.sh"), CommandForm.SHELL)))
-                .isEmpty();
+        assertAll(
+                () -> assertThat(PolicyCheck.shellFormEntrypoint(
+                        new Entrypoint(List.of("exec java -jar app.jar"), CommandForm.SHELL)))
+                        .contains("ENTRYPOINT exec java -jar app.jar"),
+                () -> assertThat(PolicyCheck.shellFormEntrypoint(new Cmd(List.of("./run.sh"), CommandForm.SHELL)))
+                        .isEmpty());
     }
 
     @Test
     void scratchHasNoDigestToPinSoIsNoR1Breach() {
-        assertThat(PolicyCheck.pin(new BaseImage("scratch", null, null))).isEmpty();
-        assertThat(PolicyCheck.pin(new BaseImage("busybox", null, null))).isPresent();
+        assertAll(
+                () -> assertThat(PolicyCheck.pin(new BaseImage("scratch", null, null))).isEmpty(),
+                () -> assertThat(PolicyCheck.pin(new BaseImage("busybox", null, null))).isPresent());
     }
 }

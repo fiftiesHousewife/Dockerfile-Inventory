@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,41 +25,38 @@ class FactExtractorTest {
     void readsTheFinalBaseOfAPlainFrom() {
         ImageFacts facts = facts("FROM registry.example.com/ubi9/ubi-minimal:9.4-1227\n");
 
-        assertThat(facts).satisfies(f -> {
-            assertThat(f.stageCount()).isEqualTo(1);
-            assertThat(f.base()).isEqualTo(new BaseImage("registry.example.com/ubi9/ubi-minimal", "9.4-1227", null));
-            assertThat(f.base().digestPinned()).isFalse();
-        });
+        assertAll(
+                () -> assertThat(facts.stageCount()).isEqualTo(1),
+                () -> assertThat(facts.base()).isEqualTo(new BaseImage("registry.example.com/ubi9/ubi-minimal",
+                        "9.4-1227", null)),
+                () -> assertThat(facts.base().digestPinned()).isFalse());
     }
 
     @Test
     void readsADigestPin() {
         ImageFacts facts = facts("FROM ubi9/ubi-minimal:9.4@sha256:" + "a".repeat(64) + "\n");
 
-        assertThat(facts.base()).satisfies(base -> {
-            assertThat(base.digest()).isEqualTo("sha256:" + "a".repeat(64));
-            assertThat(base.digestPinned()).isTrue();
-        });
+        assertAll(
+                () -> assertThat(facts.base().digest()).isEqualTo("sha256:" + "a".repeat(64)),
+                () -> assertThat(facts.base().digestPinned()).isTrue());
     }
 
     @Test
     void substitutesGlobalArgDefaultsIntoFrom() {
         ImageFacts facts = facts("ARG BASE=ubi9/ubi-minimal\nARG TAG=9.4\nFROM ${BASE}:${TAG}\n");
 
-        assertThat(facts.base()).satisfies(base -> {
-            assertThat(base).isEqualTo(new BaseImage("ubi9/ubi-minimal", "9.4", null));
-            assertThat(base.resolved()).isTrue();
-        });
+        assertAll(
+                () -> assertThat(facts.base()).isEqualTo(new BaseImage("ubi9/ubi-minimal", "9.4", null)),
+                () -> assertThat(facts.base().resolved()).isTrue());
     }
 
     @Test
     void leavesABaseFromAnArgWithoutDefaultUnresolved() {
         ImageFacts facts = facts("ARG BASE\nFROM $BASE\n");
 
-        assertThat(facts.base()).satisfies(base -> {
-            assertThat(base.name()).isEqualTo("${BASE}");
-            assertThat(base.resolved()).isFalse();
-        });
+        assertAll(
+                () -> assertThat(facts.base().name()).isEqualTo("${BASE}"),
+                () -> assertThat(facts.base().resolved()).isFalse());
     }
 
     @ParameterizedTest
@@ -82,10 +80,9 @@ class FactExtractorTest {
                 FROM app
                 """);
 
-        assertThat(facts).satisfies(f -> {
-            assertThat(f.stageCount()).isEqualTo(3);
-            assertThat(f.base()).isEqualTo(new BaseImage("ubi9/ubi", "9.4", null));
-        });
+        assertAll(
+                () -> assertThat(facts.stageCount()).isEqualTo(3),
+                () -> assertThat(facts.base()).isEqualTo(new BaseImage("ubi9/ubi", "9.4", null)));
     }
 
     @Test
@@ -120,10 +117,9 @@ class FactExtractorTest {
                 RUN curl -sSL https://x.example/install | sh
                 """);
 
-        assertThat(facts).satisfies(f -> {
-            assertThat(f.runs()).isEqualTo(3);
-            assertThat(f.opaqueRuns()).isEqualTo(2);
-        });
+        assertAll(
+                () -> assertThat(facts.runs()).isEqualTo(3),
+                () -> assertThat(facts.opaqueRuns()).isEqualTo(2));
     }
 
     @ParameterizedTest
@@ -144,10 +140,9 @@ class FactExtractorTest {
     void readsTheFinalUserAndItsKind(String dockerfile, String user, UserKind kind) {
         ImageFacts facts = facts(dockerfile.replace("\\n", "\n") + "\n");
 
-        assertThat(facts).satisfies(f -> {
-            assertThat(f.finalUser()).isEqualTo(user);
-            assertThat(f.userKind()).isEqualTo(kind);
-        });
+        assertAll(
+                () -> assertThat(facts.finalUser()).isEqualTo(user),
+                () -> assertThat(facts.userKind()).isEqualTo(kind));
     }
 
     @Test
@@ -250,11 +245,10 @@ class FactExtractorTest {
                 USER $UID:$GROUP
                 """);
 
-        assertThat(facts).satisfies(f -> {
-            assertThat(f.base().name()).isEqualTo("quay.io/ubi9/ubi");
-            assertThat(f.base().tag()).isEqualTo("9");
-            assertThat(f.userKind()).isEqualTo(UserKind.NUMERIC);
-        });
+        assertAll(
+                () -> assertThat(facts.base().name()).isEqualTo("quay.io/ubi9/ubi"),
+                () -> assertThat(facts.base().tag()).isEqualTo("9"),
+                () -> assertThat(facts.userKind()).isEqualTo(UserKind.NUMERIC));
     }
 
     @Test
@@ -264,10 +258,10 @@ class FactExtractorTest {
                 RUN for p in git curl; do apk add --no-cache $p; done
                 """);
 
-        assertThat(facts).satisfies(f -> {
-            assertThat(f.packageCalls()).extracting(c -> c.call().packages()).containsExactly(List.of("git", "curl"));
-            assertThat(f.opaqueRuns()).isZero();
-        });
+        assertAll(
+                () -> assertThat(facts.packageCalls()).extracting(c -> c.call().packages())
+                        .containsExactly(List.of("git", "curl")),
+                () -> assertThat(facts.opaqueRuns()).isZero());
     }
 
     @Test
@@ -280,11 +274,10 @@ class FactExtractorTest {
                 RUN apk add --no-cache git
                 """);
 
-        assertThat(facts).satisfies(f -> {
-            assertThat(f.runs()).isEqualTo(1);
-            assertThat(f.opaqueRuns()).isZero();
-            assertThat(f.otherShellRuns()).isEqualTo(1);
-        });
+        assertAll(
+                () -> assertThat(facts.runs()).isEqualTo(1),
+                () -> assertThat(facts.opaqueRuns()).isZero(),
+                () -> assertThat(facts.otherShellRuns()).isEqualTo(1));
     }
 
     @Test
@@ -333,7 +326,8 @@ class FactExtractorTest {
 
         StageEnd end = FactExtractor.scanned(1, file.getStages().get(1), Map.of(), byStageName, runs);
 
-        assertThat(end).isEqualTo(new StageEnd("1001", List.of("8080"), EntrypointForm.NONE));
-        assertThat(byStageName).containsOnlyKeys("base", "app");
+        assertAll(
+                () -> assertThat(end).isEqualTo(new StageEnd("1001", List.of("8080"), EntrypointForm.NONE)),
+                () -> assertThat(byStageName).containsOnlyKeys("base", "app"));
     }
 }

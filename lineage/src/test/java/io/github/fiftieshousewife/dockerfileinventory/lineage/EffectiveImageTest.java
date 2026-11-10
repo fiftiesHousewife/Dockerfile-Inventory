@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +22,8 @@ class EffectiveImageTest {
 
         EffectiveImage image = new EffectiveImage(List.of(), none, none, empty, empty, values, values, false);
 
-        assertThat(List.copyOf(image.env().keySet())).isSorted();
-        assertThat(List.copyOf(image.labels().keySet())).isSorted();
+        assertAll(
+                () -> assertThat(List.copyOf(image.env().keySet())).isSorted(),
+                () -> assertThat(List.copyOf(image.labels().keySet())).isSorted());
     }
 }

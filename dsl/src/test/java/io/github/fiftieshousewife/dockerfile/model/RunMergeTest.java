@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -111,10 +112,11 @@ class RunMergeTest {
 
     @Test
     void changesShellStateLooksAtTheFirstWordOfEveryCommandInTheRun() {
-        assertThat(RunMerge.changesShellState(shell("make && cd /src"))).isTrue();
-        assertThat(RunMerge.changesShellState(shell("true; export A=1"))).isTrue();
-        assertThat(RunMerge.changesShellState(shell("false || . ./env"))).isTrue();
-        assertThat(RunMerge.changesShellState(shell("echo cd", "make"))).isFalse();
+        assertAll(
+                () -> assertThat(RunMerge.changesShellState(shell("make && cd /src"))).isTrue(),
+                () -> assertThat(RunMerge.changesShellState(shell("true; export A=1"))).isTrue(),
+                () -> assertThat(RunMerge.changesShellState(shell("false || . ./env"))).isTrue(),
+                () -> assertThat(RunMerge.changesShellState(shell("echo cd", "make"))).isFalse());
     }
 
     private static Run shell(String... commands) {

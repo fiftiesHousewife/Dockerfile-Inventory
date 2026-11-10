@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,14 +14,17 @@ class ContinuationsTest {
 
     @Test
     void oneLineJoinsDropsCommentLinesCollapsesWhitespaceAndKeepsABackslashEndingTheLastLine() {
-        assertThat(Continuations.oneLine("COPY a \\\n  # why\n\tC:\\\\Windows\\\\ \n"))
-                .isEqualTo("COPY a C:\\\\Windows\\\\");
-        assertThat(Continuations.oneLine("RUN make \\  \n    && make install")).isEqualTo("RUN make && make install");
+        assertAll(
+                () -> assertThat(Continuations.oneLine("COPY a \\\n  # why\n\tC:\\\\Windows\\\\ \n"))
+                        .isEqualTo("COPY a C:\\\\Windows\\\\"),
+                () -> assertThat(Continuations.oneLine("RUN make \\  \n    && make install"))
+                        .isEqualTo("RUN make && make install"));
     }
 
     @Test
     void withoutTrailingBackslashDropsOnlyAFinalBackslash() {
-        assertThat(Continuations.withoutTrailingBackslash("make \\")).isEqualTo("make ");
-        assertThat(Continuations.withoutTrailingBackslash("make")).isEqualTo("make");
+        assertAll(
+                () -> assertThat(Continuations.withoutTrailingBackslash("make \\")).isEqualTo("make "),
+                () -> assertThat(Continuations.withoutTrailingBackslash("make")).isEqualTo("make"));
     }
 }

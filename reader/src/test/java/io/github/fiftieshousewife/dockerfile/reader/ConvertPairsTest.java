@@ -5,6 +5,7 @@ import io.github.fiftieshousewife.dockerfile.model.Env;
 import io.github.fiftieshousewife.dockerfile.model.Label;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -33,15 +34,17 @@ class ConvertPairsTest {
 
     @Test
     void pairsReadsKeyValueWordsOrTheLegacyFormThatSetsOneKey() {
-        assertThat(ConvertPairs.pairs("a=1 b=\"two words\"")).containsExactly(entry("a", "1"),
-                entry("b", "two words"));
-        assertThat(ConvertPairs.pairs("maintainer \"A <a@example.com>\""))
-                .containsExactly(entry("maintainer", "A <a@example.com>"));
+        assertAll(
+                () -> assertThat(ConvertPairs.pairs("a=1 b=\"two words\"")).containsExactly(entry("a", "1"),
+                        entry("b", "two words")),
+                () -> assertThat(ConvertPairs.pairs("maintainer \"A <a@example.com>\""))
+                        .containsExactly(entry("maintainer", "A <a@example.com>")));
     }
 
     @Test
     void envAndLabelAreReadFromTheirPrintedText() {
-        assertThat(ConvertPairs.env("ENV A=1")).isEqualTo(new Env(Map.of("A", "1")));
-        assertThat(ConvertPairs.label("LABEL team x")).isEqualTo(new Label(Map.of("team", "x")));
+        assertAll(
+                () -> assertThat(ConvertPairs.env("ENV A=1")).isEqualTo(new Env(Map.of("A", "1"))),
+                () -> assertThat(ConvertPairs.label("LABEL team x")).isEqualTo(new Label(Map.of("team", "x"))));
     }
 }

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -88,11 +89,12 @@ class LineageTest {
 
     @Test
     void chainIdsStartWithTheFirstDiffIdAndHashEachNextOntoThePrevious() {
-        assertThat(Lineage.chainIds(List.of("sha256:a", "sha256:b"))).satisfies(chain -> {
-            assertThat(chain).hasSize(2).first().isEqualTo("sha256:a");
-            assertThat(chain.get(1)).startsWith("sha256:").isNotEqualTo("sha256:b").hasSize(71);
-        });
-        assertThat(Lineage.chainIds(List.of())).isEmpty();
+        assertAll(
+                () -> assertThat(Lineage.chainIds(List.of("sha256:a", "sha256:b"))).satisfies(chain -> {
+                    assertThat(chain).hasSize(2).first().isEqualTo("sha256:a");
+                    assertThat(chain.get(1)).startsWith("sha256:").isNotEqualTo("sha256:b").hasSize(71);
+                }),
+                () -> assertThat(Lineage.chainIds(List.of())).isEmpty());
     }
 
     @Test
@@ -100,9 +102,10 @@ class LineageTest {
         HistoryStep a = new HistoryStep("a", null, false, null);
         HistoryStep b = new HistoryStep("b", null, false, null);
 
-        assertThat(Lineage.isStrictPrefix(List.of(a), List.of(a, b))).isTrue();
-        assertThat(Lineage.isStrictPrefix(List.of(a, b), List.of(a, b))).isFalse();
-        assertThat(Lineage.isStrictPrefix(List.of(b), List.of(a, b))).isFalse();
+        assertAll(
+                () -> assertThat(Lineage.isStrictPrefix(List.of(a), List.of(a, b))).isTrue(),
+                () -> assertThat(Lineage.isStrictPrefix(List.of(a, b), List.of(a, b))).isFalse(),
+                () -> assertThat(Lineage.isStrictPrefix(List.of(b), List.of(a, b))).isFalse());
     }
 
     @Test
@@ -111,9 +114,10 @@ class LineageTest {
         Resolved.Node longA = node("long-a", List.of("L1"), List.of("ADD base", "RUN a"));
         Resolved.Node longB = node("long-b", List.of("L1"), List.of("ADD base", "RUN a"));
 
-        assertThat(Lineage.closest(List.of(shorter, longA))).isEqualTo(new Parent.Of("long-a"));
-        assertThat(Lineage.closest(List.of(longB, shorter, longA)))
-                .isEqualTo(new Parent.Ambiguous(List.of("long-a", "long-b")));
+        assertAll(
+                () -> assertThat(Lineage.closest(List.of(shorter, longA))).isEqualTo(new Parent.Of("long-a")),
+                () -> assertThat(Lineage.closest(List.of(longB, shorter, longA)))
+                        .isEqualTo(new Parent.Ambiguous(List.of("long-a", "long-b"))));
     }
 
     @Test
@@ -122,9 +126,12 @@ class LineageTest {
         Resolved.Node preceding = node("preceding", List.of("L1"), List.of("ADD base"));
         Resolved.Node unrelated = node("unrelated", List.of("L1"), List.of("ADD other", "RUN x"));
 
-        assertThat(Lineage.precedingHistory(child, List.of(preceding, unrelated))).containsExactly(preceding);
-        assertThat(Lineage.nearestOf(child, List.of(preceding, unrelated))).isEqualTo(new Parent.Of("preceding"));
-        assertThat(Lineage.nearestOf(child, List.of(unrelated))).isEqualTo(new Parent.Of("unrelated"));
+        assertAll(
+                () -> assertThat(Lineage.precedingHistory(child, List.of(preceding, unrelated)))
+                        .containsExactly(preceding),
+                () -> assertThat(Lineage.nearestOf(child, List.of(preceding, unrelated)))
+                        .isEqualTo(new Parent.Of("preceding")),
+                () -> assertThat(Lineage.nearestOf(child, List.of(unrelated))).isEqualTo(new Parent.Of("unrelated")));
     }
 
     @Test
@@ -141,8 +148,10 @@ class LineageTest {
     void anImageWithNoChainOrNoHeldPrefixIsARoot() {
         Resolved.Node app = node("app", "L1", "L2");
 
-        assertThat(Lineage.parent(app, List.of(), Map.of())).isEqualTo(new Parent.Root());
-        assertThat(Lineage.parent(app, List.of("c1", "c2"), Map.of("c2", List.of()))).isEqualTo(new Parent.Root());
+        assertAll(
+                () -> assertThat(Lineage.parent(app, List.of(), Map.of())).isEqualTo(new Parent.Root()),
+                () -> assertThat(Lineage.parent(app, List.of("c1", "c2"), Map.of("c2", List.of())))
+                        .isEqualTo(new Parent.Root()));
     }
 
     private static Resolved.Node node(String digest, String... layers) {

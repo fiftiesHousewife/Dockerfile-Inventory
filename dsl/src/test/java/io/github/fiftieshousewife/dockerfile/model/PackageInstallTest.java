@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,10 @@ class PackageInstallTest {
 
     @Test
     void anInstallNeedsAtLeastOneNamedPackage() {
-        assertThatIllegalArgumentException().isThrownBy(() -> new PackageInstall(PackageManager.DNF, List.of()));
-        assertThatIllegalArgumentException().isThrownBy(() -> new PackageInstall(PackageManager.DNF, List.of(" ")));
+        assertAll(
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> new PackageInstall(PackageManager.DNF,
+                        List.of())),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> new PackageInstall(PackageManager.DNF,
+                        List.of(" "))));
     }
 }
