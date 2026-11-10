@@ -34,13 +34,17 @@ final class WorkloadTable {
     }
 
     static String row(ActionPlanView.PlannedWorkload workload, Set<String> catalogued) {
+        return described(workload) + "<td>" + containers(workload, catalogued) + "</td><td>"
+                + escape(workload.findings().stream().map(f -> f.check() + ": " + f.message())
+                .collect(Collectors.joining("; "))) + "</td></tr>";
+    }
+
+    static String described(ActionPlanView.PlannedWorkload workload) {
         String file = workload.locations().stream().findFirst().map(w -> w.repository() + " " + w.path()).orElse("");
         return "<tr><td>" + escape(workload.verdict().toLowerCase(Locale.ROOT)) + "</td><td>"
                 + escape(workload.kind() + " " + workload.name()
                 + (workload.namespace() == null ? "" : " (" + workload.namespace() + ")"))
-                + "</td><td>" + escape(file) + "</td><td>" + containers(workload, catalogued) + "</td><td>"
-                + escape(workload.findings().stream().map(f -> f.check() + ": " + f.message())
-                .collect(Collectors.joining("; "))) + "</td></tr>";
+                + "</td><td>" + escape(file) + "</td>";
     }
 
     static String containers(ActionPlanView.PlannedWorkload workload, Set<String> catalogued) {

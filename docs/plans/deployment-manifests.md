@@ -265,3 +265,23 @@ validator-workloads`). On that survey the summary reads "Of 21 workloads, 15 wou
 and 4 run as they are", and the OpenShift page lists the 21. The fixes table's column is "File to change"; otherwise
 the pages without workloads are as before.
 
+
+## Slice 5: a Dockerfile's workloads (planned and built 10 Nov)
+
+Why: the OpenShift page says which Dockerfiles a workload runs; the Dockerfile's own page should say the reverse.
+
+Design: `Deployments.byDockerfile` gathers, for each Dockerfile, the workloads whose containers lineage links to it;
+`Deployments.section` writes a "Runs in" table on its page (the workload's verdict; kind, name and namespace; its
+YAML's first location; the containers running it, with their images and whether the tag floats) and links to the
+OpenShift page. A Dockerfile no workload runs, and every page without the validator's workloads, is as before.
+
+Tests, in order: `byDockerfile` (a workload once per Dockerfile it runs, two containers on the same Dockerfile once,
+unlinked containers nowhere); `section` (its row, empty for none); `Pages` putting it on the linked Dockerfile's page
+only.
+
+Questions: none (asked 10 Nov: "go ahead with the dockerfile page").
+
+Built 10 Nov: `Deployments` (`byDockerfile`, `section`, `running`), with `WorkloadTable.described` shared by both
+tables; `Pages` adds the section to each Dockerfile's page. On the owner's survey (no lineage, so no container
+linked) every page is byte for byte as before; the section waits for a survey with lineage to show on real data.
+

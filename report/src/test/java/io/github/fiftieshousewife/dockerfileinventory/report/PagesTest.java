@@ -55,6 +55,21 @@ class PagesTest {
     }
 
     @Test
+    void aDockerfilesPageListsTheWorkloadsThatRunItAndOthersDoNot() {
+        ActionPlanView view = ActionPlanPageTest.view(1);
+        ActionPlanView withWorkloads = new ActionPlanView(view.plan(), view.actions(), view.fixes(),
+                List.of(DeploymentsTest.workload("web", new ActionPlanView.PlannedContainer("app", "app:1",
+                        List.of("a1"), false, null))));
+        Map<String, String> pages = Pages.all(new CatalogueView(List.of(linked("a1", "acme/api", List.of(),
+                        List.of("b9")), linked("b9", "beta/app", List.of("a1"), List.of()))),
+                ArchetypeRows.of(ArchetypeRowsTest.RANKING, ArchetypeRowsTest.ESTATE), Optional.of(withWorkloads));
+
+        assertAll(
+                () -> assertThat(pages.get("dockerfiles/a1.html")).contains("<h2>Runs in</h2>", "Deployment web"),
+                () -> assertThat(pages.get("dockerfiles/b9.html")).doesNotContain("Runs in"));
+    }
+
+    @Test
     void anArchetypeLinksToTheDockerfilePageOfOneOfItsFiles() {
         assertThat(pages().get("archetypes.html")).contains("href=\"dockerfiles/a1.html\"");
     }

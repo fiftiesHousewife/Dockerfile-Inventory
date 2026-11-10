@@ -70,4 +70,10 @@ class WorkloadTableTest {
     void withoutWorkloadsThereIsNoTable() {
         assertThat(WorkloadTable.render(List.of(), Set.of())).isEmpty();
     }
+
+    @Test
+    void aWorkloadIsDescribedByItsVerdictKindNameNamespaceAndFile() {
+        assertThat(WorkloadTable.described(linked("RUNS", "app", false))).isEqualTo("<tr><td>runs</td>"
+                + "<td>Deployment app (shop)</td><td>team/shop deploy/app.yaml</td>");
+    }
 }

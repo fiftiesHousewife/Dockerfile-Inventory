@@ -37,9 +37,12 @@ final class Pages {
         pages.put("hierarchy.html", Page.render("Hierarchy", "", HierarchyPage.body(entries)));
         pages.put("blocked.html", Page.render("Blocked", "", BlockedPage.body(entries)));
         pages.putAll(ranking(rows, catalogued));
+        Map<String, List<ActionPlanView.PlannedWorkload>> running = plan.map(p -> Deployments.byDockerfile(
+                p.workloads())).orElse(Map.of());
         entries.forEach(entry -> pages.put("dockerfiles/" + entry.blobSha() + ".html", Page.render(
                 entry.locations().getFirst().repository() + "/" + entry.locations().getFirst().path(), "../",
-                DockerfilePage.body(entry))));
+                DockerfilePage.body(entry) + Deployments.section(entry.blobSha(),
+                        running.getOrDefault(entry.blobSha(), List.of())))));
         return pages;
     }
 

@@ -71,7 +71,7 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
                     CatalogueMain (the catalogue alone, for the validator: `inventory catalogue`)
                     Pages (writes them, from CatalogueView and ArchetypeRows): OverviewPage (EstateFigures),
                     HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName,
-                    ActionPlanPage (ActionPlanView: the validator's output), WorkloadTable;
+                    ActionPlanPage (ActionPlanView: the validator's output), WorkloadTable, Deployments (a Dockerfile's workloads);
                     Page, Html, Style, About (info text)
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
                     Rule, EffectiveRule, CatalogueRule (over the estate, from CatalogueView), Finding, Subject,
