@@ -1,5 +1,14 @@
 # The report and the catalogue
 
+![The summary page](../images/report-summary.png)
+
+![The OpenShift action plan](../images/report-openshift.png)
+
+![The archetypes](../images/report-archetypes.png)
+
+The pages above are from six public organisations combined (sclorg, openshift, konflux-ci, redhat-developer,
+docker-library, bitnami: 8,199 locations, 5,160 distinct Dockerfiles), without lineage, so no registry images.
+
 ```bash
 export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR

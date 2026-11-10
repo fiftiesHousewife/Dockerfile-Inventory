@@ -43,6 +43,11 @@ final class Style {
             .health .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
             .health .state { font-size: 13px; font-weight: 600; }
             .health .icon { display: inline-block; width: 1.2em; text-align: center; }
+            .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;
+                     margin: 18px 0 8px; }
+            .tile { background: var(--tile); border-radius: 8px; padding: 10px 12px; }
+            .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+            .tile .label { font-size: 13px; color: var(--muted); }
             .health.good .icon { color: var(--good); } .health.watch .icon { color: var(--watch); }
             .health.act .icon { color: var(--act); } .health.no-data .icon { color: var(--muted); }
             .health .who { font-size: 12px; color: var(--muted); margin-top: 4px; }

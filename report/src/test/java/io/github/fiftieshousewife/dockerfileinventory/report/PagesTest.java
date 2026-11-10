@@ -104,4 +104,18 @@ class PagesTest {
                                 + "<strong>251 to 500</strong><a href=\"archetypes-3.html\">501 to 700</a></nav>"),
                 () -> assertThat(Pages.pager(1, 250, 250)).isEmpty());
     }
+
+    @Test
+    void everyClassThePagesUseHasAStyle() {
+        Pattern classes = Pattern.compile("class=\"([^\"]+)\"");
+        Map<String, String> pages = new java.util.HashMap<>(pages());
+        pages.putAll(Pages.all(new CatalogueView(List.of()), ArchetypeRows.of(ArchetypeRowsTest.RANKING,
+                ArchetypeRowsTest.ESTATE), Optional.of(ActionPlanPageTest.WORKLOADS)));
+        java.util.Set<String> used = pages.values().stream().flatMap(page -> classes.matcher(page).results())
+                .flatMap(match -> java.util.Arrays.stream(match.group(1).split(" "))).collect(
+                        java.util.stream.Collectors.toCollection(java.util.TreeSet::new));
+
+        assertThat(used).allMatch(name -> Pattern.compile("\\." + Pattern.quote(name) + "\\b").matcher(Style.CSS)
+                .find());
+    }
 }

@@ -17,7 +17,13 @@ fix first.
 - **Converts** each Dockerfile to a typed model and back, to prove it can be rewritten safely.
 
 What you get is a folder per stage and an HTML report: the estate's overview, each Dockerfile's page, the archetypes,
-the image hierarchy, and the OpenShift action plan.
+the image hierarchy, and the OpenShift action plan. Here is the summary for six public organisations (8,199
+Dockerfile locations, without lineage):
+
+![The report's summary page](docs/images/report-summary.png)
+
+More pages: [the OpenShift action plan](docs/images/report-openshift.png) and
+[the archetypes](docs/images/report-archetypes.png).
 
 ## Quick start
 
