@@ -1,9 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -67,10 +67,9 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 1).run();
 
-        assertThat(files.tags()).singleElement().satisfies(row -> {
-            assertThat(row.configDigest()).isNull();
-            assertThat(row.skipped()).isEqualTo(Resolved.Reason.NO_AMD64);
-        });
+        assertThat(files.tags()).singleElement()
+                .extracting(TagRow::configDigest, TagRow::skipped)
+                .containsExactly(null, Resolved.Reason.NO_AMD64);
     }
 
     @Test

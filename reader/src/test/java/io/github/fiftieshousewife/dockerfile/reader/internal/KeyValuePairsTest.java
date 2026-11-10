@@ -72,16 +72,29 @@ class KeyValuePairsTest {
     }
 
     @Test
-    void aScanIsOutsideOnlyWhenNoQuoteIsOpenAndNothingIsEscaped() {
-        KeyValuePairs.Scan scan = new KeyValuePairs.Scan();
+    void aNewScanIsOutside() {
+        assertThat(new KeyValuePairs.Scan().outside()).isTrue();
+    }
 
-        assertThat(scan.outside()).isTrue();
+    @Test
+    void insideDoubleQuotesTheScanIsNotOutsideAndASingleQuoteIsLiteral() {
+        KeyValuePairs.Scan scan = new KeyValuePairs.Scan();
         scan.step('"');
-        assertThat(scan.outside()).isFalse();
-        assertThat(scan.literal('\'')).isTrue();
+
+        assertAll(
+                () -> assertThat(scan.outside()).isFalse(),
+                () -> assertThat(scan.literal('\'')).isTrue());
+    }
+
+    @Test
+    void afterABackslashTheScanIsNotOutsideAndAQuoteIsLiteral() {
+        KeyValuePairs.Scan scan = new KeyValuePairs.Scan();
+        scan.step('"');
         scan.step('"');
         scan.step('\\');
-        assertThat(scan.outside()).isFalse();
-        assertThat(scan.literal('"')).isTrue();
+
+        assertAll(
+                () -> assertThat(scan.outside()).isFalse(),
+                () -> assertThat(scan.literal('"')).isTrue());
     }
 }

@@ -138,13 +138,14 @@ class FoldTest {
                 List.of(step("ADD file:ubi in /"), step("RUN make")));
         Map<String, Link> links = Map.of("app", APP_LINK, "base", baseLink);
 
-        assertThat(Fold.of(List.of(base, app), Map.of("base", new Parent.Root(), "app", new Parent.Of("base")), links)
-                .get("app").chain())
-                .containsExactly(new ChainEntry("app", APP_LINK), new ChainEntry("base", baseLink));
         Map<String, Parent> cycle = Map.of("base", new Parent.Of("app"), "app", new Parent.Of("base"));
-        assertThat(Fold.of(List.of(base, app), cycle, links)
-                .get("app").chain())
-                .extracting(ChainEntry::configDigest).containsExactly("app", "base");
+
+        assertAll(
+                () -> assertThat(Fold.of(List.of(base, app),
+                        Map.of("base", new Parent.Root(), "app", new Parent.Of("base")), links).get("app").chain())
+                        .containsExactly(new ChainEntry("app", APP_LINK), new ChainEntry("base", baseLink)),
+                () -> assertThat(Fold.of(List.of(base, app), cycle, links).get("app").chain())
+                        .extracting(ChainEntry::configDigest).containsExactly("app", "base"));
     }
 
     @Test
@@ -205,11 +206,12 @@ class FoldTest {
     void theEffectiveImageOfALoneImageHasOnlyItselfInItsChain() {
         Resolved.Node app = node("app", List.of("L1"), "1001", List.of(step("USER 1001")));
 
-        assertThat(Fold.effective(app, List.of(new Fold.Member(app, List.of(new Instruction("USER", "1001")))),
-                Map.of("app", APP_LINK))).satisfies(e -> {
-                    assertThat(e.chain()).containsExactly(new ChainEntry("app", APP_LINK));
-                    assertThat(e.parentHasOnbuild()).isFalse();
-                });
+        EffectiveImage effective = Fold.effective(app,
+                List.of(new Fold.Member(app, List.of(new Instruction("USER", "1001")))), Map.of("app", APP_LINK));
+
+        assertAll(
+                () -> assertThat(effective.chain()).containsExactly(new ChainEntry("app", APP_LINK)),
+                () -> assertThat(effective.parentHasOnbuild()).isFalse());
     }
 
     static HistoryStep step(String instruction) {

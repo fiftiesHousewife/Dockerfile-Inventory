@@ -30,10 +30,13 @@ class DraftTest {
     }
 
     @Test
-    void lastUserIsTheLastUserInstructionOrNull() {
-        Draft draft = new Draft(null, ALPINE, null);
-        assertThat(draft.lastUser()).isNull();
+    void lastUserIsNullWithoutAUserInstruction() {
+        assertThat(new Draft(null, ALPINE, null).lastUser()).isNull();
+    }
 
+    @Test
+    void lastUserIsTheLastUserInstruction() {
+        Draft draft = new Draft(null, ALPINE, null);
         draft.add(new User("0"));
         draft.add(new Workdir("/app"));
         draft.add(new User("1001"));

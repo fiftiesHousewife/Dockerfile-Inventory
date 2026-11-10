@@ -8,11 +8,15 @@ import org.junit.jupiter.api.Test;
 class ShellScanTest {
 
     @Test
-    void nextIsTheFollowingCharacterOrZeroAtTheEnd() {
-        ShellScan scan = new ShellScan("ab");
+    void nextIsTheFollowingCharacter() {
+        assertThat(new ShellScan("ab").next()).isEqualTo('b');
+    }
 
-        assertThat(scan.next()).isEqualTo('b');
+    @Test
+    void nextIsZeroAtTheEnd() {
+        ShellScan scan = new ShellScan("ab");
         scan.at = 1;
+
         assertThat(scan.next()).isEqualTo((char) 0);
     }
 
@@ -64,11 +68,15 @@ class ShellScanTest {
     }
 
     @Test
-    void moreIsFalseAtTheEndOrOnceUnreadable() {
-        ShellScan scan = new ShellScan("a");
+    void moreIsTrueBeforeTheEnd() {
+        assertThat(new ShellScan("a").more()).isTrue();
+    }
 
-        assertThat(scan.more()).isTrue();
+    @Test
+    void moreIsFalseOnceUnreadable() {
+        ShellScan scan = new ShellScan("a");
         scan.unreadable = true;
+
         assertThat(scan.more()).isFalse();
     }
 }
