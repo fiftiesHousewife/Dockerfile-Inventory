@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-// tools and network-tools come first: one is built on the other.
 record OkdChoice(List<Image> candidates, List<Image> chosen, List<String> bases) {
 
     static final String CONTENT = "okd/scos-content";
@@ -24,6 +23,7 @@ record OkdChoice(List<Image> candidates, List<Image> chosen, List<String> bases)
         bases = List.copyOf(bases);
     }
 
+    // network-tools is built on tools, so both come first.
     static List<Image> candidates(String release, List<Image> images, Set<String> scanned, int count) {
         Set<String> tools = Set.of(release + "-tools", release + "-network-tools");
         List<Image> others = List.copyOf(images.stream().filter(image -> !tools.contains(image.tag()))
@@ -60,7 +60,6 @@ record OkdChoice(List<Image> candidates, List<Image> chosen, List<String> bases)
                         + image.tag().substring(release.length() + 1) + ":" + release)).toList();
     }
 
-    // No registry host, and a digest written as a tag of its first twelve characters.
     static String jcrName(String image) {
         String reference = image.substring(image.indexOf('/') + 1);
         int at = reference.indexOf("@sha256:");

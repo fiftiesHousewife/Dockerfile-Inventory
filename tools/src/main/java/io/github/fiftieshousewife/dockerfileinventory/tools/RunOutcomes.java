@@ -50,7 +50,6 @@ record RunOutcomes(List<Outcome> failures, List<Outcome> parsed, Map<String, Str
                 : "fails";
     }
 
-    // The first, as the bank's earlier cases were collected.
     static Map<String, Location> locations(Path manifest) {
         return Json.rows(manifest).collect(Collectors.toMap(row -> row.path("blobSha").asString(), row -> new Location(
                 row.path("repository").asString(), row.path("path").asString(), row.path("commitSha").asString()),

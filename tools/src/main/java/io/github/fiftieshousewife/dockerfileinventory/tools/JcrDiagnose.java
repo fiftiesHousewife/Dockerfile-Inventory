@@ -12,7 +12,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Why the local JCR the lineage demo starts is not answering: the image's architecture, Docker's memory, the
  * container's state and memory use, the errors in its own logs, where it can be reached from, and what its Docker API
@@ -61,7 +60,7 @@ public final class JcrDiagnose {
         dockerApi();
     }
 
-    private void containerSections() {
+    void containerSections() {
         String jcr = JcrContainers.JCR;
         section("image architecture (arm64 runs natively on Apple silicon; amd64 is emulated)",
                 List.of("docker", "image", "inspect", image, "--format", "{{.Architecture}}"));
@@ -78,7 +77,7 @@ public final class JcrDiagnose {
                         + "| tail -20"));
     }
 
-    private void networkSections() {
+    void networkSections() {
         String jcr = JcrContainers.JCR;
         String ping = "/artifactory/api/system/ping";
         section("reachability from the demo network and inside JCR", List.of("docker", "run", "--rm", "--network",
@@ -94,7 +93,7 @@ public final class JcrDiagnose {
                         + "/artifactory-service.log | tail -15"));
     }
 
-    private void dockerApi() {
+    void dockerApi() {
         out.println("\n== Docker API from this machine: status and the start of each reply (admin login)");
         DOCKER_API.forEach(path -> out.printf("%-52s %s%n", "/" + path, probe(path)));
     }

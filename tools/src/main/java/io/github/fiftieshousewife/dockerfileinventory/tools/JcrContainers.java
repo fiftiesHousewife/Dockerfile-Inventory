@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.List;
 
-// JCR 7.19x refuses its old built-in Derby, so it runs on PostgreSQL; the database password is a fixed local one,
-// reachable only on the demo's network.
 final class JcrContainers {
 
     static final String NETWORK = "inventory-demo";
@@ -31,6 +29,7 @@ final class JcrContainers {
         }
     }
 
+    // JCR 7.19x refuses its built-in Derby; the fixed database password is reachable only on the demo's network.
     void postgres() {
         if (running(POSTGRES)) {
             return;
@@ -54,7 +53,6 @@ final class JcrContainers {
         }
     }
 
-    // A JCR of another version cannot open this one's database: removing its volumes is left to the person.
     void refuseAnotherVersion() {
         String running = docker.run("docker", "inspect", "-f", "{{.Config.Image}}", JCR).out().strip();
         if (!running.isEmpty() && !running.equals(jcrImage) && !running.startsWith("Error")) {

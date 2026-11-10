@@ -12,7 +12,6 @@ import tools.jackson.core.util.Separators;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-// jq printed the bank's earlier cases, so new ones are laid out as jq lays them out.
 final class Json {
 
     static final ObjectMapper MAPPER = new ObjectMapper();
@@ -33,7 +32,6 @@ final class Json {
         return MAPPER.readTree(file.toFile());
     }
 
-    // jq's layout: two spaces, every array element on its own line, "name": value, and [] and {} when empty.
     static final class JqPrinter extends DefaultPrettyPrinter {
 
         private static final long serialVersionUID = 1L;

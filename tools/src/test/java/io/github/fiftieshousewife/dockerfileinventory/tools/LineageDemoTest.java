@@ -70,6 +70,13 @@ class LineageDemoTest {
     }
 
     @Test
+    void dockersArchitectureIsNamedAsAPlatformNamesIt() {
+        assertAll(
+                () -> assertThat(LineageDemo.architecture("x86_64\n")).isEqualTo("amd64"),
+                () -> assertThat(LineageDemo.architecture("aarch64")).isEqualTo("arm64"));
+    }
+
+    @Test
     void anInputMissingIsRefusedSayingWhatToRunFirst(@TempDir Path out) {
         assertThatIllegalArgumentException().isThrownBy(() -> LineageDemo.require(out.resolve("manifest.jsonl"),
                 "run discovery first")).withMessage("no " + out.resolve("manifest.jsonl") + "; run discovery first");

@@ -8,11 +8,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 
-// Builds for linux/amd64 because lineage reads amd64 only. JCR speaks plain HTTP here, so every pull and push skips
-// TLS verification.
 final class DemoImages {
 
     static final String BUILDAH_STORAGE = "inventory-demo-buildah";
+    // Lineage reads amd64 images only.
+    private static final String ARCH = "amd64";
 
     private final Commands docker;
     private final String registry;
@@ -36,10 +36,9 @@ final class DemoImages {
                 .forEach(fields -> copy(fields[0], fields[1], log));
     }
 
-    // --override-arch makes skopeo pick a manifest list's amd64 image.
     void copy(String reference, String name, Path log) {
         boolean copied = docker.run(List.of("docker", "run", "--rm", "--network", JcrContainers.NETWORK, skopeoImage,
-                "copy", "-q", "--preserve-digests", "--override-os", "linux", "--override-arch", "amd64",
+                "copy", "-q", "--preserve-digests", "--override-os", "linux", "--override-arch", ARCH,
                 "--dest-tls-verify=false", "--dest-creds", "admin:" + password, "docker://" + reference,
                 "docker://" + registry + "/" + name), null).ok();
         log(log, copied ? "pushed " + registry + "/" + name : "FAILED " + reference);
@@ -68,7 +67,7 @@ final class DemoImages {
     }
 
     void mirrorRoot(String root, Path out, Path log) {
-        boolean mirrored = buildah(out, List.of("pull", "-q", "--platform", "linux/amd64", root))
+        boolean mirrored = buildah(out, List.of("pull", "-q", "--platform", "linux/" + ARCH, root))
                 && buildah(out, List.of("tag", root, local(root))) && push(out, local(root));
         if (!mirrored) {
             log(log, "FAILED mirror " + root);
@@ -79,16 +78,16 @@ final class DemoImages {
         String context = "/src/" + build.repository() + "/" + build.commit();
         String image = registry + "/" + build.name();
         boolean built = buildah(out, concat(List.of(List.of("build", "-q", "--layers=false", "--platform",
-                "linux/amd64"), login(), List.of("--from", local(build.base()), "-f", context + "/" + build.path(),
-                "-t", image, context)))) && push(out, image);
+                "linux/" + ARCH), plainHttpLogin(), List.of("--from", local(build.base()), "-f",
+                context + "/" + build.path(), "-t", image, context)))) && push(out, image);
         log(log, built ? "pushed " + image : "FAILED " + build.name());
     }
 
     private boolean push(Path out, String image) {
-        return buildah(out, concat(List.of(List.of("push", "-q"), login(), List.of(image))));
+        return buildah(out, concat(List.of(List.of("push", "-q"), plainHttpLogin(), List.of(image))));
     }
 
-    private List<String> login() {
+    private List<String> plainHttpLogin() {
         return List.of("--tls-verify=false", "--creds", "admin:" + password);
     }
 
@@ -98,8 +97,7 @@ final class DemoImages {
         return registry + "/" + (reference.contains(":") ? reference : reference + ":c9s");
     }
 
-    // Buildah runs natively (as an emulated binary it cannot re-exec itself for RUN); its store is a volume, so each
-    // step's container sees what the last one left.
+    // Native, as an emulated Buildah cannot re-exec itself for RUN; its store's volume carries images between steps.
     private boolean buildah(Path out, List<String> arguments) {
         return docker.run(concat(List.of(List.of("docker", "run", "--rm", "--privileged", "--platform",
                 nativePlatform, "--network", JcrContainers.NETWORK, "-e", "STORAGE_DRIVER=vfs", "-v", out.resolve("src")
