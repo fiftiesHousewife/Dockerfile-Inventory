@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -24,8 +25,9 @@ class ParentTest {
 
     @Test
     void aRootOrAnUnplacedImageHasNoParentImage() {
-        assertThat(Parent.node(new Parent.Root(), BY_DIGEST)).isNull();
-        assertThat(Parent.node(null, BY_DIGEST)).isNull();
+        assertAll(
+                () -> assertThat(Parent.node(new Parent.Root(), BY_DIGEST)).isNull(),
+                () -> assertThat(Parent.node(null, BY_DIGEST)).isNull());
     }
 
     private static Resolved.Node node(String digest) {

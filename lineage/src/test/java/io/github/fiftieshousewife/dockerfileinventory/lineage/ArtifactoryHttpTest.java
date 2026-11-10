@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -57,9 +58,11 @@ class ArtifactoryHttpTest {
     void listsLocalDockerRepositoriesByKeyWithTheBearerToken() {
         route("/artifactory/api/repositories", exchange -> respond(exchange, 200, "repositories.json"));
 
-        assertThat(artifactory.dockerRepositories()).containsExactly("docker-local", "base-images");
-        assertThat(requests).containsExactly("GET /artifactory/api/repositories?type=local&packageType=docker");
-        assertThat(authorizations).containsOnly("Bearer t0ken");
+        assertAll(
+                () -> assertThat(artifactory.dockerRepositories()).containsExactly("docker-local", "base-images"),
+                () -> assertThat(requests)
+                        .containsExactly("GET /artifactory/api/repositories?type=local&packageType=docker"),
+                () -> assertThat(authorizations).containsOnly("Bearer t0ken"));
     }
 
     @Test
@@ -68,10 +71,12 @@ class ArtifactoryHttpTest {
                 exchange.getRequestURI().getRawQuery().contains("last=")
                         ? "catalog-page2.json" : "catalog-page1.json"));
 
-        assertThat(artifactory.images("docker-local")).containsExactly("team/app", "team/worker", "ubi9/ubi-minimal");
-        assertThat(requests).containsExactly(
-                "GET /artifactory/api/docker/docker-local/v2/_catalog?n=2",
-                "GET /artifactory/api/docker/docker-local/v2/_catalog?n=2&last=team%2Fworker");
+        assertAll(
+                () -> assertThat(artifactory.images("docker-local")).containsExactly("team/app", "team/worker",
+                        "ubi9/ubi-minimal"),
+                () -> assertThat(requests).containsExactly(
+                        "GET /artifactory/api/docker/docker-local/v2/_catalog?n=2",
+                        "GET /artifactory/api/docker/docker-local/v2/_catalog?n=2&last=team%2Fworker"));
     }
 
     @Test
@@ -83,10 +88,12 @@ class ArtifactoryHttpTest {
         route("/artifactory/api/docker/docker-local/v2/team/gone/tags/list",
                 exchange -> respond(exchange, 404, "name-unknown.json"));
 
-        assertThat(artifactory.tags("docker-local", "team/app")).containsExactly("1.0", "1.1", "latest");
-        assertThat(artifactory.tags("docker-local", "team/empty")).isEmpty();
-        assertThat(artifactory.tags("docker-local", "team/gone")).isEmpty();
-        assertThat(requests).contains("GET /artifactory/api/docker/docker-local/v2/team/app/tags/list?n=2&last=1.1");
+        assertAll(
+                () -> assertThat(artifactory.tags("docker-local", "team/app")).containsExactly("1.0", "1.1", "latest"),
+                () -> assertThat(artifactory.tags("docker-local", "team/empty")).isEmpty(),
+                () -> assertThat(artifactory.tags("docker-local", "team/gone")).isEmpty(),
+                () -> assertThat(requests)
+                        .contains("GET /artifactory/api/docker/docker-local/v2/team/app/tags/list?n=2&last=1.1"));
     }
 
     @Test
@@ -99,17 +106,18 @@ class ArtifactoryHttpTest {
         route("/artifactory/api/docker/docker-local/v2/team/app/manifests/gone",
                 exchange -> respond(exchange, 404, "name-unknown.json"));
 
-        assertThat(artifactory.manifest("docker-local", "team/app", "1.0")).hasValueSatisfying(m -> {
-            assertThat(m.mediaType()).isEqualTo("application/vnd.docker.distribution.manifest.list.v2+json");
-            assertThat(m.digest()).isEqualTo("sha256:" + "a".repeat(64));
-            assertThat(m.body()).contains("\"architecture\": \"amd64\"");
-        });
-        assertThat(artifactory.manifest("docker-local", "team/app", "gone")).isEmpty();
-        assertThat(accepts.getFirst()).contains(
-                "application/vnd.docker.distribution.manifest.v2+json",
-                "application/vnd.docker.distribution.manifest.list.v2+json",
-                "application/vnd.oci.image.manifest.v1+json",
-                "application/vnd.oci.image.index.v1+json");
+        assertAll(
+                () -> assertThat(artifactory.manifest("docker-local", "team/app", "1.0")).hasValueSatisfying(m -> {
+                    assertThat(m.mediaType()).isEqualTo("application/vnd.docker.distribution.manifest.list.v2+json");
+                    assertThat(m.digest()).isEqualTo("sha256:" + "a".repeat(64));
+                    assertThat(m.body()).contains("\"architecture\": \"amd64\"");
+                }),
+                () -> assertThat(artifactory.manifest("docker-local", "team/app", "gone")).isEmpty(),
+                () -> assertThat(accepts.getFirst()).contains(
+                        "application/vnd.docker.distribution.manifest.v2+json",
+                        "application/vnd.docker.distribution.manifest.list.v2+json",
+                        "application/vnd.oci.image.manifest.v1+json",
+                        "application/vnd.oci.image.index.v1+json"));
     }
 
     @Test
@@ -124,9 +132,10 @@ class ArtifactoryHttpTest {
         route("/artifactory/api/docker/docker-local/v2/team/app/blobs/sha256:gone",
                 exchange -> respond(exchange, 404, "name-unknown.json"));
 
-        assertThat(artifactory.blob("docker-local", "team/app", digest)).hasValueSatisfying(
-                text -> assertThat(text).contains("\"diff_ids\""));
-        assertThat(artifactory.blob("docker-local", "team/app", "sha256:gone")).isEmpty();
+        assertAll(
+                () -> assertThat(artifactory.blob("docker-local", "team/app", digest)).hasValueSatisfying(
+                        text -> assertThat(text).contains("\"diff_ids\"")),
+                () -> assertThat(artifactory.blob("docker-local", "team/app", "sha256:gone")).isEmpty());
     }
 
     @Test
@@ -134,9 +143,10 @@ class ArtifactoryHttpTest {
         route("/artifactory/api/storage/docker-local/team/app/1.0",
                 exchange -> respond(exchange, 200, "storage-tag.json"));
 
-        assertThat(artifactory.lastPushed("docker-local", "team/app", "1.0"))
-                .contains(Instant.parse("2026-10-02T09:15:00Z"));
-        assertThat(artifactory.lastPushed("docker-local", "team/app", "gone")).isEmpty();
+        assertAll(
+                () -> assertThat(artifactory.lastPushed("docker-local", "team/app", "1.0"))
+                        .contains(Instant.parse("2026-10-02T09:15:00Z")),
+                () -> assertThat(artifactory.lastPushed("docker-local", "team/app", "gone")).isEmpty());
     }
 
     private ArtifactoryHttp artifactory(TokenSource token) {
@@ -241,8 +251,9 @@ class ArtifactoryHttpTest {
             }
         });
 
-        assertThat(artifactory.dockerRepositories()).containsExactly("docker-local", "base-images");
-        assertThat(calls).hasValue(3);
+        assertAll(
+                () -> assertThat(artifactory.dockerRepositories()).containsExactly("docker-local", "base-images"),
+                () -> assertThat(calls).hasValue(3));
     }
 
     @Test
@@ -269,8 +280,9 @@ class ArtifactoryHttpTest {
 
     @Test
     void pagingAsksForEntriesAfterTheLastOneListed() {
-        assertThat(ArtifactoryHttp.after(List.of())).isEmpty();
-        assertThat(ArtifactoryHttp.after(List.of("a", "team/b"))).isEqualTo("&last=team%2Fb");
+        assertAll(
+                () -> assertThat(ArtifactoryHttp.after(List.of())).isEmpty(),
+                () -> assertThat(ArtifactoryHttp.after(List.of("a", "team/b"))).isEqualTo("&last=team%2Fb"));
     }
 
     @Test
@@ -279,8 +291,9 @@ class ArtifactoryHttpTest {
                 exchange.getRequestURI().getRawQuery().contains("last=")
                         ? "catalog-page2.json" : "catalog-page1.json"));
 
-        assertThat(artifactory.paged("api/docker/docker-local/v2/_catalog", "repositories")).hasSize(3);
-        assertThat(requests).hasSize(2);
+        assertAll(
+                () -> assertThat(artifactory.paged("api/docker/docker-local/v2/_catalog", "repositories")).hasSize(3),
+                () -> assertThat(requests).hasSize(2));
     }
 
     @Test

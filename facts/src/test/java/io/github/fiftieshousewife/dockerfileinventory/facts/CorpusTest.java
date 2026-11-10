@@ -18,7 +18,8 @@ class CorpusTest {
 
     static Stream<String> cases() throws IOException {
         try (Stream<Path> dirs = Files.list(CORPUS)) {
-            return dirs.filter(Files::isDirectory).map(dir -> String.valueOf(dir.getFileName())).sorted().toList().stream();
+            return dirs.filter(Files::isDirectory).map(dir -> String.valueOf(dir.getFileName())).sorted().toList()
+                    .stream();
         }
     }
 
@@ -29,7 +30,8 @@ class CorpusTest {
         JsonNode expected = JSON.readTree(dir.resolve("expected.json").toFile());
         ParseResult result = new FactsParser().parse(name, Files.readString(dir.resolve("Dockerfile")));
 
-        assertThat(Corpus.outcome(result)).as(Corpus.ratchet(name, "parse")).isEqualTo(expected.path("parse").asString());
+        assertThat(Corpus.outcome(result)).as(Corpus.ratchet(name, "parse")).isEqualTo(expected.path("parse")
+                .asString());
         if (result instanceof ParseResult.Parsed parsed) {
             assertThat(FactExtractor.extract(parsed.file()).opaqueRuns()).as(Corpus.ratchet(name, "unreadableRuns"))
                     .isEqualTo(expected.path("unreadableRuns").asInt());

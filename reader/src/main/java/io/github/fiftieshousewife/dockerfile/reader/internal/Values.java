@@ -23,7 +23,7 @@ public final class Values {
                 .collect(Collectors.joining());
     }
 
-    // A word as the Dockerfile wrote it, its quotes put back (the parser keeps a literal's text without them).
+    // The parser keeps a literal's text without its quotes.
     public static String written(Docker.Argument argument) {
         return argument.getContents().stream()
                 .map(c -> c instanceof Docker.Literal l ? quoted(l)

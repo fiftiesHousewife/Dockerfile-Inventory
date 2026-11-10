@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -81,9 +82,11 @@ class OwnStepsTest {
         NormalStep cleanup = new NormalStep("RUN", "rm -rf /tmp/art", null, false);
         NormalStep user = new NormalStep("USER", "1001", null, false);
 
-        assertThat(OwnSteps.withoutReleaseTooling(List.of(root, doozer, root, make, root, swap, cleanup, user)))
-                .containsExactly(root, make, user);
-        assertThat(OwnSteps.withoutReleaseTooling(List.of(root, make))).containsExactly(root, make);
+        assertAll(
+                () -> assertThat(OwnSteps.withoutReleaseTooling(List.of(root, doozer, root, make, root, swap, cleanup,
+                        user)))
+                        .containsExactly(root, make, user),
+                () -> assertThat(OwnSteps.withoutReleaseTooling(List.of(root, make))).containsExactly(root, make));
     }
 
     @Test
@@ -135,8 +138,9 @@ class OwnStepsTest {
                 new NormalStep("RUN", "b", null, false),
                 new NormalStep("USER", "0", null, false));
 
-        assertThat(OwnSteps.lastIndex(steps, step -> step.keyword().equals("RUN"))).isEqualTo(1);
-        assertThat(OwnSteps.lastIndex(steps, step -> step.keyword().equals("CMD"))).isEqualTo(-1);
+        assertAll(
+                () -> assertThat(OwnSteps.lastIndex(steps, step -> step.keyword().equals("RUN"))).isEqualTo(1),
+                () -> assertThat(OwnSteps.lastIndex(steps, step -> step.keyword().equals("CMD"))).isEqualTo(-1));
     }
 
     @Test
@@ -144,20 +148,25 @@ class OwnStepsTest {
         NormalStep from = new NormalStep("RUN", "make", "ubi9", false);
         NormalStep plain = new NormalStep("USER", "0", null, false);
 
-        assertThat(OwnSteps.lastFrom(List.of(plain, from, plain))).isEqualTo(1);
-        assertThat(OwnSteps.lastFrom(List.of(plain, plain))).isZero();
+        assertAll(
+                () -> assertThat(OwnSteps.lastFrom(List.of(plain, from, plain))).isEqualTo(1),
+                () -> assertThat(OwnSteps.lastFrom(List.of(plain, plain))).isZero());
     }
 
     @Test
     void theDoozerMarkerIsAnEnvSettingTheDoozerKey() {
-        assertThat(OwnSteps.doozerEnv(new NormalStep("ENV", "A __doozer", null, false))).isTrue();
-        assertThat(OwnSteps.doozerEnv(new NormalStep("ENV", "__doozer_other", null, false))).isFalse();
-        assertThat(OwnSteps.doozerEnv(new NormalStep("LABEL", "__doozer", null, false))).isFalse();
+        assertAll(
+                () -> assertThat(OwnSteps.doozerEnv(new NormalStep("ENV", "A __doozer", null, false))).isTrue(),
+                () -> assertThat(OwnSteps.doozerEnv(new NormalStep("ENV", "__doozer_other", null, false))).isFalse(),
+                () -> assertThat(OwnSteps.doozerEnv(new NormalStep("LABEL", "__doozer", null, false))).isFalse());
     }
 
     @Test
     void aRunStartsWithAPrefixOnlyAsARun() {
-        assertThat(OwnSteps.runStarts(new NormalStep("RUN", "rm -rf /tmp/art", null, false), "rm -rf")).isTrue();
-        assertThat(OwnSteps.runStarts(new NormalStep("CMD", "rm -rf /tmp/art", null, false), "rm -rf")).isFalse();
+        assertAll(
+                () -> assertThat(OwnSteps.runStarts(new NormalStep("RUN", "rm -rf /tmp/art", null, false), "rm -rf"))
+                        .isTrue(),
+                () -> assertThat(OwnSteps.runStarts(new NormalStep("CMD", "rm -rf /tmp/art", null, false), "rm -rf"))
+                        .isFalse());
     }
 }

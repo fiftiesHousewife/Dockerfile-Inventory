@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import io.github.fiftieshousewife.dockerfile.reader.internal.ShellTokeniser;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -93,14 +94,18 @@ class PackageCallsTest {
 
     @Test
     void expandedWordKeepsAnUnknownVariableOrAWordThatIsNotOnlyAReference() {
-        assertThat(PackageCalls.expandedWord("$NOPE", Map.of())).containsExactly("$NOPE");
-        assertThat(PackageCalls.expandedWord("a-$PKGS", Map.of("PKGS", "git"))).containsExactly("a-$PKGS");
+        assertAll(
+                () -> assertThat(PackageCalls.expandedWord("$NOPE", Map.of())).containsExactly("$NOPE"),
+                () -> assertThat(PackageCalls.expandedWord("a-$PKGS", Map.of("PKGS", "git")))
+                        .containsExactly("a-$PKGS"));
     }
 
     @Test
     void packagesAreTheWordsAfterAnInstallSubcommandWithoutSubstitutions() {
-        assertThat(PackageCalls.packages("install", List.of("install", "git", "$(cat x)"))).containsExactly("git");
-        assertThat(PackageCalls.packages("update", List.of("update", "git"))).isEmpty();
+        assertAll(
+                () -> assertThat(PackageCalls.packages("install", List.of("install", "git", "$(cat x)")))
+                        .containsExactly("git"),
+                () -> assertThat(PackageCalls.packages("update", List.of("update", "git"))).isEmpty());
     }
 
     @ParameterizedTest

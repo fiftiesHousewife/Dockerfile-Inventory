@@ -65,7 +65,6 @@ public final class Installs {
                 : Optional.of(new PackageInstall(manager, flags.get(true), flags.get(false)));
     }
 
-    // The tokeniser drops leading assignments (DEBIAN_FRONTEND=noninteractive), which the model would lose.
     public static boolean eachCommandIsItsOwnWords(String text, List<List<String>> commands) {
         String[] parts = text.split("&&");
         return parts.length == commands.size() && IntStream.range(0, parts.length).allMatch(i ->

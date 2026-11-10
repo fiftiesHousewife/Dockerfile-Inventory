@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,8 @@ class RatesTest {
 
     @Test
     void ratioIsZeroForNothingToMeasure() {
-        assertThat(Rates.ratio(1, 4)).isEqualTo(0.25);
-        assertThat(Rates.ratio(0, 0)).isZero();
+        assertAll(
+                () -> assertThat(Rates.ratio(1, 4)).isEqualTo(0.25),
+                () -> assertThat(Rates.ratio(0, 0)).isZero());
     }
 }

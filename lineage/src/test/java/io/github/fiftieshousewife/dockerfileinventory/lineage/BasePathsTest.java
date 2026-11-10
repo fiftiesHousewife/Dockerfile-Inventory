@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 import static io.github.fiftieshousewife.dockerfileinventory.lineage.LinksTest.dockerfile;
 import static io.github.fiftieshousewife.dockerfileinventory.lineage.LinksTest.image;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -34,19 +35,22 @@ class BasePathsTest {
 
     @Test
     void pathsAreTheSameWithOrWithoutALeadingRepositoryKeyOnEitherSide() {
-        assertThat(BasePaths.samePath("team/base", "team/base")).isTrue();
-        assertThat(BasePaths.samePath("docker-local/team/base", "team/base")).isTrue();
-        assertThat(BasePaths.samePath("team/base", "docker-local/team/base")).isTrue();
-        assertThat(BasePaths.samePath("team/base", "team/other")).isFalse();
+        assertAll(
+                () -> assertThat(BasePaths.samePath("team/base", "team/base")).isTrue(),
+                () -> assertThat(BasePaths.samePath("docker-local/team/base", "team/base")).isTrue(),
+                () -> assertThat(BasePaths.samePath("team/base", "docker-local/team/base")).isTrue(),
+                () -> assertThat(BasePaths.samePath("team/base", "team/other")).isFalse());
     }
 
     @Test
     void aDockerfileIsOnAHeldBaseWhenArtifactoryHasItsPathWithOrWithoutTheRepositoryKey() {
         Set<String> names = Set.of("team/base");
 
-        assertThat(BasePaths.heldByArtifactory(dockerfile("a", "team/base", false), names)).isTrue();
-        assertThat(BasePaths.heldByArtifactory(dockerfile("b", "docker-local/team/base", false), names)).isTrue();
-        assertThat(BasePaths.heldByArtifactory(dockerfile("c", "ubi9", false), names)).isFalse();
-        assertThat(BasePaths.heldByArtifactory(dockerfile("d", null, false), names)).isFalse();
+        assertAll(
+                () -> assertThat(BasePaths.heldByArtifactory(dockerfile("a", "team/base", false), names)).isTrue(),
+                () -> assertThat(BasePaths.heldByArtifactory(dockerfile("b", "docker-local/team/base", false), names))
+                        .isTrue(),
+                () -> assertThat(BasePaths.heldByArtifactory(dockerfile("c", "ubi9", false), names)).isFalse(),
+                () -> assertThat(BasePaths.heldByArtifactory(dockerfile("d", null, false), names)).isFalse());
     }
 }

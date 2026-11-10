@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +14,9 @@ class StageTest {
 
     @Test
     void aStageBuildsOnExactlyOneOfABaseImageOrAnEarlierStage() {
-        assertThatIllegalArgumentException().isThrownBy(() -> new Stage(null, UBI, "build", List.of()));
-        assertThatIllegalArgumentException().isThrownBy(() -> new Stage(null, null, null, List.of()));
+        assertAll(
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> new Stage(null, UBI, "build", List.of())),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> new Stage(null, null, null, List.of())));
     }
 
     @Test

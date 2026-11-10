@@ -47,12 +47,11 @@ class LineageFilesTest {
 
         files.storeConfig("sha256:abc", "{}");
 
-        assertThat(files).satisfies(f -> {
-            assertThat(f.hasConfig("sha256:abc")).isTrue();
-            assertThat(f.config("sha256:abc")).contains("{}");
-            assertThat(f.config("sha256:def")).isEmpty();
-            assertThat(dir.resolve("configs/sha256_abc.json")).exists();
-        });
+        assertAll(
+                () -> assertThat(files.hasConfig("sha256:abc")).isTrue(),
+                () -> assertThat(files.config("sha256:abc")).contains("{}"),
+                () -> assertThat(files.config("sha256:def")).isEmpty(),
+                () -> assertThat(dir.resolve("configs/sha256_abc.json")).exists());
     }
 
     @Test
@@ -70,8 +69,9 @@ class LineageFilesTest {
         Path file = dir.resolve("rows.jsonl");
         Files.writeString(file, "one\n\n  \ntwo\n");
 
-        assertThat(LineageFiles.lines(file)).containsExactly("one", "two");
-        assertThat(LineageFiles.lines(dir.resolve("missing.jsonl"))).isEmpty();
+        assertAll(
+                () -> assertThat(LineageFiles.lines(file)).containsExactly("one", "two"),
+                () -> assertThat(LineageFiles.lines(dir.resolve("missing.jsonl"))).isEmpty());
     }
 
     @Test

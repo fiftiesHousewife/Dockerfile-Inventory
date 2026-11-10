@@ -1,9 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -67,10 +67,9 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 1).run();
 
-        assertThat(files.tags()).singleElement().satisfies(row -> {
-            assertThat(row.configDigest()).isNull();
-            assertThat(row.skipped()).isEqualTo(Resolved.Reason.NO_AMD64);
-        });
+        assertThat(files.tags()).singleElement()
+                .extracting(TagRow::configDigest, TagRow::skipped)
+                .containsExactly(null, Resolved.Reason.NO_AMD64);
     }
 
     @Test
@@ -84,8 +83,10 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 1).run();
 
-        assertThat(files.tags()).hasSize(3).allSatisfy(row -> assertThat(row.configDigest()).isEqualTo(CONFIG_C));
-        assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1);
+        assertAll(
+                () -> assertThat(files.tags()).hasSize(3).allSatisfy(row -> assertThat(row.configDigest())
+                        .isEqualTo(CONFIG_C)),
+                () -> assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1));
     }
 
     @Test
@@ -99,9 +100,10 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 1).run();
 
-        assertThat(artifactory.manifestCalls).hasValue(manifestsBefore);
-        assertThat(files.tags()).hasSize(1);
-        assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1);
+        assertAll(
+                () -> assertThat(artifactory.manifestCalls).hasValue(manifestsBefore),
+                () -> assertThat(files.tags()).hasSize(1),
+                () -> assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1));
     }
 
     @Test
@@ -115,8 +117,9 @@ class InventoryTest {
 
         new Inventory(artifactory, files, 8).run();
 
-        assertThat(files.tags()).hasSize(20).extracting(TagRow::image).doesNotHaveDuplicates();
-        assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1);
+        assertAll(
+                () -> assertThat(files.tags()).hasSize(20).extracting(TagRow::image).doesNotHaveDuplicates(),
+                () -> assertThat(artifactory.blobCalls.get(CONFIG_C)).hasValue(1));
     }
 
     @Test
@@ -155,11 +158,12 @@ class InventoryTest {
         LineageFiles files = new LineageFiles(out);
         Inventory inventory = new Inventory(artifactory, files, 1);
 
-        assertThat(inventory.fetch("docker-local", "team/app", "sha256:gone"))
-                .contains(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:gone"));
-        assertThat(inventory.fetch("docker-local", "team/app", "sha256:bad"))
-                .contains(new Resolved.Skipped(Resolved.Reason.UNREADABLE_CONFIG, "sha256:bad"));
-        assertThat(files.hasConfig("sha256:bad")).isFalse();
+        assertAll(
+                () -> assertThat(inventory.fetch("docker-local", "team/app", "sha256:gone"))
+                        .contains(new Resolved.Skipped(Resolved.Reason.GONE, "sha256:gone")),
+                () -> assertThat(inventory.fetch("docker-local", "team/app", "sha256:bad"))
+                        .contains(new Resolved.Skipped(Resolved.Reason.UNREADABLE_CONFIG, "sha256:bad")),
+                () -> assertThat(files.hasConfig("sha256:bad")).isFalse());
     }
 
     @Test
@@ -168,8 +172,10 @@ class InventoryTest {
         LineageFiles files = new LineageFiles(out);
         files.storeConfig(CONFIG_C, "{}");
 
-        assertThat(new Inventory(artifactory, files, 1).config("docker-local", "team/app", CONFIG_C)).isEmpty();
-        assertThat(artifactory.blobCalls).isEmpty();
+        assertAll(
+                () -> assertThat(new Inventory(artifactory, files, 1).config("docker-local", "team/app", CONFIG_C))
+                        .isEmpty(),
+                () -> assertThat(artifactory.blobCalls).isEmpty());
     }
 
     @Test

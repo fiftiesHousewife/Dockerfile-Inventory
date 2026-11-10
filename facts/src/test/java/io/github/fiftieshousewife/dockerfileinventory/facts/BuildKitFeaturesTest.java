@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,9 +24,11 @@ class BuildKitFeaturesTest {
 
     @Test
     void mountsIsFalseForARunWithoutFlagsOrWithOtherFlags() {
-        assertThat(BuildKitFeatures.mounts(null)).isFalse();
-        assertThat(BuildKitFeatures.mounts(Parsed.first("FROM ubi9\nRUN --network=none true\n", Docker.Run.class)
-                .getFlags())).isFalse();
+        assertAll(
+                () -> assertThat(BuildKitFeatures.mounts(null)).isFalse(),
+                () -> assertThat(BuildKitFeatures.mounts(Parsed.first("FROM ubi9\nRUN --network=none true\n",
+                        Docker.Run.class)
+                        .getFlags())).isFalse());
     }
 
     @ParameterizedTest

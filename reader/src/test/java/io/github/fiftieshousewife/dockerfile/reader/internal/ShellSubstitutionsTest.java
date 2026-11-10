@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,10 +32,9 @@ class ShellSubstitutionsTest {
 
         ShellSubstitutions.dollar(scan);
 
-        assertThat(scan).satisfies(s -> {
-            assertThat(s.word).hasToString("$(id -u)");
-            assertThat(s.at).isEqualTo(7);
-        });
+        assertAll(
+                () -> assertThat(scan.word).hasToString("$(id -u)"),
+                () -> assertThat(scan.at).isEqualTo(7));
     }
 
     @Test
@@ -54,7 +54,8 @@ class ShellSubstitutionsTest {
         ShellSubstitutions.backticks(closed);
         ShellSubstitutions.backticks(open);
 
-        assertThat(closed.word).hasToString("`date`");
-        assertThat(open.unreadable).isTrue();
+        assertAll(
+                () -> assertThat(closed.word).hasToString("`date`"),
+                () -> assertThat(open.unreadable).isTrue());
     }
 }

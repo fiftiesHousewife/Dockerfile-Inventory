@@ -34,7 +34,6 @@ record LineageRates(int tags, int images, Map<Resolved.Reason, Integer> skipped,
         return skipped;
     }
 
-    // The share of tags in scope placed in the tree; tags with no amd64 image, or gone, are out of scope.
     static double coverage(List<TagRow> tags, Map<Resolved.Reason, Integer> skipped) {
         long placed = tags.stream().filter(t -> t.configDigest() != null).count();
         long inScope = tags.size() - skipped.getOrDefault(Resolved.Reason.NO_AMD64, 0)

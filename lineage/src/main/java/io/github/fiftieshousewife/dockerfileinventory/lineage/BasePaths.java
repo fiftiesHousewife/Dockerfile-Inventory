@@ -30,7 +30,6 @@ final class BasePaths {
         return path != null && (imageNames.contains(path) || imageNames.contains(withoutFirstSegment(path)));
     }
 
-    // A Dockerfile may name an Artifactory image with or without the repository key as its first segment.
     static boolean samePath(String a, String b) {
         return a.equals(b) || withoutFirstSegment(a).equals(b) || a.equals(withoutFirstSegment(b));
     }

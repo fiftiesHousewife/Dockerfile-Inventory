@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
@@ -15,40 +16,42 @@ class ShellQuotesTest {
 
     @Test
     void anEscapedCharacterIsItselfAndAnEscapedDollarIsMarkedLiteral() {
-        assertThat(scanned("\\a", ShellQuotes::escaped).word).hasToString("a");
-        assertThat(scanned("\\$", ShellQuotes::escaped).word).hasToString(String.valueOf(ShellToken.LITERAL_DOLLAR));
+        assertAll(
+                () -> assertThat(scanned("\\a", ShellQuotes::escaped).word).hasToString("a"),
+                () -> assertThat(scanned("\\$", ShellQuotes::escaped).word)
+                        .hasToString(String.valueOf(ShellToken.LITERAL_DOLLAR)));
     }
 
     @Test
     void aBackslashNewlineIsAContinuationAndAddsNothing() {
-        assertThat(scanned("\\\nx", ShellQuotes::escaped)).satisfies(scan -> {
-            assertThat(scan.word).isEmpty();
-            assertThat(scan.at).isEqualTo(1);
-        });
+        assertAll(
+                () -> assertThat(scanned("\\\nx", ShellQuotes::escaped).word).isEmpty(),
+                () -> assertThat(scanned("\\\nx", ShellQuotes::escaped).at).isEqualTo(1));
     }
 
     @Test
     void singleQuotesKeepTheirTextAsItIsWithDollarsMarkedLiteral() {
-        assertThat(scanned("'a $b' c", ShellQuotes::singleQuoted)).satisfies(scan -> {
-            assertThat(scan.word).hasToString("a " + ShellToken.LITERAL_DOLLAR + "b");
-            assertThat(scan.quoted).isTrue();
-            assertThat(scan.at).isEqualTo(5);
-        });
+        assertAll(
+                () -> assertThat(scanned("'a $b' c", ShellQuotes::singleQuoted).word)
+                        .hasToString("a " + ShellToken.LITERAL_DOLLAR + "b"),
+                () -> assertThat(scanned("'a $b' c", ShellQuotes::singleQuoted).quoted).isTrue(),
+                () -> assertThat(scanned("'a $b' c", ShellQuotes::singleQuoted).at).isEqualTo(5));
     }
 
     @Test
     void anUnclosedQuoteMakesTheScriptUnreadable() {
-        assertThat(scanned("'a", ShellQuotes::singleQuoted).unreadable).isTrue();
-        assertThat(scanned("\"a", ShellQuotes::doubleQuoted).unreadable).isTrue();
+        assertAll(
+                () -> assertThat(scanned("'a", ShellQuotes::singleQuoted).unreadable).isTrue(),
+                () -> assertThat(scanned("\"a", ShellQuotes::doubleQuoted).unreadable).isTrue());
     }
 
     @Test
     void doubleQuotesKeepDollarsAndSubstitutionsAndEndAtTheClosingQuote() {
-        assertThat(scanned("\"$A `b` $(c)\" d", ShellQuotes::doubleQuoted)).satisfies(scan -> {
-            assertThat(scan.word).hasToString("$A `b` $(c)");
-            assertThat(scan.quoted).isTrue();
-            assertThat(scan.at).isEqualTo(12);
-        });
+        assertAll(
+                () -> assertThat(scanned("\"$A `b` $(c)\" d", ShellQuotes::doubleQuoted).word)
+                        .hasToString("$A `b` $(c)"),
+                () -> assertThat(scanned("\"$A `b` $(c)\" d", ShellQuotes::doubleQuoted).quoted).isTrue(),
+                () -> assertThat(scanned("\"$A `b` $(c)\" d", ShellQuotes::doubleQuoted).at).isEqualTo(12));
     }
 
     @Test
@@ -62,10 +65,9 @@ class ShellQuotesTest {
 
         ShellQuotes.escapedInDoubleQuotes(scan);
 
-        assertThat(scan).satisfies(s -> {
-            assertThat(s.word).isEmpty();
-            assertThat(s.at).isEqualTo(1);
-        });
+        assertAll(
+                () -> assertThat(scan.word).isEmpty(),
+                () -> assertThat(scan.at).isEqualTo(1));
     }
 
     @Test
@@ -79,7 +81,8 @@ class ShellQuotesTest {
 
     @Test
     void aLiteralDollarIsMarkedAndAnyOtherCharacterIsItself() {
-        assertThat(ShellQuotes.literal('$')).isEqualTo(ShellToken.LITERAL_DOLLAR);
-        assertThat(ShellQuotes.literal('a')).isEqualTo('a');
+        assertAll(
+                () -> assertThat(ShellQuotes.literal('$')).isEqualTo(ShellToken.LITERAL_DOLLAR),
+                () -> assertThat(ShellQuotes.literal('a')).isEqualTo('a'));
     }
 }

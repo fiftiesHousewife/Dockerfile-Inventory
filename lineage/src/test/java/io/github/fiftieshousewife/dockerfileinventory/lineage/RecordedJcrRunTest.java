@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.sun.net.httpserver.HttpServer;
 import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
@@ -86,18 +87,19 @@ class RecordedJcrRunTest {
                         .stream(r.path("blobShas").spliterator(), false).map(b -> b.asString().substring(0, 10))
                         .sorted().toList())));
 
-        assertThat(parents).isEqualTo(Map.of(
-                "centos/centos:stream9", "Root",
-                "sclorg/s2i-core-c9s:c9s", "centos/centos:stream9",
-                "sclorg/s2i-base-c9s:c9s", "sclorg/s2i-core-c9s:c9s",
-                "sclorg/nginx-container-1-24-c9s:c9s", "sclorg/s2i-core-c9s:c9s",
-                "sclorg/s2i-python-container-3-12-c9s:c9s", "sclorg/s2i-base-c9s:c9s"));
-        assertThat(links).isEqualTo(Map.of(
-                "centos/centos:stream9", "NONE ",
-                "sclorg/s2i-core-c9s:c9s", "PROBABLE 1723284a86",
-                "sclorg/s2i-base-c9s:c9s", "PROBABLE 84d379564c",
-                "sclorg/nginx-container-1-24-c9s:c9s", "PROBABLE 6070555cb3,6add3832a5,b2c5980342,d69ccd7230",
-                "sclorg/s2i-python-container-3-12-c9s:c9s", "PROBABLE 22461d2436"));
+        assertAll(
+                () -> assertThat(parents).isEqualTo(Map.of(
+                        "centos/centos:stream9", "Root",
+                        "sclorg/s2i-core-c9s:c9s", "centos/centos:stream9",
+                        "sclorg/s2i-base-c9s:c9s", "sclorg/s2i-core-c9s:c9s",
+                        "sclorg/nginx-container-1-24-c9s:c9s", "sclorg/s2i-core-c9s:c9s",
+                        "sclorg/s2i-python-container-3-12-c9s:c9s", "sclorg/s2i-base-c9s:c9s")),
+                () -> assertThat(links).isEqualTo(Map.of(
+                        "centos/centos:stream9", "NONE ",
+                        "sclorg/s2i-core-c9s:c9s", "PROBABLE 1723284a86",
+                        "sclorg/s2i-base-c9s:c9s", "PROBABLE 84d379564c",
+                        "sclorg/nginx-container-1-24-c9s:c9s", "PROBABLE 6070555cb3,6add3832a5,b2c5980342,d69ccd7230",
+                        "sclorg/s2i-python-container-3-12-c9s:c9s", "PROBABLE 22461d2436")));
     }
 
     private static List<JsonNode> lines(Path file) {

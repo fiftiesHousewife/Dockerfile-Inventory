@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,8 +39,9 @@ class TemplatesTest {
 
     @Test
     void afterDollarIsTrueOnlyWhenTheCharacterBeforeIsADollar() {
-        assertThat(Templates.afterDollar("${{", 1)).isTrue();
-        assertThat(Templates.afterDollar("{{", 0)).isFalse();
-        assertThat(Templates.afterDollar("a{{", 1)).isFalse();
+        assertAll(
+                () -> assertThat(Templates.afterDollar("${{", 1)).isTrue(),
+                () -> assertThat(Templates.afterDollar("{{", 0)).isFalse(),
+                () -> assertThat(Templates.afterDollar("a{{", 1)).isFalse());
     }
 }

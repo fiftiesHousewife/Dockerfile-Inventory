@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,11 +54,13 @@ class FoldTest {
                 Map.of("base", new Parent.Root(), "app", new Parent.Of("base")),
                 Map.of("app", APP_LINK, "base", baseLink)).get("app");
 
-        assertThat(effective).satisfies(e -> {
-            assertThat(e.workingDir()).isEqualTo(new Property<>("/app", new SetBy.Image("base", baseLink)));
-            assertThat(e.entrypoint()).isEqualTo(new Property<>(List.of("run"), new SetBy.Image("base", baseLink)));
-            assertThat(e.cmd()).isEqualTo(new Property<>(List.of("serve"), new SetBy.Image("app", APP_LINK)));
-        });
+        assertAll(
+                () -> assertThat(effective.workingDir()).isEqualTo(new Property<>("/app", new SetBy.Image("base",
+                        baseLink))),
+                () -> assertThat(effective.entrypoint()).isEqualTo(new Property<>(List.of("run"),
+                        new SetBy.Image("base", baseLink))),
+                () -> assertThat(effective.cmd()).isEqualTo(new Property<>(List.of("serve"), new SetBy.Image("app",
+                        APP_LINK))));
     }
 
     @Test
@@ -79,14 +82,13 @@ class FoldTest {
                 Map.of("base", new Parent.Root(), "app", new Parent.Of("base")),
                 Map.of("app", APP_LINK, "base", baseLink)).get("app");
 
-        assertThat(effective).satisfies(e -> {
-            assertThat(e.env()).containsExactlyInAnyOrderEntriesOf(Map.of(
-                    "PATH", new Property<>("/opt/app/bin:/usr/bin", new SetBy.Image("app", APP_LINK)),
-                    "APP_ROOT", new Property<>("/opt/app", new SetBy.Image("base", baseLink))));
-            assertThat(e.labels()).containsExactlyInAnyOrderEntriesOf(Map.of(
-                    "name", new Property<>("app", new SetBy.Image("app", APP_LINK)),
-                    "vendor", new Property<>("acme", new SetBy.Image("base", baseLink))));
-        });
+        assertAll(
+                () -> assertThat(effective.env()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                        "PATH", new Property<>("/opt/app/bin:/usr/bin", new SetBy.Image("app", APP_LINK)),
+                        "APP_ROOT", new Property<>("/opt/app", new SetBy.Image("base", baseLink)))),
+                () -> assertThat(effective.labels()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                        "name", new Property<>("app", new SetBy.Image("app", APP_LINK)),
+                        "vendor", new Property<>("acme", new SetBy.Image("base", baseLink)))));
     }
 
     @Test
@@ -97,10 +99,9 @@ class FoldTest {
         EffectiveImage effective = Fold.of(List.of(python), Map.of("python", new Parent.Root()),
                 Map.of("python", APP_LINK)).get("python");
 
-        assertThat(effective).satisfies(e -> {
-            assertThat(e.entrypoint().setBy()).isEqualTo(new SetBy.ExternalBase("ubi9/s2i-base"));
-            assertThat(e.user().setBy()).isEqualTo(new SetBy.Image("python", APP_LINK));
-        });
+        assertAll(
+                () -> assertThat(effective.entrypoint().setBy()).isEqualTo(new SetBy.ExternalBase("ubi9/s2i-base")),
+                () -> assertThat(effective.user().setBy()).isEqualTo(new SetBy.Image("python", APP_LINK)));
     }
 
     @Test
@@ -137,13 +138,14 @@ class FoldTest {
                 List.of(step("ADD file:ubi in /"), step("RUN make")));
         Map<String, Link> links = Map.of("app", APP_LINK, "base", baseLink);
 
-        assertThat(Fold.of(List.of(base, app), Map.of("base", new Parent.Root(), "app", new Parent.Of("base")), links)
-                .get("app").chain())
-                .containsExactly(new ChainEntry("app", APP_LINK), new ChainEntry("base", baseLink));
         Map<String, Parent> cycle = Map.of("base", new Parent.Of("app"), "app", new Parent.Of("base"));
-        assertThat(Fold.of(List.of(base, app), cycle, links)
-                .get("app").chain())
-                .extracting(ChainEntry::configDigest).containsExactly("app", "base");
+
+        assertAll(
+                () -> assertThat(Fold.of(List.of(base, app),
+                        Map.of("base", new Parent.Root(), "app", new Parent.Of("base")), links).get("app").chain())
+                        .containsExactly(new ChainEntry("app", APP_LINK), new ChainEntry("base", baseLink)),
+                () -> assertThat(Fold.of(List.of(base, app), cycle, links).get("app").chain())
+                        .extracting(ChainEntry::configDigest).containsExactly("app", "base"));
     }
 
     @Test
@@ -157,11 +159,10 @@ class FoldTest {
                 Map.of("base", new Parent.Root(), "app", new Parent.Of("base"), "plain", new Parent.Root()),
                 Map.of("app", APP_LINK, "base", Link.NONE, "plain", Link.NONE));
 
-        assertThat(effective).satisfies(e -> {
-            assertThat(e.get("app").parentHasOnbuild()).isTrue();
-            assertThat(e.get("base").parentHasOnbuild()).isFalse();
-            assertThat(e.get("plain").parentHasOnbuild()).isFalse();
-        });
+        assertAll(
+                () -> assertThat(effective.get("app").parentHasOnbuild()).isTrue(),
+                () -> assertThat(effective.get("base").parentHasOnbuild()).isFalse(),
+                () -> assertThat(effective.get("plain").parentHasOnbuild()).isFalse());
     }
 
     @Test
@@ -181,9 +182,11 @@ class FoldTest {
         Resolved.Node root = node("root", List.of("L1"), null, List.of(step("ADD file:ubi in /"), step("USER 0"),
                 step("RUN make", "FROM registry.example.com/ubi9:1")));
 
-        assertThat(Fold.external(root)).isEqualTo(new Fold.External("ubi9",
-                List.of(new Instruction("ADD", "/"), new Instruction("USER", "0"))));
-        assertThat(Fold.external(node("bare", List.of("L1"), null, List.of(step("ADD file:a in /"))))).isNull();
+        assertAll(
+                () -> assertThat(Fold.external(root)).isEqualTo(new Fold.External("ubi9",
+                        List.of(new Instruction("ADD", "/"), new Instruction("USER", "0")))),
+                () -> assertThat(Fold.external(node("bare", List.of("L1"), null, List.of(step("ADD file:a in /")))))
+                        .isNull());
     }
 
     @Test
@@ -193,22 +196,22 @@ class FoldTest {
                 List.of(new Fold.Member(app, List.of(new Instruction("RUN", "make")))),
                 new Fold.External("ubi9", List.of(new Instruction("USER", "0"))), Map.of("app", APP_LINK));
 
-        assertThat(by).satisfies(b -> {
-            assertThat(b.setBy(i -> i.keyword().equals("RUN"))).isEqualTo(new SetBy.Image("app", APP_LINK));
-            assertThat(b.setBy(i -> i.keyword().equals("USER"))).isEqualTo(new SetBy.ExternalBase("ubi9"));
-            assertThat(b.setBy(i -> i.keyword().equals("CMD"))).isEqualTo(new SetBy.Unknown());
-        });
+        assertAll(
+                () -> assertThat(by.setBy(i -> i.keyword().equals("RUN"))).isEqualTo(new SetBy.Image("app", APP_LINK)),
+                () -> assertThat(by.setBy(i -> i.keyword().equals("USER"))).isEqualTo(new SetBy.ExternalBase("ubi9")),
+                () -> assertThat(by.setBy(i -> i.keyword().equals("CMD"))).isEqualTo(new SetBy.Unknown()));
     }
 
     @Test
     void theEffectiveImageOfALoneImageHasOnlyItselfInItsChain() {
         Resolved.Node app = node("app", List.of("L1"), "1001", List.of(step("USER 1001")));
 
-        assertThat(Fold.effective(app, List.of(new Fold.Member(app, List.of(new Instruction("USER", "1001")))),
-                Map.of("app", APP_LINK))).satisfies(e -> {
-                    assertThat(e.chain()).containsExactly(new ChainEntry("app", APP_LINK));
-                    assertThat(e.parentHasOnbuild()).isFalse();
-                });
+        EffectiveImage effective = Fold.effective(app,
+                List.of(new Fold.Member(app, List.of(new Instruction("USER", "1001")))), Map.of("app", APP_LINK));
+
+        assertAll(
+                () -> assertThat(effective.chain()).containsExactly(new ChainEntry("app", APP_LINK)),
+                () -> assertThat(effective.parentHasOnbuild()).isFalse());
     }
 
     static HistoryStep step(String instruction) {

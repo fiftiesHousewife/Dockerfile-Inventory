@@ -19,7 +19,6 @@ final class FinalStage {
                 .toList();
     }
 
-    // Before the last USER only: an earlier one (USER 0 to build) comes before the paths exist.
     static int lastUser(List<Instruction> instructions) {
         return IntStream.iterate(instructions.size() - 1, i -> i >= 0, i -> i - 1)
                 .filter(i -> instructions.get(i) instanceof User)

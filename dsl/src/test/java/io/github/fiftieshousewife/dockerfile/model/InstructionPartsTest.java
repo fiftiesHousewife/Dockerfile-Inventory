@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -16,12 +17,13 @@ class InstructionPartsTest {
 
     @Test
     void aRunBodyIsItsJoinedCommandsItsJsonArrayOrItsHeredoc() {
-        assertThat(List.of(new RunBody.Shell(List.of("a", "b")), new RunBody.Exec(List.of("a", "b")),
-                new RunBody.Heredoc("", "EOF", true, List.of("a"))))
-                .map(InstructionParts::body)
-                .containsExactly("a \\\n    && b", "[\"a\", \"b\"]", "<<'EOF'\na\nEOF");
-        assertThat(InstructionParts.body(new RunBody.Heredoc("cat > /etc/x", "EOF", true, List.of("a"))))
-                .isEqualTo("cat > /etc/x <<'EOF'\na\nEOF");
+        assertAll(
+                () -> assertThat(List.of(new RunBody.Shell(List.of("a", "b")), new RunBody.Exec(List.of("a", "b")),
+                        new RunBody.Heredoc("", "EOF", true, List.of("a"))))
+                        .map(InstructionParts::body)
+                        .containsExactly("a \\\n    && b", "[\"a\", \"b\"]", "<<'EOF'\na\nEOF"),
+                () -> assertThat(InstructionParts.body(new RunBody.Heredoc("cat > /etc/x", "EOF", true, List.of("a"))))
+                        .isEqualTo("cat > /etc/x <<'EOF'\na\nEOF"));
     }
 
     @Test
@@ -40,10 +42,11 @@ class InstructionPartsTest {
 
     @Test
     void copyWritesFromBeforeChownAndLeavesOutWhatIsNotSet() {
-        assertThat(InstructionParts.copy(new Copy(List.of("a", "b"), "/d/", null, null)))
-                .isEqualTo("COPY a b /d/");
-        assertThat(InstructionParts.copy(new Copy(List.of("a"), "/d/", "1:0", "build")))
-                .isEqualTo("COPY --from=build --chown=1:0 a /d/");
+        assertAll(
+                () -> assertThat(InstructionParts.copy(new Copy(List.of("a", "b"), "/d/", null, null)))
+                        .isEqualTo("COPY a b /d/"),
+                () -> assertThat(InstructionParts.copy(new Copy(List.of("a"), "/d/", "1:0", "build")))
+                        .isEqualTo("COPY --from=build --chown=1:0 a /d/"));
     }
 
     @Test

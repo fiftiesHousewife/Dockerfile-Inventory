@@ -62,7 +62,6 @@ final class ArtifactoryClient {
         return found(base.resolve(path), send(request));
     }
 
-    // A 404 means the image, tag or blob no longer exists; a 401 or 403 that the token cannot read it.
     static Optional<HttpResponse<String>> found(URI uri, HttpResponse<String> response) {
         return switch (response.statusCode()) {
             case 200 -> Optional.of(response);
@@ -78,7 +77,6 @@ final class ArtifactoryClient {
         return body.length() > ABBREVIATED_LENGTH ? body.substring(0, ABBREVIATED_LENGTH) : body;
     }
 
-    // Each attempt is built afresh, so a token read again after a 401 is the one sent.
     HttpResponse<String> send(Supplier<HttpRequest> request) {
         boolean refreshed = false;
         for (int attempt = 1; ; attempt++) {

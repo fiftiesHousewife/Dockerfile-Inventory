@@ -33,8 +33,6 @@ final class Fold {
         return effective;
     }
 
-    // The values come from the image's own config, which the builder has already folded; the chain says which
-    // image set each one.
     static EffectiveImage effective(Resolved.Node image, List<Member> chain, Map<String, Link> links) {
         Attribution by = new Attribution(chain, external(chain.getLast().image()), links);
         ImageConfig config = image.config();
@@ -94,7 +92,6 @@ final class Fold {
                             : new SetBy.Unknown());
         }
 
-        // ENV and LABEL steps reduce to their key names, so each key is attributed on its own.
         Map<String, Property<String>> perKey(Map<String, String> values, String keyword) {
             Map<String, Property<String>> attributed = new HashMap<>();
             values.forEach((key, value) -> attributed.put(key, new Property<>(value,

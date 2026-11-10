@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -27,8 +28,9 @@ class RunFlagTest {
 
     @Test
     void anEmptyMountOrABlankModeIsRefused() {
-        assertThatIllegalArgumentException().isThrownBy(() -> new RunFlag.Mount(List.of()));
-        assertThatIllegalArgumentException().isThrownBy(() -> new RunFlag.Network(" "));
-        assertThatIllegalArgumentException().isThrownBy(() -> new RunFlag.Security(""));
+        assertAll(
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> new RunFlag.Mount(List.of())),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> new RunFlag.Network(" ")),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> new RunFlag.Security("")));
     }
 }

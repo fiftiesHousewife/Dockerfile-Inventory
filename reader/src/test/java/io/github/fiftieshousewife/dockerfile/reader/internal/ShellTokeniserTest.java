@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -105,9 +106,10 @@ class ShellTokeniserTest {
     void aCommandSubstitutionIsOneWordOfUnknownValueAndTheCommandsAroundItAreRead() {
         String script = "ARCH=$(uname -m) && curl -o x https://h/$ARCH.tgz && tar xf x";
 
-        assertThat(ShellTokeniser.parse(script)).contains(List.of(
-                List.of("curl", "-o", "x", "https://h/$ARCH.tgz"), List.of("tar", "xf", "x")));
-        assertThat(ShellTokeniser.assignments(script)).containsEntry("ARCH", "$(uname -m)");
+        assertAll(
+                () -> assertThat(ShellTokeniser.parse(script)).contains(List.of(
+                        List.of("curl", "-o", "x", "https://h/$ARCH.tgz"), List.of("tar", "xf", "x"))),
+                () -> assertThat(ShellTokeniser.assignments(script)).containsEntry("ARCH", "$(uname -m)"));
     }
 
     @Test
@@ -144,9 +146,10 @@ class ShellTokeniserTest {
     void nestedIfsElifsAndAnAssignmentAfterThenAreReadToo() {
         String script = "if a; then if b; then dnf install -y x; fi; elif c; then V=1 apk add y; fi";
 
-        assertThat(ShellTokeniser.parse(script)).contains(List.of(List.of("a"), List.of("b"),
-                List.of("dnf", "install", "-y", "x"), List.of("c"), List.of("apk", "add", "y")));
-        assertThat(ShellTokeniser.assignments(script)).containsEntry("V", "1");
+        assertAll(
+                () -> assertThat(ShellTokeniser.parse(script)).contains(List.of(List.of("a"), List.of("b"),
+                        List.of("dnf", "install", "-y", "x"), List.of("c"), List.of("apk", "add", "y"))),
+                () -> assertThat(ShellTokeniser.assignments(script)).containsEntry("V", "1"));
     }
 
     @Test
@@ -183,19 +186,22 @@ class ShellTokeniserTest {
         String loop = "for p in git curl; do apk add --no-cache $p; done";
         String files = "for f in /etc/*.conf; do sed -i s/a/b/ $f; done";
 
-        assertThat(ShellTokeniser.parse(loop)).contains(List.of(List.of("apk", "add", "--no-cache", "$p")));
-        assertThat(ShellTokeniser.assignments(loop)).containsEntry("p", "git curl");
-        assertThat(ShellTokeniser.assignments(files)).doesNotContainKey("f");
-        assertThat(ShellTokeniser.parse("while read -r line; do echo $line; done < /tmp/list"))
-                .contains(List.of(List.of("read", "-r", "line"), List.of("echo", "$line")));
+        assertAll(
+                () -> assertThat(ShellTokeniser.parse(loop)).contains(List.of(List.of("apk", "add", "--no-cache",
+                        "$p"))),
+                () -> assertThat(ShellTokeniser.assignments(loop)).containsEntry("p", "git curl"),
+                () -> assertThat(ShellTokeniser.assignments(files)).doesNotContainKey("f"),
+                () -> assertThat(ShellTokeniser.parse("while read -r line; do echo $line; done < /tmp/list"))
+                        .contains(List.of(List.of("read", "-r", "line"), List.of("echo", "$line"))));
     }
 
     @Test
     void aFunctionsBodyIsReadWhereItIsDefinedInEitherForm() {
-        assertThat(ShellTokeniser.parse("install() { apt-get install -y curl; }; install"))
-                .contains(List.of(List.of("apt-get", "install", "-y", "curl"), List.of("install")));
-        assertThat(ShellTokeniser.parse("function setup { apk add git; }; setup"))
-                .contains(List.of(List.of("apk", "add", "git"), List.of("setup")));
+        assertAll(
+                () -> assertThat(ShellTokeniser.parse("install() { apt-get install -y curl; }; install"))
+                        .contains(List.of(List.of("apt-get", "install", "-y", "curl"), List.of("install"))),
+                () -> assertThat(ShellTokeniser.parse("function setup { apk add git; }; setup"))
+                        .contains(List.of(List.of("apk", "add", "git"), List.of("setup"))));
     }
 
     @Test
@@ -207,7 +213,9 @@ class ShellTokeniserTest {
     void aBashArrayHoldsItsWordsAndALoopOverItTakesThem() {
         String script = "A=( x \\\n  \"y z\" ) ; for c in \"${A[@]}\"; do echo $c; done";
 
-        assertThat(ShellTokeniser.parse(script)).contains(List.of(List.of("echo", "$c")));
-        assertThat(ShellTokeniser.assignments(script)).containsEntry("A", "x y z").containsEntry("c", "x y z");
+        assertAll(
+                () -> assertThat(ShellTokeniser.parse(script)).contains(List.of(List.of("echo", "$c"))),
+                () -> assertThat(ShellTokeniser.assignments(script)).containsEntry("A", "x y z").containsEntry("c",
+                        "x y z"));
     }
 }

@@ -1,9 +1,10 @@
 package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,18 +42,23 @@ class ImageBuilderTest {
 
     @Test
     void s4TheFinalUserMustBeNumericAndNonRoot() {
-        assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).entrypoint("app"))).containsExactly("S4");
-        assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user("app").entrypoint("app")))
-                .containsExactly("S4");
-        assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(0).entrypoint("app"))).containsExactly("S4");
+        assertAll(
+                () -> assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).entrypoint("app")))
+                        .containsExactly("S4"),
+                () -> assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user("app").entrypoint("app")))
+                        .containsExactly("S4"),
+                () -> assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(0).entrypoint("app")))
+                        .containsExactly("S4"));
     }
 
     @Test
     void s1AndR1TheFinalBaseMustBeApprovedAndPinnedByDigest() {
-        assertThat(breaches(ImageBuilder.finalStage(new BaseImage("alpine", "3.20", DIGEST)).user(1001)
-                .entrypoint("app"))).containsExactly("S1");
-        assertThat(breaches(ImageBuilder.finalStage(new BaseImage("ubi9/ubi-minimal", "9.4", null)).user(1001)
-                .entrypoint("app"))).containsExactly("R1");
+        assertAll(
+                () -> assertThat(breaches(ImageBuilder.finalStage(new BaseImage("alpine", "3.20", DIGEST)).user(1001)
+                        .entrypoint("app"))).containsExactly("S1"),
+                () -> assertThat(breaches(ImageBuilder.finalStage(new BaseImage("ubi9/ubi-minimal", "9.4", null))
+                        .user(1001)
+                        .entrypoint("app"))).containsExactly("R1"));
     }
 
     @Test
@@ -65,19 +71,21 @@ class ImageBuilderTest {
 
     @Test
     void h2AShellFormEntrypointRawOrWrittenAsTheDockerfileWroteItIsABreach() {
-        assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(1001)
-                .raw("ENTRYPOINT java -jar app.jar", "legacy start script"))).containsExactly("H2");
-        assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(1001)
-                .entrypoint(List.of("java -jar app.jar"), CommandForm.SHELL)
-                .cmd(List.of("--serve"), CommandForm.SHELL))).containsExactly("H2");
+        assertAll(
+                () -> assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(1001)
+                        .raw("ENTRYPOINT java -jar app.jar", "legacy start script"))).containsExactly("H2"),
+                () -> assertThat(breaches(ImageBuilder.finalStage(UBI_MINIMAL).user(1001)
+                        .entrypoint(List.of("java -jar app.jar"), CommandForm.SHELL)
+                        .cmd(List.of("--serve"), CommandForm.SHELL))).containsExactly("H2"));
     }
 
     @Test
     void h1AShellOrRawInstallThatDoesNotCleanIsABreach() {
-        assertThat(breaches(valid().run("dnf install -y git"))).containsExactly("H1");
-        assertThat(breaches(valid().raw("RUN apt-get install -y curl", "copied"))).containsExactly("H1");
-        assertThat(breaches(valid().run("dnf install -y git", "dnf clean all"))).isEmpty();
-        assertThat(breaches(valid().run("apk add --no-cache git"))).isEmpty();
+        assertAll(
+                () -> assertThat(breaches(valid().run("dnf install -y git"))).containsExactly("H1"),
+                () -> assertThat(breaches(valid().raw("RUN apt-get install -y curl", "copied"))).containsExactly("H1"),
+                () -> assertThat(breaches(valid().run("dnf install -y git", "dnf clean all"))).isEmpty(),
+                () -> assertThat(breaches(valid().run("apk add --no-cache git"))).isEmpty());
     }
 
     @Test
@@ -189,13 +197,15 @@ class ImageBuilderTest {
 
     @Test
     void addTakesAUrlOrAnArchiveAndRefusesALocalFileForCopy() {
-        assertThat(ImageBuilder.create().thenStage("app", ALPINE).add("rootfs.tar.gz", "/").model().stages()
-                .getFirst().instructions())
-                .containsExactly(new Add(List.of("rootfs.tar.gz"), "/", null, null, null, false, false,
-                        false));
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).add("app.jar", "/opt/"))
-                .withMessageContaining("use copy");
+        assertAll(
+                () -> assertThat(ImageBuilder.create().thenStage("app", ALPINE).add("rootfs.tar.gz", "/").model()
+                        .stages()
+                        .getFirst().instructions())
+                        .containsExactly(new Add(List.of("rootfs.tar.gz"), "/", null, null, null, false, false,
+                                false)),
+                () -> assertThatIllegalArgumentException()
+                        .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).add("app.jar", "/opt/"))
+                        .withMessageContaining("use copy"));
     }
 
     @Test
@@ -230,25 +240,29 @@ class ImageBuilderTest {
 
     @Test
     void theInstructionJustAddedCanBeMadeAnOnbuildAndAHealthcheckGiven() {
-        assertThat(ImageBuilder.create().thenStage("app", ALPINE).copy(".", "/app/").asOnbuild()
-                .healthcheck(Map.of("retries", "3"), "curl", "-f", "http://localhost/").healthcheckNone().model()
-                .stages().getFirst().instructions())
-                .containsExactly(new Onbuild(new Copy(List.of("."), "/app/", null, null)),
-                        new Healthcheck(Map.of("retries", "3"), List.of("curl", "-f", "http://localhost/"),
-                                CommandForm.EXEC),
-                        Healthcheck.NONE);
-        assertThatIllegalStateException()
-                .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).asOnbuild());
+        assertAll(
+                () -> assertThat(ImageBuilder.create().thenStage("app", ALPINE).copy(".", "/app/").asOnbuild()
+                        .healthcheck(Map.of("retries", "3"), "curl", "-f", "http://localhost/").healthcheckNone()
+                                .model()
+                        .stages().getFirst().instructions())
+                        .containsExactly(new Onbuild(new Copy(List.of("."), "/app/", null, null)),
+                                new Healthcheck(Map.of("retries", "3"), List.of("curl", "-f", "http://localhost/"),
+                                        CommandForm.EXEC),
+                                Healthcheck.NONE),
+                () -> assertThatIllegalStateException()
+                        .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).asOnbuild()));
     }
 
     @Test
     void portsCanBeGivenAsDockerWritesThemAndABadOneIsRefused() {
-        assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090).model()
-                .stages().getFirst().instructions())
-                .containsExactly(new Expose(List.of(Port.of(8080), new Port("53/udp"))),
-                        new Expose(List.of(Port.of(9090))));
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).expose("80/http"));
+        assertAll(
+                () -> assertThat(ImageBuilder.create().thenStage("app", ALPINE).expose("8080", "53/udp").expose(9090)
+                        .model()
+                        .stages().getFirst().instructions())
+                        .containsExactly(new Expose(List.of(Port.of(8080), new Port("53/udp"))),
+                                new Expose(List.of(Port.of(9090)))),
+                () -> assertThatIllegalArgumentException()
+                        .isThrownBy(() -> ImageBuilder.create().thenStage("app", ALPINE).expose("80/http")));
     }
 
     @Test
@@ -258,9 +272,11 @@ class ImageBuilderTest {
 
         ImageBuilder again = ImageBuilder.of(model);
 
-        assertThat(again.model()).isEqualTo(model);
-        assertThat(again.check(Policy.of(List.of()))).extracting(PolicyViolation.Breach::rule).contains("S4", "S1");
-        assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).contains("ARG MODE=\"prod\"");
+        assertAll(
+                () -> assertThat(again.model()).isEqualTo(model),
+                () -> assertThat(again.check(Policy.of(List.of()))).extracting(PolicyViolation.Breach::rule)
+                        .contains("S4", "S1"),
+                () -> assertThat(DockerfileRenderer.render(model, Target.DEFAULT)).contains("ARG MODE=\"prod\""));
     }
 
     @Test

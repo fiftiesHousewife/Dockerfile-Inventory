@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.reader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -20,16 +21,18 @@ class PrintedTest {
     void commentsAreTheLinesBeforeTheInstructionWithoutTheirHash() {
         Printed printed = new Printed(FILE);
 
-        assertThat(printed.comments(instruction(0))).containsExactly("first", "second");
-        assertThat(printed.comments(instruction(1))).isEmpty();
+        assertAll(
+                () -> assertThat(printed.comments(instruction(0))).containsExactly("first", "second"),
+                () -> assertThat(printed.comments(instruction(1))).isEmpty());
     }
 
     @Test
     void textIsTheInstructionWithoutTheCommentsBeforeIt() {
         Printed printed = new Printed(FILE);
 
-        assertThat(printed.text(instruction(0))).isEqualTo("USER 1001");
-        assertThat(printed.text(instruction(1))).isEqualTo("RUN make");
+        assertAll(
+                () -> assertThat(printed.text(instruction(0))).isEqualTo("USER 1001"),
+                () -> assertThat(printed.text(instruction(1))).isEqualTo("RUN make"));
     }
 
     @Test

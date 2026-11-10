@@ -20,7 +20,6 @@ sealed interface Parent {
         }
     }
 
-    // An ambiguous parent's candidates share layers and history, so any of them gives the same own steps.
     static Resolved.Node node(Parent parent, Map<String, Resolved.Node> byDigest) {
         return switch (parent) {
             case Of of -> byDigest.get(of.configDigest());

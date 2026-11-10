@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -28,8 +29,9 @@ class RunScriptsTest {
     void anExecFormRunHasNoScriptAndItsWordsAreOneCommand() {
         Docker.Run exec = run("RUN [\"dnf\", \"install\", \"git\"]");
 
-        assertThat(RunScripts.script(exec)).isEmpty();
-        assertThat(RunScripts.commands(exec)).contains(List.of(List.of("dnf", "install", "git")));
+        assertAll(
+                () -> assertThat(RunScripts.script(exec)).isEmpty(),
+                () -> assertThat(RunScripts.commands(exec)).contains(List.of(List.of("dnf", "install", "git"))));
     }
 
     @Test
@@ -64,7 +66,9 @@ class RunScriptsTest {
     void aShellFormRunsScriptDropsCommentLinesAsDockerDoesEvenInsideAQuotedString() {
         Docker.Run quoted = run("RUN conf=' \\\n    A=y \\\n# we've removed B \\\n    C=y'; \\\n    echo \"$conf\"");
 
-        assertThat(RunScripts.script(quoted)).hasValueSatisfying(script -> assertThat(script).doesNotContain("we've"));
-        assertThat(RunScripts.commands(quoted)).isPresent();
+        assertAll(
+                () -> assertThat(RunScripts.script(quoted)).hasValueSatisfying(script -> assertThat(script)
+                        .doesNotContain("we've")),
+                () -> assertThat(RunScripts.commands(quoted)).isPresent());
     }
 }

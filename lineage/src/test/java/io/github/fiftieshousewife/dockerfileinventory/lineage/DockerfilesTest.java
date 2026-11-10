@@ -51,10 +51,12 @@ class DockerfilesTest {
     }
 
     @Test
-    void readsEveryFactsRowAndMissingFilesReadAsNone(@TempDir Path facts, @TempDir Path discovery)
-            throws IOException {
+    void missingFilesReadAsNone(@TempDir Path facts, @TempDir Path discovery) {
         assertThat(Dockerfiles.read(facts, discovery)).isEmpty();
+    }
 
+    @Test
+    void readsEveryFactsRow(@TempDir Path facts, @TempDir Path discovery) throws IOException {
         Files.writeString(facts.resolve("facts.jsonl"), "{\"blobSha\":\"one\",\"steps\":[]}\n\n");
 
         assertThat(Dockerfiles.read(facts, discovery)).extracting(Dockerfile::blobSha).containsExactly("one");

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,7 +46,8 @@ class FactsParserTest {
         ParseResult result = new FactsParser().parse("k8s", "FROM BASEIMAGE\n\nCROSS_BUILD_COPY qemu /usr/bin/\n");
 
         assertThat(result).isInstanceOfSatisfying(ParseResult.Failed.class,
-                failed -> assertThat(failed.message()).contains("line 3:0 unrecognised line: CROSS_BUILD_COPY qemu /usr/bin/"));
+                failed -> assertThat(failed.message())
+                        .contains("line 3:0 unrecognised line: CROSS_BUILD_COPY qemu /usr/bin/"));
     }
 
     @Test
@@ -148,9 +150,10 @@ class FactsParserTest {
     void anExecFormWithASpaceBeforeACommaParsesAndKeepsItsWordsAsWritten() {
         String dockerfile = "FROM php:8.5\nCMD [\"php\", \"-S\" , \"0.0.0.0:8080\"]\n";
 
-        assertThat(new FactsParser().parse("php", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
-        assertThat(Steps.of(((ParseResult.Parsed) new FactsParser().parse("php", dockerfile)).file()))
-                .contains(new Step("CMD", "[\"php\", \"-S\" , \"0.0.0.0:8080\"]"));
+        assertAll(
+                () -> assertThat(new FactsParser().parse("php", dockerfile)).isInstanceOf(ParseResult.Parsed.class),
+                () -> assertThat(Steps.of(((ParseResult.Parsed) new FactsParser().parse("php", dockerfile)).file()))
+                        .contains(new Step("CMD", "[\"php\", \"-S\" , \"0.0.0.0:8080\"]")));
     }
 
     @Test
@@ -158,8 +161,10 @@ class FactsParserTest {
         String dockerfile = "FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.io/library/rust:latest AS builder\n"
                 + "COPY --chown=${UID:-1001} a /b\n";
 
-        assertThat(new FactsParser().parse("rust", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
-        assertThat(FactExtractorTest.facts(dockerfile).base().name()).isEqualTo("docker.io/library/rust");
+        assertAll(
+                () -> assertThat(new FactsParser().parse("rust", dockerfile)).isInstanceOf(ParseResult.Parsed.class),
+                () -> assertThat(FactExtractorTest.facts(dockerfile).base().name())
+                        .isEqualTo("docker.io/library/rust"));
     }
 
     @Test
@@ -167,8 +172,9 @@ class FactsParserTest {
         String dockerfile = "FROM --platform=$BUILDPLATFORM golang:1.26.4 AS builder\nARG TARGETOS TARGETARCH\n"
                 + "RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /app .\n";
 
-        assertThat(new FactsParser().parse("go", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
-        assertThat(FactExtractorTest.facts(dockerfile).base().name()).isEqualTo("golang");
+        assertAll(
+                () -> assertThat(new FactsParser().parse("go", dockerfile)).isInstanceOf(ParseResult.Parsed.class),
+                () -> assertThat(FactExtractorTest.facts(dockerfile).base().name()).isEqualTo("golang"));
     }
 
     @Test
@@ -197,8 +203,9 @@ class FactsParserTest {
         String dockerfile = "ARG HTTP_PROXY=\nARG HTTPS_PROXY=\nFROM --platform=linux/arm64 debian:bookworm\n"
                 + "ARG CROSSPLANE_VERSION=\nWORKDIR /workspace\n";
 
-        assertThat(new FactsParser().parse("proxy", dockerfile)).isInstanceOf(ParseResult.Parsed.class);
-        assertThat(FactExtractor.globalArgs(Parsed.file(dockerfile))).containsEntry("HTTP_PROXY", "");
+        assertAll(
+                () -> assertThat(new FactsParser().parse("proxy", dockerfile)).isInstanceOf(ParseResult.Parsed.class),
+                () -> assertThat(FactExtractor.globalArgs(Parsed.file(dockerfile))).containsEntry("HTTP_PROXY", ""));
     }
 
     @Test

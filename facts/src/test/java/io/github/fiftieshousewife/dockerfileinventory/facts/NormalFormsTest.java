@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static io.github.fiftieshousewife.dockerfileinventory.facts.FactExtractorTest.facts;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -105,8 +106,9 @@ class NormalFormsTest {
 
     @Test
     void upperKeywordUpperCasesOnlyTheFirstWord() {
-        assertThat(NormalForms.upperKeyword("run make all")).isEqualTo("RUN make all");
-        assertThat(NormalForms.upperKeyword("onbuild")).isEqualTo("ONBUILD");
+        assertAll(
+                () -> assertThat(NormalForms.upperKeyword("run make all")).isEqualTo("RUN make all"),
+                () -> assertThat(NormalForms.upperKeyword("onbuild")).isEqualTo("ONBUILD"));
     }
 
     @Test

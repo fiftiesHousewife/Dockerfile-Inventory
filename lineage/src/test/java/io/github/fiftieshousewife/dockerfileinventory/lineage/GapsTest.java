@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,11 +33,10 @@ class GapsTest {
                 Map.of("ubi", new Parent.Root(), "app", new Parent.Of("ubi"), "squashed", new Parent.Root()),
                 Map.of("ubi", Link.NONE, "app", LINKED, "squashed", LINKED));
 
-        assertThat(report).satisfies(r -> {
-            assertThat(r.externalBases())
-                    .containsExactly(new GapRow("ubi", ubi, Instant.parse("2026-09-01T00:00:00Z")));
-            assertThat(r.gaps()).isEmpty();
-        });
+        assertAll(
+                () -> assertThat(report.externalBases())
+                        .containsExactly(new GapRow("ubi", ubi, Instant.parse("2026-09-01T00:00:00Z"))),
+                () -> assertThat(report.gaps()).isEmpty());
     }
 
     @Test
@@ -82,9 +82,10 @@ class GapsTest {
 
     @Test
     void anImagesOutdatedCandidatesComeFromItsParent() {
-        assertThat(Gaps.candidates(new Parent.Of("base"))).containsExactly("base");
-        assertThat(Gaps.candidates(new Parent.Ambiguous(List.of("a", "b")))).containsExactly("a", "b");
-        assertThat(Gaps.candidates(new Parent.Root())).isEmpty();
+        assertAll(
+                () -> assertThat(Gaps.candidates(new Parent.Of("base"))).containsExactly("base"),
+                () -> assertThat(Gaps.candidates(new Parent.Ambiguous(List.of("a", "b")))).containsExactly("a", "b"),
+                () -> assertThat(Gaps.candidates(new Parent.Root())).isEmpty());
     }
 
     @Test
@@ -109,10 +110,11 @@ class GapsTest {
         Map<String, Parent> parents = Map.of("root", new Parent.Root(), "built", new Parent.Of("root"));
         Map<String, Link> links = Map.of("root", Link.NONE, "built", Link.NONE);
 
-        assertThat(Gaps.unlinked(references, parents, links, true)).extracting(GapRow::configDigest)
-                .containsExactly("root");
-        assertThat(Gaps.unlinked(references, parents, links, false)).extracting(GapRow::configDigest)
-                .containsExactly("built");
+        assertAll(
+                () -> assertThat(Gaps.unlinked(references, parents, links, true)).extracting(GapRow::configDigest)
+                        .containsExactly("root"),
+                () -> assertThat(Gaps.unlinked(references, parents, links, false)).extracting(GapRow::configDigest)
+                        .containsExactly("built"));
     }
 
     @Test

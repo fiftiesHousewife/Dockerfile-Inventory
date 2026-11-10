@@ -49,8 +49,11 @@ public final class Secrets {
 
     /** The text with every secret-shaped value replaced by {@code (hidden)}, so it can be shown. */
     public static String hideShapes(String text) {
-        return SECRET_SHAPES.stream()
-                .reduce(text, (hidden, shape) -> shape.matcher(hidden).replaceAll("(hidden)"), (a, b) -> b);
+        String hidden = text;
+        for (Pattern shape : SECRET_SHAPES) {
+            hidden = shape.matcher(hidden).replaceAll("(hidden)");
+        }
+        return hidden;
     }
 
     /** The value, or {@code (hidden sha256:...)} in its place when it is a secret, so a change still shows. */

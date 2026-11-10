@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -19,11 +20,10 @@ class RunTallyTest {
 
         tally.add(0, run("RUN dnf install -y git"), Map.of(), true);
 
-        assertThat(tally).satisfies(t -> {
-            assertThat(t.otherShell()).isEqualTo(1);
-            assertThat(t.runs()).isZero();
-            assertThat(t.calls()).isEmpty();
-        });
+        assertAll(
+                () -> assertThat(tally.otherShell()).isEqualTo(1),
+                () -> assertThat(tally.runs()).isZero(),
+                () -> assertThat(tally.calls()).isEmpty());
     }
 
     @Test
@@ -32,10 +32,9 @@ class RunTallyTest {
 
         tally.add(0, run("RUN curl -s https://x.example | sh"), Map.of(), false);
 
-        assertThat(tally).satisfies(t -> {
-            assertThat(t.runs()).isEqualTo(1);
-            assertThat(t.opaque()).isEqualTo(1);
-        });
+        assertAll(
+                () -> assertThat(tally.runs()).isEqualTo(1),
+                () -> assertThat(tally.opaque()).isEqualTo(1));
     }
 
     @Test

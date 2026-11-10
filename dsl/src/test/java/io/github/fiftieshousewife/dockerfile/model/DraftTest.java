@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -23,15 +24,19 @@ class DraftTest {
         List<Instruction> before = draft.instructions();
         draft.add(new Workdir("/app"));
 
-        assertThat(before).isEmpty();
-        assertThat(draft.instructions()).containsExactly(new Workdir("/app"));
+        assertAll(
+                () -> assertThat(before).isEmpty(),
+                () -> assertThat(draft.instructions()).containsExactly(new Workdir("/app")));
     }
 
     @Test
-    void lastUserIsTheLastUserInstructionOrNull() {
-        Draft draft = new Draft(null, ALPINE, null);
-        assertThat(draft.lastUser()).isNull();
+    void lastUserIsNullWithoutAUserInstruction() {
+        assertThat(new Draft(null, ALPINE, null).lastUser()).isNull();
+    }
 
+    @Test
+    void lastUserIsTheLastUserInstruction() {
+        Draft draft = new Draft(null, ALPINE, null);
         draft.add(new User("0"));
         draft.add(new Workdir("/app"));
         draft.add(new User("1001"));
@@ -46,7 +51,8 @@ class DraftTest {
         Draft middle = new Draft("mid", null, "deps");
         Draft last = new Draft(null, null, "mid");
 
-        assertThat(last.baseIn(List.of(first, second, middle, last))).isEqualTo(UBI);
-        assertThat(first.baseIn(List.of(first))).isEqualTo(ALPINE);
+        assertAll(
+                () -> assertThat(last.baseIn(List.of(first, second, middle, last))).isEqualTo(UBI),
+                () -> assertThat(first.baseIn(List.of(first))).isEqualTo(ALPINE));
     }
 }

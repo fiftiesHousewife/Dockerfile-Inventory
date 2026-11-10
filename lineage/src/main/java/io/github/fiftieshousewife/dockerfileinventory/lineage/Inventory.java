@@ -64,7 +64,6 @@ final class Inventory {
         }
     }
 
-    // A repository or image the token may not read is recorded as refused; the rest of the run goes on.
     List<String> readable(String repository) {
         try {
             return artifactory.images(repository);

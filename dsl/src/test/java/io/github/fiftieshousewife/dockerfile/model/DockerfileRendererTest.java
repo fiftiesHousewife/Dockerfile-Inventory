@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfile.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,17 +94,19 @@ class DockerfileRendererTest {
                 new CopyHeredoc("/etc/app.conf", "EOF", true, List.of("[engine]", "a = 1")),
                 new CopyHeredoc("/etc/b.json", "END", false, List.of("{}")));
 
-        assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
-                COPY <<'EOF' /etc/app.conf
-                [engine]
-                a = 1
-                EOF
-                COPY <<END /etc/b.json
-                {}
-                END
-                """);
-        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file, Target.DEFAULT))
-                .withMessageContaining("heredoc");
+        assertAll(
+                () -> assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
+                        COPY <<'EOF' /etc/app.conf
+                        [engine]
+                        a = 1
+                        EOF
+                        COPY <<END /etc/b.json
+                        {}
+                        END
+                        """),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file,
+                        Target.DEFAULT))
+                        .withMessageContaining("heredoc"));
     }
 
     @Test
@@ -161,10 +164,12 @@ class DockerfileRendererTest {
         Dockerfile file = single(new Run(new RunBody.Shell(List.of("mvn package")),
                 List.of(RunFlag.Mount.parse("type=cache,target=/root/.m2"), new RunFlag.Network("none"))));
 
-        assertThat(DockerfileRenderer.render(file, new Target(false, true)))
-                .endsWith("RUN --mount=type=cache,target=/root/.m2 --network=none mvn package\n");
-        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file, Target.DEFAULT))
-                .withMessageContaining("--mount");
+        assertAll(
+                () -> assertThat(DockerfileRenderer.render(file, new Target(false, true)))
+                        .endsWith("RUN --mount=type=cache,target=/root/.m2 --network=none mvn package\n"),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file,
+                        Target.DEFAULT))
+                        .withMessageContaining("--mount"));
     }
 
     @Test
@@ -172,15 +177,17 @@ class DockerfileRendererTest {
         Dockerfile file = single(new Run(new RunBody.Exec(List.of("/bin/opm", "serve", "/configs"))),
                 new Run(new RunBody.Heredoc("", "EOF", false, List.of("set -e", "make"))));
 
-        assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
-                RUN ["/bin/opm", "serve", "/configs"]
-                RUN <<EOF
-                set -e
-                make
-                EOF
-                """);
-        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file, Target.DEFAULT))
-                .withMessageContaining("heredoc");
+        assertAll(
+                () -> assertThat(DockerfileRenderer.render(file, new Target(true, false))).endsWith("""
+                        RUN ["/bin/opm", "serve", "/configs"]
+                        RUN <<EOF
+                        set -e
+                        make
+                        EOF
+                        """),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(file,
+                        Target.DEFAULT))
+                        .withMessageContaining("heredoc"));
     }
 
     @Test
@@ -188,12 +195,15 @@ class DockerfileRendererTest {
         Dockerfile mount = single(new Raw("RUN --mount=type=cache,target=/root/.m2 mvn package", "cache"));
         Dockerfile heredoc = single(new Raw("RUN <<EOT\nmake\nEOT", "script"));
 
-        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(mount, Target.DEFAULT))
-                .withMessageContaining("--mount");
-        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(heredoc, Target.DEFAULT))
-                .withMessageContaining("heredoc");
-        assertThat(DockerfileRenderer.render(mount, new Target(false, true))).contains("--mount");
-        assertThat(DockerfileRenderer.render(heredoc, new Target(true, false))).contains("<<EOT");
+        assertAll(
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(mount,
+                        Target.DEFAULT))
+                        .withMessageContaining("--mount"),
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.render(heredoc,
+                        Target.DEFAULT))
+                        .withMessageContaining("heredoc"),
+                () -> assertThat(DockerfileRenderer.render(mount, new Target(false, true))).contains("--mount"),
+                () -> assertThat(DockerfileRenderer.render(heredoc, new Target(true, false))).contains("<<EOT"));
     }
 
     @Test
@@ -223,8 +233,9 @@ class DockerfileRendererTest {
         Dockerfile env = single(new Env(Map.of("P", "pre\\\\$HOME")));
         Dockerfile windows = single(new Env(Map.of("W", "C:\\tools\\")));
 
-        assertThat(DockerfileRenderer.render(env, Target.DEFAULT)).contains("P=\"pre\\\\$HOME\"");
-        assertThat(DockerfileRenderer.render(windows, Target.DEFAULT)).contains("W=\"C:\\\\tools\\\\\"");
+        assertAll(
+                () -> assertThat(DockerfileRenderer.render(env, Target.DEFAULT)).contains("P=\"pre\\\\$HOME\""),
+                () -> assertThat(DockerfileRenderer.render(windows, Target.DEFAULT)).contains("W=\"C:\\\\tools\\\\\""));
     }
 
     @Test
@@ -247,28 +258,36 @@ class DockerfileRendererTest {
 
     @Test
     void fromNamesTheBaseWithTagAndDigestOrTheEarlierStageAndAnyAlias() {
-        assertThat(DockerfileRenderer.from(new Stage("build", new BaseImage("alpine", "3.20", DIGEST), null,
-                List.of()))).isEqualTo("FROM alpine:3.20@" + DIGEST + " AS build");
-        assertThat(DockerfileRenderer.from(new Stage(null, null, "build", List.of()))).isEqualTo("FROM build");
+        assertAll(
+                () -> assertThat(DockerfileRenderer.from(new Stage("build", new BaseImage("alpine", "3.20", DIGEST),
+                        null,
+                        List.of()))).isEqualTo("FROM alpine:3.20@" + DIGEST + " AS build"),
+                () -> assertThat(DockerfileRenderer.from(new Stage(null, null, "build", List.of())))
+                        .isEqualTo("FROM build"));
     }
 
     @Test
     void referenceLeavesOutAMissingTagOrDigest() {
-        assertThat(DockerfileRenderer.reference(new BaseImage("alpine", null, null))).isEqualTo("alpine");
-        assertThat(DockerfileRenderer.reference(new BaseImage("alpine", null, DIGEST))).isEqualTo("alpine@" + DIGEST);
+        assertAll(
+                () -> assertThat(DockerfileRenderer.reference(new BaseImage("alpine", null, null))).isEqualTo("alpine"),
+                () -> assertThat(DockerfileRenderer.reference(new BaseImage("alpine", null, DIGEST)))
+                        .isEqualTo("alpine@" + DIGEST));
     }
 
     @Test
     void endedAddsABlankLineOnlyAfterATrailingBackslash() {
-        assertThat(DockerfileRenderer.ended("COPY a C:\\")).isEqualTo("COPY a C:\\\n");
-        assertThat(DockerfileRenderer.ended("USER 1001")).isEqualTo("USER 1001");
+        assertAll(
+                () -> assertThat(DockerfileRenderer.ended("COPY a C:\\")).isEqualTo("COPY a C:\\\n"),
+                () -> assertThat(DockerfileRenderer.ended("USER 1001")).isEqualTo("USER 1001"));
     }
 
     @Test
     void supportedPassesALineTheTargetCanRead() {
-        assertThat(DockerfileRenderer.supported("RUN make", Target.DEFAULT)).isEqualTo("RUN make");
-        assertThat(DockerfileRenderer.supported("RUN --network=none --mount=type=cache make", new Target(false, true)))
-                .contains("--mount");
+        assertAll(
+                () -> assertThat(DockerfileRenderer.supported("RUN make", Target.DEFAULT)).isEqualTo("RUN make"),
+                () -> assertThat(DockerfileRenderer.supported("RUN --network=none --mount=type=cache make",
+                        new Target(false, true)))
+                        .contains("--mount"));
     }
 
     @Test
@@ -301,8 +320,11 @@ class DockerfileRendererTest {
     void stageRefusesAnInstructionTheTargetCannotRead() {
         Stage stage = new Stage(null, null, "build", List.of(new Raw("RUN <<EOT\nx\nEOT", "script")));
 
-        assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.stage(stage, Target.DEFAULT));
-        assertThat(DockerfileRenderer.stage(stage, new Target(true, false))).isEqualTo("FROM build\nRUN <<EOT\nx\nEOT");
+        assertAll(
+                () -> assertThatIllegalArgumentException().isThrownBy(() -> DockerfileRenderer.stage(stage,
+                        Target.DEFAULT)),
+                () -> assertThat(DockerfileRenderer.stage(stage, new Target(true, false)))
+                        .isEqualTo("FROM build\nRUN <<EOT\nx\nEOT"));
     }
 
     private static Dockerfile single(Instruction... instructions) {

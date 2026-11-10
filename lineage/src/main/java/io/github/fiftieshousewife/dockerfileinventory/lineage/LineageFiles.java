@@ -22,7 +22,6 @@ final class LineageFiles {
         this.dir = dir;
     }
 
-    // Appended one row at a time, so an interrupted inventory resumes.
     synchronized void record(TagRow row) {
         append(TAGS, json.writeValueAsString(row));
     }
@@ -52,7 +51,6 @@ final class LineageFiles {
         }
     }
 
-    // Written under a temporary name and moved, so a config file on disk is always whole.
     void storeConfig(String digest, String text) {
         try {
             Path target = configPath(digest);
