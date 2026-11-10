@@ -20,7 +20,6 @@ enum BuildOutcome {
         return log.contains("checking on sources under \"/src/") ? MISSING_SOURCE : FAILED;
     }
 
-    // What apt, apk, dnf, curl and Go print when a download fails on the network or a mirror, not in the build.
     static final List<String> FETCH_FAILURES = List.of("TLS:", "Hash Sum mismatch",
             "Could not resolve", "Temporary failure resolving", "Connection timed out", "Connection reset",
             "i/o timeout", "TLS handshake timeout", "Curl error (", "curl: (6)", "curl: (7)", "curl: (28)",

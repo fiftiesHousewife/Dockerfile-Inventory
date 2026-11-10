@@ -1,11 +1,15 @@
 package io.github.fiftieshousewife.dockerfileinventory.tools;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,6 +68,30 @@ class ImageCollectTest {
         try (Stream<Path> files = Files.list(corpus.resolve("scos-tools-1a2b3c4d"))) {
             assertThat(files).isEmpty();
         }
+    }
+
+    @Test
+    void theCorpusSettingNamesWhereTheCasesGo() {
+        ImageCollect.of(run.toString(), Map.of("CORPUS", corpus.toString())).collect();
+
+        assertThat(corpus.resolve("scos-tools-1a2b3c4d")).isDirectory();
+    }
+
+    @Test
+    void aRunWithoutOneOfItsInputsIsRefusedNamingIt() throws IOException {
+        Files.delete(run.resolve("facts/facts.jsonl"));
+
+        assertThatIllegalArgumentException().isThrownBy(() -> new ImageCollect(run, corpus).collect())
+                .withMessage("no " + run.resolve("facts/facts.jsonl"));
+    }
+
+    @Test
+    void aCaseThatCannotBeWrittenIsAnInputOutputFailure() throws IOException {
+        Path blocked = corpus.resolve("file");
+        Files.writeString(blocked, "");
+
+        assertThatExceptionOfType(UncheckedIOException.class)
+                .isThrownBy(() -> new ImageCollect(run, blocked).collect());
     }
 
     @Test

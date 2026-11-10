@@ -24,4 +24,14 @@ class CommandsTest {
         assertThatThrownBy(() -> Commands.processes().run(List.of("no-such-command-for-the-test"), null))
                 .isInstanceOf(UncheckedIOException.class);
     }
+
+    @Test
+    void anInterruptedWaitIsRefusedAndKeepsTheInterrupt() {
+        Thread.currentThread().interrupt();
+
+        assertAll(
+                () -> assertThatThrownBy(() -> Commands.processes().run("sh", "-c", "exec >&- 2>&-; sleep 1"))
+                        .isInstanceOf(IllegalStateException.class),
+                () -> assertThat(Thread.interrupted()).isTrue());
+    }
 }

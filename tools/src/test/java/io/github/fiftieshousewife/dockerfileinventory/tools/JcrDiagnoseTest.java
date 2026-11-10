@@ -39,6 +39,46 @@ class JcrDiagnoseTest {
                 () -> assertThat(docker.asked).contains("docker exec inventory-jcr ls /var/opt/jfrog/artifactory/log"));
     }
 
+    private static JcrDiagnose diagnose(JcrContainersTest.Recorded docker, ByteArrayOutputStream printed) {
+        return new JcrDiagnose(docker, URI.create("http://127.0.0.1:1/"), "password", HttpClient.newHttpClient(),
+                "jcr:7", new PrintStream(printed, true, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void theContainerSectionsAskAboutTheImageDockersMemoryTheContainerAndItsLogs() {
+        JcrContainersTest.Recorded docker = new JcrContainersTest.Recorded();
+
+        diagnose(docker, new ByteArrayOutputStream()).containerSections();
+
+        assertThat(docker.asked).contains("docker image inspect jcr:7 --format {{.Architecture}}",
+                "docker info --format {{.MemTotal}}",
+                "docker ps -a --filter name=^inventory-jcr$ --format {{.Status}}",
+                "docker exec inventory-jcr tail -40 /var/opt/jfrog/artifactory/log/access-service.log");
+    }
+
+    @Test
+    void theNetworkSectionsPingJcrFromTheDemoNetworkAndFromInsideIt() {
+        JcrContainersTest.Recorded docker = new JcrContainersTest.Recorded();
+
+        diagnose(docker, new ByteArrayOutputStream()).networkSections();
+
+        assertThat(docker.asked).contains("docker run --rm --network inventory-demo curlimages/curl:8.10.1 -s -m 5 "
+                        + "-o /dev/null -w %{http_code}\n http://inventory-jcr:8082/artifactory/api/system/ping",
+                "docker exec inventory-jcr curl -s -m 5 -o /dev/null -w %{http_code}\n "
+                        + "http://localhost:8082/artifactory/api/system/ping",
+                "docker exec inventory-jcr ls /var/opt/jfrog/artifactory/etc/artifactory");
+    }
+
+    @Test
+    void theDockerApiSectionPrintsAProbeOfEachPath() {
+        ByteArrayOutputStream printed = new ByteArrayOutputStream();
+
+        diagnose(new JcrContainersTest.Recorded(), printed).dockerApi();
+
+        assertThat(printed.toString(StandardCharsets.UTF_8).lines().filter(line -> line.contains("no answer")))
+                .hasSize(JcrDiagnose.DOCKER_API.size());
+    }
+
     @Test
     void aSectionIsItsTitleThenWhatEachCommandSaid() {
         JcrContainersTest.Recorded docker = new JcrContainersTest.Recorded();

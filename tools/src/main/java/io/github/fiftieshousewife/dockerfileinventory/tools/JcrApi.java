@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 import tools.jackson.databind.JsonNode;
 
-// Tokens are kept in memory and never printed: a refusal shows the reply without them.
 final class JcrApi {
 
     private final URI root;

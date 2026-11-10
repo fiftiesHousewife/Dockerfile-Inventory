@@ -15,7 +15,7 @@ final class CloneSource {
     private final String web;
     private final Optional<TokenSource> token;
 
-    private CloneSource(String web, Optional<TokenSource> token) {
+    CloneSource(String web, Optional<TokenSource> token) {
         this.web = web;
         this.token = token;
     }

@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// What two builds of the same original differ in. A file only in one image is matched by its directory, as names
-// that carry a process ID differ every build.
 final class Noise {
 
     private static final String ONLY_IN = "only in";
@@ -18,6 +16,7 @@ final class Noise {
         this.directories = directories;
     }
 
+    // A file only in one image is matched by its directory: names that carry a process ID differ every build.
     static Noise of(List<String> control) {
         return new Noise(control.stream().map(Noise::key).collect(Collectors.toSet()),
                 control.stream().filter(Noise::onlyInOne).map(Noise::directory).collect(Collectors.toSet()));
@@ -30,7 +29,6 @@ final class Noise {
                 .toList();
     }
 
-    // A file's path and what about it differs ("mode", "content"); a config field's name.
     static String key(String difference) {
         int colon = difference.indexOf(": ");
         if (colon < 0) {

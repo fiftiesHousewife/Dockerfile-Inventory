@@ -20,7 +20,6 @@ interface Commands {
         return run(List.of(command), null);
     }
 
-    // stderr joins stdout, so a failure says why.
     static Commands processes() {
         return (command, stdin) -> {
             try {

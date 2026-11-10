@@ -8,8 +8,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-// For sources CI makes before an image is built: the original and the regenerated Dockerfile then build on the same
-// inputs.
 final class Stubs {
 
     private Stubs() {

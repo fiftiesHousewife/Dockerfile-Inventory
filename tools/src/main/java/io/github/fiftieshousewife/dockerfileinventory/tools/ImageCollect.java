@@ -40,9 +40,12 @@ public final class ImageCollect {
             System.err.println("usage: collectImages --args=<run directory>, e.g. --args=out/okd");
             System.exit(2);
         }
-        int written = new ImageCollect(Path.of(args[0]), Path.of(System.getenv().getOrDefault("CORPUS",
-                "testdata/corpus/images"))).collect();
+        int written = of(args[0], System.getenv()).collect();
         System.out.println("corpus: " + written + " images added");
+    }
+
+    static ImageCollect of(String run, Map<String, String> env) {
+        return new ImageCollect(Path.of(run), Path.of(env.getOrDefault("CORPUS", "testdata/corpus/images")));
     }
 
     int collect() {

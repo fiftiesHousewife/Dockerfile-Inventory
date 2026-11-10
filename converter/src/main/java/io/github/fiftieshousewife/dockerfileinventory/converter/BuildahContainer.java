@@ -1,34 +1,21 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedMap;
 import java.util.function.Supplier;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-// Run natively: an emulated Buildah cannot re-exec itself for RUN. Builds keep Docker's format, so HEALTHCHECK,
-// ONBUILD and SHELL reach the config.
 final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseable {
 
-    static final String IMAGE = "quay.io/buildah/stable:v1.43.5";
-    private static final String NAME = "inventory-compare";
-    private static final String EMPTY_SECRET = "empty-secret";
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private final Path sources;
-    private final Path work;
-    private final String arch;
-    private final int timeoutMinutes;
+    private final BuildahCommands commands;
 
-    BuildahContainer(Path sources, Path work, String arch, int timeoutMinutes) {
-        this.sources = sources.toAbsolutePath();
-        this.work = work.toAbsolutePath();
-        this.arch = arch;
-        this.timeoutMinutes = timeoutMinutes;
+    BuildahContainer(BuildahCommands commands) {
+        this.commands = commands;
     }
 
     static int timeoutMinutes(Map<String, String> environment) {
@@ -44,27 +31,10 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
 
     static BuildahContainer start(Path sources, Path work, Map<String, String> environment) {
         String arch = architecture(Processes.output(List.of("docker", "info", "--format", "{{.Architecture}}")));
-        BuildahContainer container = new BuildahContainer(sources, work, arch, timeoutMinutes(environment));
-        Processes.logged(List.of("docker", "rm", "-f", NAME), container.work.resolve("docker-rm.log"));
-        Processes.output(container.runCommand(environment));
-        return container;
-    }
-
-    List<String> runCommand(Map<String, String> environment) {
-        List<String> command = new ArrayList<>(List.of("docker", "run", "-d", "--rm", "--privileged", "--platform",
-                "linux/" + arch, "--name", NAME, "-e", "STORAGE_DRIVER=vfs", "-v", sources + ":/src",
-                "-v", work + ":/work", "-v", "inventory-compare-buildah:/var/lib/containers"));
-        setting(environment, "REGISTRY_AUTH_FILE").ifPresent(auth -> command.addAll(
-                List.of("-v", auth + ":/auth.json:ro", "-e", "REGISTRY_AUTH_FILE=/auth.json")));
-        setting(environment, "REGISTRIES_CONF").ifPresent(conf -> command.addAll(
-                List.of("-v", conf + ":/etc/containers/registries.conf:ro")));
-        command.addAll(List.of(IMAGE, "sleep", "infinity"));
-        return command;
-    }
-
-    private static Optional<String> setting(Map<String, String> environment, String name) {
-        return Optional.ofNullable(environment.get(name)).filter(value -> !value.isBlank())
-                .map(value -> Path.of(value).toAbsolutePath().toString());
+        BuildahCommands commands = new BuildahCommands(sources, work, arch, timeoutMinutes(environment));
+        Processes.logged(BuildahCommands.stop(), commands.work().resolve("docker-rm.log"));
+        Processes.output(commands.start(environment));
+        return new BuildahContainer(commands);
     }
 
     static String architecture(String docker) {
@@ -75,17 +45,17 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
     }
 
     String arch() {
-        return arch;
+        return commands.arch();
     }
 
     @Override
     public BuildOutcome build(Path dockerfile, Path context, String tag, Path log, List<String> secrets) {
-        RunFiles.writeFile(work.resolve(EMPTY_SECRET), "");
-        return retried(() -> BuildOutcome.of(Processes.exitStatus(buildCommand(dockerfile, context, tag, secrets),
+        RunFiles.writeFile(commands.work().resolve(BuildahCommands.EMPTY_SECRET), "");
+        return retried(() -> BuildOutcome.of(Processes.exitStatus(commands.build(dockerfile, context, tag, secrets),
                 log, Map.of()), RunFiles.read(log)), log);
     }
 
-    BuildOutcome retried(Supplier<BuildOutcome> attempt, Path log) {
+    static BuildOutcome retried(Supplier<BuildOutcome> attempt, Path log) {
         BuildOutcome first = attempt.get();
         if (first != BuildOutcome.FAILED || !BuildOutcome.fetchFailed(RunFiles.read(log))) {
             return first;
@@ -96,61 +66,32 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
 
     @Override
     public void remove(List<String> tags) {
-        tags.forEach(tag -> Processes.logged(removeCommand(tag), work.resolve("remove.log")));
-    }
-
-    List<List<String>> clearingCommands() {
-        return List.of(exec("buildah", "rm", "--all"), exec("buildah", "rmi", "--prune"));
-    }
-
-    List<String> removeCommand(String tag) {
-        return exec("buildah", "rmi", "-f", tag);
-    }
-
-    List<String> buildCommand(Path dockerfile, Path context, String tag, List<String> secrets) {
-        List<String> command = new ArrayList<>(exec("timeout", "-k", "30", Integer.toString(timeoutMinutes * 60),
-                "buildah", "build", "-q", "--format", "docker", "--layers=false"));
-        secrets.forEach(id -> command.addAll(List.of("--secret", "id=" + id + ",src=/work/" + EMPTY_SECRET)));
-        command.addAll(List.of("-f", inside(dockerfile), "-t", tag, inside(context)));
-        return command;
+        tags.forEach(tag -> Processes.logged(BuildahCommands.remove(tag), removeLog()));
     }
 
     @Override
     public JsonNode inspect(String tag) {
-        return JSON.readTree(Processes.output(exec("buildah", "inspect", "--type", "image", tag)));
+        return JSON.readTree(Processes.output(BuildahCommands.inspect(tag)));
     }
 
     @Override
     public SortedMap<String, FileEntry> files(String tag) {
-        String container = Processes.output(exec("buildah", "from", "-q", tag)).strip();
+        String container = Processes.output(BuildahCommands.from(tag)).strip();
         try {
-            String mount = Processes.output(exec("buildah", "mount", container)).strip();
-            return Processes.streamed(exec("tar", "-C", mount, "--numeric-owner", "-cf", "-", "."), TarListing::of);
+            String mount = Processes.output(BuildahCommands.mount(container)).strip();
+            return Processes.streamed(BuildahCommands.tar(mount), TarListing::of);
         } finally {
-            Processes.output(exec("buildah", "rm", container));
+            Processes.output(BuildahCommands.removeContainer(container));
         }
     }
 
     @Override
     public void close() {
-        clearingCommands().forEach(command -> Processes.logged(command, work.resolve("remove.log")));
-        Processes.output(List.of("docker", "rm", "-f", NAME));
+        BuildahCommands.clearing().forEach(command -> Processes.logged(command, removeLog()));
+        Processes.output(BuildahCommands.stop());
     }
 
-    String inside(Path host) {
-        Path path = host.toAbsolutePath().normalize();
-        if (path.startsWith(sources)) {
-            return "/src/" + sources.relativize(path);
-        }
-        if (path.startsWith(work)) {
-            return "/work/" + work.relativize(path);
-        }
-        throw new IllegalArgumentException(path + " is under neither " + sources + " nor " + work);
-    }
-
-    private static List<String> exec(String... command) {
-        List<String> line = new ArrayList<>(List.of("docker", "exec", NAME));
-        line.addAll(List.of(command));
-        return line;
+    private Path removeLog() {
+        return commands.work().resolve("remove.log");
     }
 }

@@ -1,8 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.tools;
 
-import io.github.fiftieshousewife.dockerfileinventory.lineage.LineageMain;
-import io.github.fiftieshousewife.dockerfileinventory.report.ReportMain;
-import io.github.fiftieshousewife.dockerfileinventory.rules.RulesMain;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -69,21 +66,7 @@ public final class LineageDemo {
         require(facts.resolve("facts.jsonl"), "run facts on " + discovery + " first");
         DemoRegistry.Ready ready = registry.start();
         images(discovery, out, out.resolve("build.log"), ready);
-        stages(discovery, facts, out, ready.token());
-    }
-
-    private void stages(Path discovery, Path facts, Path out, String token) {
-        String api = "http://localhost:" + env.getOrDefault("JCR_PORT", "8082") + "/artifactory";
-        String lineage = out.resolve("lineage").toString();
-        LineageMain.run(Map.of("ARTIFACTORY_URL", api, "ARTIFACTORY_TOKEN", token, "FACTS_DIR", facts.toString(),
-                "DISCOVERY_DIR", discovery.toString(), "OUT_DIR", lineage, "ARTIFACTORY_CONCURRENCY", "4",
-                "ARTIFACTORY_MAX_REQUESTS_PER_SECOND", "50"));
-        ReportMain.run(Map.of("FACTS_DIR", facts.toString(), "DISCOVERY_DIR", discovery.toString(), "LINEAGE_DIR",
-                lineage, "OUT_DIR", out.resolve("report").toString()));
-        RulesMain.run(Map.of("DISCOVERY_DIR", discovery.toString(), "LINEAGE_DIR", lineage, "OUT_DIR",
-                out.resolve("rules").toString()));
-        System.out.println("output: " + lineage + ", " + out.resolve("report/index.html") + ", "
-                + out.resolve("rules"));
+        new DemoStages(env.getOrDefault("JCR_PORT", "8082")).run(discovery, facts, out, ready.token());
     }
 
     void images(Path discovery, Path out, Path log, DemoRegistry.Ready ready) {
@@ -106,11 +89,14 @@ public final class LineageDemo {
     }
 
     private DemoImages demoImages(String repository) {
-        String architecture = docker.run("docker", "info", "--format", "{{.Architecture}}").out().strip()
-                .replace("x86_64", "amd64").replace("aarch64", "arm64");
+        String architecture = architecture(docker.run("docker", "info", "--format", "{{.Architecture}}").out());
         return new DemoImages(docker, JcrContainers.JCR + ":8082/" + repository, password(env),
                 env.getOrDefault("SKOPEO_IMAGE", SKOPEO_IMAGE), env.getOrDefault("BUILDAH_IMAGE", BUILDAH_IMAGE),
                 "linux/" + architecture);
+    }
+
+    static String architecture(String docker) {
+        return docker.strip().replace("x86_64", "amd64").replace("aarch64", "arm64");
     }
 
     List<BuildPlan.Build> plan(List<BuildPlan.Build> all) {

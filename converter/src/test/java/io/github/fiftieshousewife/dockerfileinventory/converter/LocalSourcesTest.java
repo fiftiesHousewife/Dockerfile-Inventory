@@ -62,6 +62,14 @@ class LocalSourcesTest {
     }
 
     @Test
+    void aDefaultedReferenceIsTheVariableThenAPlatformArgumentLeftAsItIsThenTheDefault() {
+        assertAll(
+                () -> assertThat(LocalSources.defaulted("V", "d", Map.of("V", "set"))).isEqualTo("set"),
+                () -> assertThat(LocalSources.defaulted("TARGETARCH", "amd64", Map.of())).isEqualTo("${TARGETARCH}"),
+                () -> assertThat(LocalSources.defaulted("V", "d", Map.of())).isEqualTo("d"));
+    }
+
+    @Test
     void aSourceIsRemoteWhenItIsAUrlOrAGitAddress() {
         assertAll(
                 () -> assertThat(LocalSources.remote("https://example.com/a.tgz")).isTrue(),

@@ -15,6 +15,10 @@ final class Processes {
         T read(InputStream output) throws IOException;
     }
 
+    interface Started<T> {
+        T on(Process process) throws IOException, InterruptedException;
+    }
+
     private Processes() {
     }
 
@@ -31,10 +35,8 @@ final class Processes {
     }
 
     static <T> T streamed(List<String> command, Map<String, String> environment, Reader<T> reader) {
-        try {
-            ProcessBuilder builder = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD);
-            builder.environment().putAll(environment);
-            Process process = builder.start();
+        ProcessBuilder builder = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD);
+        return started(builder, command, environment, process -> {
             T read;
             try (InputStream output = process.getInputStream()) {
                 read = reader.read(output);
@@ -44,12 +46,7 @@ final class Processes {
                 throw new IllegalStateException("failed: " + String.join(" ", command));
             }
             return read;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("interrupted: " + String.join(" ", command), e);
-        }
+        });
     }
 
     static boolean logged(List<String> command, Path log) {
@@ -63,10 +60,18 @@ final class Processes {
     static int exitStatus(List<String> command, Path log, Map<String, String> environment) {
         try {
             RunFiles.createParent(log);
-            ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile());
-            builder.environment().putAll(environment);
-            Process process = builder.start();
-            return process.waitFor();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile());
+        return started(builder, command, environment, Process::waitFor);
+    }
+
+    static <T> T started(ProcessBuilder builder, List<String> command, Map<String, String> environment,
+            Started<T> then) {
+        builder.environment().putAll(environment);
+        try {
+            return then.on(builder.start());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (InterruptedException e) {

@@ -19,7 +19,6 @@ final class ImageComparison {
         }
     }
 
-    // A second build of the original, to tell build noise from what the conversion changed.
     record Control(JsonNode inspect, SortedMap<String, FileEntry> files) {
     }
 

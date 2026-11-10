@@ -22,7 +22,6 @@ final class ImageCase {
                 .filter(value -> !value.isEmpty()).findFirst().orElse(""));
     }
 
-    // https://host/owner/name/... -> owner/name.
     static String repository(String url) {
         String path = url.replaceFirst("^https?://[^/]+/", "");
         List<String> parts = List.of(path.split("/"));

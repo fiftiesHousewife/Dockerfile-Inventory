@@ -13,7 +13,6 @@ import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-// Dockerfiles sharing a checkout run one after another: each cleans the checkout and writes its stubs into it.
 final class ImageComparisons {
 
     static final String PARALLEL = "IMAGE_ROUND_TRIP_PARALLEL";
@@ -34,6 +33,7 @@ final class ImageComparisons {
 
     static List<Timed> run(List<String> shas, Function<String, String> checkout, int threads,
                            Function<String, ImageComparison.Result> compare, LongSupplier nanos) {
+        // Each comparison cleans its checkout and writes stubs into it: one checkout's Dockerfiles take turns.
         Map<String, List<Integer>> byCheckout = IntStream.range(0, shas.size()).boxed().collect(Collectors.groupingBy(
                 i -> checkout.apply(shas.get(i)), LinkedHashMap::new, Collectors.toList()));
         Map<Integer, Timed> done = new ConcurrentHashMap<>();

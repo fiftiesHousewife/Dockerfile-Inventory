@@ -47,12 +47,18 @@ final class LocalSources {
         });
     }
 
-    // The builder sets the platform's arguments, so a default given for one never applies; Stubs expands them.
     static String value(String text, Map<String, String> variables) {
         String defaulted = DEFAULTED.matcher(text).replaceAll(reference -> Matcher.quoteReplacement(
-                variables.containsKey(reference.group(1)) ? variables.get(reference.group(1))
-                        : PLATFORM.contains(reference.group(1)) ? "${" + reference.group(1) + "}" : reference.group(2)));
+                defaulted(reference.group(1), reference.group(2), variables)));
         return Expansions.expanded(defaulted, variables);
+    }
+
+    // The builder sets the platform's arguments, so a default given for one never applies; Stubs expands them.
+    static String defaulted(String name, String fallback, Map<String, String> variables) {
+        if (variables.containsKey(name)) {
+            return variables.get(name);
+        }
+        return PLATFORM.contains(name) ? "${" + name + "}" : fallback;
     }
 
     static List<String> secretIds(Dockerfile model) {
