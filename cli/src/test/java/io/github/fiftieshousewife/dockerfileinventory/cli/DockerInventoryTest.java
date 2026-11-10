@@ -237,4 +237,9 @@ final class DockerInventoryTest {
     void aFailureWithAnEmptyMessageIsNamedByItsType() {
         assertThat(DockerInventory.firstLine(new IllegalStateException(""))).isEqualTo("IllegalStateException");
     }
+
+    @Test
+    void aFailureWithoutAMessageIsNamedByItsKind() {
+        assertThat(DockerInventory.firstLine(new IllegalStateException())).isEqualTo("IllegalStateException");
+    }
 }

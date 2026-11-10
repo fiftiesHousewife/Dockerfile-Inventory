@@ -56,7 +56,7 @@ public final class DiscoveryMain {
         OrganisationCredentials credentials = GitHubAccess.credentials(env, api, settings, throttle);
         LOG.info("discovery: {}, {}", api.base(), settings);
         GitHub gitHub = GitHubAccess.client(api, settings, throttle, credentials, env);
-        int concurrency = Integer.parseInt(env.getOrDefault("GHE_CONCURRENCY", "8"));
+        int concurrency = Throttle.concurrency(env, "GHE_CONCURRENCY", 8);
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
         var discovery = new Discovery(gitHub, releases, output, concurrency,
                 organizations(env.getOrDefault("ORGANIZATIONS", ""), api), tryRepositories(env), Selection.from(env),

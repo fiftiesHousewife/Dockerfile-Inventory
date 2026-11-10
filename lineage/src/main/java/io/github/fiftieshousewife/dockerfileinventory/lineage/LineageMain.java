@@ -23,7 +23,7 @@ public final class LineageMain {
 
     private static final Logger LOG = LoggerFactory.getLogger(LineageMain.class);
 
-    private static final String DEFAULT_CONCURRENCY = "16";
+    private static final int DEFAULT_CONCURRENCY = 16;
 
     private LineageMain() {
     }
@@ -55,7 +55,7 @@ public final class LineageMain {
         LOG.info("lineage: {}, token from {}, {}", url, token, settings);
         Artifactory artifactory = new ArtifactoryHttp(URI.create(url), settings, token,
                 Throttle.of(Throttle.rate(env, "ARTIFACTORY_MAX_REQUESTS_PER_SECOND")));
-        int concurrency = Integer.parseInt(env.getOrDefault("ARTIFACTORY_CONCURRENCY", DEFAULT_CONCURRENCY));
+        int concurrency = Throttle.concurrency(env, "ARTIFACTORY_CONCURRENCY", DEFAULT_CONCURRENCY);
         new Inventory(artifactory, new LineageFiles(out), concurrency).run();
     }
 

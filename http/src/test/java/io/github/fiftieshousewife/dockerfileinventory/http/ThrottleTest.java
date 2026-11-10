@@ -164,4 +164,14 @@ class ThrottleTest {
                 () -> assertThatThrownBy(() -> Throttle.rate(Map.of("A", "0"), "A"))
                         .hasMessage("A is a number of calls a second above 0, not 0"));
     }
+
+    @Test
+    void aConcurrencyIsAPositiveWholeNumberRefusedByNameOrItsDefault() {
+        assertAll(
+                () -> assertThat(Throttle.concurrency(Map.of(), "GHE_CONCURRENCY", 8)).isEqualTo(8),
+                () -> assertThat(Throttle.concurrency(Map.of("GHE_CONCURRENCY", "3"), "GHE_CONCURRENCY", 8))
+                        .isEqualTo(3),
+                () -> assertThatThrownBy(() -> Throttle.concurrency(Map.of("GHE_CONCURRENCY", "lots"),
+                        "GHE_CONCURRENCY", 8)).hasMessage("GHE_CONCURRENCY is a positive whole number, not lots"));
+    }
 }

@@ -87,4 +87,10 @@ final class OrganisationCredentialsTest {
                 .choose("web")).hasMessage("no credential reads web: neither GHE_TOKEN, GHE_TOKEN_FILE nor GHE_APP_ID "
                 + "is set");
     }
+
+    @Test
+    void theTokenIsTheOneTheCredentialsHold() {
+        assertThat(new OrganisationCredentials(Optional.empty(), Optional.of(TOKEN), Instant::now).token())
+                .containsSame(TOKEN);
+    }
 }

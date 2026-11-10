@@ -109,4 +109,11 @@ class ActionDrilldownTest {
     void aDockerfileWithoutAPlaceOrPageIsNamedByItsSha() {
         assertThat(ActionDrilldown.dockerfile("aaa", Map.of(), Set.of())).isEqualTo("aaa");
     }
+
+    @Test
+    void aSeverityTheListDoesNotKnowRanksLastNotFirst() {
+        assertAll(
+                () -> assertThat(ActionDrilldown.rank("REFUSED")).isZero(),
+                () -> assertThat(ActionDrilldown.rank("RUNS")).isEqualTo(ActionDrilldown.WORST_FIRST.size()));
+    }
 }

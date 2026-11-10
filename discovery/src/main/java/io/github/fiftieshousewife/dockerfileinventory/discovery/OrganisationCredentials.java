@@ -60,6 +60,10 @@ final class OrganisationCredentials {
         return installations().keySet().stream().sorted().toList();
     }
 
+    Optional<Credential> token() {
+        return token;
+    }
+
     synchronized Map<String, String> chosen() {
         return new LinkedHashMap<>(chosen);
     }

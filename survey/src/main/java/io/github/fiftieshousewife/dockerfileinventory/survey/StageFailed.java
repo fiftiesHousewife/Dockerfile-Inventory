@@ -1,11 +1,14 @@
 package io.github.fiftieshousewife.dockerfileinventory.survey;
 
+import java.util.Optional;
+
 final class StageFailed extends Exception {
 
     private static final long serialVersionUID = 1L;
 
     StageFailed(String stage, Exception cause) {
-        super(stage + " failed: " + String.valueOf(cause.getMessage()).lines().findFirst().orElse(""), cause);
+        super(stage + " failed: " + Optional.ofNullable(cause.getMessage())
+                .flatMap(message -> message.lines().findFirst()).orElse(cause.getClass().getSimpleName()), cause);
     }
 
     String explained() {

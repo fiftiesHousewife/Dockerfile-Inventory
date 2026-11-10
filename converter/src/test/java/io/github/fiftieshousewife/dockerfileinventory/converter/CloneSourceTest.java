@@ -41,4 +41,11 @@ class CloneSourceTest {
         assertThat(CloneSource.from(Map.of("GHE_TOKEN", "t0k")))
                 .hasToString("https://github.com with GHE_TOKEN (variable)");
     }
+
+    @Test
+    void anApiUrlWithoutAHostIsRefusedNamingTheSetting() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> CloneSource.web("file:///tmp/x"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("GHE_API_URL has no host: file:///tmp/x");
+    }
 }

@@ -110,7 +110,8 @@ public final class DockerInventory {
     }
 
     static String firstLine(Exception e) {
-        return String.valueOf(e.getMessage()).lines().findFirst().orElse(e.getClass().getSimpleName());
+        return Optional.ofNullable(e.getMessage()).flatMap(message -> message.lines().findFirst())
+                .orElse(e.getClass().getSimpleName());
     }
 
     static Optional<Command> command(String name, List<Command> commands) {

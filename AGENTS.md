@@ -3,9 +3,10 @@
 Notes for anyone, human or agent, changing the pipeline. Start with [the overview](docs/overview.md): the problem,
 the approach and why each stage exists. The plan, with its phases and gates, is the
 [delivery plan](https://claude.ai/artifact/N7dHR2cH1nKgAhqkpBJx6R); what is being worked on and what is queued is in
-[BACKLOG.md](BACKLOG.md), which you keep current. The [README](README.md) is a short read for people running the pipeline: what it
-does, a quick start, examples, the commands; the detail (each stage's settings, outputs and what the numbers mean) is
-in [docs/guide/](docs/guide/), one guide per stage, linked from it. Neither holds history or anything about the code.
+[BACKLOG.md](BACKLOG.md), which you keep current. The [README](README.md) is a short read for people running the
+pipeline: what it does, a quick start, examples, the commands; the detail (each stage's settings, outputs and what the
+numbers mean) is in [docs/guide/](docs/guide/), one guide per stage, linked from it. Neither holds history or anything
+about the code.
 
 ## How work proceeds
 
@@ -39,7 +40,7 @@ http/               corporate networks, shared by discovery and lineage: HttpSet
                     environment, with defaults; the HttpClient), ProxySettings (HTTPS_PROXY, HTTP_PROXY, NO_PROXY),
                     TrustBundle (a corporate CA), RetryPolicy (backoff, rate-limit waits, RateLimitWaitTooLong),
                     Credential, TokenSource (NAME or NAME_FILE, re-read when the file changes), Throttle (a run's
-                    calls a second, slowing with the server), HttpLog (the debug lines)
+                    calls a second, slowing with the server; Latencies), HttpLog (the debug lines)
 discovery/          stage 0: organisations -> repositories -> trees at the released commit -> Dockerfile blobs
                     Discovery (the run), Scans (repositories on virtual threads), RepoScan (one repository),
                     TreeWalk (truncated trees by subtree), BlobFetch (GraphQL batches of 50), DiscoveryOutput (files)
@@ -69,16 +70,17 @@ lineage/            stage 1b: Artifactory images -> family tree -> links to Dock
                     by rare steps), LinkRule (which links credit an image to a Dockerfile: `credited` on each)
                     Fold (effective user, env, labels, with who set each), Gaps, Analysis, Dockerfiles, LineageRates
 report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes, the catalogue, HTML pages from it
-                    Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, Tallies, ReportRun
-                    CatalogueRun (catalogue/dockerfiles.jsonl): CatalogueEntry, CatalogueEntries, CatalogueLinks,
-                    Footprint, Runtimes, Versions; RegistryImages (lineage's output per image), Unmaintained,
-                    Hierarchies (chains, layers, blockedBy), CatalogueSettings (FootprintRules),
-                    Placement; Actions: ReleaseScope, Reaches, Conversions, Siblings, BaseLags, Cadences, Provenance
-                    CatalogueMain (the catalogue alone, for the validator: the report distribution's `bin/catalogue`)
-                    Pages (writes them, from CatalogueView and ArchetypeRows): OverviewPage (EstateFigures),
-                    HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName,
-                    ActionPlanPage (ActionPlanView: the validator's output), WorkloadTable, Deployments (a Dockerfile's workloads);
-                    Page, Html, Style, About (info text)
+                    Estate, EffectiveUsers, Passes, MinHash, NearDuplicates, Archetypes, Tallies, ReportRun CatalogueRun
+                    (catalogue/dockerfiles.jsonl): CatalogueEntry, CatalogueEntries, CatalogueLinks, Footprint,
+                    Runtimes, Versions; RegistryImages (lineage's output per image), Unmaintained, Hierarchies (chains,
+                    layers, blockedBy), CatalogueSettings (FootprintRules), Placement; Actions: ReleaseScope, Reaches,
+                    Conversions, Siblings, BaseLags, Cadences, Provenance CatalogueMain (the catalogue alone, for the
+                    validator: the report distribution's `bin/catalogue`) Pages (writes them, from CatalogueView and
+                    ArchetypeRows): OverviewPage (EstateFigures), HierarchyPage, BlockedPage, DockerfilePage
+                    (DockerfileSections), ArchetypeTable, ArchetypeName, ActionPlanPage (ActionPlanView: the validator's
+                    output), ActionDrilldown (by check, a check's fixes, a fix's Dockerfiles), RepositoryPage,
+                    CheckNames, WorkloadTable, Deployments (a Dockerfile's workloads); Breakdowns and Drilldowns (each
+                    count's Dockerfiles), Programs, Tabs, Sections, UnparsedPage; Page, Html, Style, About (info text)
 rules/              stage 3: detect-only rules over facts, parsed Dockerfiles and lineage
                     Rule, EffectiveRule, CatalogueRule (over the estate, from CatalogueView), Finding, Subject,
                     ImageView, RuleRun (a failing rule is a finding); one class per rule (S1-S7, R1-R4, H1-H9, I1, I2;
@@ -95,21 +97,22 @@ validator/          stage 3c: facts -> each image judged through a platform prof
                     Workload, PodCheck: Privileged (D1) to Unconfined (D6), FloatingImage (D7); PodValidation,
                     WorkloadVerdict; ImageReference, ImageLinks, ContainerLink, ContainerImage (a container's image
                     linked through lineage, P9 answered by the manifest); FloatingBase (P11)
-cli/                the docker-inventory command (`DockerInventory`): Commands (each command and the settings it reads,
-                    required ones checked before it runs), Command, Setting, Help, NearMisses (a setting's typo), Flags (--settings, --load), SettingsFile (the YAML),
-                    Load (the gentle and normal presets), Logging, Prompt (the question after discovery's first pass),
-                    Version (from the build); the `docker-inventory` distribution (`installDist`), tested as installed
-survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`), Survey (the stages in order, each
+cli/                the docker-inventory command (`DockerInventory`): Commands and SettingGroups (each command and the
+                    settings it reads, required ones checked before it runs), Command, Setting, Help, NearMisses (a
+                    setting's typo), Flags (--settings, --load), SettingsFile (the YAML), Load (the gentle and normal
+                    presets), Logging, Prompt (the question after discovery's first pass), Version (from the build); the
+                    `docker-inventory` distribution (`installDist`), tested as installed
+survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`; Arguments, Stages, StageFailed),
+                    Survey (the stages in order, each
                     with the folders the earlier ones wrote); every stage's ...Main.run(env)
-tools/              the contributors' tools, not in the image: CorpusCollect (`./gradlew collectCorpus
-                    --args=<run>`: the Dockerfiles a run found hard into testdata/corpus/dockerfiles; RunOutcomes,
-                    Workaround, CorpusCase), ImageCollect (`./gradlew collectImages --args=<run>`: a lineage run's
-                    images into testdata/corpus/images); OkdSelect (`./gradlew selectOkd`: an OKD release's images for a
-                    lineage run, from quay.io: OkdChoice, Quay, QuayHttp), JcrRecord (`./gradlew recordJcrFixtures`:
-                    a local JCR's replies as lineage's fixtures), LineageDemo (`./gradlew lineageDemo`: lineage end
-                    to end on a local JCR in Docker: BuildPlan, JcrContainers, JcrApi, DemoImages, Commands),
-                    JcrDiagnose (`./gradlew jcrDiagnose`); Json (the bank's JSON, laid out as jq
-                    lays it out)
+tools/              the contributors' tools, not in the image: CorpusCollect (`./gradlew collectCorpus --args=<run>`:
+                    the Dockerfiles a run found hard into testdata/corpus/dockerfiles; RunOutcomes, Workaround,
+                    CorpusCase), ImageCollect (`./gradlew collectImages --args=<run>`: a lineage run's images into
+                    testdata/corpus/images); OkdSelect (`./gradlew selectOkd`: an OKD release's images for a lineage
+                    run, from quay.io: OkdChoice, Quay, QuayHttp), JcrRecord (`./gradlew recordJcrFixtures`: a local
+                    JCR's replies as lineage's fixtures), LineageDemo (`./gradlew lineageDemo`: lineage end to end on a
+                    local JCR in Docker: BuildPlan, JcrContainers, JcrApi, DemoImages, DemoStages, Commands),
+                    JcrDiagnose (`./gradlew jcrDiagnose`); Json (the bank's JSON, laid out as jq lays it out)
 secrets/            Secrets: what counts as a secret value or name, shared by facts, rules and report; not published
 dsl/                stage 4: the Dockerfile model and the one renderer; no OpenRewrite; package
                     io.github.fiftieshousewife.dockerfile.model, to be published as dockerfile-model
@@ -128,12 +131,12 @@ reader/             Dockerfile text -> model, published as dockerfile-reader
                     ShellScan, ShellQuotes, ShellSubstitutions, ShellToken (characters to words), ShellCommands,
                     ShellCommand, ShellKeywords (words to commands); Continuations, KeyValuePairs, Expansions,
                     ArgumentText, ArgPairs; Values, Installs
-converter/          stage 5: Dockerfile -> model (through reader) -> Dockerfile, and Java builder classes
-                    Location; RoundTrip, CanonicalSteps; JavaEmitter, BuilderCalls,
-                    RecordCalls, ClassNames, GeneratedClasses; ConverterRun, Coverage, RunFiles; JavaRoundTrip,
-                    InMemoryCompiler; Phase 5b: ImageComparisonRun (Builder; BuildahContainer, Checkouts with
-                    CloneSource, Processes), DockerfileSelection, Regenerated, LocalSources, Stubs, TarListing,
-                    FileEntry, ImageComparison, ConfigDifferences, FileDifferences, ImageComparisons (several at once, timed)
+converter/          stage 5: Dockerfile -> model (through reader) -> Dockerfile, and Java builder classes Location;
+                    RoundTrip, CanonicalSteps; JavaEmitter, BuilderCalls, RecordCalls, ClassNames, GeneratedClasses;
+                    ConverterRun, Coverage, RunFiles; JavaRoundTrip, InMemoryCompiler; Phase 5b: ImageComparisonRun
+                    (Builder; BuildahContainer and BuildahCommands, Checkouts with CloneSource, Processes),
+                    DockerfileSelection, Regenerated, LocalSources, Stubs, TarListing, FileEntry, ImageComparison,
+                    ConfigDifferences, FileDifferences, ImageComparisons (several at once, timed)
 testdata/contracts/ the normal-form contracts between facts and lineage: real Dockerfiles against the history of
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
@@ -233,7 +236,8 @@ a test in its `tree` tests from the minimal reproduction, the grammar (`src/main
 and a line in the changed file's header saying what changed. The corpus tests name the cases the fix turns.
 
 **A new setting.** Read it in the stage's `...Main` from the environment map, give it a default, refuse a bad value
-naming the variable, list it in the stage's guide (`docs/guide/`) and in `cli`'s `Commands`. Network settings belong in `http`'s `HttpSettings`.
+naming the variable, list it in the stage's guide (`docs/guide/`) and in `cli`'s `Commands` or `SettingGroups`.
+Network settings belong in `http`'s `HttpSettings`.
 
 **Release a library.** Set its version in `gradle.properties` (`inventory.parserVersion`, `inventory.modelVersion`;
 semantic: a change to the public API is a major version, or a minor one before 1.0), commit, then run

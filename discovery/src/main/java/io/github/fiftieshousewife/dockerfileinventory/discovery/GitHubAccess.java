@@ -58,11 +58,10 @@ final class GitHubAccess {
     static GitHub client(GitHubApi api, HttpSettings settings, Throttle throttle, OrganisationCredentials credentials,
                          Map<String, String> env) {
         Map<Credential, GitHub> clients = new ConcurrentHashMap<>();
-        Optional<Credential> token = token(env);
         return new PerOrganisation(org -> clients.computeIfAbsent(credentials.of(org),
                 credential -> new GitHubHttp(api, settings, credential, throttle)),
-                () -> token.map(t -> new GitHubHttp(api, settings, t, throttle).organizations())
-                        .orElseGet(credentials::installed));
+                () -> credentials.token().map(t -> clients.computeIfAbsent(t, credential -> new GitHubHttp(api,
+                        settings, credential, throttle)).organizations()).orElseGet(credentials::installed));
     }
 
     static String lines(Map<String, String> chosen) {

@@ -78,6 +78,25 @@ public final class Throttle {
     }
 
     /**
+     * How many calls a setting allows at once: a positive whole number, or the fallback when unset.
+     *
+     * @param env the settings
+     * @param name the setting
+     * @param fallback the number when it is unset
+     * @return the number
+     */
+    public static int concurrency(Map<String, String> env, String name, int fallback) {
+        String value = env.get(name);
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        if (!value.strip().matches("[1-9][0-9]{0,5}")) {
+            throw new IllegalStateException(name + " is a positive whole number, not " + value);
+        }
+        return Integer.parseInt(value.strip());
+    }
+
+    /**
      * Waits for this call's turn.
      *
      * @throws InterruptedException when interrupted while waiting

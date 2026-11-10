@@ -30,6 +30,9 @@ final class CloneSource {
     static String web(String api) {
         URI uri = URI.create(api.strip());
         String host = uri.getHost();
+        if (host == null) {
+            throw new IllegalStateException("GHE_API_URL has no host: " + api.strip());
+        }
         if (host.equals(DOT_COM) || host.equals("api." + DOT_COM)) {
             return "https://" + DOT_COM;
         }

@@ -24,4 +24,10 @@ class StageFailedTest {
         assertThat(new StageFailed("facts", new IllegalStateException("no network")).explained())
                 .isEqualTo("facts failed: no network");
     }
+
+    @Test
+    void aStageFailingWithoutAMessageIsNamedByTheFailuresKind() {
+        assertThat(new StageFailed("discovery", new NullPointerException()).getMessage())
+                .isEqualTo("discovery failed: NullPointerException");
+    }
 }

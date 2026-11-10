@@ -27,7 +27,7 @@ final class ActionDrilldown {
                         LinkedHashMap::new, Collectors.toList()))
                 .entrySet().stream().map(e -> checkRow(e.getKey(), e.getValue(),
                         fixes.getOrDefault(e.getKey(), List.of())))
-                .sorted(Comparator.comparingInt((CheckRow row) -> WORST_FIRST.indexOf(row.severity()))
+                .sorted(Comparator.comparingInt((CheckRow row) -> rank(row.severity()))
                         .thenComparing(Comparator.comparingInt(CheckRow::dockerfiles).reversed())
                         .thenComparing(CheckRow::check))
                 .toList();
@@ -42,7 +42,12 @@ final class ActionDrilldown {
 
     static String worst(List<ActionPlanView.PlannedAction> actions) {
         return actions.stream().map(ActionPlanView.PlannedAction::severity)
-                .min(Comparator.comparingInt(WORST_FIRST::indexOf)).orElse("INFORMATION");
+                .min(Comparator.comparingInt(ActionDrilldown::rank)).orElse("INFORMATION");
+    }
+
+    static int rank(String severity) {
+        int rank = WORST_FIRST.indexOf(severity);
+        return rank < 0 ? WORST_FIRST.size() : rank;
     }
 
     static String checkTable(List<CheckRow> rows, String up) {

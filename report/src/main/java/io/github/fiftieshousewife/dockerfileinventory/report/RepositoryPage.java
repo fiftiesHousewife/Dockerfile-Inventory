@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 final class RepositoryPage {
 
     private static final Comparator<ActionPlanView.PlannedAction> MOST_URGENT = Comparator
-            .comparingInt((ActionPlanView.PlannedAction a) -> ActionDrilldown.WORST_FIRST.indexOf(a.severity()))
+            .comparingInt((ActionPlanView.PlannedAction a) -> ActionDrilldown.rank(a.severity()))
             .thenComparing(ActionPlanView.PlannedAction::check);
 
     private RepositoryPage() {

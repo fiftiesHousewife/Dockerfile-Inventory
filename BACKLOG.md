@@ -106,6 +106,15 @@ and one line when its gate is met.
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and
   `jcrDiagnose`, each checked against what its script wrote, or against the local JCR. Left to the owner: `selectOkd`
   live on quay.io, and `lineageDemo` end to end (it needs quay.io or GitHub).
+- Done 10 Nov (asked 10 Nov: "a good old quality pass in depth"): a second pass over every module but the parser,
+  four modules' groups at once: classes over 150 lines 5 -> 0, methods over 25 lines 8 -> 0, private methods holding
+  a decision 15 -> 0 (each now tested directly), `//` comment lines 249 -> 121 (those left record an outside fact),
+  lines over 120 characters 4 -> 0; coverage up in every module (discovery 92.5 -> 95.5%, converter 92.4 -> 95.0%,
+  survey 90.9 -> 93.1%, lineage 97.9 -> 98.8%); report and rules tests one assertion or one assertAll each. Every
+  stage's output on the combined estate byte for byte the same; `validate` and `roundTrip` green. Five bugs found
+  on the way, fixed apart: a host-less GHE_API_URL crashed the image round trip's clone; a failure without a
+  message printed "failed: null"; the concurrency settings refused a bad value without naming it; discovery read
+  the token file through two objects; an unknown severity sorted as the worst.
 - Done 9 Nov (asked 9 Nov): a quality pass over every module but the vendored parser: long classes and methods
   split, loops turned into streams where they read better, decisions in private methods opened up and tested, comments
   that said what the code does removed; line coverage up in most modules. Behaviour kept: `check`, `roundTrip` and
