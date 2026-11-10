@@ -90,8 +90,7 @@ final class BuildahContainer implements ImageComparisonRun.Builder, AutoCloseabl
         if (first != BuildOutcome.FAILED || !BuildOutcome.fetchFailed(RunFiles.read(log))) {
             return first;
         }
-        RunFiles.writeFile(log.resolveSibling(log.getFileName().toString().replace(".log", ".first.log")),
-                RunFiles.read(log));
+        RunFiles.writeFile(Path.of(log.toString().replaceFirst("\\.log$", ".first.log")), RunFiles.read(log));
         return attempt.get();
     }
 
