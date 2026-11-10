@@ -202,3 +202,7 @@ Questions:
 3. The pod findings as actions. Into `actions.jsonl` and `fixes.jsonl` beside the images' (each naming the YAML file
    to change, and for an image finding the manifest answers, the YAML instead of the Dockerfile), or kept in
    `workload-verdicts.jsonl` until the report's slice shows them?
+   Answered 10 Nov: into `actions.jsonl` and `fixes.jsonl`, each naming the YAML file to change.
+4. A floating reference is itself a thing to fix and fails the validator (owner, 10 Nov): a new pod check, D7, for a
+   container naming a floating tag. Open: whether "anywhere in the hierarchy" also raises P8 (an unpinned `FROM`) from
+   drift; on the combined estate 3,987 P8 actions, and every one of the 723 drift images has one.
