@@ -197,6 +197,8 @@ Questions:
    of the same registry.
 2. A floating tag (`latest`, or none). Link it to the image that tag points at when lineage read it, or leave it
    unlinked since the cluster may pull another?
+   Answered 10 Nov: link it to the image the tag pointed at when lineage read it, and mark the link floating in
+   `workload-verdicts.jsonl`.
 3. The pod findings as actions. Into `actions.jsonl` and `fixes.jsonl` beside the images' (each naming the YAML file
    to change, and for an image finding the manifest answers, the YAML instead of the Dockerfile), or kept in
    `workload-verdicts.jsonl` until the report's slice shows them?
