@@ -16,7 +16,8 @@ and one line when its gate is met.
   counted apart.
 - Done 7 Nov: running inside a corporate network (`docs/plans/corporate-readiness.md`): the `http` module (proxy,
   CA bundle, token files, retries, rate-limit waits and pacing) in discovery and lineage, SSO and refusals handled,
-  `INVENTORY_MIRROR` for the build, a `Containerfile` for the pod (its first build is the owner's).
+  `INVENTORY_MIRROR` for the build. The `Containerfile` for a pod removed 10 Nov: the project is consumed as
+  libraries and a CLI from Central, not run as a pod (`docs/plans/ci.md`).
 - Active (planned 7 Nov, `docs/plans/dsl-completion.md`): the DSL completed. Done 7 Nov: S1, every instruction
   typed (the combined estate's 5,150 converted files fully typed, from 92.6%). Done 8 Nov: S2, ten goldens from real
   archetypes, one per family; S3, the Java round trip (all 5,149 passing Dockerfiles' classes rebuild them); S4,

@@ -1,7 +1,0 @@
-.git
-.gradle
-.claude
-.idea
-out
-**/build
-gradlew-claude

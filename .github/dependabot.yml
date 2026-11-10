@@ -1,0 +1,7 @@
+# The workflows' actions only: Gradle's dependencies are kept current by verifyUpToDate.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -54,9 +54,9 @@ the same batch). The URL is a GitHub Enterprise Server host with the organisatio
 `https://github.com/acme`, or `https://acme.ghe.com`. Every other setting below is passed on to the stage that
 reads it, so the same environment configures a proxy, a CA bundle, Artifactory or a profile. A rerun of a full run
 resumes discovery where it stopped; a stage that fails stops the survey with one line saying which and why (GitHub
-refusing the token is explained). In the image: `inventory survey [--try] <URL>`.
+refusing the token is explained).
 
-The sections after this one run each stage alone, for a pod job per stage or to rerun one.
+The sections after this one run each stage alone, to rerun one.
 
 ## Requirements
 
@@ -95,23 +95,6 @@ Each stage prints the settings it uses, without secrets, before it starts. A bad
 variable. A GitHub organisation that enforces SAML single sign-on stops discovery at once with the link to authorise
 the token; a repository or image Artifactory refuses is recorded as refused (`REFUSED` in lineage's rates) and the
 rest is read.
-
-## Run as a container
-
-The `Containerfile` builds one image holding every stage, for a job in a pod (UBI 9 minimal, a trimmed Java 25
-runtime, a non-root user, a home folder an arbitrary OpenShift user ID can write to, the heap sized from the pod's
-memory limit):
-
-```bash
-buildah build -t dockerfile-inventory -f Containerfile .        # behind a firewall: --build-arg INVENTORY_MIRROR=...
-podman run --rm -e GHE_API_URL -e GHE_TOKEN_FILE=/secrets/ghe-token -v ./out:/work/out:Z \
-    -v ./secrets:/secrets:ro,Z -e OUT_DIR=/work/out/discovery dockerfile-inventory discovery
-```
-
-`inventory survey [--try] <URL>` runs a whole survey (above); `inventory <stage>` runs `discovery`, `facts`,
-`lineage`, `catalogue`, `report`, `rules`, `validator` or `converter` alone, with the settings below
-from the environment; `JAVA_OPTS` (default `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError`) is passed to Java.
-Mount the token as a file and set `GHE_TOKEN_FILE` or `ARTIFACTORY_TOKEN_FILE`, so a rotated secret is picked up.
 
 ## Run discovery
 
@@ -262,7 +245,7 @@ export OUT_DIR=/data/report
 ./gradlew :report:run
 ```
 
-With the validator, run the catalogue first: `inventory catalogue` (or the report distribution's `bin/catalogue`)
+With the validator, run the catalogue first: the report distribution's `bin/catalogue` (`./gradlew :report:installDist`)
 takes the same settings, without `VALIDATOR_DIR`, and writes only `catalogue/dockerfiles.jsonl`, `archetypes.jsonl`
 and `passes.json`, which the validator reads; the report then writes the same files again with its pages.
 

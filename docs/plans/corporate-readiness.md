@@ -1,6 +1,6 @@
 # Running inside a corporate network: plan
 
-Status: built 7 Nov (the image awaits its first build by the owner). Built 7 Nov: the `http` module, wired into discovery and lineage
+Status: built 7 Nov; C11 (the pod) removed 10 Nov: the project is consumed as libraries and a CLI from Central, not run as a pod (`docs/plans/ci.md`). Built 7 Nov: the `http` module, wired into discovery and lineage
 (C1-C6, C8, C9 and the waits of C7). C10 built: `INVENTORY_MIRROR` (and `_USER`, `_PASSWORD`) replaces Maven Central and the plugin portal in both settings
 files, checked against a real mirror. C11 built: `Containerfile` (UBI OpenJDK 25 builder: installDist of the six stages and a JRE jlink'd from their jdeps
 modules; UBI 9 minimal runtime as user 1001 with group-0-writable HOME and /work, `JAVA_OPTS` defaulting to

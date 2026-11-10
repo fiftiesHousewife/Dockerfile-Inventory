@@ -68,7 +68,7 @@ report/             stage 2: facts + manifest (+ lineage) -> passes, archetypes,
                     Footprint, Runtimes, Versions; RegistryImages (lineage's output per image), Unmaintained,
                     Hierarchies (chains, layers, blockedBy), CatalogueSettings (FootprintRules),
                     Placement; Actions: ReleaseScope, Reaches, Conversions, Siblings, BaseLags, Cadences, Provenance
-                    CatalogueMain (the catalogue alone, for the validator: `inventory catalogue`)
+                    CatalogueMain (the catalogue alone, for the validator: the report distribution's `bin/catalogue`)
                     Pages (writes them, from CatalogueView and ArchetypeRows): OverviewPage (EstateFigures),
                     HierarchyPage, BlockedPage, DockerfilePage (DockerfileSections), ArchetypeTable, ArchetypeName,
                     ActionPlanPage (ActionPlanView: the validator's output), WorkloadTable, Deployments (a Dockerfile's workloads);
@@ -128,11 +128,10 @@ testdata/contracts/ the normal-form contracts between facts and lineage: real Do
                     the real images they built (python-311, sclorg-c9s-*)
 testdata/corpus/    the fixture bank: real Dockerfiles and images that broke something, each with its expected
                     outcome; facts', the converter's and lineage's corpus tests ratchet on it (its README)
-scripts/            inventory, the image's entry point (`inventory <stage>`); no other scripts: tools are Java
+.github/            workflows: check (every push and pull request: `check` without `verifyUpToDate`), up-to-date
+                    (weekly: `verifyUpToDate`); dependabot.yml for the workflows' actions, pinned by commit
 LICENSE, NOTICE     Apache 2.0 for the project's own code, put in every published jar (a module with its own, as the
                     parser has, ships those instead)
-Containerfile       the image for a pod: every stage's distribution and a jlink'd JRE on UBI 9 minimal;
-                    scripts/inventory is its entry point (`inventory <stage>`)
 docs/               overview.md (the problem and the approach), plans/ (one per phase or slice), upstream/
                     (rewrite-docker issues)
 ```
@@ -149,6 +148,9 @@ Each module's run entry point is its `...Main`; the README lists their settings.
 ./gradlew imageRoundTrip                          # tag image-roundtrip: chosen Dockerfiles built twice (Docker)
 ./gradlew validate                                # tag validate: the validator's counts on a real estate
 ```
+
+GitHub Actions runs `./gradlew check -x verifyUpToDate` on every push and pull request
+(`.github/workflows/check.yml`, its reports kept when it fails) and `verifyUpToDate` weekly (`up-to-date.yml`).
 
 Bulk checks are JUnit tests tagged `roundtrip`, `image-roundtrip` or `validate`, never scripts: `test` and `check`
 leave them out, and each skips with its reason when its input (an estate on disk, Docker) is missing. Their
