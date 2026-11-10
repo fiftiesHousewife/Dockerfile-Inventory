@@ -9,7 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// A page for each row of the summary, listing the Dockerfiles its count counts.
 final class Drilldowns {
 
     private Drilldowns() {

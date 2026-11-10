@@ -36,7 +36,6 @@ record ActionPlanView(Plan plan, List<PlannedAction> actions, List<PlannedFix> f
                            String verdict, List<PlannedContainer> containers, List<PlannedFinding> findings) {
     }
 
-    // unlinked: why no Dockerfile was found, null when one was.
     record PlannedContainer(String name, String image, List<String> dockerfiles, boolean floating,
                             String unlinked) {
     }

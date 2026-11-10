@@ -12,8 +12,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// The action plan from the top down: each check with its counts, a check's fixes, a fix's Dockerfiles; and each
-// repository's actions.
 final class ActionDrilldown {
 
     static final List<String> WORST_FIRST = List.of("REFUSED", "BREAKS", "DRIFT", "INFORMATION");

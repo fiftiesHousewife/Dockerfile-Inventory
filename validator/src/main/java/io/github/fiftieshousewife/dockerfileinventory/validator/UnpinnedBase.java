@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 
 import java.util.List;
 
-// A base by tag alone can change under the image between two builds.
 final class UnpinnedBase implements PlatformCheck {
 
     @Override

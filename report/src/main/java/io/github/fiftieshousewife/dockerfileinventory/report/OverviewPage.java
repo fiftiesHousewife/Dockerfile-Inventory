@@ -21,7 +21,6 @@ final class OverviewPage {
         return body(f, organisations, up, null);
     }
 
-    // lists: where the rows' lists are, relative to this page; null for none.
     static String body(EstateFigures f, List<String> organisations, String up, String lists) {
         return "<div class=\"tiles\">" + tile("Dockerfiles", count(f.dockerfiles()), up + "archetypes.html")
                 + tile("Images", count(f.images()), up + "hierarchy.html")
@@ -74,7 +73,6 @@ final class OverviewPage {
         return lists == null ? null : lists + section + "/";
     }
 
-    // A row's label, linked to the list of the Dockerfiles it counts when there is one; escaped.
     static String labelled(String label, String list) {
         return list == null ? escape(label) : "<a href=\"" + list + Drilldowns.slug(label) + ".html\">"
                 + escape(label) + "</a>";

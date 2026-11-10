@@ -35,7 +35,6 @@ final class Html {
                 + "\" aria-label=\"" + escape(text) + "\">i</span>";
     }
 
-    // An inline bar in one neutral hue: the number beside it carries the value.
     static String meter(double fraction) {
         return "<span class=\"meter\" aria-hidden=\"true\"><span style=\"width:" + percent(fraction)
                 + "\"></span></span>";

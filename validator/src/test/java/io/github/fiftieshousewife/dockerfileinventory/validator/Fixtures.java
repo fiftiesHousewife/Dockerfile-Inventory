@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 import java.nio.file.Path;
 import java.util.List;
 
-// The real facts lines in fixtures/facts.jsonl, found by the start of their blob SHA.
 final class Fixtures {
 
     static final Path FACTS = Path.of("src/test/resources/fixtures/facts.jsonl");

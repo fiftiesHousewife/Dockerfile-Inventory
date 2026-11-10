@@ -57,7 +57,6 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
         return counts;
     }
 
-    // Named things largest first; depths and layer bands keep the order of their scale instead.
     static Map<String, Integer> largestFirst(Map<String, Integer> counts) {
         return counts.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
                         .thenComparing(Map.Entry.comparingByKey()))

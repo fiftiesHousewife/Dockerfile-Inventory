@@ -7,8 +7,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// The Dockerfiles behind each row of the summary, by section and the row's label: what its counts are the sizes of,
-// and what its lists show.
 final class Breakdowns {
 
     static final List<String> FINAL_IMAGE = List.of("Runs as root", "Exposes a port below 1024", "Ships a toolchain");

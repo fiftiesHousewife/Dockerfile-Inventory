@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// A small estate read from facts, for the archetype tests.
 final class Estates {
 
     static final Estate ESTATE = new Estate(List.of(

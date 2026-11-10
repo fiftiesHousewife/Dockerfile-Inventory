@@ -16,7 +16,6 @@ final class Runtimes {
     static final Map<String, String> PLACES = Map.of("final", "shipped", "build", "build only", "inherited",
             "from its base");
 
-    // How a runtime reads in the report: whether it ships, is only for the build, or comes from its base.
     static String label(Found found) {
         return found.runtime() + " (" + PLACES.getOrDefault(found.where(), found.where()) + ")";
     }

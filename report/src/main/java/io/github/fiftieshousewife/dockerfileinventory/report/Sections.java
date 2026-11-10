@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-// Every page's sections fold under their headings, open to begin with; a page is read top to bottom, then skimmed.
 final class Sections {
 
     private static final String HEADING = "<h2>";

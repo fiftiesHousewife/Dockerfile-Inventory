@@ -1,7 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.validator;
 
-// The platform checks in the order of the plan's table (docs/plans/openshift-validator.md), the pod checks
-// (docs/plans/deployment-manifests.md), then the rules' IDs.
 enum Check {
     P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11,
     D1, D2, D3, D4, D5, D6, D7,
