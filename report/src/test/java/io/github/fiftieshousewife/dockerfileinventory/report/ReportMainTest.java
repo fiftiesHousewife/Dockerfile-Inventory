@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,5 +71,13 @@ class ReportMainTest {
                 EstateTest.FIXTURES.toString(), "OUT_DIR", out.toString()));
 
         assertThat(out.resolve("index.html")).exists();
+    }
+
+    @Test
+    void mainReadsItsSettingsFromTheEnvironment() {
+        assumeTrue(System.getenv("OUT_DIR") == null, "OUT_DIR is set");
+
+        assertThatThrownBy(() -> ReportMain.main(new String[0])).isInstanceOf(IllegalStateException.class)
+                .hasMessage("OUT_DIR is not set");
     }
 }

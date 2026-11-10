@@ -1,7 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import io.github.fiftieshousewife.dockerfileinventory.secrets.Secrets;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -57,7 +61,7 @@ final class SecretValue implements Rule {
             return Optional.empty();
         }
         return Optional.of(new Finding(id(), severity(), subject.blobSha(), line,
-                keyword + " " + name + " has a secret-shaped value", Hashes.sha256(literal.get()), List.of()));
+                keyword + " " + name + " has a secret-shaped value", sha256(literal.get()), List.of()));
     }
 
     static Optional<String> literal(Docker.Argument value) {
@@ -78,5 +82,14 @@ final class SecretValue implements Rule {
             text = text.substring(1, text.length() - 1);
         }
         return text.isEmpty() ? Optional.empty() : Optional.of(text);
+    }
+
+    static String sha256(String text) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(text.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("every JVM has SHA-256", e);
+        }
     }
 }

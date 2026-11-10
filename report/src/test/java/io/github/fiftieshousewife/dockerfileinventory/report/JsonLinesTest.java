@@ -1,9 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -33,5 +35,10 @@ class JsonLinesTest {
         assertAll(
                 () -> assertThat(JsonLines.pushed(pushed)).isEqualTo(Instant.parse("2026-01-01T00:00:00Z")),
                 () -> assertThat(JsonLines.pushed(never)).isEqualTo(Instant.MIN));
+    }
+
+    @Test
+    void aFileThatCannotBeReadStopsTheRun(@TempDir Path dir) {
+        assertThatThrownBy(() -> JsonLines.read(dir)).isInstanceOf(UncheckedIOException.class);
     }
 }
