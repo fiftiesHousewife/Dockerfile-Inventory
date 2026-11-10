@@ -3,8 +3,9 @@
 Notes for anyone, human or agent, changing the pipeline. Start with [the overview](docs/overview.md): the problem,
 the approach and why each stage exists. The plan, with its phases and gates, is the
 [delivery plan](https://claude.ai/artifact/N7dHR2cH1nKgAhqkpBJx6R); what is being worked on and what is queued is in
-[BACKLOG.md](BACKLOG.md), which you keep current. The [README](README.md) is for people running the pipeline or
-reading its output: settings, outputs, what the numbers mean. Nothing about the code goes there.
+[BACKLOG.md](BACKLOG.md), which you keep current. The [README](README.md) is a short read for people running the pipeline: what it
+does, a quick start, examples, the commands; the detail (each stage's settings, outputs and what the numbers mean) is
+in [docs/guide/](docs/guide/), one guide per stage, linked from it. Neither holds history or anything about the code.
 
 ## How work proceeds
 
@@ -139,7 +140,8 @@ docs/               overview.md (the problem and the approach), plans/ (one per 
                     (rewrite-docker issues)
 ```
 
-Each module's run entry point is its `...Main`; the README lists their settings.
+Each stage's entry point is its `...Main.run(env)`, run through the `cli` module's `docker-inventory <stage>`; the
+guides in `docs/guide/` list their settings.
 
 ## Build and test
 
@@ -225,7 +227,7 @@ a test in its `tree` tests from the minimal reproduction, the grammar (`src/main
 and a line in the changed file's header saying what changed. The corpus tests name the cases the fix turns.
 
 **A new setting.** Read it in the stage's `...Main` from the environment map, give it a default, refuse a bad value
-naming the variable, list it in the README. Network settings belong in `http`'s `HttpSettings`.
+naming the variable, list it in the stage's guide (`docs/guide/`) and in `cli`'s `Commands`. Network settings belong in `http`'s `HttpSettings`.
 
 **Release a library.** Set its version in `gradle.properties` (`inventory.parserVersion`, `inventory.modelVersion`;
 semantic: a change to the public API is a major version, or a minor one before 1.0), commit, then run
