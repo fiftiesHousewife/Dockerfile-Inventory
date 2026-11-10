@@ -63,7 +63,8 @@ class SurveyMainTest {
         assertAll(
                 () -> assertThat(ran).containsExactly("discovery out/acme-try/discovery", "facts out/acme-try/facts",
                         "catalogue out/acme-try/catalogue", "rules out/acme-try/rules",
-                        "validator out/acme-try/validator", "report out/acme-try/report"),
+                        "validator out/acme-try/validator", "converter out/acme-try/converter",
+                        "report out/acme-try/report"),
                 () -> assertThat(report).isEqualTo(Path.of("out/acme-try/report/index.html")));
     }
 

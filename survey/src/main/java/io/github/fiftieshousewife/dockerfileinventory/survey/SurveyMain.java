@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.survey;
 
+import io.github.fiftieshousewife.dockerfileinventory.converter.ConverterMain;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.Combine;
 import io.github.fiftieshousewife.dockerfileinventory.discovery.DiscoveryMain;
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsMain;
@@ -38,6 +39,7 @@ public final class SurveyMain {
             "catalogue", CatalogueMain::run,
             "rules", RulesMain::run,
             "validator", ValidatorMain::run,
+            "converter", ConverterMain::run,
             "report", ReportMain::run);
 
     record Arguments(List<String> urls, boolean trial) {
@@ -69,6 +71,17 @@ public final class SurveyMain {
         if (exit != 0) {
             System.exit(exit);
         }
+    }
+
+    /**
+     * Runs the survey the arguments name with the given settings.
+     *
+     * @param args {@code [--try] <organisation URL>...}
+     * @param env the settings
+     * @return 0 when the report is written, 1 when a stage failed, 2 when the arguments are wrong
+     */
+    public static int run(List<String> args, Map<String, String> env) {
+        return run(args.toArray(String[]::new), env, RUNNERS, System.err);
     }
 
     static int run(String[] args, Map<String, String> env, Map<String, Runner> runners, PrintStream err) {

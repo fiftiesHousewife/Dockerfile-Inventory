@@ -91,6 +91,8 @@ and one line when its gate is met.
 - Now (`docs/plans/cli.md`, asked 10 Nov, questions answered 10 Nov): the `docker-inventory` CLI, in five slices:
   the command and Java 21; logs (SLF4J, Log4j 2); settings, load presets and required rate limits; a partial scan
   with a confirm step and a ceiling; GitHub Apps beside tokens, per organisation.
+  Slice 1 done 10 Nov: `docker-inventory` with every stage and the survey (the converter added), help, version,
+  exit statuses, near-miss settings; everything on Java 21.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

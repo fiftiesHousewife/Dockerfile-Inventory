@@ -89,6 +89,9 @@ validator/          stage 3c: facts -> each image judged through a platform prof
                     Workload, PodCheck: Privileged (D1) to Unconfined (D6), FloatingImage (D7); PodValidation,
                     WorkloadVerdict; ImageReference, ImageLinks, ContainerLink, ContainerImage (a container's image
                     linked through lineage, P9 answered by the manifest); FloatingBase (P11)
+cli/                the docker-inventory command (`DockerInventory`): Commands (each command and the settings it reads,
+                    required ones checked before it runs), Command, Setting, Help, NearMisses (a setting's typo),
+                    Version (from the build); the `docker-inventory` distribution (`installDist`), tested as installed
 survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`), Survey (the stages in order, each
                     with the folders the earlier ones wrote); every stage's ...Main.run(env)
 tools/              the contributors' tools, not in the image: CorpusCollect (`./gradlew collectCorpus

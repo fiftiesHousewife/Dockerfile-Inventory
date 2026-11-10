@@ -1,9 +1,10 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
- * The converter's job entry point. Settings come from the environment, as the pipeline runs it as a pod:
+ * The converter's entry point. Settings come from the environment:
  * {@code DISCOVERY_DIR}, {@code OUT_DIR}, and optionally {@code OPT_IN} (repositories that get generated classes)
  * and {@code ALLOW_LIST} (approved bases, for the generated TODOs).
  */
@@ -12,12 +13,21 @@ public final class ConverterMain {
     private ConverterMain() {
     }
 
-    /** Arguments are ignored: the job pod passes its settings in the environment. */
+    /** Converts with the environment's settings; arguments are ignored. */
     public static void main(String[] args) {
-        Path out = Path.of(required("OUT_DIR", System.getenv("OUT_DIR")));
-        new ConverterRun(Path.of(required("DISCOVERY_DIR", System.getenv("DISCOVERY_DIR"))),
-                optional(System.getenv("OPT_IN")), optional(System.getenv("ALLOW_LIST")), out,
-                javaRoundTrip(System.getenv("JAVA_ROUND_TRIP"))).run();
+        run(System.getenv());
+    }
+
+    /**
+     * Converts every Dockerfile of {@code DISCOVERY_DIR} into {@code OUT_DIR}.
+     *
+     * @param env the settings
+     */
+    public static void run(Map<String, String> env) {
+        Path out = Path.of(required("OUT_DIR", env.get("OUT_DIR")));
+        new ConverterRun(Path.of(required("DISCOVERY_DIR", env.get("DISCOVERY_DIR"))),
+                optional(env.get("OPT_IN")), optional(env.get("ALLOW_LIST")), out,
+                javaRoundTrip(env.get("JAVA_ROUND_TRIP"))).run();
         System.out.println("Conversions written to " + out);
     }
 

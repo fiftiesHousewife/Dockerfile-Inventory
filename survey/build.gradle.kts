@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":report"))
     implementation(project(":rules"))
     implementation(project(":validator"))
+    implementation(project(":converter"))
 }
 
 application {

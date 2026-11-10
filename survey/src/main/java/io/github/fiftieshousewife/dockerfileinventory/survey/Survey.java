@@ -11,7 +11,8 @@ import java.util.stream.Stream;
 final class Survey {
 
     static final int TRY_REPOSITORIES = 10;
-    static final List<String> AFTER_THE_FACTS = List.of("catalogue", "rules", "validator", "report");
+    static final List<String> AFTER_THE_FACTS = List.of("catalogue", "rules", "validator", "converter",
+            "report");
 
     record Step(String stage, Map<String, String> env) {
 

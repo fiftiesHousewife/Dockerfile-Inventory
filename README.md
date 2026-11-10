@@ -37,14 +37,24 @@ for access):
 ## Survey an organisation
 
 One command runs the whole survey: discovery, the facts, lineage (when `ARTIFACTORY_URL` is set), the catalogue,
-the rules, the OpenShift validator and the report, each stage reading what the one before wrote. Try it first:
+the rules, the OpenShift validator, the converter and the report, each stage reading what the one before wrote. It
+needs Java 21 or newer. Try it first:
 
 ```bash
 export GHE_TOKEN_FILE=~/secrets/ghe-token          # or GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token)
-./gradlew -q :survey:run --args="--try https://github.example.com/acme"   # 10 repositories with a Dockerfile
-./gradlew -q :survey:run --args="https://github.example.com/acme"         # every repository
-./gradlew -q :survey:run --args="https://github.example.com/acme https://github.example.com/beta"  # one estate
+docker-inventory survey --try https://github.example.com/acme      # 10 repositories with a Dockerfile
+docker-inventory survey https://github.example.com/acme            # every repository
+docker-inventory survey https://github.example.com/acme https://github.example.com/beta   # one estate
 ```
+
+`docker-inventory` is the distribution's launcher (`./gradlew :cli:installDist` builds it into
+`cli/build/install/docker-inventory/`; from a checkout, `./gradlew -q :cli:run --args="survey ..."` runs it too).
+`docker-inventory --help` lists the commands: `survey`, and each stage alone (`discovery`, `facts`, `lineage`,
+`catalogue`, `report`, `rules`, `validator`, `converter`); `docker-inventory <command> --help` lists the settings that
+command reads, which are required and their defaults. A setting given with a near-miss name (`GHE_TOKN`) is warned of.
+It exits 0 when done, 1 when a stage fails (its last line says which and why), and 2 on a usage error found before
+anything runs (an unknown command or argument, a required setting left out); what the validator finds never changes
+the exit status.
 
 A try writes to `out/acme-try/`, the full run to `out/acme/`, several organisations to `out/acme+beta/` (`OUT_DIR`
 overrides), one folder per stage; the last

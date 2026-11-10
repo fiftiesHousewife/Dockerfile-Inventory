@@ -143,3 +143,16 @@ What the stages do today:
 - **Logs.** Each stage prints progress lines with `System.out` and errors with `System.err`; no levels, no
   timestamps, nothing machine-readable.
 
+## Built, slice 1 (10 Nov)
+
+Every module is compiled by the JDK 25 toolchain for `--release 21` and tested on Java 21 (`inventory.targetRelease`
+in `inventory.java`, which the libraries' setting became); the three rules with unnamed patterns test with
+`instanceof`. The survey runs the converter before the report (`CONVERTER_DIR` for it), through `ConverterMain.run`.
+The `cli` module: `DockerInventory` dispatches to `Commands.ALL`, checks a stage's arguments (none) and its required
+settings before it runs (2), turns a failure into one line (1), warns of a near-miss setting (`NearMisses`, within two
+edits of a setting sharing its prefix), prints `--help`, `<command> --help` (`Help`) and `--version` (`Version`, the
+build's `inventory.cliVersion` written into the jar). `installDist` makes `bin/docker-inventory`, whose `--version`
+and exit status are tested on the installed distribution. Run by hand on the owner's survey's discovery: `facts`
+reads it as `./gradlew :facts:run` did. Not yet: the stages still print with `System.out` (slice 2); the zip and the
+plain jar's publication belong to the publication plan.
+

@@ -5,8 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class ConverterMainTest {
 
@@ -32,5 +36,19 @@ class ConverterMainTest {
                 () -> assertThat(ConverterMain.javaRoundTrip("false")).isFalse(),
                 () -> assertThatIllegalStateException().isThrownBy(() -> ConverterMain.javaRoundTrip("no"))
                         .withMessageContaining("JAVA_ROUND_TRIP"));
+    }
+
+    @Test
+    void aRunConvertsTheDiscoveryItIsGivenIntoItsOutputFolder(@TempDir Path discovery, @TempDir Path out)
+            throws IOException {
+        Files.createDirectories(discovery.resolve("blobs"));
+        Files.writeString(discovery.resolve("blobs/a"), "FROM ubi9/ubi-minimal:9.4\nUSER 1001\n");
+        Files.writeString(discovery.resolve("manifest.jsonl"), "{\"repository\":\"team/app\",\"path\":\"Dockerfile\","
+                + "\"blobSha\":\"a\"}\n");
+
+        ConverterMain.run(Map.of("DISCOVERY_DIR", discovery.toString(), "OUT_DIR", out.toString(),
+                "JAVA_ROUND_TRIP", "false"));
+
+        assertThat(out.resolve("roundtrip.jsonl")).isNotEmptyFile();
     }
 }
