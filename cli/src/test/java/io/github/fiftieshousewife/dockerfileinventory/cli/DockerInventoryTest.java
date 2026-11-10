@@ -206,4 +206,35 @@ final class DockerInventoryTest {
                 () -> assertThat(err()).contains("discovery: no repository pay/gone",
                         "discovery: stopped before fetching"));
     }
+
+    @Test
+    void aCommandIsFoundByItsName() {
+        assertAll(
+                () -> assertThat(DockerInventory.command("facts", List.of(facts, failing))).contains(facts),
+                () -> assertThat(DockerInventory.command("fact", List.of(facts, failing))).isEmpty());
+    }
+
+    @Test
+    void aStartedCommandsFailureIsItsExitCode() {
+        PrintStream errors = new PrintStream(err, true, StandardCharsets.UTF_8);
+        Command usage = new Command("x", "x", List.of(), env -> {
+            throw new UsageError("bad");
+        });
+
+        assertAll(
+                () -> assertThat(DockerInventory.started(facts, List.of(), Map.of(), errors)).isZero(),
+                () -> assertThat(DockerInventory.started(usage, List.of(), Map.of(), errors)).isEqualTo(2),
+                () -> assertThat(DockerInventory.started(failing, List.of(), Map.of(), errors)).isEqualTo(1));
+    }
+
+    @Test
+    void theKnownSettingsAreEveryCommandsSettings() {
+        assertThat(DockerInventory.known(List.of(facts, failing))).containsExactlyInAnyOrder("DISCOVERY_DIR",
+                "OUT_DIR");
+    }
+
+    @Test
+    void aFailureWithAnEmptyMessageIsNamedByItsType() {
+        assertThat(DockerInventory.firstLine(new IllegalStateException(""))).isEqualTo("IllegalStateException");
+    }
 }

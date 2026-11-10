@@ -6,7 +6,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-// A load fills in each server's rate and concurrency where neither is given; choosing one counts as setting the rate.
 enum Load {
     GENTLE(2, 2, 5, 4),
     NORMAL(10, 8, 20, 16);

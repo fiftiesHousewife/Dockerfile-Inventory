@@ -1,4 +1,5 @@
 package io.github.fiftieshousewife.dockerfileinventory.cli;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -77,5 +78,14 @@ class SettingsFileTest {
                     privateKeyFile: ~/keys/inventory.pem
                 """, "s.yaml")).isEqualTo(Map.of("GHE_APP_ID", "1234", "GHE_APP_PRIVATE_KEY_FILE",
                 "~/keys/inventory.pem"));
+    }
+
+    @Test
+    void aServersKeysAreItsSettingsAndOnlyGitHubHasAGroupAndAnApp() {
+        assertAll(
+                () -> assertThat(SettingsFile.server("GHE", "GHE_API_URL")).containsKeys("urls", "app")
+                        .containsEntry("tokenFile", "GHE_TOKEN_FILE"),
+                () -> assertThat(SettingsFile.server("ARTIFACTORY", "ARTIFACTORY_URL")).doesNotContainKeys("urls", "app")
+                        .containsEntry("concurrency", "ARTIFACTORY_CONCURRENCY"));
     }
 }

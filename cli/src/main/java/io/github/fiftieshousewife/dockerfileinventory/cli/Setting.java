@@ -1,9 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.cli;
 
 import java.util.List;
+import java.util.Map;
 
-// fallback: what the command uses when the setting is left out; requiredWith: a setting that, once set, makes this one
-// required too; requiredUnless: settings that, any one set, stand in for this one, which is required otherwise.
 record Setting(String name, boolean required, String fallback, String requiredWith, List<String> requiredUnless,
                String description) {
 
@@ -25,5 +24,18 @@ record Setting(String name, boolean required, String fallback, String requiredWi
 
     static Setting optional(String name, String fallback, String description) {
         return new Setting(name, false, fallback, null, null, description);
+    }
+
+    boolean requiredIn(Map<String, String> env) {
+        return required || requiredWith != null && !unset(env.get(requiredWith))
+                || requiredUnless != null && requiredUnless.stream().allMatch(other -> unset(env.get(other)));
+    }
+
+    boolean missingFrom(Map<String, String> env) {
+        return requiredIn(env) && unset(env.get(name));
+    }
+
+    static boolean unset(String value) {
+        return value == null || value.isBlank();
     }
 }

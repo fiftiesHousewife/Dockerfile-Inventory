@@ -65,4 +65,11 @@ class PromptTest {
                 .isInstanceOf(UsageError.class)
                 .hasMessage("no terminal to ask on: give --yes to go on without asking");
     }
+
+    @Test
+    void aNumberIsShownWholeOrToOnePlace() {
+        assertAll(
+                () -> assertThat(Prompt.number(2.0)).isEqualTo("2"),
+                () -> assertThat(Prompt.number(2.46)).isEqualTo("2.5"));
+    }
 }

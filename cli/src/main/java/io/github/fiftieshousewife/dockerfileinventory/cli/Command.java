@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.cli;
 import java.util.List;
 import java.util.Map;
 
-// arguments: whether the command takes any beyond --help; a stage takes none, its settings come from the environment.
 record Command(String name, String summary, List<Setting> settings, boolean arguments, Runner runner) {
 
     interface Runner {

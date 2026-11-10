@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-// Read before any logger exists: Log4j reads the system properties these become (log4j2.xml) when it starts.
 record Logging(String level, boolean json, String config) {
 
     static final String LEVEL = "docker-inventory.log.level";

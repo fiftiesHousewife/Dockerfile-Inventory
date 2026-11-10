@@ -12,18 +12,18 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
-// The choices a person makes, in YAML: each key the environment variable it stands for.
 final class SettingsFile {
 
     static final Map<String, Map<String, String>> SECTIONS = Map.of(
             "github", server("GHE", "GHE_API_URL"),
             "artifactory", server("ARTIFACTORY", "ARTIFACTORY_URL"));
     static final Map<String, String> TOP = Map.of("platform", "PROFILE", "out", "OUT_DIR");
+    static final Map<String, String> APP = Map.of("id", "GHE_APP_ID", "privateKeyFile", "GHE_APP_PRIVATE_KEY_FILE");
 
     private SettingsFile() {
     }
 
-    private static Map<String, String> server(String prefix, String url) {
+    static Map<String, String> server(String prefix, String url) {
         Map<String, String> keys = new LinkedHashMap<>();
         keys.put("url", url);
         if (prefix.equals("GHE")) {
@@ -87,8 +87,6 @@ final class SettingsFile {
             }
         });
     }
-
-    static final Map<String, String> APP = Map.of("id", "GHE_APP_ID", "privateKeyFile", "GHE_APP_PRIVATE_KEY_FILE");
 
     static void app(JsonNode values, String key, String source, Map<String, String> env) {
         values.properties().forEach(entry -> {
