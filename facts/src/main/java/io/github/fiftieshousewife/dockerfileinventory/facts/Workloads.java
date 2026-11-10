@@ -13,6 +13,7 @@ import tools.jackson.dataformat.yaml.YAMLMapper;
 final class Workloads {
 
     private static final YAMLMapper YAML = new YAMLMapper();
+    private static final List<String> TEMPLATE_OPENERS = List.of("{{", "{%");
     private static final String TEMPLATE_SPEC = "/spec/template/spec";
     private static final Map<String, String> POD_SPEC_POINTERS = Map.of(
             "Pod", "/spec",
@@ -39,7 +40,7 @@ final class Workloads {
     }
 
     static boolean isTemplate(String text) {
-        return text.contains("{{") || text.contains("{%");
+        return TEMPLATE_OPENERS.stream().anyMatch(text::contains);
     }
 
     static Read documents(String text) {
