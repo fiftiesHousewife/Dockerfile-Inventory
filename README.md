@@ -122,6 +122,21 @@ platform: openshift-4-restricted-v2
 docker-inventory survey --settings acme.yaml
 ```
 
+Read with a GitHub App where it is installed, and a token elsewhere, organisation by organisation (the token can be
+left out once the app is in every organisation):
+
+```yaml
+github:
+  url: https://github.example.com/acme
+  app:
+    id: 123456
+    privateKeyFile: ~/keys/inventory-app.pem   # the key as GitHub gives it
+  tokenFile: ~/secrets/ghe-token
+  load: gentle
+```
+
+Discovery's `credentials.jsonl` records which credential read each organisation, and its log says so as it goes.
+
 To survey a group of organisations as one estate, with one combined report, list them under `github.urls` in place of
 `url`:
 

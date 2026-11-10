@@ -33,6 +33,9 @@ final class SettingsFile {
         keys.put("load", prefix + "_LOAD");
         keys.put("requestsPerSecond", prefix + "_MAX_REQUESTS_PER_SECOND");
         keys.put("concurrency", prefix + "_CONCURRENCY");
+        if (prefix.equals("GHE")) {
+            keys.put("app", null);
+        }
         return keys;
     }
 
@@ -77,7 +80,23 @@ final class SettingsFile {
                 throw new UsageError(source + ": " + key + " is not a setting (" + String.join(", ", keys.keySet()
                         .stream().map(k -> name + "." + k).toList()) + ")");
             }
-            env.put(keys.get(entry.getKey()), value(entry.getValue()));
+            if (entry.getKey().equals("app")) {
+                app(entry.getValue(), key, source, env);
+            } else {
+                env.put(keys.get(entry.getKey()), value(entry.getValue()));
+            }
+        });
+    }
+
+    static final Map<String, String> APP = Map.of("id", "GHE_APP_ID", "privateKeyFile", "GHE_APP_PRIVATE_KEY_FILE");
+
+    static void app(JsonNode values, String key, String source, Map<String, String> env) {
+        values.properties().forEach(entry -> {
+            if (!APP.containsKey(entry.getKey())) {
+                throw new UsageError(source + ": " + key + "." + entry.getKey() + " is not a setting (" + key
+                        + ".id, " + key + ".privateKeyFile)");
+            }
+            env.put(APP.get(entry.getKey()), value(entry.getValue()));
         });
     }
 

@@ -236,3 +236,17 @@ and 14 ms per distinct Dockerfile, measured on the combined estate: facts 11 s, 
 Tried with the installed command: no terminal, 2; a bad ceiling, 2; the settings in `discovery --help`. Not tried
 here: a real first pass and question against GitHub (no token in this session); the owner's run is the test.
 
+## Built, slice 5 (10 Nov)
+
+`http`'s `Credential` (`TokenSource` one); discovery's client takes any. `AppJwt` reads the app's key (PKCS#1 as GitHub
+gives it, wrapped into PKCS#8, or PKCS#8) and signs a JWT backdated a minute, lasting nine; `AppCredential` signs one
+for each call; `AppInstallations` lists the installations (by organisation, any case) and issues an installation's
+token (`POST app/installations/{id}/access_tokens`); `InstallationToken` renews it five minutes before it expires and
+at once after a 401. `OrganisationCredentials` chooses per organisation when it is first read, the app's installation
+or the token, and stops naming an organisation neither reaches; `PerOrganisation` sends each call with its
+organisation's credential, splitting a blob or history batch across organisations; `GitHubAccess` wires it, one client
+per credential on the run's throttle. Discovery logs and writes `credentials.jsonl` (organisation, credential). The
+CLI: `GHE_APP_ID` and `GHE_APP_PRIVATE_KEY_FILE` (required with the ID), `GHE_TOKEN` required unless its file or an
+app; the settings file's `github.app` (`id`, `privateKeyFile`). Not done: the report showing the credentials; not tried
+against a real GitHub App (none in this session).
+

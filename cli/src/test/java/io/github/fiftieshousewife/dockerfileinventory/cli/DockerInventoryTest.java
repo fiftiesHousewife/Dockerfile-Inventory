@@ -174,11 +174,14 @@ final class DockerInventoryTest {
     @Test
     void aSettingRequiredUnlessAnotherIsSetIsAUsageErrorWhenNeitherIs() {
         Command discovery = new Command("discovery", "finds", List.of(Setting.requiredUnless("GHE_TOKEN",
-                "GHE_TOKEN_FILE", "a token"), Setting.optional("GHE_TOKEN_FILE", "a file")), ran::add);
+                List.of("GHE_TOKEN_FILE", "GHE_APP_ID"), "a token"), Setting.optional("GHE_TOKEN_FILE", "a file")),
+                ran::add);
         PrintStream errors = new PrintStream(err, true, StandardCharsets.UTF_8);
 
         assertAll(
                 () -> assertThat(DockerInventory.run(discovery, List.of(), Map.of("GHE_TOKEN_FILE", "/t"), System.out,
+                        errors, List.of())).isZero(),
+                () -> assertThat(DockerInventory.run(discovery, List.of(), Map.of("GHE_APP_ID", "1234"), System.out,
                         errors, List.of())).isZero(),
                 () -> assertThat(DockerInventory.run(discovery, List.of(), Map.of(), System.out, errors, List.of()))
                         .isEqualTo(2),

@@ -102,7 +102,8 @@ public final class DockerInventory {
 
     static boolean required(Setting setting, Map<String, String> env) {
         return setting.required() || setting.requiredWith() != null && !isBlank(env.get(setting.requiredWith()))
-                || setting.requiredUnless() != null && isBlank(env.get(setting.requiredUnless()));
+                || setting.requiredUnless() != null && setting.requiredUnless().stream()
+                .allMatch(other -> isBlank(env.get(other)));
     }
 
     static java.util.Set<String> known(List<Command> commands) {

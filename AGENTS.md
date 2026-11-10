@@ -38,7 +38,7 @@ parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docke
 http/               corporate networks, shared by discovery and lineage: HttpSettings (every setting from the
                     environment, with defaults; the HttpClient), ProxySettings (HTTPS_PROXY, HTTP_PROXY, NO_PROXY),
                     TrustBundle (a corporate CA), RetryPolicy (backoff, rate-limit waits, RateLimitWaitTooLong),
-                    TokenSource (NAME or NAME_FILE, re-read when the file changes), Throttle (a run's
+                    Credential, TokenSource (NAME or NAME_FILE, re-read when the file changes), Throttle (a run's
                     calls a second, slowing with the server), HttpLog (the debug lines)
 discovery/          stage 0: organisations -> repositories -> trees at the released commit -> Dockerfile blobs
                     Discovery (the run), Scans (repositories on virtual threads), RepoScan (one repository),
@@ -46,6 +46,8 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
                     ChangeFetch and GraphQlHistory: each location's last change, in batches of 50
                     GitHub (interface) / GitHubHttp, GitHubRequests (sending, errors), GraphQlRepositories,
                     GraphQlBlobs, RestTrees; GitHubApi (the three URL forms); RateLimit; ReleaseIndex
+                    GitHubAccess: a token, a GitHub App or both (AppJwt, AppCredential, AppInstallations,
+                    InstallationToken, OrganisationCredentials, PerOrganisation: each organisation's own credential)
                     Selection (--repository, --repository-name-contains), FirstPass, Confirmation, RunStopped,
                     SelectionNotFound: the question between the tree walks and the fetches
                     DockerfilePaths: what counts as a Dockerfile (not source, templates, images, grammars, symlinks,

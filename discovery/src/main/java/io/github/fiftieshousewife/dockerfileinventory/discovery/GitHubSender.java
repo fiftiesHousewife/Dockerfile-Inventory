@@ -1,11 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.Credential;
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpLog;
 import io.github.fiftieshousewife.dockerfileinventory.http.RatePacing;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
-import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -22,16 +22,16 @@ final class GitHubSender {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSender.class);
 
     private final HttpClient http;
-    private final TokenSource token;
+    private final Credential token;
     private final RetryPolicy retries;
     private final Sleeper sleeper;
     private final Throttle throttle;
 
-    GitHubSender(HttpClient http, TokenSource token, RetryPolicy retries, Sleeper sleeper) {
+    GitHubSender(HttpClient http, Credential token, RetryPolicy retries, Sleeper sleeper) {
         this(http, token, retries, sleeper, Throttle.NONE);
     }
 
-    GitHubSender(HttpClient http, TokenSource token, RetryPolicy retries, Sleeper sleeper, Throttle throttle) {
+    GitHubSender(HttpClient http, Credential token, RetryPolicy retries, Sleeper sleeper, Throttle throttle) {
         this.http = http;
         this.token = token;
         this.retries = retries;

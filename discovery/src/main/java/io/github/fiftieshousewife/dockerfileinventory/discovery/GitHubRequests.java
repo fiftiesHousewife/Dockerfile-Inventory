@@ -1,9 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.Credential;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
-import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,16 +21,16 @@ final class GitHubRequests {
 
     private final GitHubSender sender;
     private final URI apiBase;
-    private final TokenSource token;
+    private final Credential token;
     private final Duration timeout;
     private final ObjectMapper json = new ObjectMapper();
 
-    GitHubRequests(HttpClient http, URI apiBase, TokenSource token, RetryPolicy retries, Duration timeout,
+    GitHubRequests(HttpClient http, URI apiBase, Credential token, RetryPolicy retries, Duration timeout,
             Sleeper sleeper) {
         this(new GitHubSender(http, token, retries, sleeper, Throttle.NONE), apiBase, token, timeout);
     }
 
-    GitHubRequests(GitHubSender sender, URI apiBase, TokenSource token, Duration timeout) {
+    GitHubRequests(GitHubSender sender, URI apiBase, Credential token, Duration timeout) {
         this.sender = sender;
         this.apiBase = withTrailingSlash(apiBase);
         this.token = token;
@@ -53,6 +53,15 @@ final class GitHubRequests {
             case 404, 409, 422 -> Optional.empty();
             default -> throw failure(response);
         };
+    }
+
+    JsonNode post(String path) {
+        HttpResponse<String> response = sender.send(() -> request(path)
+                .POST(HttpRequest.BodyPublishers.noBody()).build());
+        if (response.statusCode() != 200 && response.statusCode() != 201) {
+            throw failure(response);
+        }
+        return parse(response);
     }
 
     // GraphQL reports errors in a 200 response, beside whatever data it could resolve.

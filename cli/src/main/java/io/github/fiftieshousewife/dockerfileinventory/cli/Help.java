@@ -34,7 +34,7 @@ final class Help {
             return "required with " + setting.requiredWith() + ": ";
         }
         if (setting.requiredUnless() != null) {
-            return "required unless " + setting.requiredUnless() + " is set: ";
+            return "required unless " + String.join(" or ", setting.requiredUnless()) + " is set: ";
         }
         return setting.fallback() == null ? "optional: " : "optional, default " + setting.fallback() + ": ";
     }

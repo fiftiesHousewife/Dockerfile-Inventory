@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.cli;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class HelpTest {
@@ -16,8 +17,8 @@ class HelpTest {
                         .isEqualTo("optional, default 8: "),
                 () -> assertThat(Help.qualifier(Setting.requiredWith("A_RATE", "A_URL", "x")))
                         .isEqualTo("required with A_URL: "),
-                () -> assertThat(Help.qualifier(Setting.requiredUnless("GHE_TOKEN", "GHE_TOKEN_FILE", "x")))
-                        .isEqualTo("required unless GHE_TOKEN_FILE is set: "));
+                () -> assertThat(Help.qualifier(Setting.requiredUnless("GHE_TOKEN", List.of("GHE_TOKEN_FILE",
+                        "GHE_APP_ID"), "x"))).isEqualTo("required unless GHE_TOKEN_FILE or GHE_APP_ID is set: "));
     }
 
     @Test

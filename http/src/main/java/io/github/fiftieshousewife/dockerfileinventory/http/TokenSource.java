@@ -12,7 +12,7 @@ import java.util.Optional;
  * A token from the environment: {@code NAME}, or {@code NAME_FILE} naming a file that is read again whenever it
  * changes, so a token rotated by OpenShift, a Vault agent or a refresher is picked up during a long run. Never shown.
  */
-public final class TokenSource {
+public final class TokenSource implements Credential {
 
     private final String name;
     private final String fixed;
@@ -39,6 +39,7 @@ public final class TokenSource {
         return new TokenSource(name, variable.map(String::strip).orElse(null), file.map(Path::of).orElse(null));
     }
 
+    @Override
     public String token() {
         if (fixed != null) {
             return fixed;
@@ -52,6 +53,7 @@ public final class TokenSource {
     }
 
     /** After a 401: true when the file now holds another token, so the call is worth one more try. */
+    @Override
     public boolean refresh() {
         if (fixed != null) {
             return false;

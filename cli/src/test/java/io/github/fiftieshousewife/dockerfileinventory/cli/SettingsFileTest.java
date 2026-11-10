@@ -34,7 +34,7 @@ class SettingsFileTest {
         assertThatThrownBy(() -> SettingsFile.parse("github:\n  uri: x\n", "s.yaml"))
                 .isInstanceOf(UsageError.class)
                 .hasMessage("s.yaml: github.uri is not a setting (github.url, github.urls, github.tokenFile, "
-                        + "github.load, github.requestsPerSecond, github.concurrency)");
+                        + "github.load, github.requestsPerSecond, github.concurrency, github.app)");
     }
 
     @Test
@@ -66,5 +66,16 @@ class SettingsFileTest {
                     - https://ghe.example.com/beta
                 """, "s.yaml")).isEqualTo(Map.of("SURVEY_URLS",
                 "https://ghe.example.com/acme,https://ghe.example.com/beta"));
+    }
+
+    @Test
+    void aGitHubAppIsItsIdAndTheFileHoldingItsKey() {
+        assertThat(SettingsFile.parse("""
+                github:
+                  app:
+                    id: 1234
+                    privateKeyFile: ~/keys/inventory.pem
+                """, "s.yaml")).isEqualTo(Map.of("GHE_APP_ID", "1234", "GHE_APP_PRIVATE_KEY_FILE",
+                "~/keys/inventory.pem"));
     }
 }

@@ -99,6 +99,8 @@ and one line when its gate is met.
   server, a YAML settings file.
   Slice 4 done 10 Nov: `--repository`, `--repository-name-contains`, a first pass with its summary, likely time
   and question, `--yes`, `--max-dockerfiles`, exit 3.
+  Slice 5 done 10 Nov: GitHub Apps beside tokens, per organisation, recorded in `credentials.jsonl`. Next: the
+  report showing which credential read each organisation; a run with a real GitHub App.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and
