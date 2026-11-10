@@ -100,4 +100,10 @@ class EstateFiguresTest {
 
         assertThat(figures.images()).isEqualTo(1);
     }
+
+    @Test
+    void aTallyOfNamedThingsComesLargestFirstThenByName() {
+        assertThat(EstateFigures.largestFirst(java.util.Map.of("alpine", 211, "full", 860, "micro", 47,
+                "distroless", 211)).keySet()).containsExactly("full", "alpine", "distroless", "micro");
+    }
 }

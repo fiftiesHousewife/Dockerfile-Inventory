@@ -37,4 +37,13 @@ class OverviewPageTest {
         assertThat(OverviewPage.body(FIGURES, List.of(), "../")).contains("href=\"../blocked.html\"")
                 .doesNotContain("href=\"orgs/");
     }
+
+    @Test
+    void theFinalImagesSharesComeLargestFirst() {
+        String shares = OverviewPage.shares(new EstateFigures(10, 0, 10, 0, 1, java.util.Map.of(), java.util.Map.of(),
+                0, 2, 1, 7, java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), 0));
+
+        assertThat(java.util.List.of(shares.indexOf("Ships a toolchain"), shares.indexOf("Runs as root"),
+                shares.indexOf("Exposes a port below 1024"))).isSorted();
+    }
 }

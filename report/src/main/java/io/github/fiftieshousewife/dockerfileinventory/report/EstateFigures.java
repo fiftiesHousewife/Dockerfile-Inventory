@@ -32,12 +32,12 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
                 (int) parsed.stream().filter(e -> "ROOT".equals(e.image().userKind())).count(),
                 (int) parsed.stream().filter(e -> lowPort(e.image().ports())).count(),
                 (int) parsed.stream().filter(e -> toolchain(e.build())).count(),
-                tally(parsed.stream().map(e -> e.footprint().footprint()).toList()),
-                tally(parsed.stream().flatMap(e -> e.build().runtimes().stream()
-                        .map(r -> r.runtime() + " (" + r.where() + ")").distinct()).toList()),
-                tally(parsed.stream().flatMap(e -> e.build().stages().stream()
-                        .flatMap(s -> s.unusual().stream()).distinct()).toList()),
-                unmaintained(parsed, images),
+                largestFirst(tally(parsed.stream().map(e -> e.footprint().footprint()).toList())),
+                largestFirst(tally(parsed.stream().flatMap(e -> e.build().runtimes().stream()
+                        .map(r -> r.runtime() + " (" + r.where() + ")").distinct()).toList())),
+                largestFirst(tally(parsed.stream().flatMap(e -> e.build().stages().stream()
+                        .flatMap(s -> s.unusual().stream()).distinct()).toList())),
+                largestFirst(unmaintained(parsed, images)),
                 (int) images.stream().filter(i -> !i.blockedBy().isEmpty())
                         .map(Hierarchies.BuiltImage::configDigest).distinct().count());
     }
@@ -53,6 +53,13 @@ record EstateFigures(int dockerfiles, int unparsed, int locations, int images, i
             counts.put("in archived repositories only", archived);
         }
         return counts;
+    }
+
+    // Named things largest first; depths and layer bands keep the order of their scale instead.
+    static Map<String, Integer> largestFirst(Map<String, Integer> counts) {
+        return counts.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
     }
 
     static String reasonKind(String reason) {
