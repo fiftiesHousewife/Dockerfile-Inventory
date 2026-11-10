@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.util.Map;
 
-// The validator's checks and the rules by a plain name, as the guides describe them.
 final class CheckNames {
 
     static final Map<String, String> NAMES = Map.ofEntries(

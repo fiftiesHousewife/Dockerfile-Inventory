@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,18 +48,18 @@ class LineageViewTest {
         ImageView view = LineageView.view(json("{\"configDigest\":\"x\",\"chain\":[],\"user\":{}}"),
                 Map.of("x", List.of("x:1")));
 
-        assertThat(view).satisfies(v -> {
-            assertThat(v.chain()).isEmpty();
-            assertThat(v.rootNames()).isEmpty();
-            assertThat(v.user()).isNull();
-        });
+        assertAll(
+                () -> assertThat(view.chain()).isEmpty(),
+                () -> assertThat(view.rootNames()).isEmpty(),
+                () -> assertThat(view.user()).isNull());
     }
 
     @Test
     void userSetByIsTheSettingImageOnlyWhenAnImageSetIt() {
-        assertThat(LineageView.userSetBy(json("{\"kind\":\"Image\",\"configDigest\":\"b\",\"link\":"
-                + "{\"blobShas\":[\"b-df\"]}}"))).isEqualTo(new ImageView.Group("b", List.of("b-df")));
-        assertThat(LineageView.userSetBy(json("{\"kind\":\"Unknown\"}"))).isNull();
+        assertAll(
+                () -> assertThat(LineageView.userSetBy(json("{\"kind\":\"Image\",\"configDigest\":\"b\",\"link\":"
+                        + "{\"blobShas\":[\"b-df\"]}}"))).isEqualTo(new ImageView.Group("b", List.of("b-df"))),
+                () -> assertThat(LineageView.userSetBy(json("{\"kind\":\"Unknown\"}"))).isNull());
     }
 
     @Test

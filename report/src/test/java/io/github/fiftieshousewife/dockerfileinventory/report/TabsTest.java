@@ -26,6 +26,17 @@ class TabsTest {
     }
 
     @Test
+    void theCurrentTabIsMarkedAsTheCurrentPage() {
+        assertThat(Tabs.tab("index.html", "All", true))
+                .isEqualTo("<a href=\"index.html\" class=\"current\" aria-current=\"page\">All</a>");
+    }
+
+    @Test
+    void anotherTabIsAPlainEscapedLink() {
+        assertThat(Tabs.tab("orgs/a.html", "a&b", false)).isEqualTo("<a href=\"orgs/a.html\">a&amp;b</a>");
+    }
+
+    @Test
     void oneOrganisationNeedsNoTabs() {
         assertThat(Tabs.render(List.of("acme"), null, "")).isEmpty();
     }

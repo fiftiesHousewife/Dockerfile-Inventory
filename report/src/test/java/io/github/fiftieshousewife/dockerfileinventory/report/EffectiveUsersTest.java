@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,10 +41,11 @@ class EffectiveUsersTest {
                 {"configDigest":"e","user":{"value":null}}
                 """);
 
-        assertThat(EffectiveUsers.users(dir.resolve("effective.jsonl"))).satisfies(users -> {
-            assertThat(users).containsEntry("d", "1001").containsKey("e");
-            assertThat(users.get("e")).isNull();
-        });
+        Map<String, String> users = EffectiveUsers.users(dir.resolve("effective.jsonl"));
+
+        assertAll(
+                () -> assertThat(users).containsEntry("d", "1001").containsKey("e"),
+                () -> assertThat(users.get("e")).isNull());
     }
 
     @Test
@@ -62,8 +64,9 @@ class EffectiveUsersTest {
     void theNewerOfTwoImagesWinsAndAnUnknownPushLoses() {
         Map<String, Instant> pushed = Map.of("a", JANUARY, "b", JUNE);
 
-        assertThat(EffectiveUsers.newer("a", "b", pushed)).isEqualTo("b");
-        assertThat(EffectiveUsers.newer("b", "a", pushed)).isEqualTo("b");
-        assertThat(EffectiveUsers.newer("x", "a", pushed)).isEqualTo("a");
+        assertAll(
+                () -> assertThat(EffectiveUsers.newer("a", "b", pushed)).isEqualTo("b"),
+                () -> assertThat(EffectiveUsers.newer("b", "a", pushed)).isEqualTo("b"),
+                () -> assertThat(EffectiveUsers.newer("x", "a", pushed)).isEqualTo("a"));
     }
 }

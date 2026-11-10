@@ -47,11 +47,9 @@ final class ChangedAfterCopy implements Rule {
     }
 
     static Optional<Copied> copied(String line, int lineNumber) {
-        String destination = AddSources.of(line).destination();
-        return destination != null && destination.startsWith("/") && !destination.contains("$")
-                ? Optional.of(new Copied(destination, line.split("\\s+", 2)[0].toUpperCase(Locale.ROOT),
-                        lineNumber))
-                : Optional.empty();
+        AddSources read = AddSources.of(line);
+        return read.absoluteDestination() ? Optional.of(new Copied(read.destination(),
+                line.split("\\s+", 2)[0].toUpperCase(Locale.ROOT), lineNumber)) : Optional.empty();
     }
 
     static List<String> messages(String run, List<Copied> copied) {

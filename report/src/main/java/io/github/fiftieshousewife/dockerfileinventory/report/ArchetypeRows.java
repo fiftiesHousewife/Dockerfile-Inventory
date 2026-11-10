@@ -92,10 +92,7 @@ record ArchetypeRows(List<Row> rows, Map<String, Apart> apart, int total, int k8
     }
 
     static Map<String, Integer> counted(List<Location> where, Function<Location, String> key) {
-        return where.stream().collect(Collectors.toMap(key, l -> 1, Integer::sum)).entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
-                        .thenComparing(Map.Entry.comparingByKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
+        return EstateFigures.largestFirst(where.stream().collect(Collectors.toMap(key, l -> 1, Integer::sum)));
     }
 
     static Map<String, Apart> apart(Map<String, List<String>> blobs, Map<String, List<Location>> locations) {

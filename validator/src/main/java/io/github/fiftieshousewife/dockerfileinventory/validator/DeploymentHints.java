@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// What the image declares that OpenShift leaves to the deployment.
 final class DeploymentHints implements PlatformCheck {
 
     @Override

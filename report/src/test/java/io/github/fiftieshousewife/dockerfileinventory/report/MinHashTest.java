@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.math.BigInteger;
 import java.util.Set;
@@ -24,18 +25,20 @@ class MinHashTest {
         Set<String> half = range(50, 150);
         Set<String> most = range(10, 110);
 
-        assertThat(MinHash.jaccard(a, half)).isCloseTo(50.0 / 150, within(1e-9));
-        assertThat(MinHash.jaccard(a, most)).isCloseTo(90.0 / 110, within(1e-9));
-        assertThat(MinHash.estimate(MinHash.signature(a), MinHash.signature(half)))
-                .isCloseTo(MinHash.jaccard(a, half), within(0.1));
-        assertThat(MinHash.estimate(MinHash.signature(a), MinHash.signature(most)))
-                .isCloseTo(MinHash.jaccard(a, most), within(0.1));
+        assertAll(
+                () -> assertThat(MinHash.jaccard(a, half)).isCloseTo(50.0 / 150, within(1e-9)),
+                () -> assertThat(MinHash.jaccard(a, most)).isCloseTo(90.0 / 110, within(1e-9)),
+                () -> assertThat(MinHash.estimate(MinHash.signature(a), MinHash.signature(half)))
+                        .isCloseTo(MinHash.jaccard(a, half), within(0.1)),
+                () -> assertThat(MinHash.estimate(MinHash.signature(a), MinHash.signature(most)))
+                        .isCloseTo(MinHash.jaccard(a, most), within(0.1)));
     }
 
     @Test
     void fnv1aMatchesThePublishedSixtyFourBitVectors() {
-        assertThat(MinHash.fnv1a("")).isEqualTo(0xcbf29ce484222325L);
-        assertThat(MinHash.fnv1a("a")).isEqualTo(0xaf63dc4c8601ec8cL);
+        assertAll(
+                () -> assertThat(MinHash.fnv1a("")).isEqualTo(0xcbf29ce484222325L),
+                () -> assertThat(MinHash.fnv1a("a")).isEqualTo(0xaf63dc4c8601ec8cL));
     }
 
     @Test
@@ -45,9 +48,10 @@ class MinHashTest {
         long x = (1L << 61) - 2;
         long b = 987654321L;
 
-        assertThat(MinHash.mulAddMod(2, 3, 4)).isEqualTo(10);
-        assertThat(MinHash.mulAddMod(a, x, b)).isEqualTo(BigInteger.valueOf(a).multiply(BigInteger.valueOf(x))
-                .add(BigInteger.valueOf(b)).mod(prime).longValueExact());
+        assertAll(
+                () -> assertThat(MinHash.mulAddMod(2, 3, 4)).isEqualTo(10),
+                () -> assertThat(MinHash.mulAddMod(a, x, b)).isEqualTo(BigInteger.valueOf(a)
+                        .multiply(BigInteger.valueOf(x)).add(BigInteger.valueOf(b)).mod(prime).longValueExact()));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Map;
@@ -25,12 +26,11 @@ class RuleRatesTest {
         Map<String, Object> rates = RuleRates.of(List.of(finding("S3", "a"), finding("H1", "c")), LOCATIONS,
                 List.of("S4", "R2"));
 
-        assertThat(rates).satisfies(r -> {
-            assertThat(r.keySet()).containsExactly("skipped", "rules");
-            assertThat(r.get("skipped")).asString().isEqualTo("[R2, S4]");
-            assertThat(r.get("rules")).asString().isEqualTo("{H1={findings=1, files=1, locations=0}, "
-                    + "S3={findings=1, files=1, locations=2}}");
-        });
+        assertAll(
+                () -> assertThat(rates.keySet()).containsExactly("skipped", "rules"),
+                () -> assertThat(rates.get("skipped")).asString().isEqualTo("[R2, S4]"),
+                () -> assertThat(rates.get("rules")).asString().isEqualTo("{H1={findings=1, files=1, locations=0}, "
+                        + "S3={findings=1, files=1, locations=2}}"));
     }
 
     private static Finding finding(String rule, String blob) {

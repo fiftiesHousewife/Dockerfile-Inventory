@@ -70,6 +70,47 @@ class PagesTest {
     }
 
     @Test
+    void withoutAPlanTheSummaryLeadsWithTheEstate() {
+        assertThat(Pages.index(List.of(), List.of(), Optional.empty())).doesNotContain("openshift.html");
+    }
+
+    @Test
+    void theSummarysPlanLinksToTheActionPlanAndItsWorstChecks() {
+        assertThat(Pages.whatToFixFirst(ActionDrilldownTest.VIEW)).contains("<h2>What to fix first</h2>",
+                "href=\"checks/P6.html\"", "<a href=\"openshift.html\">Every check</a>");
+    }
+
+    @Test
+    void theActionPlanIsItsPageThenItsDrilldowns() {
+        assertThat(Pages.actionPlan(ActionDrilldownTest.VIEW, Set.of()).keySet()).startsWith("openshift.html",
+                "checks/S5.html");
+    }
+
+    @Test
+    void eachOrganisationHasItsSummaryAndItsListsUnderItsFolder() {
+        assertThat(Pages.organisationPages(Map.of("acme", List.of(linked("a1", "acme/api", List.of(), List.of())))))
+                .containsKeys("orgs/acme.html", "orgs/acme/lists/depth/0.html");
+    }
+
+    @Test
+    void aDockerfilesPageIsTitledByItsFirstRepositoryAndPath() {
+        assertThat(Pages.dockerfilePage(linked("a1", "acme/api", List.of(), List.of()), Map.of(), List.of()))
+                .contains("<title>acme/api/Dockerfile");
+    }
+
+    @Test
+    void eachDockerfileHasAPageByItsSha() {
+        assertThat(Pages.dockerfilePages(List.of(linked("a1", "acme/api", List.of(), List.of())), Map.of(), Map.of()))
+                .containsOnlyKeys("dockerfiles/a1.html");
+    }
+
+    @Test
+    void anUnparsedDockerfileHasNoProgram() {
+        assertThat(Pages.programs(List.of(linked("a1", "acme/api", List.of(), List.of()),
+                Entries.unparsed("zz", "beta/broken")))).containsOnlyKeys("a1");
+    }
+
+    @Test
     void anArchetypeLinksToTheDockerfilePageOfOneOfItsFiles() {
         assertThat(pages().get("archetypes.html")).contains("href=\"dockerfiles/a1.html\"");
     }

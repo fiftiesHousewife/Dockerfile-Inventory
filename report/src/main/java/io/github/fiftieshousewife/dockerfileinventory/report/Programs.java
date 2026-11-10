@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-// What an image starts: its entrypoint, then its command. An archetype is one recipe; the programs it starts say how
-// many different things that recipe builds.
 final class Programs {
 
     record Split(List<String> same, List<String> other) {

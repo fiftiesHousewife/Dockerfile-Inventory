@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-// One base and tag pinned at several digests across the estate, so the images built on it drift apart.
 final class PinDrift implements CatalogueRule {
 
     // Examples write placeholders such as "sha256..." where a digest goes.

@@ -27,4 +27,13 @@ class AddSourcesTest {
                 () -> assertThat(AddSources.remote("git@github.com:a/b.git")).isTrue(),
                 () -> assertThat(AddSources.remote("http.txt")).isFalse());
     }
+
+    @Test
+    void anAbsoluteDestinationWithoutAVariableIsKnownBeforeTheBuild() {
+        assertAll(
+                () -> assertThat(AddSources.of("COPY a /opt/app/").absoluteDestination()).isTrue(),
+                () -> assertThat(AddSources.of("COPY a app/").absoluteDestination()).isFalse(),
+                () -> assertThat(AddSources.of("COPY a $HOME/").absoluteDestination()).isFalse(),
+                () -> assertThat(AddSources.of("COPY").absoluteDestination()).isFalse());
+    }
 }

@@ -47,10 +47,8 @@ class DrilldownsTest {
     }
 
     @Test
-    void theSummarysRowsLinkToTheirLists() {
-        assertThat(OverviewPage.body(EstateFigures.of(ENTRIES), List.of(), "", "lists/"))
-                .contains("<a href=\"lists/runtime/java-shipped.html\">java (shipped)</a>",
-                        "<a href=\"lists/final-image/runs-as-root.html\">Runs as root</a>");
+    void aDockerfileIsNamedByItsFirstRepositoryAndPath() {
+        assertThat(Drilldowns.firstPlace(ENTRIES.getFirst())).isEqualTo("payments/api Dockerfile");
     }
 
     @Test

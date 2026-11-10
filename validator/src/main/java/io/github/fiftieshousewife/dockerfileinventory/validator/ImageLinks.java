@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import tools.jackson.databind.JsonNode;
 
-// digests: each image's names (path:tag, and repository/path:tag) to its config digest; dockerfiles: each config
-// digest to the Dockerfiles lineage credits with it.
 record ImageLinks(boolean lineage, Map<String, String> digests, Map<String, List<String>> dockerfiles) {
 
     static final ImageLinks NONE = new ImageLinks(false, Map.of(), Map.of());

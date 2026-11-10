@@ -1,6 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.facts.FactsParser;
 import java.io.IOException;
@@ -33,31 +35,28 @@ class DiscoveryFilesTest {
 
     @Test
     void subjectsParseEachBlobOnceKeyedByItsSha() {
-        assertThat(new DiscoveryFiles(dir).subjects()).satisfiesExactly(
-                a -> assertThat(a).satisfies(s -> {
-                    assertThat(s.blobSha()).isEqualTo("a");
-                    assertThat(s.isParsed()).isFalse();
-                }),
-                b -> assertThat(b).satisfies(s -> {
-                    assertThat(s.blobSha()).isEqualTo("b");
-                    assertThat(s.isParsed()).isTrue();
-                }));
+        assertThat(new DiscoveryFiles(dir).subjects()).extracting(Subject::blobSha, Subject::isParsed)
+                .containsExactly(tuple("a", false), tuple("b", true));
     }
 
     @Test
     void subjectCarriesTheFactsOfAParsedFileOrTheParsersMessage() {
         FactsParser parser = new FactsParser();
 
-        assertThat(DiscoveryFiles.subject(parser, "x", "FROM ubi9:9.4\n").facts().base().tag()).isEqualTo("9.4");
-        assertThat(DiscoveryFiles.subject(parser, "x", "not a dockerfile\n").failure()).startsWith("Syntax error");
+        assertAll(
+                () -> assertThat(DiscoveryFiles.subject(parser, "x", "FROM ubi9:9.4\n").facts().base().tag())
+                        .isEqualTo("9.4"),
+                () -> assertThat(DiscoveryFiles.subject(parser, "x", "not a dockerfile\n").failure())
+                        .startsWith("Syntax error"));
     }
 
     @Test
     void textIsABlobsContentOrNullWhenItWasNotFetched() {
         DiscoveryFiles files = new DiscoveryFiles(dir);
 
-        assertThat(files.text("b")).isEqualTo("FROM ubi9\n");
-        assertThat(files.text("missing")).isNull();
+        assertAll(
+                () -> assertThat(files.text("b")).isEqualTo("FROM ubi9\n"),
+                () -> assertThat(files.text("missing")).isNull());
     }
 
     @Test

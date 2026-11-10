@@ -11,10 +11,9 @@ final class BaseLags {
     record BaseLag(String base, String tag, String newestTag) {
     }
 
-    // Digit runs compared as numbers of any length: the shorter, leading zeros aside, is the smaller.
-    private static final Comparator<String> NUMBER = Comparator.comparingInt(String::length)
+    private static final Comparator<String> AS_NUMBER = Comparator.comparingInt(String::length)
             .thenComparing(Comparator.naturalOrder());
-    private static final Comparator<String> BY_NUMBERS = (a, b) -> Arrays.compare(numbers(a), numbers(b), NUMBER);
+    private static final Comparator<String> BY_NUMBERS = (a, b) -> Arrays.compare(numbers(a), numbers(b), AS_NUMBER);
 
     private final Map<String, List<String>> tagsByImage;
 

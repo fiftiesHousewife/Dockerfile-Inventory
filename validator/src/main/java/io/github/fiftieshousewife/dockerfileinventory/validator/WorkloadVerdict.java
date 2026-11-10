@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-// findings: the pod's, then those of each linked container's images.
 record WorkloadVerdict(String blobSha, String kind, String name, String namespace, List<Location> locations,
                        Verdict verdict, List<ContainerLink> containers, List<Finding> findings) {
 

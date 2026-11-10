@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
-import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
 import io.github.fiftieshousewife.dockerfile.parser.tree.Docker;
 
@@ -28,14 +27,13 @@ class LinesTest {
         Lines lines = Lines.of(subject.file());
         List<Docker.Stage> stages = subject.file().getStages();
 
-        SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(lines.of(subject.file().getGlobalArgs().getFirst())).isEqualTo(2);
-            softly.assertThat(lines.of(stages.get(0).getFrom())).isEqualTo(4);
-            softly.assertThat(lines.of(stages.get(0).getInstructions().get(0))).isEqualTo(6);
-            softly.assertThat(lines.of(stages.get(0).getInstructions().get(1))).isEqualTo(8);
-            softly.assertThat(lines.of(stages.get(1).getFrom())).isEqualTo(10);
-            softly.assertThat(lines.of(stages.get(1).getInstructions().get(0))).isEqualTo(11);
-        });
+        assertAll(
+                () -> assertThat(lines.of(subject.file().getGlobalArgs().getFirst())).isEqualTo(2),
+                () -> assertThat(lines.of(stages.get(0).getFrom())).isEqualTo(4),
+                () -> assertThat(lines.of(stages.get(0).getInstructions().get(0))).isEqualTo(6),
+                () -> assertThat(lines.of(stages.get(0).getInstructions().get(1))).isEqualTo(8),
+                () -> assertThat(lines.of(stages.get(1).getFrom())).isEqualTo(10),
+                () -> assertThat(lines.of(stages.get(1).getInstructions().get(0))).isEqualTo(11));
     }
 
     @Test

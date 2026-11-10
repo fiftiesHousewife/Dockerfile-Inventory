@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 
-// One self-contained page: its own styles, relative links, no script.
 final class Page {
 
     private Page() {

@@ -23,12 +23,11 @@ final class ArchetypeTable {
     static String render(List<Row> rows, int from, int to, Set<String> pages, Map<String, String> programs,
                          String up) {
         int largest = rows.stream().mapToInt(Row::locations).max().orElse(1);
-        return "<div class=\"scroll\"><table><tr><th class=\"num\">Rank</th><th>Archetype</th>"
-                + "<th class=\"num\">Locations</th><th></th><th class=\"num\">Files</th><th>Organisations</th>"
-                + "<th>Largest repository</th><th class=\"num\">Programs</th></tr>"
-                + rows.subList(Math.min(from, rows.size()), Math.min(to, rows.size())).stream()
-                .map(r -> row(r, largest, pages, programs, up)).collect(Collectors.joining())
-                + "</table></div>";
+        return Html.scrollTable("<th class=\"num\">Rank</th><th>Archetype</th><th class=\"num\">Locations</th>"
+                + "<th></th><th class=\"num\">Files</th><th>Organisations</th><th>Largest repository</th>"
+                + "<th class=\"num\">Programs</th>", rows.subList(Math.min(from, rows.size()),
+                        Math.min(to, rows.size())).stream()
+                .map(r -> row(r, largest, pages, programs, up)).collect(Collectors.joining()));
     }
 
     static String row(Row row, int largest, Set<String> pages, Map<String, String> programs, String up) {
@@ -42,17 +41,14 @@ final class ArchetypeTable {
 
     static String name(Row row, Set<String> pages, String up) {
         return row.blobShas().stream().filter(pages::contains).findFirst()
-                .map(sha -> "<a href=\"" + up + "dockerfiles/" + escape(sha) + ".html\">" + escape(row.name()) + "</a>")
+                .map(sha -> Html.dockerfileLink(up, sha, row.name()))
                 .orElseGet(() -> escape(row.name()) + "<br><span class=\"note\">"
                         + escape(row.where().getFirst().repository() + ": " + row.where().getFirst().path())
                         + "</span>");
     }
 
     static String chips(Map<String, Integer> organisations) {
-        return organisations.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
-                        .thenComparing(Map.Entry.comparingByKey()))
-                .limit(CHIPS)
+        return EstateFigures.largestFirst(organisations).entrySet().stream().limit(CHIPS)
                 .map(e -> "<span class=\"chip\">" + escape(e.getKey()) + " " + count(e.getValue()) + "</span>")
                 .collect(Collectors.joining(" "))
                 + (organisations.size() > CHIPS ? " and " + (organisations.size() - CHIPS) + " more" : "");

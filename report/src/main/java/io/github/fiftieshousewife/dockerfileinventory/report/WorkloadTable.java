@@ -5,7 +5,6 @@ import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,11 +24,10 @@ final class WorkloadTable {
             return "";
         }
         int hidden = workloads.size() - ActionPlanPage.SHOWN;
-        return "<h2>Workloads, worst first</h2><div class=\"scroll\"><table><tr><th>Verdict</th><th>Workload</th>"
-                + "<th>File</th><th>Containers</th><th>Findings</th></tr>"
-                + workloads.stream().sorted(ORDER).limit(ActionPlanPage.SHOWN).map(w -> row(w, catalogued))
-                .collect(Collectors.joining())
-                + "</table></div>" + (hidden > 0 ? "<p>and " + count(hidden)
+        return "<h2>Workloads, worst first</h2>" + Html.scrollTable("<th>Verdict</th><th>Workload</th><th>File</th>"
+                + "<th>Containers</th><th>Findings</th>", workloads.stream().sorted(ORDER).limit(ActionPlanPage.SHOWN)
+                .map(w -> row(w, catalogued)).collect(Collectors.joining()))
+                + (hidden > 0 ? "<p>and " + count(hidden)
                 + " more in the validator's workload-verdicts.jsonl.</p>" : "");
     }
 
@@ -41,7 +39,7 @@ final class WorkloadTable {
 
     static String described(ActionPlanView.PlannedWorkload workload) {
         String file = workload.locations().stream().findFirst().map(w -> w.repository() + " " + w.path()).orElse("");
-        return "<tr><td>" + escape(workload.verdict().toLowerCase(Locale.ROOT)) + "</td><td>"
+        return "<tr><td>" + Html.lowerCase(workload.verdict()) + "</td><td>"
                 + escape(workload.kind() + " " + workload.name()
                 + (workload.namespace() == null ? "" : " (" + workload.namespace() + ")"))
                 + "</td><td>" + escape(file) + "</td>";
@@ -61,8 +59,6 @@ final class WorkloadTable {
     }
 
     static String dockerfile(String sha, Set<String> catalogued) {
-        String shown = escape(sha.substring(0, Math.min(8, sha.length())));
-        return catalogued.contains(sha) ? "<a href=\"dockerfiles/" + escape(sha) + ".html\">" + shown + "</a>"
-                : shown;
+        return Html.dockerfileLink("", sha, sha.substring(0, Math.min(8, sha.length())), catalogued);
     }
 }

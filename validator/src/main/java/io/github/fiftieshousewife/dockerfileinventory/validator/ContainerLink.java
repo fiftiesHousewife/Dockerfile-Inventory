@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.validator;
 
 import java.util.List;
 
-// unlinked: why no Dockerfile was found, null when one was.
 record ContainerLink(String name, String image, List<String> dockerfiles, boolean floating, String unlinked) {
 
     ContainerLink {

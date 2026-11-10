@@ -5,7 +5,6 @@ import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -64,20 +63,15 @@ final class ActionPlanPage {
     }
 
     static String repositories(Map<String, Integer> repositories, Set<String> withPages) {
-        return "<h2>By repository</h2><div class=\"scroll\"><table><tr><th>Repository</th><th class=\"num\">Actions"
-                + "</th></tr>" + repositories.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
-                        .thenComparing(Map.Entry.comparingByKey()))
-                .map(e -> "<tr><td>" + (withPages.contains(e.getKey()) ? "<a href=\""
-                        + ActionDrilldown.repositoryPath(e.getKey()) + "\">" + escape(e.getKey()) + "</a>"
-                        : escape(e.getKey())) + "</td><td class=\"num\">" + count(e.getValue())
-                        + "</td></tr>")
-                .collect(Collectors.joining()) + "</table></div>";
+        return "<h2>By repository</h2>" + Html.scrollTable("<th>Repository</th><th class=\"num\">Actions</th>",
+                EstateFigures.largestFirst(repositories).entrySet().stream()
+                        .map(e -> "<tr><td>" + repository(e.getKey(), withPages) + "</td><td class=\"num\">"
+                                + count(e.getValue()) + "</td></tr>")
+                        .collect(Collectors.joining()));
     }
 
-    static String dockerfile(String sha, ActionPlanView.Where place, Set<String> catalogued) {
-        String name = place == null ? sha : place.repository() + " " + place.path();
-        return catalogued.contains(sha) ? "<a href=\"dockerfiles/" + escape(sha) + ".html\">" + escape(name) + "</a>"
-                : escape(name);
+    static String repository(String repository, Set<String> withPages) {
+        return withPages.contains(repository) ? "<a href=\"" + RepositoryPage.path(repository) + "\">"
+                + escape(repository) + "</a>" : escape(repository);
     }
 }

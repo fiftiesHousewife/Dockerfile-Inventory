@@ -53,18 +53,19 @@ final class ValidatorRun {
         List<Judged> judged = images.stream()
                 .map(image -> new Judged(image.blobSha(), Validation.findings(image, profile))).toList();
         Optional<List<WorkloadVerdict>> workloads = workloads(subjects);
-        List<WorkloadVerdict> judgedWorkloads = workloads.orElse(List.of());
         Map<String, Verdict> verdicts = verdicts(judged);
         Map<String, List<Location>> locations = withWorkloads(locations(discoveryDir.resolve("manifest.jsonl")),
-                judgedWorkloads);
-        List<Action> actions = Actions.of(findings(judged, judgedWorkloads), locations);
+                workloads.orElse(List.of()));
+        List<Action> actions = Actions.of(findings(judged, workloads.orElse(List.of())), locations);
         List<Fix> fixes = Fixes.of(actions, catalogue(), subjects, locations);
         write("actions.jsonl", lines(actions));
         write("fixes.jsonl", lines(fixes));
         write("verdicts.jsonl", lines(verdicts.entrySet().stream()
                 .map(e -> new ImageVerdict(e.getKey(), e.getValue())).toList()));
-        Map<String, Object> summary = ActionPlan.summary(profile, verdicts, all.size() - images.size(), actions,
-                fixes.size());
+        writePlan(ActionPlan.summary(profile, verdicts, all.size() - images.size(), actions, fixes.size()), workloads);
+    }
+
+    void writePlan(Map<String, Object> summary, Optional<List<WorkloadVerdict>> workloads) {
         workloads.ifPresent(list -> {
             write("workload-verdicts.jsonl", lines(list));
             summary.putAll(WorkloadVerdict.summary(list));

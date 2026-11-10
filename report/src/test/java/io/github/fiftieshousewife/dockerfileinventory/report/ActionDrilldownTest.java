@@ -57,18 +57,56 @@ class ActionDrilldownTest {
     }
 
     @Test
-    void eachRepositoryHasAPageOfItsActions() {
-        Map<String, String> pages = ActionDrilldown.pages(VIEW, Set.of());
-
-        assertAll(
-                () -> assertThat(pages).containsKeys("repositories/team-api.html", "repositories/team-web.html"),
-                () -> assertThat(pages.get("repositories/team-web.html")).contains("P6", "b/Dockerfile",
-                        "c/Dockerfile").doesNotContain("S5"));
+    void thePagesIncludeEachRepositorysPage() {
+        assertThat(ActionDrilldown.pages(VIEW, Set.of())).containsKeys("repositories/team-api.html",
+                "repositories/team-web.html");
     }
 
     @Test
-    void everyCheckHasAPlainName() {
-        assertThat(List.of("P1", "P6", "P11", "D7", "S5", "R3", "H9", "I2"))
-                .allMatch(check -> !CheckNames.of(check).equals(check));
+    void theWorstSeverityOfAChecksActionsIsItsSeverity() {
+        assertThat(ActionDrilldown.worst(VIEW.actions())).isEqualTo("BREAKS");
+    }
+
+    @Test
+    void aCheckWithoutActionsCountsAsInformation() {
+        assertThat(ActionDrilldown.worst(List.of())).isEqualTo("INFORMATION");
+    }
+
+    @Test
+    void aChecksRowCountsItsDistinctDockerfilesItsFixesAndTheirLocations() {
+        assertThat(ActionDrilldown.checkRow("P6", VIEW.actions().subList(1, 4), VIEW.fixes().subList(1, 3)))
+                .isEqualTo(new ActionDrilldown.CheckRow("P6", "BREAKS",
+                        "Shell-form start: the process never receives SIGTERM", 3, 2, 4));
+    }
+
+    @Test
+    void aCheckLinksToItsPage() {
+        assertThat(ActionDrilldown.checkLink("../", "P6")).isEqualTo("<a href=\"../checks/P6.html\">P6</a>");
+    }
+
+    @Test
+    void aFixReachesItsCopiesAndTheDockerfilesBuiltOnThem() {
+        assertThat(ActionDrilldown.reached(VIEW.fixes().get(1))).isEqualTo(3);
+    }
+
+    @Test
+    void aFixReachingSeveralDockerfilesLinksToItsPage() {
+        assertThat(ActionDrilldown.reach(VIEW.fixes().get(1))).isEqualTo("<a href=\"../fixes/P6-a.html\">3</a>");
+    }
+
+    @Test
+    void aFixReachingOneDockerfileIsJustItsCount() {
+        assertThat(ActionDrilldown.reach(VIEW.fixes().getFirst())).isEqualTo("1");
+    }
+
+    @Test
+    void aCataloguedDockerfileLinksUpToItsPageByItsFirstPlace() {
+        assertThat(ActionDrilldown.dockerfile("aaa", Map.of("aaa", new ActionPlanView.Where("team/api", "Dockerfile")),
+                Set.of("aaa"))).isEqualTo("<a href=\"../dockerfiles/aaa.html\">team/api Dockerfile</a>");
+    }
+
+    @Test
+    void aDockerfileWithoutAPlaceOrPageIsNamedByItsSha() {
+        assertThat(ActionDrilldown.dockerfile("aaa", Map.of(), Set.of())).isEqualTo("aaa");
     }
 }

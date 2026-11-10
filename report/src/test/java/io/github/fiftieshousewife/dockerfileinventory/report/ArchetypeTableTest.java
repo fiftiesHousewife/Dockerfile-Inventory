@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.Map;
 import java.util.Set;
@@ -42,10 +43,11 @@ class ArchetypeTableTest {
 
     @Test
     void whatLeftTheRankingIsOneNote() {
-        assertThat(ArchetypeTable.apart(ROWS.apart())).isEqualTo("<p class=\"note\">Not ranked: "
-                + "bundle (scratch, metadata only): 4 locations in 1 file; template, not a Dockerfile: 1 location in "
-                + "1 file; base set by a variable: 1 location in 1 file.</p>");
-        assertThat(ArchetypeTable.apart(Map.of())).isEmpty();
+        assertAll(
+                () -> assertThat(ArchetypeTable.apart(ROWS.apart())).isEqualTo("<p class=\"note\">Not ranked: "
+                        + "bundle (scratch, metadata only): 4 locations in 1 file; template, not a Dockerfile: "
+                        + "1 location in 1 file; base set by a variable: 1 location in 1 file.</p>"),
+                () -> assertThat(ArchetypeTable.apart(Map.of())).isEmpty());
     }
 
     @Test

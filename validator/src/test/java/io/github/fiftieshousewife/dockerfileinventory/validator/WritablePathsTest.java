@@ -72,6 +72,24 @@ class WritablePathsTest {
     }
 
     @Test
+    void aChmodGivingTheGroupWriteGroupWritesAndAChownDoesNot() {
+        assertAll(
+                () -> assertThat(WritablePaths.groupWrites(new Subject.Permission("chmod", "g+w", List.of("/a"),
+                        false))).isTrue(),
+                () -> assertThat(WritablePaths.groupWrites(new Subject.Permission("chown", "g+w", List.of("/a"),
+                        false))).isFalse());
+    }
+
+    @Test
+    void aCopyGroupWritesOnlyWithAGroupWritableChmod() {
+        assertAll(
+                () -> assertThat(WritablePaths.groupWrites(new Subject.Copy("COPY", List.of("a"), "/a", null, null,
+                        "775"))).isTrue(),
+                () -> assertThat(WritablePaths.groupWrites(new Subject.Copy("COPY", List.of("a"), "/a", null, null,
+                        null))).isFalse());
+    }
+
+    @Test
     void aDockerfileMakesPathsGroupWritableByFixPermissionsOrAGroupWritableChmod() {
         assertAll(
                 () -> assertThat(WritablePaths.makesGroupWritable(subject("141f718e"))).isTrue(),

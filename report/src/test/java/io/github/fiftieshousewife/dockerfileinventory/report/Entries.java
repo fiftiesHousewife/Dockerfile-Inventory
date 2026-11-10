@@ -3,7 +3,6 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import java.util.List;
 import java.util.Map;
 
-// Catalogue entries for the page tests, with only what a test sets.
 final class Entries {
 
     private Entries() {

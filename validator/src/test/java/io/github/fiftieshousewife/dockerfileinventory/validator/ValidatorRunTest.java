@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.JsonNode;
@@ -242,5 +244,23 @@ class ValidatorRunTest {
 
         assertThat(ValidatorRun.byBlob(List.of(first, new Subject("a", null, null, List.of(), List.of()))))
                 .containsExactly(Map.entry("a", first));
+    }
+
+    @Test
+    void thePlanWithoutWorkloadsIsTheSummaryAlone() {
+        new ValidatorRun(FIXTURES, FIXTURES, null, null, null, Fixtures.V2, out)
+                .writePlan(new LinkedHashMap<>(Map.of("images", 1)), Optional.empty());
+
+        assertThat(JSON.readTree(out.resolve("action-plan.json").toFile()).toString()).isEqualTo("{\"images\":1}");
+    }
+
+    @Test
+    void thePlanWithWorkloadsWritesThemAndCountsThem() {
+        new ValidatorRun(FIXTURES, FIXTURES, null, null, null, Fixtures.V2, out)
+                .writePlan(new LinkedHashMap<>(), Optional.of(List.of()));
+
+        assertAll(
+                () -> assertThat(out.resolve("workload-verdicts.jsonl")).isEmptyFile(),
+                () -> assertThat(JSON.readTree(out.resolve("action-plan.json").toFile()).has("workloads")).isTrue());
     }
 }

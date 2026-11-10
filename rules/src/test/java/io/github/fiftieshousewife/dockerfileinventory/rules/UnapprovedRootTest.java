@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -22,11 +23,12 @@ class UnapprovedRootTest {
         ImageView onUbi = new ImageView("app", "1001", APP, List.of(APP, BASE, UBI), List.of("ubi9/ubi-minimal:9.4"));
         ImageView onAlpine = new ImageView("app", "1001", APP, List.of(APP, BASE, UBI), List.of("alpine:3.20"));
 
-        assertThat(s1.check(onUbi, b -> null)).isEmpty();
-        assertThat(s1.check(onAlpine, b -> null)).singleElement().satisfies(f -> {
-            assertThat(f.message()).contains("alpine:3.20");
-            assertThat(f.contributing()).containsExactly("base-df");
-        });
+        assertAll(
+                () -> assertThat(s1.check(onUbi, b -> null)).isEmpty(),
+                () -> assertThat(s1.check(onAlpine, b -> null)).singleElement()
+                        .extracting(Finding::message).asString().contains("alpine:3.20"),
+                () -> assertThat(s1.check(onAlpine, b -> null)).singleElement()
+                        .extracting(Finding::contributing).isEqualTo(List.of("base-df")));
     }
 
     @Test
@@ -36,8 +38,9 @@ class UnapprovedRootTest {
 
     @Test
     void builtOnRootIsTheDockerfilesOfTheImageJustAboveTheRoot() {
-        assertThat(UnapprovedRoot.builtOnRoot(List.of(APP, BASE, UBI))).containsExactly("base-df");
-        assertThat(UnapprovedRoot.builtOnRoot(List.of(UBI))).isEmpty();
+        assertAll(
+                () -> assertThat(UnapprovedRoot.builtOnRoot(List.of(APP, BASE, UBI))).containsExactly("base-df"),
+                () -> assertThat(UnapprovedRoot.builtOnRoot(List.of(UBI))).isEmpty());
     }
 
     @ParameterizedTest

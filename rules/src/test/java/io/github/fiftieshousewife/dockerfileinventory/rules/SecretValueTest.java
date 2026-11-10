@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.secrets.Secrets;
 import java.util.List;
@@ -13,19 +14,18 @@ class SecretValueTest {
 
     @Test
     void s2ReportsASecretNamedEnvOrArgWithALiteralValueByLineAndHashOnly() {
-        assertThat(new SecretValue().check(Subjects.of("""
+        List<Finding> findings = new SecretValue().check(Subjects.of("""
                 FROM ubi9
                 ENV DB_PASSWORD=hunter2
                 ARG API_TOKEN=abc
                 ENV PASSWORD_FILE=$SECRETS/db SECRET_KEY=
                 ARG TOKEN
-                """))).satisfiesExactly(
-                        f -> {
-                            assertThat(f.line()).isEqualTo(2);
-                            assertThat(f.message()).contains("DB_PASSWORD").doesNotContain("hunter2");
-                            assertThat(f.valueHash()).isEqualTo(Hashes.sha256("hunter2"));
-                        },
-                        f -> assertThat(f.line()).isEqualTo(3));
+                """));
+
+        assertAll(
+                () -> assertThat(findings).extracting(Finding::line).containsExactly(2, 3),
+                () -> assertThat(findings.getFirst().message()).contains("DB_PASSWORD").doesNotContain("hunter2"),
+                () -> assertThat(findings.getFirst().valueHash()).isEqualTo(SecretValue.sha256("hunter2")));
     }
 
     @Test
@@ -34,7 +34,7 @@ class SecretValueTest {
                 FROM ubi9
                 ENV NSS_WRAPPER_PASSWD="/opt/app/nss_passwd" CREDENTIAL_FILE=/run/creds.json
                 ENV DB_PASSWORD="/not a path"
-                """))).singleElement().satisfies(f -> assertThat(f.message()).contains("DB_PASSWORD"));
+                """))).singleElement().extracting(Finding::message).asString().contains("DB_PASSWORD");
     }
 
     @Test
@@ -76,20 +76,22 @@ class SecretValueTest {
         Subject subject = Subjects.of("FROM ubi9\nENV A_TOKEN=abc B_PASSWORD=def\nUSER 1001\n");
         List<Docker.Instruction> instructions = subject.file().getStages().getFirst().getInstructions();
 
-        assertThat(new SecretValue().findings(subject, 2, instructions.get(0)))
-                .extracting(Finding::message)
-                .containsExactly("ENV A_TOKEN has a secret-shaped value", "ENV B_PASSWORD has a secret-shaped value");
-        assertThat(new SecretValue().findings(subject, 3, instructions.get(1))).isEmpty();
+        assertAll(
+                () -> assertThat(new SecretValue().findings(subject, 2, instructions.get(0)))
+                        .extracting(Finding::message).containsExactly("ENV A_TOKEN has a secret-shaped value",
+                                "ENV B_PASSWORD has a secret-shaped value"),
+                () -> assertThat(new SecretValue().findings(subject, 3, instructions.get(1))).isEmpty());
     }
 
     @Test
     void checkKeepsTheLineAndTheHashOfASecretValue() {
         Subject subject = Subjects.of("FROM ubi9\nARG API_TOKEN=abc\n");
 
-        assertThat(new SecretValue().check(subject, 2, "ARG", "API_TOKEN", argValue(subject))).hasValueSatisfying(
-                f -> assertThat(f).isEqualTo(new Finding("S2", Severity.CRITICAL, "blob", 2,
-                        "ARG API_TOKEN has a secret-shaped value", Hashes.sha256("abc"), List.of())));
-        assertThat(new SecretValue().check(subject, 2, "ARG", "GREETING", argValue(subject))).isEmpty();
+        assertAll(
+                () -> assertThat(new SecretValue().check(subject, 2, "ARG", "API_TOKEN", argValue(subject)))
+                        .hasValue(new Finding("S2", Severity.CRITICAL, "blob", 2,
+                                "ARG API_TOKEN has a secret-shaped value", SecretValue.sha256("abc"), List.of())),
+                () -> assertThat(new SecretValue().check(subject, 2, "ARG", "GREETING", argValue(subject))).isEmpty());
     }
 
     @ParameterizedTest
@@ -115,5 +117,11 @@ class SecretValueTest {
 
     private static Docker.Argument argValue(Subject subject) {
         return ((Docker.Arg) subject.file().getStages().getFirst().getInstructions().getFirst()).getValue();
+    }
+
+    @Test
+    void sha256IsTheLowerCaseHexDigestOfTheUtf8Text() {
+        assertThat(SecretValue.sha256("abc"))
+                .isEqualTo("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     }
 }

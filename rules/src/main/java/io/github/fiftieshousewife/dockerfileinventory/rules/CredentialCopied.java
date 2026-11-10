@@ -7,10 +7,9 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 import org.openrewrite.Cursor;
 
-// Judged by the file's name only: nothing is read from it. .npmrc and .yarnrc.yml are left out: they mostly hold
-// settings, and a token only sometimes.
 final class CredentialCopied implements Rule {
 
+    // .npmrc and .yarnrc.yml are left out: they mostly hold settings, and a token only sometimes.
     private static final Pattern CREDENTIAL = Pattern.compile("id_(rsa|dsa|ecdsa|ed25519)|.*\\.(key|p12|pfx|jks"
             + "|keystore)|\\.netrc|\\.git-credentials|\\.pgpass|\\.pypirc|kubeconfig"
             + "|\\.dockercfg", Pattern.CASE_INSENSITIVE);

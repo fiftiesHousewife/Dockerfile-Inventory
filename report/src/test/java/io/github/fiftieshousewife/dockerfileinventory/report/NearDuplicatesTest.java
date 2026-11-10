@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import java.util.Set;
@@ -28,12 +29,14 @@ class NearDuplicatesTest {
         Group b = group("b", 7, packages(1, 10));
         Group c = group("c", 2, packages(2, 11));
 
-        assertThat(MinHash.jaccard(features(a), features(c))).isLessThan(NearDuplicates.THRESHOLD);
-        assertThat(NearDuplicates.of(List.of(a, b, c))).singleElement().satisfies(merged -> {
-            assertThat(merged.key()).isEqualTo("b");
-            assertThat(merged.blobShas()).containsExactly("a", "b", "c");
-            assertThat(merged.locations()).isEqualTo(10);
-        });
+        List<Group> merged = NearDuplicates.of(List.of(a, b, c));
+
+        assertAll(
+                () -> assertThat(MinHash.jaccard(features(a), features(c))).isLessThan(NearDuplicates.THRESHOLD),
+                () -> assertThat(merged).hasSize(1),
+                () -> assertThat(merged.getFirst().key()).isEqualTo("b"),
+                () -> assertThat(merged.getFirst().blobShas()).containsExactly("a", "b", "c"),
+                () -> assertThat(merged.getFirst().locations()).isEqualTo(10));
     }
 
     @Test
@@ -92,13 +95,34 @@ class NearDuplicatesTest {
     }
 
     @Test
-    void findFollowsParentsToTheRootAndUnionJoinsUnderTheSmallerRoot() {
+    void findFollowsParentsToTheRoot() {
+        assertThat(NearDuplicates.find(new int[] {0, 0, 1, 3}, 2)).isZero();
+    }
+
+    @Test
+    void findPointsEachStepItPassesAtItsGrandparent() {
         int[] parent = {0, 0, 1, 3};
 
-        assertThat(NearDuplicates.find(parent, 2)).isZero();
+        NearDuplicates.find(parent, 2);
+
+        assertThat(parent).containsExactly(0, 0, 0, 3);
+    }
+
+    @Test
+    void unionJoinsTheLargerRootUnderTheSmallerOne() {
+        int[] parent = {0, 0, 1, 3};
+
         NearDuplicates.union(parent, 3, 2);
+
         assertThat(parent[3]).isZero();
+    }
+
+    @Test
+    void unionOfTwoMembersOfOneSetChangesNoRoot() {
+        int[] parent = {0, 0, 0, 0};
+
         NearDuplicates.union(parent, 3, 0);
+
         assertThat(parent).containsExactly(0, 0, 0, 0);
     }
 

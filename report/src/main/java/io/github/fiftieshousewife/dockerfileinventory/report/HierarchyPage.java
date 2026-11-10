@@ -39,8 +39,8 @@ final class HierarchyPage {
         path.add(entry.blobSha());
         List<CatalogueEntry> below = children(entry).stream().filter(e -> !path.contains(e.blobSha()))
                 .sorted(Comparator.comparing(HierarchyPage::label)).toList();
-        String li = "<li><a href=\"dockerfiles/" + escape(entry.blobSha()) + ".html\">"
-                + escape(entry.locations().getFirst().repository()) + "</a> " + escape(rest(entry))
+        String li = "<li>" + Html.dockerfileLink("", entry.blobSha(), entry.locations().getFirst().repository())
+                + " " + escape(rest(entry))
                 + " <span class=\"note\">" + escape(detail(entry)) + "</span>"
                 + (below.isEmpty() ? "" : "<ul>" + below.stream().map(child -> node(child, path))
                         .collect(Collectors.joining()) + "</ul>")

@@ -5,7 +5,6 @@ import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// The summary's tabs: All, the combined estate, then each organisation's summary.
 final class Tabs {
 
     private Tabs() {
@@ -20,7 +19,7 @@ final class Tabs {
                         org.equals(current))).collect(Collectors.joining()) + "</nav>";
     }
 
-    private static String tab(String href, String label, boolean current) {
+    static String tab(String href, String label, boolean current) {
         return "<a href=\"" + href + "\"" + (current ? " class=\"current\" aria-current=\"page\"" : "") + ">"
                 + escape(label) + "</a>";
     }
