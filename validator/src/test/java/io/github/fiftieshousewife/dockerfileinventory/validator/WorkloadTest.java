@@ -18,7 +18,11 @@ class WorkloadTest {
     }
 
     static Workload.Container container(String name, Workload.Security security) {
-        return new Workload.Container(name, "image", false, List.of(), List.of(),
+        return named(name, "image:1", security);
+    }
+
+    static Workload.Container named(String name, String image, Workload.Security security) {
+        return new Workload.Container(name, image, false, List.of(), List.of(),
                 new Workload.Probes(false, false, false), List.of(), security);
     }
 

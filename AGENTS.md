@@ -85,7 +85,10 @@ validator/          stage 3c: facts -> each image judged through a platform prof
                     LowPorts, UserSwitch, SetuidBits, ShellStart, BaseRegistry, UnpinnedBase, DeploymentHints,
                     UserIdentity (P10); Validation, Finding, Verdict; Actions, Action, Location; Fixes, Fix (an action
                     made once: Catalogue, the catalogue stage's archetypes and links; Inheritance, per check);
-                    RuleFindings (the rules' findings.jsonl as findings); JsonLines; ValidatorRun
+                    RuleFindings (the rules' findings.jsonl as findings); JsonLines; ValidatorRun, ActionPlan
+                    Workload, PodCheck: Privileged (D1) to Unconfined (D6), FloatingImage (D7); PodValidation,
+                    WorkloadVerdict; ImageReference, ImageLinks, ContainerLink, ContainerImage (a container's image
+                    linked through lineage, P9 answered by the manifest); FloatingBase (P11)
 survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`), Survey (the stages in order, each
                     with the folders the earlier ones wrote); every stage's ...Main.run(env)
 tools/              the contributors' tools, not in the image: CorpusCollect (`./gradlew collectCorpus

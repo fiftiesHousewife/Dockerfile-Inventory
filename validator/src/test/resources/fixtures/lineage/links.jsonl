@@ -1,0 +1,3 @@
+{"configDigest":"sha256:inspector","tier":"STRONG","blobShas":["2fc5b392e3ec9072112324117c989bdee6934113"],"parentMissing":false,"credited":true}
+{"configDigest":"sha256:postgres","tier":"STRONG","blobShas":["141f718e54c8b80c550646a4ea3d0bff996df176"],"parentMissing":false,"credited":true}
+{"configDigest":"sha256:app","tier":"WEAK","blobShas":["12baa7e1ea2860e387552422af48d49ca01a9219"],"parentMissing":false,"credited":false}

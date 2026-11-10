@@ -64,7 +64,7 @@ class ProfileTest {
     void anUnknownCheckIsRefusedByName() {
         assertThatThrownBy(() -> Profile.parse("x", """
                 {"name": "x", "describes": "", "allowedRegistries": [], "severity": {"P99": "breaks"}}"""))
-                .hasMessage("profile x: P99 is not a check (P1 to P10)");
+                .hasMessage("profile x: P99 is not a check (P1 to P11)");
     }
 
     @Test
@@ -111,8 +111,9 @@ class ProfileTest {
         String platform = """
                 {"name": "x", "describes": "", "allowedRegistries": [], "severity": {"P1": "breaks", "P2": "breaks",
                  "P3": "breaks", "P4": "breaks", "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift",
-                 "P9": "information", "P10": "information"}, "pod": {"D1": "refused", "D2": "refused",
-                 "D3": "refused", "D4": "refused", "D5": "refused", "D6": "refused"}, "rules": {"%s": "drift"}}""";
+                 "P9": "information", "P10": "information", "P11": "breaks"}, "pod": {"D1": "refused",
+                 "D2": "refused", "D3": "refused", "D4": "refused", "D5": "refused", "D6": "refused",
+                 "D7": "breaks"}, "rules": {"%s": "drift"}}""";
         assertAll(
                 () -> assertThatThrownBy(() -> Profile.parse("x", platform.formatted("Z9")))
                         .hasMessage("profile x: Z9 is not a rule"),
@@ -123,7 +124,8 @@ class ProfileTest {
     private static final String WITH_POD = """
             {"name": "x", "describes": "", "allowedRegistries": [], "severity": {"P1": "breaks", "P2": "breaks",
              "P3": "breaks", "P4": "breaks", "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift",
-             "P9": "information", "P10": "information"}, "pod": {POD}, "allowedCapabilities": ["NET_BIND_SERVICE"]}""";
+             "P9": "information", "P10": "information", "P11": "breaks"}, "pod": {POD},
+             "allowedCapabilities": ["NET_BIND_SERVICE"]}""";
 
     private static String withPod(String checks) {
         return WITH_POD.replace("POD", checks);
@@ -137,9 +139,17 @@ class ProfileTest {
     }
 
     @Test
+    void anUnknownPodCheckIsRefusedByName() {
+        assertThatThrownBy(() -> Profile.parse("x", withPod("""
+                "D9": "refused\"""")))
+                .hasMessage("profile x: D9 is not a pod check (D1 to D7)");
+    }
+
+    @Test
     void thePodChecksAndTheAllowedCapabilitiesAreRead() {
         Profile profile = Profile.parse("x", withPod("""
-                "D1": "refused", "D2": "refused", "D3": "refused", "D4": "off", "D5": "refused", "D6": "off\""""));
+                "D1": "refused", "D2": "refused", "D3": "refused", "D4": "off", "D5": "refused", "D6": "off",
+                "D7": "breaks\""""));
 
         assertAll(
                 () -> assertThat(profile.severity()).containsEntry(Check.D1, Severity.REFUSED)
@@ -154,6 +164,6 @@ class ProfileTest {
 
     @Test
     void thePlatformChecksAreThePChecks() {
-        assertThat(Profile.platform()).allMatch(check -> check.name().startsWith("P")).hasSize(10);
+        assertThat(Profile.platform()).allMatch(check -> check.name().startsWith("P")).hasSize(11);
     }
 }

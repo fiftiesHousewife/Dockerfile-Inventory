@@ -1,7 +1,7 @@
 # Validator fixtures
 
 - `copied-profile.json`: the shipped `openshift-4-restricted-v2` profile, copied and changed as an estate owner
-  would: P8 (an unpinned base) raised from drift to breaks and one allowed registry added.
+  would: P8 (an unpinned base) raised from drift to breaks and one allowed registry added; P11 and D7 as shipped.
 - `facts.jsonl`: fifteen real lines of the facts stage's output on the combined public estate (`out/all`, written 8 Nov
   with the catalogue's fields), each picked for one behaviour a check reads. By blob SHA, with one location each:
 
@@ -32,3 +32,7 @@
 | a plain Deployment, nothing asked of the host | `a185638a...` | openshift/training `assets/cluster-filler.yaml` |
 | a privileged DaemonSet running as root, on the host's network, PID and paths | `d88374c0...` | openshift/openshift-tools `ansible/roles/openshift_node_group/files/sync.yaml` |
 | a privileged Pod mounting a host path (the Docker socket) | `fe15041e...` | openshift/image-inspector `kubernetes/image-inspector-app.yaml` |
+- `lineage/`: lineage's output in the shapes `lineage` writes (trimmed to the fields the validator reads), made by
+  hand to link the workloads above to the fixture Dockerfiles: `openshift/image-inspector:latest` credited to the
+  `HEALTHCHECK` image `2fc5b392...`, `team/postgres:9.6` credited to the `VOLUME` image `141f718e...`, `team/app:1.2`
+  linked to `12baa7e1...` but not credited, and `rhel7:7.9` skipped (no config digest).

@@ -81,7 +81,8 @@ record Profile(String name, String describes, List<String> allowedRegistries, Ma
 
     static Check pod(String source, String id) {
         return Arrays.stream(Check.values()).filter(c -> c.pod() && c.name().equals(id)).findFirst()
-                .orElseThrow(() -> refused(source, id + " is not a pod check (D1 to D6)"));
+                .orElseThrow(() -> refused(source, id + " is not a pod check (D1 to D"
+                        + Arrays.stream(Check.values()).filter(Check::pod).count() + ")"));
     }
 
     static Check rule(String source, String id) {

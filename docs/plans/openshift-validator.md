@@ -182,9 +182,10 @@ OpenShift behaviour it predicts.
 | P5 | a setuid or setgid bit set (`chmod u+s`, `g+s`, `4755`) | read | breaks | information |
 | P6 | a shell-form `ENTRYPOINT` or `CMD` | read | breaks | breaks |
 | P7 | a base from a registry not on the profile's list | read | breaks | breaks |
-| P8 | a base not pinned by digest | read | drift | drift |
+| P8 | a base with a fixed tag but no digest (until 10 Nov any base without a digest) | read | drift | drift |
 | P9 | `HEALTHCHECK` or `VOLUME` | read | information | information |
 | P10 | a start command reading the user's name or home (`whoami`, `$USER`, `$HOME`, `~`) | inferred | information | information |
+| P11 | a floating base: `latest` or no tag, no digest (added 10 Nov, `docs/plans/deployment-manifests.md`) | read | breaks | breaks |
 
   Under v1, `sudo`, `su` and `gosu` still fail (SETUID and SETGID are dropped), but another setuid binary still
   gains what the bounding set allows, so P5 alone differs.

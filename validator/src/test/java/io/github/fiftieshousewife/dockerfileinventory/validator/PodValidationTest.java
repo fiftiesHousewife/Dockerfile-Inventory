@@ -16,16 +16,19 @@ class PodValidationTest {
     @Test
     void everyPodCheckRunsInTheOrderOfItsId() {
         assertThat(PodValidation.CHECKS).extracting(PodCheck::id)
-                .containsExactly(Check.D1, Check.D2, Check.D3, Check.D4, Check.D5, Check.D6);
+                .containsExactly(Check.D1, Check.D2, Check.D3, Check.D4, Check.D5, Check.D6, Check.D7);
     }
 
     @Test
-    void eachProblemBecomesARefusedFindingOnTheWorkloadsFile() {
+    void eachProblemBecomesAFindingOnTheWorkloadsFileAtItsChecksSeverity() {
         assertThat(PodValidation.findings(real("fe15041e"), V2)).containsExactly(
                 new Finding(Check.D1, Severity.REFUSED, Certainty.READ, "fe15041e95910e1a1179dbb4c96a7c51140a7966",
                         "container image-inspector is privileged"),
                 new Finding(Check.D5, Severity.REFUSED, Certainty.READ, "fe15041e95910e1a1179dbb4c96a7c51140a7966",
-                        "the pod mounts the host path /var/run/docker.sock"));
+                        "the pod mounts the host path /var/run/docker.sock"),
+                new Finding(Check.D7, Severity.BREAKS, Certainty.READ, "fe15041e95910e1a1179dbb4c96a7c51140a7966",
+                        "container image-inspector runs docker.io/openshift/image-inspector:latest, which floats "
+                                + "with latest"));
     }
 
     @Test

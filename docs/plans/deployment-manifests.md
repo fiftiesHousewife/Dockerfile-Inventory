@@ -170,22 +170,32 @@ the Docker socket. Fixtures: three of those lines (`validator/src/test/resources
 Next, 3b: link each container's image to a Dockerfile through lineage, let a manifest answer its image's P9, and make
 the pod findings actions naming the YAML (and the Dockerfile when linked).
 
-## Slice 3b: linking, answers, actions (planned 10 Nov; questions open)
+## Slice 3b: linking, answers, actions (planned and built 10 Nov)
 
-Design so far:
+Design:
 
-- A container's `image` is matched to an image lineage read (`images.jsonl`: repository, image, tag, config digest),
-  and lineage's credited link (`links.jsonl`) names the Dockerfile's blob SHA. Linked, the workload's verdict is the
-  worst of its pod findings and its image's findings, less those the manifest answers.
-- The manifest answers P9 for its container when it declares a liveness or readiness probe (for a `HEALTHCHECK`) and
-  mounts a volume at each of the image's `VOLUME` paths.
-- `workload-verdicts.jsonl` names each container's Dockerfile, or says it is unlinked and why (no lineage, no image
-  matching, a Kustomize patch naming no image).
+- A container's `image` is read as a reference (`ImageReference`): the registry host dropped (a first segment with
+  `.` or `:`, or `localhost`), then the path, the tag and the digest. It matches an image lineage read
+  (`images.jsonl`) when its path is the image's, or the Artifactory repository's name and then the image's, and its tag
+  is the image's (`latest` when it names none). Lineage's credited links (`links.jsonl`) give the config digest's
+  Dockerfiles (`ImageLinks`).
+- Each container in `workload-verdicts.jsonl` names its Dockerfiles and whether its tag floats, or why it is unlinked:
+  no lineage, no image matching, no credited link, a reference by digest alone (lineage keeps config digests, not
+  manifest digests), or no image named (a Kustomize patch).
+- A floating reference is a thing to fix and fails: `latest` or no tag, without a digest. D7 (`FloatingImage`) for a
+  container, P11 (`FloatingBase`) for a `FROM`, both breaks in the shipped profiles; P8 keeps a fixed tag without a
+  digest, at drift.
+- Linked, the workload's verdict is the worst of its pod findings and its images' platform findings, with P9
+  recomputed for the container: its liveness or readiness probe answers a `HEALTHCHECK`, a mount at a `VOLUME` path
+  answers that volume (`DeploymentHints.unanswered`).
+- The pod findings are actions and fixes, each naming the YAML (its blob SHA and locations). The images' findings
+  stay actions on their Dockerfiles as before.
 
-Tests, in order, once the questions are answered: matching a reference (each form the answers allow); a container
-linked through a credited link, and one whose link is not credited; P9 answered by probes and mounts, and not when a
-`VOLUME` path is left unmounted; a linked workload's verdict taking its image's findings; the pod findings as actions
-(per question 3); `ValidatorRun` with lineage and workloads; `validate` unchanged.
+Tests, in order: `ImageReference` (host, path, tag, digest; floating); P11 and P8 split, and a profile without P11 or
+D7 refused; `FloatingImage`; `ImageLinks` (path and tag whatever the host, the repository's name first, latest for no
+tag, an uncredited link, no image, a digest alone, no image named, no lineage); `DeploymentHints.unanswered`;
+`WorkloadVerdict` with its containers and its images' findings; `ValidatorRun` writing the pod findings as actions and
+linking through a lineage fixture; `validate` updated with the measured move from P8 to P11.
 
 Questions:
 
@@ -204,5 +214,22 @@ Questions:
    `workload-verdicts.jsonl` until the report's slice shows them?
    Answered 10 Nov: into `actions.jsonl` and `fixes.jsonl`, each naming the YAML file to change.
 4. A floating reference is itself a thing to fix and fails the validator (owner, 10 Nov): a new pod check, D7, for a
-   container naming a floating tag. Open: whether "anywhere in the hierarchy" also raises P8 (an unpinned `FROM`) from
-   drift; on the combined estate 3,987 P8 actions, and every one of the 723 drift images has one.
+   container naming a floating tag. A `FROM` of `latest` or no tag fails too (P11); a fixed tag without a digest stays
+   drift (P8). Combined estate before: 3,987 P8 actions, 551 `latest` and 621 untagged.
+
+## Built, slice 3b (10 Nov)
+
+`ImageReference` reads a container's image (`ImageReference.host` also serves P7's `BaseRegistry`); `ImageLinks`
+reads lineage's `images.jsonl` and credited `links.jsonl` into a `ContainerLink` per container; `ContainerImage`
+gives a linked image's platform findings with P9 from `DeploymentHints.unanswered`; `WorkloadVerdict` carries the
+containers and both kinds of finding; `ValidatorRun` adds the pod findings to the actions, with the workloads'
+locations; `ActionPlan` holds the plan's counts. `FloatingImage` (D7) and `FloatingBase` (P11) are breaks in both
+profiles; `UnpinnedBase` (P8) leaves floating bases to P11.
+
+Measured: on the combined estate (`./gradlew validate`, updated in the same commit) P8's 3,984 actions became 2,812 P8
+and 1,172 P11, and 238 images moved from drift to breaks; nothing else changed. On the owner's survey of
+`github.com/openshift` (`out/openshift-try`, no lineage): 21 workloads, 15 refused, 2 break (D7: `rhel7` and
+image-inspector's `:latest`), 4 run; 41 pod actions; 12 containers unlinked for want of lineage, 10 naming no image
+(Kustomize patches and templates). Linking is tested on a lineage fixture made by hand; a survey with both lineage and
+workloads will measure it.
+

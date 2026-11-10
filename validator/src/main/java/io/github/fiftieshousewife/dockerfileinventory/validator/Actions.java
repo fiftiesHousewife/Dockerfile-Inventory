@@ -25,12 +25,14 @@ final class Actions {
             Map.entry(Check.P9, "declare the probes and volumes in the deployment"),
             Map.entry(Check.P10, "stop relying on the user's name or home at start, or give the UID a passwd entry "
                     + "(nss_wrapper)"),
+            Map.entry(Check.P11, "build from a fixed tag pinned by digest (FROM name:tag@sha256:...), never latest"),
             Map.entry(Check.D1, "drop privileged: true, or grant the workload's service account a privileged SCC"),
             Map.entry(Check.D2, "leave runAsUser out and let the SCC assign the UID"),
             Map.entry(Check.D3, "drop the added capability, or grant an SCC that allows it"),
             Map.entry(Check.D4, "set allowPrivilegeEscalation: false"),
             Map.entry(Check.D5, "drop the host network, PID, IPC, path or port, or grant an SCC that allows it"),
             Map.entry(Check.D6, "use the RuntimeDefault seccomp profile"),
+            Map.entry(Check.D7, "name the image by a fixed tag pinned by digest (name:tag@sha256:...), never latest"),
             Map.entry(Check.S1, "build from an approved base"),
             Map.entry(Check.S2, "remove the secret from the Dockerfile: pass it at build time as a secret mount, or "
                     + "at run time from the platform"),

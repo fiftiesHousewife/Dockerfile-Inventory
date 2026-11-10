@@ -60,13 +60,51 @@ class ValidatorRunTest {
     }
 
     @Test
+    void eachPodFindingIsAnActionAndAFixNamingTheWorkloadsFile() throws IOException {
+        plan();
+        List<JsonNode> actions = Files.readAllLines(out.resolve("actions.jsonl")).stream().map(JSON::readTree)
+                .filter(action -> action.path("blobSha").asString().startsWith("fe15041e")).toList();
+
+        assertAll(
+                () -> assertThat(actions).extracting(action -> action.path("check").asString())
+                        .containsExactlyInAnyOrder("D1", "D5", "D7"),
+                () -> assertThat(actions.getFirst().path("where").get(0).path("path").asString())
+                        .isEqualTo("kubernetes/image-inspector-app.yaml"),
+                () -> assertThat(Files.readAllLines(out.resolve("fixes.jsonl")))
+                        .anyMatch(fix -> fix.contains("\"check\":\"D7\"") && fix.contains("fe15041e")));
+    }
+
+    @Test
+    void withLineageEachContainerNamesItsDockerfileAndWhetherItFloats() throws IOException {
+        new ValidatorRun(FIXTURES, FIXTURES, FIXTURES.resolve("lineage"), null, null, Fixtures.V2, out).run();
+        JsonNode inspector = Files.readAllLines(out.resolve("workload-verdicts.jsonl")).stream().map(JSON::readTree)
+                .filter(w -> w.path("name").asString().equals("inspect-fedora-latest")).findFirst().orElseThrow();
+        JsonNode container = inspector.path("containers").get(0);
+
+        assertAll(
+                () -> assertThat(container.path("dockerfiles").get(0).asString())
+                        .isEqualTo("2fc5b392e3ec9072112324117c989bdee6934113"),
+                () -> assertThat(container.path("floating").asBoolean()).isTrue(),
+                () -> assertThat(inspector.path("findings").valueStream().map(f -> f.path("check").asString()))
+                        .contains("P9"));
+    }
+
+    @Test
+    void withoutLineageEachContainerSaysSo() throws IOException {
+        plan();
+
+        assertThat(Files.readAllLines(out.resolve("workload-verdicts.jsonl"))).allMatch(line ->
+                line.contains("\"unlinked\":\"no lineage\"") || line.contains("names no image"));
+    }
+
+    @Test
     void thePlanCountsTheWorkloadsAndTheirVerdicts() {
         JsonNode plan = plan();
 
         assertAll(
                 () -> assertThat(plan.path("workloads").asInt()).isEqualTo(3),
                 () -> assertThat(plan.path("workloadVerdicts").path("refused").asInt()).isEqualTo(2),
-                () -> assertThat(plan.path("workloadVerdicts").path("runs").asInt()).isEqualTo(1));
+                () -> assertThat(plan.path("workloadVerdicts").path("breaks").asInt()).isEqualTo(1));
     }
 
     @Test
@@ -97,7 +135,7 @@ class ValidatorRunTest {
                 .toList();
 
         assertAll(
-                () -> assertThat(actions.getFirst().path("severity").asString()).isEqualTo("BREAKS"),
+                () -> assertThat(actions.getFirst().path("severity").asString()).isEqualTo("REFUSED"),
                 () -> assertThat(actions.getLast().path("severity").asString()).isEqualTo("INFORMATION"),
                 () -> assertThat(actions.getFirst().path("where").get(0).path("repository").asString()).isNotEmpty());
     }
@@ -113,6 +151,7 @@ class ValidatorRunTest {
     @Test
     void withLineageAnImageSettingNoUserWhoseRegistryImagesRunAsANumericUserHasNoUserFinding(@TempDir Path lineage)
             throws IOException {
+        Files.writeString(lineage.resolve("images.jsonl"), "");
         Files.writeString(lineage.resolve("links.jsonl"), "{\"configDigest\":\"sha256:app\",\"blobShas\":"
                 + "[\"00b7e9b0f4f07bea7f89b52371b0221dc848d085\"],\"credited\":true}\n");
         Files.writeString(lineage.resolve("effective.jsonl"),

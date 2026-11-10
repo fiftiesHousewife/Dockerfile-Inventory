@@ -5,7 +5,7 @@ import java.util.List;
 final class PodValidation {
 
     static final List<PodCheck> CHECKS = List.of(new Privileged(), new FixedUser(), new AddedCapability(),
-            new PrivilegeEscalation(), new HostAccess(), new Unconfined());
+            new PrivilegeEscalation(), new HostAccess(), new Unconfined(), new FloatingImage());
 
     private PodValidation() {
     }

@@ -5,10 +5,8 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,32 +48,48 @@ final class ValidatorRun {
 
     void run() {
         List<Subject> all = subjects();
+        Map<String, Subject> subjects = byBlob(all);
         List<Subject> images = all.stream().filter(Subject::runnable).toList();
         List<Judged> judged = images.stream()
                 .map(image -> new Judged(image.blobSha(), Validation.findings(image, profile))).toList();
-        List<Finding> findings = Stream.concat(judged.stream().flatMap(image -> image.findings().stream()),
-                ruleFindings().stream()).toList();
+        Optional<List<WorkloadVerdict>> workloads = workloads(subjects);
+        List<WorkloadVerdict> judgedWorkloads = workloads.orElse(List.of());
         Map<String, Verdict> verdicts = verdicts(judged);
-        Map<String, List<Location>> locations = locations(discoveryDir.resolve("manifest.jsonl"));
-        List<Action> actions = Actions.of(findings, locations);
-        List<Fix> fixes = Fixes.of(actions, catalogue(), byBlob(all), locations);
+        Map<String, List<Location>> locations = withWorkloads(locations(discoveryDir.resolve("manifest.jsonl")),
+                judgedWorkloads);
+        List<Action> actions = Actions.of(findings(judged, judgedWorkloads), locations);
+        List<Fix> fixes = Fixes.of(actions, catalogue(), subjects, locations);
         write("actions.jsonl", lines(actions));
         write("fixes.jsonl", lines(fixes));
         write("verdicts.jsonl", lines(verdicts.entrySet().stream()
                 .map(e -> new ImageVerdict(e.getKey(), e.getValue())).toList()));
-        Map<String, Object> summary = summary(verdicts, all.size() - images.size(), actions, fixes.size());
-        workloads().ifPresent(workloads -> {
-            write("workload-verdicts.jsonl", lines(workloads));
-            summary.putAll(WorkloadVerdict.summary(workloads));
+        Map<String, Object> summary = ActionPlan.summary(profile, verdicts, all.size() - images.size(), actions,
+                fixes.size());
+        workloads.ifPresent(list -> {
+            write("workload-verdicts.jsonl", lines(list));
+            summary.putAll(WorkloadVerdict.summary(list));
         });
         write("action-plan.json", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(summary));
     }
 
-    Optional<List<WorkloadVerdict>> workloads() {
+    List<Finding> findings(List<Judged> judged, List<WorkloadVerdict> workloads) {
+        return Stream.of(judged.stream().flatMap(image -> image.findings().stream()), ruleFindings().stream(),
+                workloads.stream().flatMap(workload -> workload.podFindings().stream())).flatMap(s -> s).toList();
+    }
+
+    static Map<String, List<Location>> withWorkloads(Map<String, List<Location>> locations,
+                                                     List<WorkloadVerdict> workloads) {
+        Map<String, List<Location>> all = new LinkedHashMap<>(locations);
+        workloads.forEach(workload -> all.putIfAbsent(workload.blobSha(), workload.locations()));
+        return all;
+    }
+
+    Optional<List<WorkloadVerdict>> workloads(Map<String, Subject> subjects) {
         Path file = factsDir.resolve("workloads.jsonl");
+        ImageLinks links = lineageDir == null ? ImageLinks.NONE : ImageLinks.read(lineageDir);
         return Files.isRegularFile(file) ? Optional.of(Workload.read(file).stream()
-                .map(workload -> WorkloadVerdict.of(workload, profile)).toList()).filter(list -> !list.isEmpty())
-                : Optional.empty();
+                .map(workload -> WorkloadVerdict.of(workload, profile, links, subjects)).toList())
+                .filter(list -> !list.isEmpty()) : Optional.empty();
     }
 
     List<Subject> subjects() {
@@ -99,24 +113,6 @@ final class ValidatorRun {
 
     static Map<String, Subject> byBlob(List<Subject> subjects) {
         return subjects.stream().collect(Collectors.toMap(Subject::blobSha, s -> s, (a, b) -> a));
-    }
-
-    Map<String, Object> summary(Map<String, Verdict> verdicts, int notRunnable, List<Action> actions, int fixes) {
-        Map<Verdict, Long> counted = new EnumMap<>(Verdict.class);
-        verdicts.values().forEach(v -> counted.merge(v, 1L, Long::sum));
-        Map<String, Object> summary = new LinkedHashMap<>();
-        summary.put("profile", profile.name());
-        summary.put("describes", profile.describes());
-        summary.put("images", verdicts.size());
-        summary.put("notRunnable", notRunnable);
-        summary.put("verdicts", counted.entrySet().stream().collect(Collectors.toMap(
-                e -> e.getKey().name().toLowerCase(Locale.ROOT), Map.Entry::getValue, (a, b) -> a,
-                LinkedHashMap::new)));
-        summary.put("actions", actions.size());
-        summary.put("fixes", fixes);
-        summary.put("repositories", Actions.byRepository(actions).entrySet().stream().collect(Collectors.toMap(
-                Map.Entry::getKey, e -> e.getValue().size(), (a, b) -> a, LinkedHashMap::new)));
-        return summary;
     }
 
     static Map<String, List<Location>> locations(Path manifest) {

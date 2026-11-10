@@ -1,0 +1,4 @@
+{"repository":"docker-local","image":"openshift/image-inspector","tag":"latest","lastPushed":"2026-10-01T00:00:00Z","configDigest":"sha256:inspector","skipped":null,"skipDetail":null}
+{"repository":"docker-local","image":"team/postgres","tag":"9.6","lastPushed":"2026-10-01T00:00:00Z","configDigest":"sha256:postgres","skipped":null,"skipDetail":null}
+{"repository":"docker-local","image":"team/app","tag":"1.2","lastPushed":"2026-10-01T00:00:00Z","configDigest":"sha256:app","skipped":null,"skipDetail":null}
+{"repository":"docker-local","image":"rhel7","tag":"7.9","lastPushed":"2026-10-01T00:00:00Z","configDigest":null,"skipped":"NOT_AN_IMAGE","skipDetail":null}

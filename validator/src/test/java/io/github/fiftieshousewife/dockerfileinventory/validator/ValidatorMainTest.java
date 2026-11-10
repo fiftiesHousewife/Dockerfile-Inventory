@@ -25,6 +25,7 @@ class ValidatorMainTest {
 
     @Test
     void theLineageDirectoryGivesEachDockerfileTheUserItsRegistryImagesRunAs(@TempDir Path lineage) throws IOException {
+        Files.writeString(lineage.resolve("images.jsonl"), "");
         Files.writeString(lineage.resolve("links.jsonl"), "{\"configDigest\":\"sha256:app\",\"blobShas\":"
                 + "[\"00b7e9b0f4f07bea7f89b52371b0221dc848d085\"],\"credited\":true}\n");
         Files.writeString(lineage.resolve("effective.jsonl"),

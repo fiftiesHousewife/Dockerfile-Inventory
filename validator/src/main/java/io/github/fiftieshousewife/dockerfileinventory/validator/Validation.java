@@ -6,7 +6,7 @@ final class Validation {
 
     static final List<PlatformCheck> CHECKS = List.of(new FinalUser(), new WritablePaths(), new LowPorts(),
             new UserSwitch(), new SetuidBits(), new ShellStart(), new BaseRegistry(), new UnpinnedBase(),
-            new DeploymentHints(), new UserIdentity());
+            new DeploymentHints(), new UserIdentity(), new FloatingBase());
 
     private Validation() {
     }

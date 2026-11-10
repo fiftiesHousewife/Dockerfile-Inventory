@@ -18,9 +18,8 @@ class UnpinnedBaseTest {
     }
 
     @Test
-    void aBaseWithNoTagSaysItFloats() {
-        assertThat(check.problems(subject("2fc5b392"), V2)).containsExactly(
-                "the base cassandra has no tag or digest, so it floats with latest");
+    void aFloatingBaseIsLeftToTheFloatingCheck() {
+        assertThat(check.problems(subject("2fc5b392"), V2)).isEmpty();
     }
 
     @Test

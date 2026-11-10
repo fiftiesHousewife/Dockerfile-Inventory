@@ -70,7 +70,10 @@ and one line when its gate is met.
   `workloads.jsonl`; on ten cloned repositories 596 candidates, 6 with workloads; on the owner's survey of 24 openshift
   repositories, 530 files and 4 workloads once `vendored/` is left out (2,568 and 21 before). Slice 3a done 10 Nov: `refused`, the pod checks D1 to D6 in both profiles, a verdict per workload
   (`workload-verdicts.jsonl`); on the owner's survey 21 workloads, 15 refused (node agents and static master pods), 6
-  run. Next: 3b, linking containers to Dockerfiles through lineage and the manifest answering P9; then the report.
+  run. Slice 3b done 10 Nov: containers linked to Dockerfiles through lineage (path and tag, whatever the host), the
+  manifest answering P9, D7 and P11 for floating images and bases (breaks), the pod findings as actions; on the
+  combined estate 1,172 bases move from P8 to P11 and 238 images from drift to breaks; on the owner's survey 2
+  workloads break on a floating image. Next: the report showing workloads; linking measured on a survey with lineage.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

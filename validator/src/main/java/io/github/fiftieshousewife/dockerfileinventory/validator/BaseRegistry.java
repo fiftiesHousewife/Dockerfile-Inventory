@@ -39,6 +39,6 @@ final class BaseRegistry implements PlatformCheck {
     static String registry(String name) {
         int slash = name.indexOf('/');
         String first = slash < 0 ? "" : name.substring(0, slash);
-        return first.contains(".") || first.contains(":") || first.equals("localhost") ? first : "docker.io";
+        return ImageReference.host(first) ? first : "docker.io";
     }
 }

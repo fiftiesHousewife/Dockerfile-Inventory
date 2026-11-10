@@ -385,7 +385,7 @@ digest, base updates grouped into one pull request per repository.
 export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
 export PROFILE=openshift-4-restricted-v2      # optional: a shipped profile's name or a profile file
-export LINEAGE_DIR=/data/lineage              # optional: the user each Dockerfile's registry images run as
+export LINEAGE_DIR=/data/lineage              # optional: the users images run as; containers to Dockerfiles
 export CATALOGUE_DIR=/data/catalogue          # optional: the catalogue stage's OUT_DIR, for fixes and their reach
 export RULES_DIR=/data/rules                  # optional: the rules stage's OUT_DIR, whose findings become actions
 export OUT_DIR=/data/validator
@@ -415,9 +415,10 @@ actions, not verdicts: the verdicts say how each image fares on the platform.
 | P5 | a setuid bit set in the final stage | breaks | information |
 | P6 | a shell-form `ENTRYPOINT` (or `CMD` without one): the process never receives SIGTERM | breaks | breaks |
 | P7 | a base from a registry off the profile's list | breaks | breaks |
-| P8 | a base not pinned by digest | drift | drift |
+| P8 | a base with a fixed tag but no digest | drift | drift |
 | P9 | a `HEALTHCHECK` (ignored) or a `VOLUME` (a plain directory): the deployment must declare probes and volumes | information | information |
 | P10 | a start command reading the user's name or home (inferred) | information | information |
+| P11 | a floating base: `latest` or no tag, and no digest | breaks | breaks |
 
 Metadata-only bundles (`FROM scratch` with no start command) never run as containers and are counted apart.
 
@@ -433,14 +434,21 @@ asking for more than its SCC allows is not admitted:
 | D4 | `allowPrivilegeEscalation: true` | refused | off |
 | D5 | the host's network, PID or IPC namespace, a host path or a host port | refused | refused |
 | D6 | an `Unconfined` seccomp profile | refused | off |
+| D7 | a container naming a floating image: `latest` or no tag, and no digest | breaks | breaks |
+
+With `LINEAGE_DIR`, each container's image is matched to a registry image lineage read, on its path and tag whatever
+registry host it names (`latest` when it names none; the Artifactory repository's name may come first), and through
+lineage's credited links to its Dockerfiles. A linked workload also takes those images' platform findings, with P9 as
+the container leaves it: a liveness or readiness probe answers a `HEALTHCHECK`, a mount at a `VOLUME` path answers it.
+The pod findings are actions and fixes, naming the YAML's blob SHA and locations.
 
 | File | Contents |
 | --- | --- |
 | `action-plan.json` | The profile, how many images were judged and how many not, the verdicts (`breaks`, `drift`, `information`, `runs`: each image's worst finding), the number of actions and of fixes, and the actions per repository |
 | `actions.jsonl` | One action per line, most urgent first (severity, then the locations it reaches, then read before inferred): the check, its severity and certainty, what to change, the Dockerfile's blob SHA, the findings behind it and every location |
-| `fixes.jsonl` | The actions as fixes, most urgent first (severity, then the locations reached): with `CATALOGUE_DIR`, the same check on an archetype's copies is one fix to its `representative`, listing its `copies`, the Dockerfiles built on them that keep what the fix changes (`inheriting`: for P1 those setting no `USER`; P4, P6 and P10 those setting no start command; P2 those doing no group-0 permission work of their own; P3, P5 and P9 all; P7 and P8 none) and every location they reach; without it, one fix per action |
+| `fixes.jsonl` | The actions as fixes, most urgent first (severity, then the locations reached): with `CATALOGUE_DIR`, the same check on an archetype's copies is one fix to its `representative`, listing its `copies`, the Dockerfiles built on them that keep what the fix changes (`inheriting`: for P1 those setting no `USER`; P4, P6 and P10 those setting no start command; P2 those doing no group-0 permission work of their own; P3, P5 and P9 all; P7, P8, P11 and the pod checks none) and every location they reach; without it, one fix per action |
 | `verdicts.jsonl` | Each judged Dockerfile's verdict |
-| `workload-verdicts.jsonl` | With workloads: each workload's YAML blob SHA, kind, name, namespace, locations, verdict (`REFUSED` above `BREAKS`) and pod findings; `action-plan.json` then counts the `workloads` and their `workloadVerdicts` |
+| `workload-verdicts.jsonl` | With workloads: each workload's YAML blob SHA, kind, name, namespace, locations, verdict (`REFUSED` above `BREAKS`), its `containers` (each with its `image`, the `dockerfiles` it links to and whether it is `floating`, or why it is `unlinked`) and its findings (the pod's, then its linked images'); `action-plan.json` then counts the `workloads` and their `workloadVerdicts` |
 
 The report shows the plan as a page when given the validator's `OUT_DIR` as `VALIDATOR_DIR`.
 

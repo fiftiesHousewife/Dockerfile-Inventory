@@ -4,10 +4,11 @@
   "allowedRegistries": [],
   "severity": {
     "P1": "breaks", "P2": "breaks", "P3": "breaks", "P4": "breaks",
-    "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information"
+    "P5": "breaks", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information",
+    "P11": "breaks"
   },
   "pod": {
-    "D1": "refused", "D2": "refused", "D3": "refused", "D4": "refused", "D5": "refused", "D6": "refused"
+    "D1": "refused", "D2": "refused", "D3": "refused", "D4": "refused", "D5": "refused", "D6": "refused", "D7": "breaks"
   },
   "allowedCapabilities": ["NET_BIND_SERVICE"],
   "rules": {

@@ -4,10 +4,11 @@
   "allowedRegistries": [],
   "severity": {
     "P1": "breaks", "P2": "breaks", "P3": "breaks", "P4": "breaks",
-    "P5": "information", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information"
+    "P5": "information", "P6": "breaks", "P7": "breaks", "P8": "drift", "P9": "information", "P10": "information",
+    "P11": "breaks"
   },
   "pod": {
-    "D1": "refused", "D2": "refused", "D3": "refused", "D4": "off", "D5": "refused", "D6": "off"
+    "D1": "refused", "D2": "refused", "D3": "refused", "D4": "off", "D5": "refused", "D6": "off", "D7": "breaks"
   },
   "allowedCapabilities": [],
   "rules": {
