@@ -14,8 +14,9 @@ class HtmlTest {
 
     @Test
     void countsHaveThousandsSeparatorsAndPercentagesOneDecimal() {
-        assertThat(Html.count(1234567)).isEqualTo("1,234,567");
-        assertThat(Html.percent(0.1234)).isEqualTo("12.3%");
+        assertAll(
+                () -> assertThat(Html.count(1234567)).isEqualTo("1,234,567"),
+                () -> assertThat(Html.percent(0.1234)).isEqualTo("12.3%"));
     }
 
     @Test
@@ -37,5 +38,17 @@ class HtmlTest {
     void aShaLinkPointsIntoItsFolderAndShowsTheStartOfTheSha() {
         assertThat(Html.shaLink("dockerfiles/", "0123456789abcdef")).isEqualTo(
                 "<a href=\"dockerfiles/0123456789abcdef.html\"><code>0123456789ab</code></a>");
+    }
+
+    @Test
+    void aScrollTableWrapsItsHeadingsAndRowsInAScrollingBox() {
+        assertThat(Html.scrollTable("<th>A</th>", "<tr><td>1</td></tr>")).isEqualTo(
+                "<div class=\"scroll\"><table><tr><th>A</th></tr><tr><td>1</td></tr></table></div>");
+    }
+
+    @Test
+    void aDockerfileLinkPointsAtItsPageFromWhereTheLinkIsAndEscapesItsText() {
+        assertThat(Html.dockerfileLink("../", "abc", "acme/api <Dockerfile>")).isEqualTo(
+                "<a href=\"../dockerfiles/abc.html\">acme/api &lt;Dockerfile&gt;</a>");
     }
 }

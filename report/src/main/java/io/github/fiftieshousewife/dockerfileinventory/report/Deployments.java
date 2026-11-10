@@ -23,11 +23,10 @@ final class Deployments {
 
     static String section(String blobSha, List<ActionPlanView.PlannedWorkload> workloads) {
         return workloads.isEmpty() ? "" : "<h2>Runs in</h2><p>The workloads whose containers lineage links to this "
-                + "Dockerfile, judged on the <a href=\"../openshift.html\">action plan</a>.</p><div class=\"scroll\">"
-                + "<table><tr><th>Verdict</th><th>Workload</th><th>File</th><th>Containers</th></tr>"
-                + workloads.stream().map(workload -> WorkloadTable.described(workload) + "<td>"
-                        + running(blobSha, workload) + "</td></tr>").collect(Collectors.joining())
-                + "</table></div>";
+                + "Dockerfile, judged on the <a href=\"../openshift.html\">action plan</a>.</p>"
+                + Html.scrollTable("<th>Verdict</th><th>Workload</th><th>File</th><th>Containers</th>",
+                workloads.stream().map(workload -> WorkloadTable.described(workload) + "<td>"
+                        + running(blobSha, workload) + "</td></tr>").collect(Collectors.joining()));
     }
 
     static String running(String blobSha, ActionPlanView.PlannedWorkload workload) {

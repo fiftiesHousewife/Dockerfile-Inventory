@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.report;
 import static io.github.fiftieshousewife.dockerfileinventory.report.Html.count;
 import static io.github.fiftieshousewife.dockerfileinventory.report.Html.escape;
 
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -33,14 +34,17 @@ final class Drilldowns {
     }
 
     static String list(List<CatalogueEntry> entries, String up) {
-        return "<p>" + count(entries.size()) + " Dockerfiles.</p><div class=\"scroll\"><table><tr><th>Dockerfile"
-                + "</th><th>Organisation</th><th class=\"num\">Locations</th></tr>" + entries.stream()
-                .sorted(java.util.Comparator.comparing(CatalogueView::organisation)
+        return "<p>" + count(entries.size()) + " Dockerfiles.</p>" + Html.scrollTable("<th>Dockerfile</th>"
+                + "<th>Organisation</th><th class=\"num\">Locations</th>", entries.stream()
+                .sorted(Comparator.comparing(CatalogueView::organisation)
                         .thenComparing(e -> e.locations().getFirst().repository()))
-                .map(entry -> "<tr><td><a href=\"" + up + "dockerfiles/" + escape(entry.blobSha()) + ".html\">"
-                        + escape(entry.locations().getFirst().repository() + " " + entry.locations().getFirst()
-                        .path()) + "</a></td><td>" + escape(CatalogueView.organisation(entry))
-                        + "</td><td class=\"num\">" + count(entry.locations().size()) + "</td></tr>")
-                .collect(Collectors.joining()) + "</table></div>";
+                .map(entry -> "<tr><td>" + Html.dockerfileLink(up, entry.blobSha(), firstPlace(entry))
+                        + "</td><td>" + escape(CatalogueView.organisation(entry)) + "</td><td class=\"num\">"
+                        + count(entry.locations().size()) + "</td></tr>")
+                .collect(Collectors.joining()));
+    }
+
+    static String firstPlace(CatalogueEntry entry) {
+        return entry.locations().getFirst().repository() + " " + entry.locations().getFirst().path();
     }
 }

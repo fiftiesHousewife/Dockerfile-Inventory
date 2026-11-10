@@ -70,9 +70,9 @@ final class DockerfilePage {
     }
 
     static String table(List<String> headings, List<List<String>> rows) {
-        return "<div class=\"scroll\"><table><tr>" + headings.stream().map(name -> "<th>" + escape(name) + "</th>")
-                .collect(Collectors.joining()) + "</tr>" + rows.stream().map(row -> "<tr>" + row.stream()
+        return Html.scrollTable(headings.stream().map(name -> "<th>" + escape(name) + "</th>")
+                .collect(Collectors.joining()), rows.stream().map(row -> "<tr>" + row.stream()
                         .map(cell -> "<td>" + escape(cell) + "</td>").collect(Collectors.joining()) + "</tr>")
-                .collect(Collectors.joining()) + "</table></div>";
+                .collect(Collectors.joining()));
     }
 }

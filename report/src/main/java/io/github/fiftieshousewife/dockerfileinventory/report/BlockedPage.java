@@ -24,9 +24,9 @@ final class BlockedPage {
             return "<p>No image is held back by an unmaintained image in its chain.</p>";
         }
         return "<p>Each image below is unmaintained and stands in the chain of others, which cannot take a fresh base"
-                + " until it is rebuilt or replaced.</p><div class=\"scroll\"><table><tr><th>Image</th><th>Why"
-                + "</th><th>Images held back</th><th>Dockerfiles building them</th></tr>"
-                + blockers.stream().map(BlockedPage::row).collect(Collectors.joining()) + "</table></div>";
+                + " until it is rebuilt or replaced.</p>" + Html.scrollTable("<th>Image</th><th>Why</th>"
+                + "<th>Images held back</th><th>Dockerfiles building them</th>",
+                blockers.stream().map(BlockedPage::row).collect(Collectors.joining()));
     }
 
     static List<Blocker> blockers(List<CatalogueEntry> entries) {

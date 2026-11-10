@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.report;
 
 import java.util.Locale;
+import java.util.Set;
 
 final class Html {
 
@@ -49,4 +50,19 @@ final class Html {
         return count(n) + " " + (n == 1 ? one : many);
     }
 
+    static String scrollTable(String headings, String rows) {
+        return "<div class=\"scroll\"><table><tr>" + headings + "</tr>" + rows + "</table></div>";
+    }
+
+    static String dockerfileLink(String up, String blobSha, String text) {
+        return "<a href=\"" + up + "dockerfiles/" + escape(blobSha) + ".html\">" + escape(text) + "</a>";
+    }
+
+    static String dockerfileLink(String up, String blobSha, String text, Set<String> pages) {
+        return pages.contains(blobSha) ? dockerfileLink(up, blobSha, text) : escape(text);
+    }
+
+    static String lowerCase(String text) {
+        return escape(text.toLowerCase(Locale.ROOT));
+    }
 }

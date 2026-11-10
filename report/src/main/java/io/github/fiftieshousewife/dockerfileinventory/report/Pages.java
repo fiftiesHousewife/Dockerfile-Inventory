@@ -25,40 +25,73 @@ final class Pages {
     static Map<String, String> all(CatalogueView view, ArchetypeRows rows, Optional<ActionPlanView> plan) {
         List<CatalogueEntry> entries = view.entries();
         Map<String, List<CatalogueEntry>> byOrganisation = entries.stream()
-                .collect(Collectors.groupingBy(CatalogueView::organisation, TreeMap::new,
-                        Collectors.toList()));
-        Map<String, String> pages = new LinkedHashMap<>();
-        Set<String> catalogued = entries.stream().map(CatalogueEntry::blobSha).collect(Collectors.toSet());
+                .collect(Collectors.groupingBy(CatalogueView::organisation, TreeMap::new, Collectors.toList()));
         List<String> organisations = List.copyOf(byOrganisation.keySet());
-        Map<String, String> programs = entries.stream().filter(entry -> Programs.of(entry) != null)
-                .collect(Collectors.toMap(CatalogueEntry::blobSha, Programs::of, (a, b) -> a));
-        pages.put("index.html", Page.render("Dockerfile estate", "", Tabs.render(organisations, null, "")
-                + plan.map(p -> ActionPlanPage.lead(p)
-                + "<p><a href=\"openshift.html\">Action plan for OpenShift</a></p><h2>What to fix first</h2>"
-                + ActionDrilldown.checkTable(ActionDrilldown.byCheck(p).stream().limit(TOP_CHECKS).toList(), "")
-                + "<p><a href=\"openshift.html\">Every check</a></p>").orElse("")
-                + OverviewPage.body(EstateFigures.of(entries), organisations, "", "lists/")));
+        Set<String> catalogued = entries.stream().map(CatalogueEntry::blobSha).collect(Collectors.toSet());
+        Map<String, String> programs = programs(entries);
+        Map<String, String> pages = new LinkedHashMap<>();
+        pages.put("index.html", index(entries, organisations, plan));
         pages.putAll(Drilldowns.pages("", Breakdowns.of(entries)));
         pages.put("unparsed.html", Page.render("Did not parse", "", UnparsedPage.body(entries.stream()
                 .filter(entry -> entry.parseError() != null).toList())));
-        plan.ifPresent(p -> pages.put("openshift.html", Page.render("Action plan for OpenShift", "",
-                ActionPlanPage.body(p, catalogued))));
-        plan.ifPresent(p -> pages.putAll(ActionDrilldown.pages(p, catalogued)));
+        plan.ifPresent(p -> pages.putAll(actionPlan(p, catalogued)));
+        pages.putAll(organisationPages(byOrganisation));
+        pages.put("hierarchy.html", Page.render("Hierarchy", "", HierarchyPage.body(entries)));
+        pages.put("blocked.html", Page.render("Blocked", "", BlockedPage.body(entries)));
+        pages.putAll(ranking(rows, catalogued, programs));
+        pages.putAll(dockerfilePages(entries, programs, plan.map(p -> Deployments.byDockerfile(p.workloads()))
+                .orElse(Map.of())));
+        return pages;
+    }
+
+    static Map<String, String> programs(List<CatalogueEntry> entries) {
+        return entries.stream().filter(entry -> Programs.of(entry) != null)
+                .collect(Collectors.toMap(CatalogueEntry::blobSha, Programs::of, (a, b) -> a));
+    }
+
+    static String index(List<CatalogueEntry> entries, List<String> organisations, Optional<ActionPlanView> plan) {
+        return Page.render("Dockerfile estate", "", Tabs.render(organisations, null, "")
+                + plan.map(Pages::whatToFixFirst).orElse("")
+                + OverviewPage.body(EstateFigures.of(entries), organisations, "", "lists/"));
+    }
+
+    static String whatToFixFirst(ActionPlanView plan) {
+        return ActionPlanPage.lead(plan)
+                + "<p><a href=\"openshift.html\">Action plan for OpenShift</a></p><h2>What to fix first</h2>"
+                + ActionDrilldown.checkTable(ActionDrilldown.byCheck(plan).stream().limit(TOP_CHECKS).toList(), "")
+                + "<p><a href=\"openshift.html\">Every check</a></p>";
+    }
+
+    static Map<String, String> actionPlan(ActionPlanView plan, Set<String> catalogued) {
+        Map<String, String> pages = new LinkedHashMap<>();
+        pages.put("openshift.html", Page.render("Action plan for OpenShift", "",
+                ActionPlanPage.body(plan, catalogued)));
+        pages.putAll(ActionDrilldown.pages(plan, catalogued));
+        return pages;
+    }
+
+    static Map<String, String> organisationPages(Map<String, List<CatalogueEntry>> byOrganisation) {
+        List<String> organisations = List.copyOf(byOrganisation.keySet());
+        Map<String, String> pages = new LinkedHashMap<>();
         byOrganisation.forEach((organisation, within) -> pages.put("orgs/" + organisation + ".html",
                 Page.render(organisation, "../", Tabs.render(organisations, organisation, "../")
                         + OverviewPage.body(EstateFigures.of(within), List.of(), "../", organisation + "/lists/"))));
         byOrganisation.forEach((organisation, within) -> pages.putAll(Drilldowns.pages("orgs/" + organisation + "/",
                 Breakdowns.of(within))));
-        pages.put("hierarchy.html", Page.render("Hierarchy", "", HierarchyPage.body(entries)));
-        pages.put("blocked.html", Page.render("Blocked", "", BlockedPage.body(entries)));
-        pages.putAll(ranking(rows, catalogued, programs));
-        Map<String, List<ActionPlanView.PlannedWorkload>> running = plan.map(p -> Deployments.byDockerfile(
-                p.workloads())).orElse(Map.of());
-        entries.forEach(entry -> pages.put("dockerfiles/" + entry.blobSha() + ".html", Page.render(
-                entry.locations().getFirst().repository() + "/" + entry.locations().getFirst().path(), "../",
-                DockerfilePage.body(entry, programs) + Deployments.section(entry.blobSha(),
-                        running.getOrDefault(entry.blobSha(), List.of())))));
         return pages;
+    }
+
+    static Map<String, String> dockerfilePages(List<CatalogueEntry> entries, Map<String, String> programs,
+                                               Map<String, List<ActionPlanView.PlannedWorkload>> running) {
+        return entries.stream().collect(Collectors.toMap(entry -> "dockerfiles/" + entry.blobSha() + ".html",
+                entry -> dockerfilePage(entry, programs, running.getOrDefault(entry.blobSha(), List.of())),
+                (a, b) -> b, LinkedHashMap::new));
+    }
+
+    static String dockerfilePage(CatalogueEntry entry, Map<String, String> programs,
+                                 List<ActionPlanView.PlannedWorkload> running) {
+        return Page.render(entry.locations().getFirst().repository() + "/" + entry.locations().getFirst().path(),
+                "../", DockerfilePage.body(entry, programs) + Deployments.section(entry.blobSha(), running));
     }
 
     static Map<String, String> ranking(ArchetypeRows archetypes, Set<String> catalogued,

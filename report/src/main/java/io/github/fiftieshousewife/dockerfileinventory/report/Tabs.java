@@ -19,7 +19,7 @@ final class Tabs {
                         org.equals(current))).collect(Collectors.joining()) + "</nav>";
     }
 
-    private static String tab(String href, String label, boolean current) {
+    static String tab(String href, String label, boolean current) {
         return "<a href=\"" + href + "\"" + (current ? " class=\"current\" aria-current=\"page\"" : "") + ">"
                 + escape(label) + "</a>";
     }

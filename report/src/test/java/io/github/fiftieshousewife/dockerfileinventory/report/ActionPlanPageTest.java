@@ -60,14 +60,14 @@ class ActionPlanPageTest {
     }
 
     @Test
-    void aCataloguedDockerfileLinksToItsPageByItsFirstPlace() {
-        assertThat(ActionPlanPage.dockerfile("aaa", new ActionPlanView.Where("team/api", "Dockerfile"), Set.of("aaa")))
-                .isEqualTo("<a href=\"dockerfiles/aaa.html\">team/api Dockerfile</a>");
+    void aRepositoryWithActionsLinksToItsPage() {
+        assertThat(ActionPlanPage.repository("team/api", Set.of("team/api")))
+                .isEqualTo("<a href=\"repositories/team-api.html\">team/api</a>");
     }
 
     @Test
-    void aDockerfileWithoutAPlaceOrPageIsNamedByItsSha() {
-        assertThat(ActionPlanPage.dockerfile("aaa", null, Set.of())).isEqualTo("aaa");
+    void aRepositoryWithoutAPageIsEscapedText() {
+        assertThat(ActionPlanPage.repository("team/<web>", Set.of())).isEqualTo("team/&lt;web&gt;");
     }
 
     @Test
