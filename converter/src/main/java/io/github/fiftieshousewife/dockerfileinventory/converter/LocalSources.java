@@ -1,27 +1,58 @@
 package io.github.fiftieshousewife.dockerfileinventory.converter;
 
 import io.github.fiftieshousewife.dockerfile.model.Add;
+import io.github.fiftieshousewife.dockerfile.model.Arg;
 import io.github.fiftieshousewife.dockerfile.model.Copy;
 import io.github.fiftieshousewife.dockerfile.model.Run;
 import io.github.fiftieshousewife.dockerfile.model.Dockerfile;
+import io.github.fiftieshousewife.dockerfile.model.Env;
 import io.github.fiftieshousewife.dockerfile.model.RunFlag;
+import io.github.fiftieshousewife.dockerfile.model.Stage;
+import io.github.fiftieshousewife.dockerfile.reader.internal.Expansions;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 final class LocalSources {
+
+    private static final Pattern DEFAULTED = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*):?-([^}]*)}");
+    private static final Set<String> PLATFORM = Set.of("TARGETPLATFORM", "TARGETOS", "TARGETARCH", "TARGETVARIANT",
+            "BUILDPLATFORM", "BUILDOS", "BUILDARCH", "BUILDVARIANT");
 
     private LocalSources() {
     }
 
     static List<String> of(Dockerfile model) {
-        return model.stages().stream()
-                .flatMap(stage -> stage.instructions().stream())
-                .flatMap(instruction -> switch (instruction) {
-                    case Copy copy when copy.fromStage() == null -> copy.sources().stream();
-                    case Add add -> add.sources().stream().filter(source -> !remote(source));
-                    default -> Stream.<String>empty();
-                })
-                .toList();
+        return model.stages().stream().flatMap(LocalSources::sources).toList();
+    }
+
+    static Stream<String> sources(Stage stage) {
+        Map<String, String> variables = new HashMap<>();
+        return stage.instructions().stream().<String>mapMulti((instruction, sources) -> {
+            switch (instruction) {
+                case Arg arg when arg.defaultValue() != null ->
+                        variables.put(arg.name(), value(arg.defaultValue(), variables));
+                case Env env -> env.values().forEach((name, text) -> variables.put(name, value(text, variables)));
+                case Copy copy when copy.fromStage() == null ->
+                        copy.sources().forEach(source -> sources.accept(value(source, variables)));
+                case Add add -> add.sources().stream().filter(source -> !remote(source))
+                        .forEach(source -> sources.accept(value(source, variables)));
+                default -> {
+                }
+            }
+        });
+    }
+
+    // The builder sets the platform's arguments, so a default given for one never applies; Stubs expands them.
+    static String value(String text, Map<String, String> variables) {
+        String defaulted = DEFAULTED.matcher(text).replaceAll(reference -> Matcher.quoteReplacement(
+                variables.containsKey(reference.group(1)) ? variables.get(reference.group(1))
+                        : PLATFORM.contains(reference.group(1)) ? "${" + reference.group(1) + "}" : reference.group(2)));
+        return Expansions.expanded(defaulted, variables);
     }
 
     static List<String> secretIds(Dockerfile model) {

@@ -32,6 +32,12 @@ class StubsTest {
     }
 
     @Test
+    void aGlobInADirectoryNameIsStubbedSoThatTheGlobMatchesIt() {
+        assertThat(Stubs.create(context, List.of("dist/release_linux_${TARGETARCH}*/charts-syncer"), "arm64"))
+                .containsExactly("dist/release_linux_arm64stub/charts-syncer");
+    }
+
+    @Test
     void aGlobThatMatchesSomethingIsNotStubbed() throws IOException {
         Files.createDirectories(context.resolve("target/lib"));
         Files.writeString(context.resolve("target/lib/a.jar"), "jar");

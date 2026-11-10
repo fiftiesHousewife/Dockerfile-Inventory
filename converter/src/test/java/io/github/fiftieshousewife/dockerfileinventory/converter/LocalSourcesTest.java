@@ -4,6 +4,8 @@ import io.github.fiftieshousewife.dockerfile.reader.DockerfileReader;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class LocalSourcesTest {
@@ -24,6 +26,39 @@ class LocalSourcesTest {
 
         assertThat(LocalSources.of(DockerfileReader.read(Parsed.of(dockerfile)).model())).containsExactly("go.mod", "go.sum",
                 "bin/app-${TARGETOS}-${TARGETARCH}", "target/lib/*", "rootfs.tar.gz");
+    }
+
+    private static List<String> sources(String dockerfile) {
+        return LocalSources.of(DockerfileReader.read(Parsed.of(dockerfile)).model());
+    }
+
+    @Test
+    void aSourceTakesTheVariablesItsStageSetsBeforeIt() {
+        assertThat(sources("""
+                FROM scratch
+                ARG VERSION=1.2
+                ENV OS_ARCH="${TARGETARCH:-amd64}" NAME=app
+                COPY dist/release_linux_${OS_ARCH}*/${NAME}-${VERSION} /opt/
+                """)).containsExactly("dist/release_linux_${TARGETARCH}*/app-1.2");
+    }
+
+    @Test
+    void aDefaultIsTakenWhenItsVariableIsUnsetAndAnotherStagesVariablesAreNot() {
+        assertThat(sources("""
+                FROM ubi9 AS one
+                ENV DIR=lib
+                FROM ubi9
+                ENV OUT="${UNSET:-out}"
+                COPY ${OUT}/${DIR}/app /opt/
+                """)).containsExactly("out/${DIR}/app");
+    }
+
+    @Test
+    void aValueTakesAKnownVariableOrItsDefaultAndKeepsThePlatformsArgumentsForTheBuilder() {
+        assertAll(
+                () -> assertThat(LocalSources.value("${A:-x}/${B-y}/$A", Map.of("A", "a"))).isEqualTo("a/y/a"),
+                () -> assertThat(LocalSources.value("${TARGETOS:-linux}", Map.of()))
+                        .isEqualTo("${TARGETOS}"));
     }
 
     @Test

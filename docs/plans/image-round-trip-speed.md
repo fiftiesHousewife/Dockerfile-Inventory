@@ -71,3 +71,9 @@ The nine samples with checkouts (charts-syncer's needs a clone this session's sa
 36% faster, not the 60% estimated: each build slows when four share the VM's 8 CPUs, and php's two `make -j 8`
 builds at once set the run's length. All nine the same, as before.
 
+The owner's run of the ten (10 Nov): nine the same in 678 seconds, charts-syncer not built. Its `COPY
+dist/release_linux_${OS_ARCH}*/charts-syncer` names a variable its stage sets (`ENV OS_ARCH="${TARGETARCH:-amd64}"`),
+which `Stubs` left unexpanded, so the stub missed the glob. `LocalSources` now expands each source with the `ARG`
+defaults and `ENV` values set before it in its stage (`${NAME:-default}` too, the platform's arguments kept for
+`Stubs`); charts-syncer is then the same, on its stub, in 24 seconds.
+
