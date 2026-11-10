@@ -34,14 +34,11 @@ final class RemovedLater implements Rule {
         List<Copied> copied = new ArrayList<>();
         List<Finding> findings = new ArrayList<>();
         FinalImage.instructions(subject.file()).forEach(instruction -> {
-            switch (instruction) {
-                case Docker.Copy _, Docker.Add _ -> copied.addAll(
-                        copied(Continuations.oneLine(instruction.printTrimmed(cursor)), lines.of(instruction)));
-                case Docker.Run run -> RunScripts.commands(run).orElse(List.of()).forEach(command ->
-                        removals(command, copied).forEach(message -> findings.add(
-                                finding(subject, lines.of(run), message))));
-                default -> {
-                }
+            if (instruction instanceof Docker.Copy || instruction instanceof Docker.Add) {
+                copied.addAll(copied(Continuations.oneLine(instruction.printTrimmed(cursor)), lines.of(instruction)));
+            } else if (instruction instanceof Docker.Run run) {
+                RunScripts.commands(run).orElse(List.of()).forEach(command -> removals(command, copied)
+                        .forEach(message -> findings.add(finding(subject, lines.of(run), message))));
             }
         });
         return findings;

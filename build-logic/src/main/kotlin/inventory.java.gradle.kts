@@ -27,6 +27,15 @@ dependencies {
     "testRuntimeOnly"(lib("junit-platform-launcher"))
 }
 
+// Compiled by the newest JDK for the LTS users run (the CLI and the libraries alike), and tested on that LTS.
+val targetRelease = providers.gradleProperty("inventory.targetRelease").orElse("21").get().toInt()
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(targetRelease)
+}
+tasks.withType<Test>().configureEach {
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(targetRelease)) })
+}
+
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.compilerArgs.addAll(listOf("-parameters", "-Xlint:all", "-Werror"))

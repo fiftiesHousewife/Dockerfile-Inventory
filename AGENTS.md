@@ -244,7 +244,7 @@ Enforced by tools:
 | No SpotBugs findings at medium confidence | SpotBugs |
 | Published libraries' Javadoc free of errors (broken links, bad HTML) | javadoc `-Xdoclint:all,-missing -Werror` |
 | Line coverage at least 80% per module | JaCoCo |
-| Java 25 (newest LTS); published libraries built for and tested on Java 21 | Gradle toolchain (`inventory.javaRelease`; `inventory.libraryRelease` for modules applying `inventory.published`) |
+| Compiled by Java 25 (the newest LTS) for Java 21, and tested on 21: the CLI and the libraries run on the LTS users have | Gradle toolchain (`inventory.javaRelease` compiles, `inventory.targetRelease` is the release and the test runtime) |
 | UTF-8, LF, 4-space indent, 120-character lines | `.editorconfig`, `.gitattributes` |
 
 By hand, since no tool checks them:

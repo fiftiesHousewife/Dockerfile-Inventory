@@ -36,12 +36,11 @@ final class ChangedAfterCopy implements Rule {
         List<Finding> findings = new ArrayList<>();
         FinalImage.instructions(subject.file()).forEach(instruction -> {
             String line = Continuations.oneLine(instruction.printTrimmed(cursor));
-            switch (instruction) {
-                case Docker.Copy _, Docker.Add _ -> copied(line, lines.of(instruction)).ifPresent(copied::add);
-                case Docker.Run _ -> messages(line, copied).forEach(message ->
+            if (instruction instanceof Docker.Copy || instruction instanceof Docker.Add) {
+                copied(line, lines.of(instruction)).ifPresent(copied::add);
+            } else if (instruction instanceof Docker.Run) {
+                messages(line, copied).forEach(message ->
                         findings.add(finding(subject, lines.of(instruction), message)));
-                default -> {
-                }
             }
         });
         return findings;

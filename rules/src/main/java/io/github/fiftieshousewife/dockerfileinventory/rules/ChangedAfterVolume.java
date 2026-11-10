@@ -37,13 +37,11 @@ final class ChangedAfterVolume implements Rule {
         List<Finding> findings = new ArrayList<>();
         FinalImage.instructions(subject.file()).forEach(instruction -> {
             String line = Continuations.oneLine(instruction.printTrimmed(cursor));
-            switch (instruction) {
-                case Docker.Volume _ -> paths(line).forEach(path -> volumes.add(new Declared(path,
-                        lines.of(instruction))));
-                case Docker.Run _ -> messages(line, volumes).forEach(message ->
+            if (instruction instanceof Docker.Volume) {
+                paths(line).forEach(path -> volumes.add(new Declared(path, lines.of(instruction))));
+            } else if (instruction instanceof Docker.Run) {
+                messages(line, volumes).forEach(message ->
                         findings.add(finding(subject, lines.of(instruction), message)));
-                default -> {
-                }
             }
         });
         return findings;

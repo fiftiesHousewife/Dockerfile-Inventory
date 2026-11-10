@@ -23,15 +23,6 @@ tasks.named<Jar>("jar") {
     }
 }
 
-// Libraries are built for the LTS users run, and tested on it; the pipeline's own modules stay on the newest.
-val libraryRelease = providers.gradleProperty("inventory.libraryRelease").orElse("21").get().toInt()
-tasks.withType<JavaCompile>().configureEach {
-    options.release.set(libraryRelease)
-}
-tasks.withType<Test>().configureEach {
-    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libraryRelease)) })
-}
-
 // Javadoc that is wrong (a broken link, bad HTML) fails the build; a missing @param or @return does not, since a
 // record's component names say what its parameters are.
 tasks.withType<Javadoc>().configureEach {
