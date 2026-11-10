@@ -5,7 +5,6 @@ import java.security.PrivateKey;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-// The app itself, for the calls that list its installations and issue their tokens: a JWT signed for each call.
 final class AppCredential implements Credential {
 
     private final String appId;

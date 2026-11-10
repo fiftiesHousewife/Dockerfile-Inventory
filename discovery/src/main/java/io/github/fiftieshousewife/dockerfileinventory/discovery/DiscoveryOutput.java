@@ -15,7 +15,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// Appended as work finishes, so a rerun skips what a killed run had finished.
 final class DiscoveryOutput {
 
     record BlobFinding(String sha, String repository, String problem) {
@@ -101,7 +100,6 @@ final class DiscoveryOutput {
         store(yaml, sha, text);
     }
 
-    // Moved into place whole, so a killed run never leaves half a file a rerun would take as stored.
     private static void store(Path folder, String sha, String text) {
         try {
             Path temp = Files.createTempFile(folder, sha, ".part");

@@ -8,7 +8,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
-// Virtual threads behind a semaphore, so GitHub sees at most `concurrency` calls at once.
 final class Scans {
 
     private final RepoScan scan;

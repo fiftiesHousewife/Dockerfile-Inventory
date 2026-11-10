@@ -11,8 +11,6 @@ import java.util.stream.StreamSupport;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 
-// REST for organisations and trees, GraphQL for repositories and blob text, all through java.net.http so the
-// scanner image needs no git binary.
 final class GitHubHttp implements GitHub {
 
     private static final int PAGE_SIZE = 100;

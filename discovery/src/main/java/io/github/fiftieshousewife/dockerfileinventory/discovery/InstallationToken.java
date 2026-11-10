@@ -5,8 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-// A GitHub App installation's token lasts an hour; it is renewed five minutes before it runs out, and at once after a
-// 401, so a long run never sends an expired one.
+// A GitHub App installation's token lasts an hour.
 final class InstallationToken implements Credential {
 
     static final Duration MARGIN = Duration.ofMinutes(5);

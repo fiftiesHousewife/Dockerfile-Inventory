@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +64,11 @@ class SurveyMainTest {
 
         assertThat(err.toString(StandardCharsets.UTF_8)).isEqualTo("survey: stopped before fetching"
                 + System.lineSeparator());
+    }
+
+    @Test
+    void wrongArgumentsGivenAsAListAreAUsageErrorBeforeAnyStageRuns() {
+        assertThat(SurveyMain.run(List.of("--all"), Map.of())).isEqualTo(2);
     }
 
     @Test

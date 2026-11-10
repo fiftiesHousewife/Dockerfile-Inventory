@@ -76,7 +76,6 @@ public final class Combine {
                 && Files.isRegularFile(source.resolve("repos.jsonl")) && Files.isDirectory(source.resolve("blobs"));
     }
 
-    // Each blob once, by its SHA; a .part is a download a killed run left unfinished.
     static int copyBlobs(List<Path> sources, String folder, Path target) throws IOException {
         sources.stream()
                 .map(source -> source.resolve(folder))
@@ -89,6 +88,7 @@ public final class Combine {
         }
     }
 
+    // A .part is a download a killed run left unfinished.
     static List<Path> stored(Path directory) {
         try (Stream<Path> blobs = Files.list(directory)) {
             return blobs.filter(b -> Files.isRegularFile(b) && !b.toString().endsWith(".part")).toList();

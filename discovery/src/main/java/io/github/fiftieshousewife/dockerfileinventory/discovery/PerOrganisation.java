@@ -10,8 +10,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-// Discovery's calls, each sent with the credential of the organisation it reads: a batch spanning organisations is
-// split into one call for each.
 final class PerOrganisation implements GitHub {
 
     private final Function<String, GitHub> clients;

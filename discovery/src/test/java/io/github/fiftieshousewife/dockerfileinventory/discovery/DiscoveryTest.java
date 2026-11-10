@@ -168,15 +168,6 @@ class DiscoveryTest {
     }
 
     @Test
-    void asksOnlyForBlobsNeitherStoredNorReported() {
-        var stored = new Located("pay/api", A, Scope.RELEASED, "Dockerfile", "same");
-        var missing = new Located("pay/worker", B, Scope.RELEASED, "debug/Dockerfile", "other");
-
-        assertThat(Discovery.missing(List.of(stored, missing), "same"::equals))
-                .containsExactly(new BlobRequest("pay/worker", "other"));
-    }
-
-    @Test
     void recordsEachLocationsLastChange() {
         gitHub.change(new ChangeRequest("pay/api", A, "Dockerfile"), "c1", "2026-03-02T10:11:12Z");
 
@@ -200,15 +191,6 @@ class DiscoveryTest {
         assertThat(gitHub.changeCalls).singleElement().satisfies(batch -> assertThat(batch).containsExactly(
                 new ChangeRequest("pay/worker", B, "Dockerfile"), new ChangeRequest("pay/worker", B,
                         "debug/Dockerfile")));
-    }
-
-    @Test
-    void asksForTheLastChangeOfEachLocationNotYetRecorded() {
-        var recorded = new Located("pay/api", A, Scope.RELEASED, "Dockerfile", "same");
-        var unrecorded = new Located("pay/worker", B, Scope.RELEASED, "Dockerfile", "same");
-
-        assertThat(Discovery.unchanged(List.of(recorded, unrecorded), Set.of(new ChangeRequest("pay/api", A,
-                "Dockerfile")))).containsExactly(new ChangeRequest("pay/worker", B, "Dockerfile"));
     }
 
     private Discovery discovery() {
@@ -267,8 +249,13 @@ class DiscoveryTest {
     }
 
     @Test
-    void theCallsLeftAreTheBatchesOfFiftyForTheBlobsTheYamlAndTheLastChanges() {
-        assertThat(Discovery.batches(0) + Discovery.batches(1) + Discovery.batches(50) + Discovery.batches(51))
-                .isEqualTo(4);
+    void aScanThatDidNotFinishCountsAsFailed() {
+        assertThat(Discovery.failed(List.of(result(RepoOutcome.Status.FAILED), result(RepoOutcome.Status.SCANNED),
+                result(RepoOutcome.Status.EMPTY)))).isEqualTo(1);
+    }
+
+    private static RepoScan.Result result(RepoOutcome.Status status) {
+        return new RepoScan.Result(new RepoOutcome("pay/api", status, Scope.RELEASED, A, false, false, null, 0, null),
+                List.of(), List.of());
     }
 }
