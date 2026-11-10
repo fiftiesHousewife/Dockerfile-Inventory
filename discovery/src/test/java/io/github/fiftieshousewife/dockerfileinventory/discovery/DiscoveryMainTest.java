@@ -1,11 +1,9 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import static org.junit.jupiter.api.Assertions.assertAll;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,12 +36,13 @@ class DiscoveryMainTest {
 
     @Test
     void refusesAMissingOrBlankSetting() {
-        assertThatIllegalStateException()
-                .isThrownBy(() -> DiscoveryMain.required(Map.of("GHE_TOKEN", " "), "GHE_TOKEN"))
-                .withMessage("GHE_TOKEN is not set");
-        assertThatIllegalStateException()
-                .isThrownBy(() -> DiscoveryMain.required(Map.of(), "OUT_DIR"))
-                .withMessage("OUT_DIR is not set");
+        assertAll(
+                () -> assertThatIllegalStateException()
+                        .isThrownBy(() -> DiscoveryMain.required(Map.of("GHE_TOKEN", " "), "GHE_TOKEN"))
+                        .withMessage("GHE_TOKEN is not set"),
+                () -> assertThatIllegalStateException()
+                        .isThrownBy(() -> DiscoveryMain.required(Map.of(), "OUT_DIR"))
+                        .withMessage("OUT_DIR is not set"));
     }
 
     @Test
@@ -55,8 +54,9 @@ class DiscoveryMainTest {
     void readsTheReleaseIndexOnlyWhenOneIsGiven() throws IOException {
         Path csv = Files.writeString(dir.resolve("releases.csv"), "pay/api," + "a".repeat(40) + "\n");
 
-        assertThat(DiscoveryMain.releases(null).size()).isZero();
-        assertThat(DiscoveryMain.releases(csv.toString()).size()).isEqualTo(1);
+        assertAll(
+                () -> assertThat(DiscoveryMain.releases(null).size()).isZero(),
+                () -> assertThat(DiscoveryMain.releases(csv.toString()).size()).isEqualTo(1));
     }
 
     @Test
@@ -75,5 +75,19 @@ class DiscoveryMainTest {
                 () -> assertThat(DiscoveryMain.maxDockerfiles(Map.of("MAX_DOCKERFILES", "500"))).isEqualTo(500),
                 () -> assertThatThrownBy(() -> DiscoveryMain.maxDockerfiles(Map.of("MAX_DOCKERFILES", "lots")))
                         .hasMessage("MAX_DOCKERFILES must be a positive whole number, not lots"));
+    }
+
+    @Test
+    void aRunRecordsWhichCredentialReadEachOrganisation() throws IOException {
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.routeGraphql("repositories-page2.json");
+            Path out = dir.resolve("out");
+
+            DiscoveryMain.run(Map.of("GHE_API_URL", server.root() + "api/", "GHE_TOKEN", "t0ken",
+                    "GHE_MAX_REQUESTS_PER_SECOND", "1000", "OUT_DIR", out.toString(), "ORGANIZATIONS", "payments"));
+
+            assertThat(out.resolve("credentials.jsonl")).hasContent(
+                    "{\"organization\":\"payments\",\"credential\":\"GHE_TOKEN (variable)\"}");
+        }
     }
 }

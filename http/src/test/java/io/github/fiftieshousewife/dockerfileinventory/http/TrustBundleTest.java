@@ -6,7 +6,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.util.Arrays;
+import javax.net.ssl.TrustManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -35,5 +38,13 @@ class TrustBundleTest {
     @Test
     void anSslContextIsMadeFromTheBundle() {
         assertThat(TrustBundle.sslContext(CORPORATE_CA).getProtocol()).isEqualTo("TLS");
+    }
+
+    @Test
+    void theX509TrustManagerIsTakenFromAFactory() throws GeneralSecurityException {
+        TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        factory.init((KeyStore) null);
+
+        assertThat(TrustBundle.onlyX509(factory).getAcceptedIssuers()).isNotEmpty();
     }
 }

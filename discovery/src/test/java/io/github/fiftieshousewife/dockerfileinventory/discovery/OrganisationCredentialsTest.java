@@ -71,4 +71,20 @@ final class OrganisationCredentialsTest {
         assertThat(new OrganisationCredentials(Optional.of(app), Optional.empty(), Instant::now).installed())
                 .containsExactly("pay");
     }
+
+    @Test
+    void choosingRecordsTheInstallationThatReadsAnOrganisation() {
+        OrganisationCredentials credentials = new OrganisationCredentials(Optional.of(app), Optional.empty(),
+                Instant::now);
+        credentials.choose("pay");
+
+        assertThat(credentials.chosen()).containsExactly(Map.entry("pay", "the GitHub App, installation 7"));
+    }
+
+    @Test
+    void withNeitherATokenNorAnAppChoosingStopsTheRunNamingTheSettings() {
+        assertThatThrownBy(() -> new OrganisationCredentials(Optional.empty(), Optional.empty(), Instant::now)
+                .choose("web")).hasMessage("no credential reads web: neither GHE_TOKEN, GHE_TOKEN_FILE nor GHE_APP_ID "
+                + "is set");
+    }
 }

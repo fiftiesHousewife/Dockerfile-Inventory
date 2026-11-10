@@ -33,14 +33,6 @@ class CommandsTest {
     }
 
     @Test
-    void settingListsAreJoinedInOrder() {
-        assertAll(
-                () -> assertThat(Commands.concat(List.of(List.of(Setting.required("A", "a")),
-                        List.of(Setting.required("B", "b"))))).extracting(Setting::name).containsExactly("A", "B"),
-                () -> assertThat(Commands.concat(List.of())).isEmpty());
-    }
-
-    @Test
     void aSurveyGivenNoOrganisationTakesTheSettingsUrl() {
         assertAll(
                 () -> assertThat(Commands.surveyArguments(List.of("--try"), Map.of("GHE_API_URL", "https://g/a")))
@@ -57,10 +49,10 @@ class CommandsTest {
     void everyCommandThatCallsAServerRequiresItsRate() {
         assertAll(
                 () -> assertThat(Commands.DISCOVERY.settings()).contains(Setting.required("GHE_MAX_REQUESTS_PER_SECOND",
-                        Commands.GITHUB_RATE.description())),
-                () -> assertThat(Commands.LINEAGE.settings()).contains(Commands.ARTIFACTORY_RATE),
-                () -> assertThat(Commands.SURVEY.settings()).contains(Commands.GITHUB_RATE,
+                        SettingGroups.GITHUB_RATE.description())),
+                () -> assertThat(Commands.LINEAGE.settings()).contains(SettingGroups.ARTIFACTORY_RATE),
+                () -> assertThat(Commands.SURVEY.settings()).contains(SettingGroups.GITHUB_RATE,
                         Setting.requiredWith("ARTIFACTORY_MAX_REQUESTS_PER_SECOND", "ARTIFACTORY_URL",
-                                Commands.ARTIFACTORY_RATE.description())));
+                                SettingGroups.ARTIFACTORY_RATE.description())));
     }
 }

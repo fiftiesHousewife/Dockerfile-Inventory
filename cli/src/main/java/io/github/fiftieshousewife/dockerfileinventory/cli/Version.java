@@ -11,10 +11,14 @@ final class Version {
     }
 
     static String current() {
-        try (InputStream in = Version.class.getResourceAsStream("/docker-inventory.properties")) {
-            Properties properties = new Properties();
-            properties.load(in);
-            return properties.getProperty("version");
+        return read(Version.class.getResourceAsStream("/docker-inventory.properties"));
+    }
+
+    static String read(InputStream properties) {
+        try (InputStream in = properties) {
+            Properties read = new Properties();
+            read.load(in);
+            return read.getProperty("version");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

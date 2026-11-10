@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-// Which credential reads each organisation: the GitHub App's installation where the app is installed, the token
-// elsewhere, chosen when the organisation is first read and kept; chosen() is what the run records.
 final class OrganisationCredentials {
 
     interface Installations {
@@ -38,7 +36,7 @@ final class OrganisationCredentials {
         return credentials.computeIfAbsent(org, this::choose);
     }
 
-    private Credential choose(String org) {
+    Credential choose(String org) {
         Long installation = installations().get(org);
         if (installation != null) {
             chosen.put(org, "the GitHub App, installation " + installation);

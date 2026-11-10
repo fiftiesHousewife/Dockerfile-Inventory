@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -13,8 +14,7 @@ import java.util.HexFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// A GitHub App proves itself with a JWT signed by its private key, good for ten minutes at most; GitHub then trades it
-// for an installation token.
+// GitHub accepts an app's JWT for ten minutes at most.
 final class AppJwt {
 
     private static final Pattern PEM = Pattern.compile(
@@ -57,7 +57,7 @@ final class AppJwt {
         if (length < 0x80) {
             out.write(length);
         } else {
-            byte[] size = java.math.BigInteger.valueOf(length).toByteArray();
+            byte[] size = BigInteger.valueOf(length).toByteArray();
             int start = size[0] == 0 ? 1 : 0;
             out.write(0x80 | (size.length - start));
             out.write(size, start, size.length - start);

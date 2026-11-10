@@ -6,7 +6,6 @@ import java.util.Locale;
 import java.util.Map;
 import tools.jackson.databind.JsonNode;
 
-// Where a GitHub App is installed, by organisation, and a token for each installation; called with the app's JWT.
 final class AppInstallations implements OrganisationCredentials.Installations {
 
     private static final int PAGE_SIZE = 100;

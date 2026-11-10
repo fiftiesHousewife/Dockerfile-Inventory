@@ -4,7 +4,6 @@ import tools.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// About 50 blobs per query, one aliased `repository` field each, so a batch is one round trip.
 final class GraphQlBlobs {
 
     private static final String FIELD = "  %s: repository(owner: %s, name: %s) "

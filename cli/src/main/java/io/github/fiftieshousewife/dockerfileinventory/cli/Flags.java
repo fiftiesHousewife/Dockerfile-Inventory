@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-// The flags any command takes, wherever they stand; the rest are the command's own, in order. environment: what the
-// selection, the ceiling and --yes become, as the settings the stages read.
 record Flags(List<String> rest, Optional<String> settings, Optional<String> load, Map<String, String> environment) {
 
     static final Map<String, String> VALUES = Map.of("--settings", "a YAML file", "--load", "gentle or normal",

@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// names: repositories named exactly, owner/name; strings: a repository whose name (not owner) holds one is kept too.
 record Selection(List<String> names, List<String> strings) {
 
     static final Selection ALL = new Selection(List.of(), List.of());

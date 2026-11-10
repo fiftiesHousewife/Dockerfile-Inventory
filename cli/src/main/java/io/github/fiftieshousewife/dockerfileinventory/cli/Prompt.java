@@ -8,9 +8,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
-// Asks on the terminal whether to fetch, once discovery's first pass has found what there is.
 final class Prompt implements Confirmation {
 
     // The stages after discovery on the combined public estate (10 Nov): 73 s for 5,250 distinct Dockerfiles, and
@@ -52,7 +52,7 @@ final class Prompt implements Confirmation {
         out.print("Continue? [y/N] ");
         out.flush();
         String given = answer.get();
-        return given != null && java.util.Set.of("y", "yes").contains(given.strip().toLowerCase(Locale.ROOT));
+        return given != null && Set.of("y", "yes").contains(given.strip().toLowerCase(Locale.ROOT));
     }
 
     static Duration likely(FirstPass pass, double rate) {
@@ -68,7 +68,7 @@ final class Prompt implements Confirmation {
         return minutes < 90 ? "about " + minutes + " minutes" : "about " + number(time.toMinutes() / 60.0) + " hours";
     }
 
-    private static String number(double value) {
+    static String number(double value) {
         return value == Math.rint(value) ? String.valueOf((long) value) : String.valueOf(Math.round(value * 10) / 10.0);
     }
 }

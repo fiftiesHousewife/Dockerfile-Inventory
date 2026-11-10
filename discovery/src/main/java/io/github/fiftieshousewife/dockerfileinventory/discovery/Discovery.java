@@ -1,13 +1,11 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 final class Discovery {
@@ -45,8 +43,6 @@ final class Discovery {
                 Confirmation.ALWAYS);
     }
 
-    // tryRepositories: stop once that many scanned repositories held a Dockerfile; 0 scans every one.
-    // maxDockerfiles: stop after the first pass when it finds more distinct ones; 0 for no ceiling.
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
               List<String> organizations, int tryRepositories, Selection selection, int maxDockerfiles,
               Confirmation confirmation) {
@@ -68,27 +64,23 @@ final class Discovery {
         List<Repository> repositories = selection.of(repositories());
         List<Repository> todo = unfinished(repositories, output.finishedRepositories());
         List<RepoScan.Result> results = tryRepositories > 0 ? scanUntilEnough(todo) : scans.scanAll(todo);
-        int failed = (int) results.stream().filter(r -> !r.outcome().status().isFinal()).count();
-
+        int failed = failed(results);
         List<Located> manifest = output.manifest();
         Map<String, Located> byBlob = firstByBlob(manifest);
-        Set<String> reported = output.reportedBlobs();
-        List<BlobRequest> blobs = missing(byBlob.values(), sha -> output.hasBlob(sha) || reported.contains(sha));
         List<Located> yaml = output.yaml();
-        List<BlobRequest> yamls = missing(firstByBlob(yaml).values(),
-                sha -> output.hasYaml(sha) || reported.contains(sha));
-        List<ChangeRequest> changes = unchanged(manifest, output.changes().stream()
-                .map(c -> new ChangeRequest(c.repository(), c.commitSha(), c.path())).collect(Collectors.toSet()));
-        goOn(firstPass(repositories.size(), manifest, byBlob.size(),
-                batches(blobs.size()) + batches(yamls.size()) + batches(changes.size())));
+        Pending pending = Pending.of(output, manifest, byBlob.values(), yaml);
+        goOn(firstPass(repositories.size(), manifest, byBlob.size(), pending.calls()));
 
-        BlobFetch.Fetched fetched = blobFetch.fetch(blobs);
-        BlobFetch.Fetched fetchedYaml = yamlFetch.fetch(yamls);
-        ChangeFetch.Fetched lastChanges = changeFetch.fetch(changes);
-
+        BlobFetch.Fetched fetched = blobFetch.fetch(pending.blobs());
+        BlobFetch.Fetched fetchedYaml = yamlFetch.fetch(pending.yamls());
+        ChangeFetch.Fetched lastChanges = changeFetch.fetch(pending.changes());
         return new Summary(repositories.size(), repositories.size() - todo.size(), results.size() - failed, failed,
                 manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges.recorded(),
                 lastChanges.problems(), yaml.size(), fetchedYaml.stored());
+    }
+
+    static int failed(List<RepoScan.Result> results) {
+        return (int) results.stream().filter(r -> !r.outcome().status().isFinal()).count();
     }
 
     FirstPass firstPass(int repositories, List<Located> manifest, int distinct, int callsLeft) {
@@ -105,10 +97,6 @@ final class Discovery {
             throw new RunStopped("stopped before fetching: the first pass is kept in the output folder, and a rerun "
                     + "starts from it");
         }
-    }
-
-    static int batches(int requests) {
-        return (requests + BlobFetch.BATCH - 1) / BlobFetch.BATCH;
     }
 
     List<RepoScan.Result> scanUntilEnough(List<Repository> todo) {
@@ -135,17 +123,5 @@ final class Discovery {
     static Map<String, Located> firstByBlob(List<Located> manifest) {
         return manifest.stream()
                 .collect(Collectors.toMap(Located::blobSha, Function.identity(), (a, b) -> a, LinkedHashMap::new));
-    }
-
-    static List<ChangeRequest> unchanged(List<Located> manifest, Set<ChangeRequest> recorded) {
-        return manifest.stream().map(l -> new ChangeRequest(l.repository(), l.commitSha(), l.path()))
-                .filter(request -> !recorded.contains(request)).distinct().toList();
-    }
-
-    static List<BlobRequest> missing(Collection<Located> locations, Predicate<String> known) {
-        return locations.stream()
-                .filter(l -> !known.test(l.blobSha()))
-                .map(l -> new BlobRequest(l.repository(), l.blobSha()))
-                .toList();
     }
 }

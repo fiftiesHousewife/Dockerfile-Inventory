@@ -7,8 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-// An environment holds many variables the CLI never reads; only one starting as a setting does, and within two edits
-// of it, is taken for a typo.
 final class NearMisses {
 
     private static final int MOST_EDITS = 2;

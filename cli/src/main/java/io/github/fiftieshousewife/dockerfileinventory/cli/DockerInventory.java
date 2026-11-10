@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -80,12 +81,15 @@ public final class DockerInventory {
             return USAGE;
         }
         NearMisses.warnings(env.keySet(), known(commands)).forEach(err::println);
-        Optional<Setting> missing = command.settings().stream()
-                .filter(setting -> required(setting, env) && isBlank(env.get(setting.name()))).findFirst();
+        Optional<Setting> missing = command.settings().stream().filter(setting -> setting.missingFrom(env)).findFirst();
         if (missing.isPresent()) {
             err.println(command.name() + ": " + missing.get().name() + " is required: " + missing.get().description());
             return USAGE;
         }
+        return started(command, args, env, err);
+    }
+
+    static int started(Command command, List<String> args, Map<String, String> env, PrintStream err) {
         try {
             return command.runner().run(args, env);
         } catch (UsageError | SelectionNotFound e) {
@@ -100,13 +104,7 @@ public final class DockerInventory {
         }
     }
 
-    static boolean required(Setting setting, Map<String, String> env) {
-        return setting.required() || setting.requiredWith() != null && !isBlank(env.get(setting.requiredWith()))
-                || setting.requiredUnless() != null && setting.requiredUnless().stream()
-                .allMatch(other -> isBlank(env.get(other)));
-    }
-
-    static java.util.Set<String> known(List<Command> commands) {
+    static Set<String> known(List<Command> commands) {
         return commands.stream().flatMap(command -> command.settings().stream()).map(Setting::name)
                 .collect(Collectors.toSet());
     }
@@ -115,12 +113,8 @@ public final class DockerInventory {
         return String.valueOf(e.getMessage()).lines().findFirst().orElse(e.getClass().getSimpleName());
     }
 
-    private static Optional<Command> command(String name, List<Command> commands) {
+    static Optional<Command> command(String name, List<Command> commands) {
         return commands.stream().filter(command -> command.name().equals(name)).findFirst();
-    }
-
-    private static boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 
     private static int printed(PrintStream out, String text) {

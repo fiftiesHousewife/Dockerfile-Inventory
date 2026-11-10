@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-// GitHub truncates a recursive tree listing past 100,000 entries or 7 MB, so a truncated tree is listed one level
-// down instead and each subtree recursively, splitting again where needed.
+// GitHub truncates a recursive tree listing past 100,000 entries or 7 MB.
 final class TreeWalk {
 
     static final int MAX_DEPTH = 8;

@@ -9,8 +9,10 @@ import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -58,5 +60,49 @@ class GitHubAccessTest {
                         "{\"organization\":\"pay\",\"credential\":\"the GitHub App, installation 7\"}\n"
                                 + "{\"organization\":\"web\",\"credential\":\"GHE_TOKEN_FILE /secrets/t\"}\n"),
                 () -> assertThat(GitHubAccess.lines(Map.of())).isEmpty());
+    }
+
+    @Test
+    void aSettingIsPresentUnlessMissingOrBlank() {
+        assertAll(
+                () -> assertThat(GitHubAccess.present(Map.of("GHE_APP_ID", "1"), "GHE_APP_ID")).isTrue(),
+                () -> assertThat(GitHubAccess.present(Map.of("GHE_APP_ID", " "), "GHE_APP_ID")).isFalse(),
+                () -> assertThat(GitHubAccess.present(Map.of(), "GHE_APP_ID")).isFalse());
+    }
+
+    @Test
+    void withATokenTheOrganisationsAreTheOnesItLists() throws IOException {
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.route("/api/v3/organizations", exchange -> RecordedGitHub.respond(exchange, 200,
+                    exchange.getRequestURI().getQuery().contains("since=0")
+                            ? "organizations-page1.json" : "organizations-page2.json"));
+            GitHubApi api = GitHubApi.from(server.root() + "api/");
+            Map<String, String> env = Map.of("GHE_TOKEN", "t");
+
+            GitHub client = GitHubAccess.client(api, HttpSettings.from(Map.of()), Throttle.NONE,
+                    GitHubAccess.credentials(env, api, HttpSettings.from(Map.of()), Throttle.NONE), env);
+
+            assertThat(client.organizations()).containsExactly("payments", "platform");
+        }
+    }
+
+    @Test
+    void withAnAppAloneTheOrganisationsAreItsInstallations() {
+        OrganisationCredentials.Installations app = new OrganisationCredentials.Installations() {
+            @Override
+            public Map<String, Long> list() {
+                return Map.of("web", 9L, "pay", 7L);
+            }
+
+            @Override
+            public InstallationToken.Issued issue(long installation) {
+                return new InstallationToken.Issued("ghs_" + installation, Instant.MAX);
+            }
+        };
+
+        GitHub client = GitHubAccess.client(API, HttpSettings.from(Map.of()), Throttle.NONE,
+                new OrganisationCredentials(Optional.of(app), Optional.empty(), Instant::now), Map.of());
+
+        assertThat(client.organizations()).containsExactly("pay", "web");
     }
 }

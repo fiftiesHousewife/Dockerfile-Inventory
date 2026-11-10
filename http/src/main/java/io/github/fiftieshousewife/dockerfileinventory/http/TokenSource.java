@@ -91,7 +91,7 @@ public final class TokenSource implements Credential {
         }
     }
 
-    private static Optional<String> present(String value) {
+    static Optional<String> present(String value) {
         return Optional.ofNullable(value).filter(v -> !v.isBlank());
     }
 }

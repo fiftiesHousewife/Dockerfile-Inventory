@@ -5,7 +5,6 @@ import java.util.Optional;
 
 final class RepoScan {
 
-    // yaml: the files that could be deployment manifests.
     record Result(RepoOutcome outcome, List<Located> dockerfiles, List<Located> yaml) {
 
         Result {

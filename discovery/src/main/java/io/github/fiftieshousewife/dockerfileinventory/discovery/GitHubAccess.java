@@ -16,8 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import tools.jackson.databind.ObjectMapper;
 
-// How discovery reaches GitHub: a token, a GitHub App, or both, each organisation read with its own; one client per
-// credential, all on the run's one throttle.
 final class GitHubAccess {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -72,7 +70,7 @@ final class GitHubAccess {
                 .put("credential", e.getValue()).toString() + "\n").collect(Collectors.joining());
     }
 
-    private static boolean present(Map<String, String> env, String name) {
+    static boolean present(Map<String, String> env, String name) {
         return env.get(name) != null && !env.get(name).isBlank();
     }
 

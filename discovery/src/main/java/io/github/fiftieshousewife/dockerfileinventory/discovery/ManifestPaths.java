@@ -3,10 +3,8 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-// What could be a deployment manifest: YAML outside what is never deployed (vendored code, tests and their inputs,
-// documentation, examples and samples), CI configuration and Helm's files (a chart's templates are rendered, not read;
-// Chart.yaml and values hold no workload). Which files hold workloads is known only once read: measured on ten cloned
-// repositories, about one candidate in a hundred did before tests, docs and examples were left out.
+// A chart's templates are rendered, not read, and Chart.yaml and values hold no workload. Measured on ten cloned
+// repositories, about one candidate in a hundred held a workload before tests, docs and examples were left out.
 final class ManifestPaths {
 
     private static final Pattern YAML = Pattern.compile(".*\\.ya?ml$");

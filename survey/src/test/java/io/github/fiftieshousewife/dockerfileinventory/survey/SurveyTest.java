@@ -134,4 +134,11 @@ class SurveyTest {
                 () -> assertThat(Survey.root(urls, true, Map.of("REPOSITORIES", "payments/api,payments/web",
                         "REPOSITORY_NAME_CONTAINS", "billing"))).isEqualTo("out/payments-api+web+billing-try"));
     }
+
+    @Test
+    void aListIsItsCommaSeparatedPartsWithoutBlanksAndNothingWhenUnset() {
+        assertAll(
+                () -> assertThat(Survey.listed(" a, ,b ")).containsExactly("a", "b"),
+                () -> assertThat(Survey.listed(null)).isEmpty());
+    }
 }
