@@ -17,6 +17,8 @@ final class Pages {
 
     static final int PER_PAGE = 250;
 
+    static final int TOP_CHECKS = 10;
+
     private Pages() {
     }
 
@@ -32,13 +34,16 @@ final class Pages {
                 .collect(Collectors.toMap(CatalogueEntry::blobSha, Programs::of, (a, b) -> a));
         pages.put("index.html", Page.render("Dockerfile estate", "", Tabs.render(organisations, null, "")
                 + plan.map(p -> ActionPlanPage.lead(p)
-                + "<p><a href=\"openshift.html\">Action plan for OpenShift</a></p>").orElse("")
+                + "<p><a href=\"openshift.html\">Action plan for OpenShift</a></p><h2>What to fix first</h2>"
+                + ActionDrilldown.checkTable(ActionDrilldown.byCheck(p).stream().limit(TOP_CHECKS).toList(), "")
+                + "<p><a href=\"openshift.html\">Every check</a></p>").orElse("")
                 + OverviewPage.body(EstateFigures.of(entries), organisations, "", "lists/")));
         pages.putAll(Drilldowns.pages("", Breakdowns.of(entries)));
         pages.put("unparsed.html", Page.render("Did not parse", "", UnparsedPage.body(entries.stream()
                 .filter(entry -> entry.parseError() != null).toList())));
         plan.ifPresent(p -> pages.put("openshift.html", Page.render("Action plan for OpenShift", "",
                 ActionPlanPage.body(p, catalogued))));
+        plan.ifPresent(p -> pages.putAll(ActionDrilldown.pages(p, catalogued)));
         byOrganisation.forEach((organisation, within) -> pages.put("orgs/" + organisation + ".html",
                 Page.render(organisation, "../", Tabs.render(organisations, organisation, "../")
                         + OverviewPage.body(EstateFigures.of(within), List.of(), "../", organisation + "/lists/"))));

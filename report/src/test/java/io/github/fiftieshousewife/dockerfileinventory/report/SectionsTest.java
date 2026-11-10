@@ -11,7 +11,8 @@ class SectionsTest {
     void eachSectionFoldsUnderItsHeadingOpenToBeginWith() {
         assertThat(Sections.foldable("<p>lead</p><h2>Footprints</h2><table></table><h2>More</h2><ul></ul>"))
                 .isEqualTo("<p>lead</p>"
-                        + "<details class=\"section\" open><summary><h2>Footprints</h2></summary><table></table></details>"
+                        + "<details class=\"section\" open><summary><h2>Footprints</h2></summary><table></table>"
+                        + "</details>"
                         + "<details class=\"section\" open><summary><h2>More</h2></summary><ul></ul></details>");
     }
 

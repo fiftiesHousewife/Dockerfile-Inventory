@@ -55,24 +55,6 @@ class ActionPlanPageTest {
     }
 
     @Test
-    void theFixesComeFirstEachNamingItsRepresentativeAndCountingWhatItReaches() {
-        String body = ActionPlanPage.body(view(2), Set.of("aaa"));
-
-        assertAll(
-                () -> assertThat(body).contains("write the ENTRYPOINT in exec form", "shell form"),
-                () -> assertThat(body).contains("href=\"dockerfiles/aaa.html\">team/api aaa/Dockerfile</a>"),
-                () -> assertThat(body).doesNotContain("href=\"dockerfiles/zzz1.html\""),
-                () -> assertThat(body).contains("<td class=\"num\">3</td><td class=\"num\">1</td>"
-                        + "<td class=\"num\">7</td>"));
-    }
-
-    @Test
-    void onlyTheFirstFixesAreShownAndTheRestCounted() {
-        assertThat(ActionPlanPage.body(view(ActionPlanPage.SHOWN + 3), Set.of()))
-                .contains("and 3 more in the validator's fixes.jsonl");
-    }
-
-    @Test
     void theRepositoriesComeWithTheMostActionsFirst() {
         assertThat(ActionPlanPage.body(view(1), Set.of())).containsSubsequence("team/web", "team/api");
     }
@@ -89,14 +71,6 @@ class ActionPlanPageTest {
     }
 
     @Test
-    void aFixesRowSaysItsSeverityCertaintyAndCounts() {
-        ActionPlanView.PlannedFix fix = view(1).fixes().getFirst();
-
-        assertThat(ActionPlanPage.row(fix, null, Set.of())).contains("<td>breaks (read)</td>", "<td>P6</td>",
-                "<td class=\"num\">3</td>", "<td class=\"num\">7</td>");
-    }
-
-    @Test
     void eachDockerfileKeepsTheFirstPlaceAnyActionNames() {
         assertThat(ActionPlanPage.firstPlaces(view(2).actions()))
                 .containsEntry("aaa", new ActionPlanView.Where("team/api", "aaa/Dockerfile"));
@@ -104,14 +78,9 @@ class ActionPlanPageTest {
 
     @Test
     void repositoriesAreListedMostActionsFirst() {
-        assertThat(ActionPlanPage.repositories(Map.of("team/api", 1, "team/web", 3)))
-                .containsSubsequence("team/web", "team/api");
-    }
-
-    @Test
-    void fixesBeyondThoseShownAreCountedNotListed() {
-        assertThat(ActionPlanPage.fixes(view(ActionPlanPage.SHOWN + 2), Set.of()))
-                .contains("and 2 more in the validator's fixes.jsonl.");
+        assertThat(ActionPlanPage.repositories(Map.of("team/api", 1, "team/web", 3), Set.of("team/api")))
+                .containsSubsequence("team/web", "team/api")
+                .contains("<a href=\"repositories/team-api.html\">team/api</a>", "<td>team/web</td>");
     }
 
     @Test
@@ -126,7 +95,7 @@ class ActionPlanPageTest {
         String body = ActionPlanPage.body(WORKLOADS, Set.of());
 
         assertAll(
-                () -> assertThat(body.indexOf("Workloads, worst first")).isGreaterThan(body.indexOf("<h2>Fixes")),
+                () -> assertThat(body.indexOf("Workloads, worst first")).isGreaterThan(body.indexOf("<h2>What to fix")),
                 () -> assertThat(body).contains("DaemonSet sync (openshift-node)"));
     }
 
@@ -135,9 +104,10 @@ class ActionPlanPageTest {
         assertThat(ActionPlanPage.body(view(1), Set.of())).doesNotContain("Workloads, worst first");
     }
 
+
     @Test
-    void eachFixNamesTheFileToChangeDockerfileOrYaml() {
-        assertThat(ActionPlanPage.body(WORKLOADS, Set.of())).contains("<th>File to change</th>",
-                "openshift/openshift-tools ");
+    void thePageLeadsWithTheChecksEachLinkedToItsFixes() {
+        assertThat(ActionPlanPage.body(view(2), Set.of())).contains("<h2>What to fix, by check</h2>",
+                "<a href=\"checks/P6.html\">P6</a>", "Shell-form start");
     }
 }

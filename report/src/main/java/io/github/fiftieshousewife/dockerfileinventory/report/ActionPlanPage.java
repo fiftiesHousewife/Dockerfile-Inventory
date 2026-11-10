@@ -48,21 +48,13 @@ final class ActionPlanPage {
     }
 
     static String body(ActionPlanView view, Set<String> catalogued) {
+        Set<String> withPages = view.actions().stream().flatMap(a -> a.where().stream()
+                .map(ActionPlanView.Where::repository)).collect(Collectors.toSet());
         return lead(view) + "<p class=\"note\">" + escape(view.plan().describes()) + "</p>"
-                + fixes(view, catalogued) + WorkloadTable.render(view.workloads(), catalogued)
-                + repositories(view.plan().repositories());
-    }
-
-    static String fixes(ActionPlanView view, Set<String> catalogued) {
-        int hidden = view.fixes().size() - SHOWN;
-        Map<String, ActionPlanView.Where> places = firstPlaces(view.actions());
-        return "<h2>Fixes, most urgent first</h2><div class=\"scroll\"><table><tr><th>Severity</th><th>Check</th>"
-                + "<th>What to change</th><th>Why</th><th>File to change</th><th class=\"num\">Copies</th>"
-                + "<th class=\"num\">Built on them</th><th class=\"num\">Locations</th></tr>"
-                + view.fixes().stream().limit(SHOWN).map(f -> row(f, places.get(f.representative()), catalogued))
-                .collect(Collectors.joining())
-                + "</table></div>"
-                + (hidden > 0 ? "<p>and " + count(hidden) + " more in the validator's fixes.jsonl.</p>" : "");
+                + "<h2>What to fix, by check</h2><p>Each check, worst first; each links to its fixes, and a fix to the "
+                + "Dockerfiles it changes.</p>" + ActionDrilldown.checkTable(ActionDrilldown.byCheck(view), "")
+                + WorkloadTable.render(view.workloads(), catalogued)
+                + repositories(view.plan().repositories(), withPages);
     }
 
     static Map<String, ActionPlanView.Where> firstPlaces(List<ActionPlanView.PlannedAction> actions) {
@@ -71,23 +63,16 @@ final class ActionPlanPage {
         return places;
     }
 
-    static String repositories(Map<String, Integer> repositories) {
+    static String repositories(Map<String, Integer> repositories, Set<String> withPages) {
         return "<h2>By repository</h2><div class=\"scroll\"><table><tr><th>Repository</th><th class=\"num\">Actions"
                 + "</th></tr>" + repositories.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
                         .thenComparing(Map.Entry.comparingByKey()))
-                .map(e -> "<tr><td>" + escape(e.getKey()) + "</td><td class=\"num\">" + count(e.getValue())
+                .map(e -> "<tr><td>" + (withPages.contains(e.getKey()) ? "<a href=\""
+                        + ActionDrilldown.repositoryPath(e.getKey()) + "\">" + escape(e.getKey()) + "</a>"
+                        : escape(e.getKey())) + "</td><td class=\"num\">" + count(e.getValue())
                         + "</td></tr>")
                 .collect(Collectors.joining()) + "</table></div>";
-    }
-
-    static String row(ActionPlanView.PlannedFix fix, ActionPlanView.Where place, Set<String> catalogued) {
-        return "<tr><td>" + escape(fix.severity().toLowerCase(Locale.ROOT)) + " ("
-                + escape(fix.certainty().toLowerCase(Locale.ROOT)) + ")</td><td>" + escape(fix.check())
-                + "</td><td>" + escape(fix.what()) + "</td><td>" + escape(String.join("; ", fix.because()))
-                + "</td><td>" + dockerfile(fix.representative(), place, catalogued) + "</td><td class=\"num\">"
-                + count(fix.copies().size()) + "</td><td class=\"num\">" + count(fix.inheriting().size())
-                + "</td><td class=\"num\">" + count(fix.locations()) + "</td></tr>";
     }
 
     static String dockerfile(String sha, ActionPlanView.Where place, Set<String> catalogued) {
