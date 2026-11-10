@@ -7,11 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// Candidates for an image found by what its steps hold, not by its base: a release pipeline may record no FROM in
-// the image's history, or build it on another base than its Dockerfile names.
+// A release pipeline may record no FROM in an image's history, or build it on another base than its Dockerfile names.
 final class StepIndex {
 
-    // A step in more Dockerfiles than this (USER 1001, WORKDIR /app) says little about which built an image.
     static final int RARE = 20;
 
     private final Map<Instruction, List<Dockerfile>> byStep = new HashMap<>();

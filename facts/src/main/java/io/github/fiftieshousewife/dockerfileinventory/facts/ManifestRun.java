@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tools.jackson.databind.ObjectMapper;
 
-// Written whole each run: reading YAML is cheap.
 final class ManifestRun {
 
     record Location(String repository, String path) {

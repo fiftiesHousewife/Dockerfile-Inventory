@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -160,6 +161,21 @@ class HistoryNormaliserTest {
     void onlyAKnownBuilderPrefixIsRemoved() {
         assertThat(HistoryNormaliser.withoutBuilderPrefix(". /cachi2/cachi2.env && make")).isEqualTo("make");
         assertThat(HistoryNormaliser.withoutBuilderPrefix(". ./env && make")).isEqualTo(". ./env && make");
+    }
+
+    @Test
+    void konfluxBuildRecordsAreCopiedUnderEitherBuildinfoFolder() {
+        assertAll(
+                () -> assertThat(HistoryNormaliser.konfluxBuildRecords("/usr/share/buildinfo/x.json")).isTrue(),
+                () -> assertThat(HistoryNormaliser.konfluxBuildRecords("/root/buildinfo/")).isTrue(),
+                () -> assertThat(HistoryNormaliser.konfluxBuildRecords("/opt/buildinfo/")).isFalse());
+    }
+
+    @Test
+    void konfluxFinalStepSetsBothTheBuildDateAndTheVcsRef() {
+        assertAll(
+                () -> assertThat(HistoryNormaliser.konfluxFinalStep("build-date name vcs-ref")).isTrue(),
+                () -> assertThat(HistoryNormaliser.konfluxFinalStep("build-date name")).isFalse());
     }
 
     private static NormalStep normalise(String createdBy) {

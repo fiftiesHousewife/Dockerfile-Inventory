@@ -14,7 +14,6 @@ final class OwnSteps {
     private OwnSteps() {
     }
 
-    // ARG steps are left out, as facts leaves them out of a Dockerfile's.
     static List<Instruction> of(Resolved.Node image, Resolved.Node parent) {
         List<NormalStep> steps = image.config().history().stream().map(HistoryNormaliser::normalise).toList();
         int start = parent != null ? parent.config().history().size() : lastFrom(steps);

@@ -52,8 +52,6 @@ final class Links {
         return new Link(tier, group.stream().map(Dockerfile::blobSha).sorted().toList(), false);
     }
 
-    // Candidates are the Dockerfiles on the image's base and those sharing one of its rare steps; scoring every
-    // Dockerfile in the estate against every image would cost too much.
     Link weak(List<Instruction> own, String basePath) {
         Set<Dockerfile> candidates = new LinkedHashSet<>(basePath == null ? List.of()
                 : BasePaths.on(basePath, dockerfiles));

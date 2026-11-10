@@ -78,10 +78,4 @@ record ImageConfig(List<String> diffIds, List<HistoryStep> history, String user,
         array.forEach(v -> values.add(v.asString()));
         return values;
     }
-
-    // A squashed image, or a builder that writes no history, has fewer layer-making steps than layers, and its
-    // history cannot be aligned layer by layer.
-    boolean historyMatchesLayers() {
-        return history.stream().filter(h -> !h.emptyLayer()).count() == diffIds.size();
-    }
 }

@@ -14,10 +14,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Runs lineage from the environment, so the job's pod needs only its variables: {@code OUT_DIR}, {@code FACTS_DIR},
- * {@code DISCOVERY_DIR}, and for the inventory {@code ARTIFACTORY_URL}, {@code ARTIFACTORY_TOKEN} and optionally
- * {@code ARTIFACTORY_MAX_REQUESTS_PER_SECOND}, {@code ARTIFACTORY_CONCURRENCY}; {@code LINK_THRESHOLD} and {@code LINK_MARGIN} tune which links credit an image to a
- * Dockerfile. Without {@code ARTIFACTORY_URL} only the analysis runs, on what {@code OUT_DIR} already holds,
- * so a change to linking can be tried without Artifactory.
+ * {@code DISCOVERY_DIR}, and for the inventory {@code ARTIFACTORY_URL}, {@code ARTIFACTORY_TOKEN},
+ * {@code ARTIFACTORY_MAX_REQUESTS_PER_SECOND} and optionally {@code ARTIFACTORY_CONCURRENCY}; {@code LINK_THRESHOLD}
+ * and {@code LINK_MARGIN} tune which links credit an image to a Dockerfile. Without {@code ARTIFACTORY_URL} only the
+ * analysis runs, on what {@code OUT_DIR} already holds, so a change to linking can be tried without Artifactory.
  */
 public final class LineageMain {
 
@@ -42,17 +42,21 @@ public final class LineageMain {
         Path out = Path.of(required(env, "OUT_DIR"));
         String url = env.get("ARTIFACTORY_URL");
         if (url != null && !url.isBlank()) {
-            HttpSettings settings = HttpSettings.from(env);
-            TokenSource token = TokenSource.from(env, "ARTIFACTORY_TOKEN");
-            LOG.info("lineage: {}, token from {}, {}", url, token, settings);
-            Artifactory artifactory = new ArtifactoryHttp(URI.create(url), settings, token,
-                    Throttle.of(Throttle.rate(env, "ARTIFACTORY_MAX_REQUESTS_PER_SECOND")));
-            int concurrency = Integer.parseInt(env.getOrDefault("ARTIFACTORY_CONCURRENCY", DEFAULT_CONCURRENCY));
-            new Inventory(artifactory, new LineageFiles(out), concurrency).run();
+            inventory(env, url, out);
         }
         new Analysis(out, Path.of(required(env, "FACTS_DIR")), Path.of(required(env, "DISCOVERY_DIR")),
                 linkRule(env)).run();
         LOG.info("lineage: {}", read(out.resolve("rates.json")));
+    }
+
+    static void inventory(Map<String, String> env, String url, Path out) {
+        HttpSettings settings = HttpSettings.from(env);
+        TokenSource token = TokenSource.from(env, "ARTIFACTORY_TOKEN");
+        LOG.info("lineage: {}, token from {}, {}", url, token, settings);
+        Artifactory artifactory = new ArtifactoryHttp(URI.create(url), settings, token,
+                Throttle.of(Throttle.rate(env, "ARTIFACTORY_MAX_REQUESTS_PER_SECOND")));
+        int concurrency = Integer.parseInt(env.getOrDefault("ARTIFACTORY_CONCURRENCY", DEFAULT_CONCURRENCY));
+        new Inventory(artifactory, new LineageFiles(out), concurrency).run();
     }
 
     private static String read(Path file) {

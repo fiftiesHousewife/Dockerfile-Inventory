@@ -47,7 +47,6 @@ final class ConvertPairs {
         return parts.length < 2 ? "" : parts[1];
     }
 
-    // Read from the text, as each value is needed as written, quotes and escapes kept, for the model's form.
     static Map<String, String> pairs(String arguments) {
         String first = arguments.split("\\s+", 2)[0];
         if (first.contains("=")) {

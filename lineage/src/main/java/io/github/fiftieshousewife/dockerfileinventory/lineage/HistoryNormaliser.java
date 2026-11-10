@@ -10,14 +10,11 @@ final class HistoryNormaliser {
     private static final String NOP = "#(nop) ";
     private static final String FROM = "FROM ";
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
-    // "|2 A=x B=y " before the shell: the build arguments in force when a step after an ARG ran, which the
-    // Dockerfile's instruction does not hold.
+    // "|2 A=x B=y " before the shell: the build arguments in force after an ARG, not in the Dockerfile.
     private static final Pattern BUILD_ARGUMENTS = Pattern.compile("^\\|\\d+ .*?(?=/bin/sh -c )");
-    // Konflux's hermetic-build environment, put before every RUN.
-    private static final List<String> RUN_PREFIXES = List.of(". /cachi2/cachi2.env && ");
-    // Where Konflux copies its build records, and the labels of the final step it adds to every build.
-    private static final List<String> BUILDINFO = List.of("/usr/share/buildinfo/", "/root/buildinfo/");
-    private static final List<String> BUILD_LABELS = List.of("build-date", "vcs-ref");
+    private static final List<String> KONFLUX_HERMETIC_RUN_PREFIXES = List.of(". /cachi2/cachi2.env && ");
+    private static final List<String> KONFLUX_BUILDINFO = List.of("/usr/share/buildinfo/", "/root/buildinfo/");
+    private static final List<String> KONFLUX_FINAL_STEP_LABELS = List.of("build-date", "vcs-ref");
 
     private HistoryNormaliser() {
     }
@@ -49,11 +46,11 @@ final class HistoryNormaliser {
         return Optional.ofNullable(switch (keyword) {
             case "COPY", "ADD" -> {
                 String destination = destination(value);
-                yield new NormalStep(keyword, destination, null, BUILDINFO.stream().anyMatch(destination::startsWith));
+                yield new NormalStep(keyword, destination, null, konfluxBuildRecords(destination));
             }
             case "LABEL" -> {
                 String keys = envKeys(value);
-                yield new NormalStep(keyword, keys, null, List.of(keys.split(" ")).containsAll(BUILD_LABELS));
+                yield new NormalStep(keyword, keys, null, konfluxFinalStep(keys));
             }
             case "ENV" -> new NormalStep(keyword, envKeys(value), null, false);
             case "USER", "WORKDIR", "EXPOSE", "ENTRYPOINT", "CMD", "VOLUME", "STOPSIGNAL", "SHELL", "ONBUILD", "ARG" ->
@@ -62,19 +59,27 @@ final class HistoryNormaliser {
         });
     }
 
-    // "dir:<hash> in <dest>": the hash is of the content, so only the destination is comparable.
+    static boolean konfluxBuildRecords(String destination) {
+        return KONFLUX_BUILDINFO.stream().anyMatch(destination::startsWith);
+    }
+
+    static boolean konfluxFinalStep(String labelKeys) {
+        return List.of(labelKeys.split(" ")).containsAll(KONFLUX_FINAL_STEP_LABELS);
+    }
+
+    // "dir:<hash> in <dest>": the hash is of the content, so only the destination compares.
     static String destination(String value) {
         return value.substring(value.lastIndexOf(" in ") + " in ".length());
     }
 
-    // The legacy form "k value with spaces" sets one key.
+    // ENV and LABEL's legacy form, "k value with spaces", sets one key.
     static String envKeys(String value) {
         String first = value.split(" ", 2)[0];
         return first.contains("=") ? String.join(" ", PairKeys.of(value)) : first.replace("\"", "");
     }
 
     static String withoutBuilderPrefix(String command) {
-        return RUN_PREFIXES.stream()
+        return KONFLUX_HERMETIC_RUN_PREFIXES.stream()
                 .filter(command::startsWith)
                 .findFirst()
                 .map(prefix -> command.substring(prefix.length()))

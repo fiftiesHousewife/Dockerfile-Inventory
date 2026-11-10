@@ -42,7 +42,6 @@ final class Workloads {
         return text.contains("{{") || text.contains("{%");
     }
 
-    // A file that stops being YAML part way (a documentation fragment) still gives the workloads before the break.
     static Read documents(String text) {
         List<Workload> workloads = new ArrayList<>();
         try (MappingIterator<JsonNode> documents = YAML.readerFor(JsonNode.class).readValues(text)) {

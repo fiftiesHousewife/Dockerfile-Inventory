@@ -121,7 +121,6 @@ final class ArtifactoryHttp implements Artifactory {
         return listed.isEmpty() ? "" : "&last=" + URLEncoder.encode(listed.getLast(), StandardCharsets.UTF_8);
     }
 
-    // A 404 reads as an empty document, so callers see nothing listed.
     JsonNode getJson(String path) {
         return client.get(path, "application/json").map(this::parse).orElseGet(json::createObjectNode);
     }

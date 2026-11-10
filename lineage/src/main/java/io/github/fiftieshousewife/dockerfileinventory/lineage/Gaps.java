@@ -37,7 +37,6 @@ final class Gaps {
                 .toList();
     }
 
-    // For an ambiguous parent it is enough that one candidate is the newest.
     static Stream<Outdated> outdated(String image, List<String> candidates, Map<String, List<Reference>> references,
                                      Map<String, String> newestByName) {
         return candidates.stream()

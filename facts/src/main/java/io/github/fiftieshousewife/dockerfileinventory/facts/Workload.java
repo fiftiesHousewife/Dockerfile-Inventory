@@ -2,7 +2,6 @@ package io.github.fiftieshousewife.dockerfileinventory.facts;
 
 import java.util.List;
 
-// A setting the manifest leaves out is null.
 record Workload(String kind, String name, String namespace, Pod pod) {
 
     record Pod(boolean hostNetwork, boolean hostPid, boolean hostIpc, List<String> hostPaths, Security security,
