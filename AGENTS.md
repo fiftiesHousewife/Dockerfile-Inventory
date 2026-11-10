@@ -38,7 +38,8 @@ parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docke
 http/               corporate networks, shared by discovery and lineage: HttpSettings (every setting from the
                     environment, with defaults; the HttpClient), ProxySettings (HTTPS_PROXY, HTTP_PROXY, NO_PROXY),
                     TrustBundle (a corporate CA), RetryPolicy (backoff, rate-limit waits, RateLimitWaitTooLong),
-                    TokenSource (NAME or NAME_FILE, re-read when the file changes)
+                    TokenSource (NAME or NAME_FILE, re-read when the file changes), Throttle (a run's
+                    calls a second, slowing with the server), HttpLog (the debug lines)
 discovery/          stage 0: organisations -> repositories -> trees at the released commit -> Dockerfile blobs
                     Discovery (the run), Scans (repositories on virtual threads), RepoScan (one repository),
                     TreeWalk (truncated trees by subtree), BlobFetch (GraphQL batches of 50), DiscoveryOutput (files)
@@ -91,7 +92,8 @@ validator/          stage 3c: facts -> each image judged through a platform prof
                     WorkloadVerdict; ImageReference, ImageLinks, ContainerLink, ContainerImage (a container's image
                     linked through lineage, P9 answered by the manifest); FloatingBase (P11)
 cli/                the docker-inventory command (`DockerInventory`): Commands (each command and the settings it reads,
-                    required ones checked before it runs), Command, Setting, Help, NearMisses (a setting's typo),
+                    required ones checked before it runs), Command, Setting, Help, NearMisses (a setting's typo), Flags (--settings, --load), SettingsFile (the YAML),
+                    Load (the gentle and normal presets), Logging,
                     Version (from the build); the `docker-inventory` distribution (`installDist`), tested as installed
 survey/             one command for a survey: SurveyMain (`survey [--try] <URL>`), Survey (the stages in order, each
                     with the folders the earlier ones wrote); every stage's ...Main.run(env)

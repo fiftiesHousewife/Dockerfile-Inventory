@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
@@ -28,7 +29,7 @@ class GitHubHttpTest {
     void start() throws IOException {
         server = new RecordedGitHub();
         gitHub = new GitHubHttp(GitHubApi.from(server.root() + "api/"), HttpSettings.from(Map.of()),
-                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"));
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"), Throttle.NONE);
     }
 
     @AfterEach

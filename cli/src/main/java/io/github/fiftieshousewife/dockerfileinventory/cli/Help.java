@@ -30,6 +30,12 @@ final class Help {
         if (setting.required()) {
             return "required: ";
         }
+        if (setting.requiredWith() != null) {
+            return "required with " + setting.requiredWith() + ": ";
+        }
+        if (setting.requiredUnless() != null) {
+            return "required unless " + setting.requiredUnless() + " is set: ";
+        }
         return setting.fallback() == null ? "optional: " : "optional, default " + setting.fallback() + ": ";
     }
 

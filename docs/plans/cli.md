@@ -169,3 +169,35 @@ logged in slice 5, when there is a choice.
 
 Not test-first, owned: `Logging`'s tests were written beside it rather than run red first.
 
+## Slice 3 in detail (10 Nov)
+
+- `Throttle` (in `http`): calls spaced at most `requestsPerSecond` apart across every thread of a run; the run's normal
+  latency is the median of its first 20 calls; when the last minute's median passes twice that, or a call answers 429
+  or 503, the rate halves (to a sixteenth of the setting at least), and when the last minute's median is back under
+  one and a half times normal it doubles back towards the setting; at most one change every 10 seconds. Discovery's
+  and lineage's senders wait on it before each call and tell it each answer.
+- Settings: `GHE_MAX_REQUESTS_PER_SECOND` and `GHE_CONCURRENCY` (discovery), `ARTIFACTORY_MAX_REQUESTS_PER_SECOND` and
+  `ARTIFACTORY_CONCURRENCY` (lineage); `CONCURRENCY`, which one survey had to share between both, goes. A stage refuses
+  to start without its rate (also when run as a library), naming it.
+- `--load gentle|normal` (or `GHE_LOAD`, `ARTIFACTORY_LOAD`) fills in a rate and a concurrency left unset: gentle
+  GitHub 2 and 2, Artifactory 5 and 4; normal GitHub 10 and 8, Artifactory 20 and 16.
+- `--settings file.yaml`: `github` (`url`, `tokenFile`, `load`, `requestsPerSecond`, `concurrency`), `artifactory`
+  (the same), `platform`, `out`; a token's value is refused there (a file, never the secret), as is an unknown key,
+  each by name. The environment overrides the file; `survey` takes `github.url` when given no URL.
+
+Tests, in order: `Throttle` (spacing on a fake clock, across threads; halving on a slow minute and on 429 and 503; the
+floor; doubling back; one change in 10 seconds); `Load`; `SettingsFile`; the CLI's flags and the required rates (2,
+naming them); the stages refusing without a rate; the senders waiting on the throttle.
+
+## Built, slice 3 (10 Nov)
+
+`Throttle` (`http`) spaces a run's calls to a server and slows with it, as designed above; discovery's and lineage's
+senders wait on it and tell it each answer, and the stages read `GHE_MAX_REQUESTS_PER_SECOND` and
+`ARTIFACTORY_MAX_REQUESTS_PER_SECOND` (`Throttle.rate`: required, refused by name) and `GHE_CONCURRENCY` and
+`ARTIFACTORY_CONCURRENCY`. In the CLI, `Flags` takes `--settings` and `--load` from anywhere; `SettingsFile` reads the
+YAML (a token's value refused, an unknown key refused with the keys there are); `Load` fills in each server's rate
+and concurrency; the environment wins over the file; `survey` takes `github.url` when given no organisation. A command
+that calls a server requires its rate before it runs (2), and the tokens are required unless their files are set
+(`Setting.requiredWith`, `requiredUnless`, shown in the help). Tried with the installed command: a settings file with
+no token gets as far as discovery's token check; without a load, 2 naming the setting; a token in the file, 2.
+

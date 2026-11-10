@@ -6,7 +6,8 @@ export ARTIFACTORY_TOKEN=...                  # read access to every local Docke
 export FACTS_DIR=/data/facts                  # the facts stage's OUT_DIR
 export DISCOVERY_DIR=/data/inventory          # discovery's OUT_DIR
 export OUT_DIR=/data/lineage                  # keep it between runs: a rerun resumes the Artifactory reading
-export CONCURRENCY=16                         # optional: images read at once
+export ARTIFACTORY_MAX_REQUESTS_PER_SECOND=5 # the most calls to Artifactory a second (or ARTIFACTORY_LOAD=gentle)
+export ARTIFACTORY_CONCURRENCY=16            # optional: images read at once
 export LINK_THRESHOLD=0.8                     # optional: the score a weak link needs to credit an image (0 to 1)
 export LINK_MARGIN=0.05                       # optional: how far it must beat the runner-up (0 to 1)
 docker-inventory lineage

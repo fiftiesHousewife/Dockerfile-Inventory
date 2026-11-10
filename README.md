@@ -28,10 +28,12 @@ You need Java 21 or newer and a token that can read the organisations.
 export PATH="$PWD/cli/build/install/docker-inventory/bin:$PATH"
 
 export GHE_TOKEN_FILE=~/secrets/ghe-token
-docker-inventory survey --try https://github.example.com/acme
+docker-inventory survey --try --load gentle https://github.example.com/acme
 ```
 
-A try stops after ten repositories that hold a Dockerfile, so it proves the token and the network in a few minutes.
+`--load` says how hard to press GitHub and Artifactory, and is required: `gentle` (GitHub 2 calls a second, 2
+repositories at once; Artifactory 5 a second, 4 images at once) or `normal` (10 and 8; 20 and 16). Whatever the load,
+the run slows down by itself when the servers do. A try stops after ten repositories that hold a Dockerfile, so it proves the token and the network in a few minutes.
 Its last line says where the report is: open `out/acme-try/report/index.html`.
 
 ## Examples
@@ -39,14 +41,14 @@ Its last line says where the report is: open `out/acme-try/report/index.html`.
 Survey a whole organisation, or several as one estate:
 
 ```bash
-docker-inventory survey https://github.example.com/acme
-docker-inventory survey https://github.example.com/acme https://github.example.com/beta
+docker-inventory survey --load normal https://github.example.com/acme
+docker-inventory survey --load normal https://github.example.com/acme https://github.example.com/beta
 ```
 
 On GitHub.com or GitHub Enterprise Cloud, the URL is the organisation's:
 
 ```bash
-GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token) docker-inventory survey --try https://github.com/openshift
+GHE_TOKEN=$(env -u GITHUB_TOKEN gh auth token) docker-inventory survey --try --load gentle https://github.com/openshift
 ```
 
 Link the images in Artifactory too (lineage runs whenever `ARTIFACTORY_URL` is set):
@@ -54,13 +56,13 @@ Link the images in Artifactory too (lineage runs whenever `ARTIFACTORY_URL` is s
 ```bash
 export ARTIFACTORY_URL=https://artifactory.example.com/artifactory
 export ARTIFACTORY_TOKEN_FILE=~/secrets/artifactory-token
-docker-inventory survey https://github.example.com/acme
+docker-inventory survey --load gentle https://github.example.com/acme
 ```
 
 Judge for the older OpenShift `restricted` SCC instead of `restricted-v2`:
 
 ```bash
-PROFILE=openshift-4-restricted docker-inventory survey https://github.example.com/acme
+PROFILE=openshift-4-restricted docker-inventory survey --load gentle https://github.example.com/acme
 ```
 
 Rerun one stage on what the others wrote, here the validator:
@@ -73,8 +75,27 @@ FACTS_DIR=out/acme/facts DISCOVERY_DIR=out/acme/discovery OUT_DIR=out/acme/valid
 See every call to GitHub while it runs, or send JSON logs to a collector:
 
 ```bash
-docker-inventory --verbose survey --try https://github.example.com/acme
-LOG_FORMAT=json docker-inventory survey https://github.example.com/acme 2> survey.jsonl
+docker-inventory --verbose survey --try --load gentle https://github.example.com/acme
+LOG_FORMAT=json docker-inventory survey --load gentle https://github.example.com/acme 2> survey.jsonl
+```
+
+Keep the choices for an estate in a file, and run it with no other arguments:
+
+```yaml
+# acme.yaml
+github:
+  url: https://github.example.com/acme
+  tokenFile: ~/secrets/ghe-token
+  load: gentle
+artifactory:                      # leave out to skip lineage
+  url: https://artifactory.example.com/artifactory
+  tokenFile: ~/secrets/artifactory-token
+  load: normal
+platform: openshift-4-restricted-v2
+```
+
+```bash
+docker-inventory survey --settings acme.yaml
 ```
 
 Behind a proxy with a corporate CA:
@@ -82,7 +103,7 @@ Behind a proxy with a corporate CA:
 ```bash
 export HTTPS_PROXY=http://proxy.example.com:8080 NO_PROXY=.example.com
 export TRUST_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
-docker-inventory survey https://github.example.com/acme
+docker-inventory survey --load gentle https://github.example.com/acme
 ```
 
 ## Commands
@@ -100,7 +121,9 @@ docker-inventory survey https://github.example.com/acme
 | `report` | Writes the HTML report |
 
 `docker-inventory <command> --help` lists the settings a command reads, which are required, and their defaults.
-Settings come from the environment. The exit status is 0 when done, 1 when a stage failed (the last line says which
+Settings come from the environment, or a `--settings` YAML file (the environment wins); a rate in calls a second
+(`GHE_MAX_REQUESTS_PER_SECOND`, `ARTIFACTORY_MAX_REQUESTS_PER_SECOND`) or a `--load` is required for a command that
+calls either server. The exit status is 0 when done, 1 when a stage failed (the last line says which
 and why), and 2 for a usage error found before anything runs. Logs go to stderr: `--quiet`, `--verbose`, or
 `LOG_LEVEL`, and `LOG_FORMAT=json`.
 

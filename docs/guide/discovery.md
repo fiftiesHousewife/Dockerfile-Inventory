@@ -9,7 +9,8 @@ export GHE_TOKEN=...                               # read access to every organi
 export OUT_DIR=/data/inventory                     # keep it between runs: a rerun resumes
 export ORGANIZATIONS=payments,platform             # optional: only these (default: the URL's org, else all)
 export RELEASE_INDEX=/data/releases.csv            # optional: owner/repo,commitSha per line
-export CONCURRENCY=8                               # optional: parallel repository scans
+export GHE_MAX_REQUESTS_PER_SECOND=2              # the most calls to GitHub a second (or GHE_LOAD=gentle)
+export GHE_CONCURRENCY=8                           # optional: parallel repository scans
 export TRY_REPOSITORIES=10                         # optional: stop once this many repositories held a Dockerfile
 docker-inventory discovery
 ```

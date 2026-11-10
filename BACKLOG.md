@@ -95,6 +95,8 @@ and one line when its gate is met.
   exit statuses, near-miss settings; everything on Java 21.
   Slice 2 done 10 Nov: logs through SLF4J, Log4j 2 in the distribution (levels, `--quiet`, `--verbose`, JSON),
   each HTTP call at debug; the stages' own launchers removed.
+  Slice 3 done 10 Nov: a required rate per server (or `--load gentle|normal`), a throttle that slows with the
+  server, a YAML settings file.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

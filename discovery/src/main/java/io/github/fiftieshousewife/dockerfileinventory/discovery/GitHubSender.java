@@ -4,6 +4,7 @@ import io.github.fiftieshousewife.dockerfileinventory.http.HttpLog;
 import io.github.fiftieshousewife.dockerfileinventory.http.RatePacing;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -24,12 +25,18 @@ final class GitHubSender {
     private final TokenSource token;
     private final RetryPolicy retries;
     private final Sleeper sleeper;
+    private final Throttle throttle;
 
     GitHubSender(HttpClient http, TokenSource token, RetryPolicy retries, Sleeper sleeper) {
+        this(http, token, retries, sleeper, Throttle.NONE);
+    }
+
+    GitHubSender(HttpClient http, TokenSource token, RetryPolicy retries, Sleeper sleeper, Throttle throttle) {
         this.http = http;
         this.token = token;
         this.retries = retries;
         this.sleeper = sleeper;
+        this.throttle = throttle;
     }
 
     // A request is built again for each attempt, so a token read again after a 401 is the one sent.
@@ -54,11 +61,13 @@ final class GitHubSender {
     }
 
     Optional<HttpResponse<String>> exchange(HttpRequest request, int attempt) {
-        long start = System.nanoTime();
         try {
+            throttle.acquire();
+            long start = System.nanoTime();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            LOG.atDebug().setMessage(() -> HttpLog.call(request, response.statusCode(),
-                    Duration.ofNanos(System.nanoTime() - start))).log();
+            Duration took = Duration.ofNanos(System.nanoTime() - start);
+            throttle.record(took, response.statusCode());
+            LOG.atDebug().setMessage(() -> HttpLog.call(request, response.statusCode(), took)).log();
             return Optional.of(response);
         } catch (IOException e) {
             LOG.atDebug().setMessage(() -> HttpLog.failed(request, e)).log();

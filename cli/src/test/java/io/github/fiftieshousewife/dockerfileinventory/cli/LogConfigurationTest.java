@@ -38,7 +38,8 @@ class LogConfigurationTest {
     @Test
     void aTextLineStartsWithItsTimeAndLevel() {
         assertThat(logged(new Logging("info", false, null), "survey: facts into out/a/facts", false))
-                .matches("\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}\\S+ INFO  survey: facts into out/a/facts\\n");
+                .matches("\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}\\S+ "
+                        + "INFO  survey: facts into out/a/facts\\n");
     }
 
     @Test

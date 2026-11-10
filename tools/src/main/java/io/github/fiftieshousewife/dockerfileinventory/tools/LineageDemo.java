@@ -76,7 +76,8 @@ public final class LineageDemo {
         String api = "http://localhost:" + env.getOrDefault("JCR_PORT", "8082") + "/artifactory";
         String lineage = out.resolve("lineage").toString();
         LineageMain.run(Map.of("ARTIFACTORY_URL", api, "ARTIFACTORY_TOKEN", token, "FACTS_DIR", facts.toString(),
-                "DISCOVERY_DIR", discovery.toString(), "OUT_DIR", lineage, "CONCURRENCY", "4"));
+                "DISCOVERY_DIR", discovery.toString(), "OUT_DIR", lineage, "ARTIFACTORY_CONCURRENCY", "4",
+                "ARTIFACTORY_MAX_REQUESTS_PER_SECOND", "50"));
         ReportMain.run(Map.of("FACTS_DIR", facts.toString(), "DISCOVERY_DIR", discovery.toString(), "LINEAGE_DIR",
                 lineage, "OUT_DIR", out.resolve("report").toString()));
         RulesMain.run(Map.of("DISCOVERY_DIR", discovery.toString(), "LINEAGE_DIR", lineage, "OUT_DIR",

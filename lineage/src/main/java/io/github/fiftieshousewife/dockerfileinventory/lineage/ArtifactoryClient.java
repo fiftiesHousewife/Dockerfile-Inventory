@@ -3,6 +3,7 @@ package io.github.fiftieshousewife.dockerfileinventory.lineage;
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpLog;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.URI;
@@ -28,16 +29,23 @@ final class ArtifactoryClient {
     private final RetryPolicy retries;
     private final Duration timeout;
     private final Sleeper sleeper;
+    private final Throttle throttle;
+
+    ArtifactoryClient(HttpClient http, URI base, TokenSource token, RetryPolicy retries, Duration timeout,
+            Sleeper sleeper) {
+        this(http, base, token, retries, timeout, sleeper, Throttle.NONE);
+    }
 
     // The client follows redirects: Artifactory can redirect blob downloads to its file store.
     ArtifactoryClient(HttpClient http, URI base, TokenSource token, RetryPolicy retries, Duration timeout,
-            Sleeper sleeper) {
+            Sleeper sleeper, Throttle throttle) {
         this.http = http;
         this.base = withTrailingSlash(base);
         this.token = token;
         this.retries = retries;
         this.timeout = timeout;
         this.sleeper = sleeper;
+        this.throttle = throttle;
     }
 
     static URI withTrailingSlash(URI base) {
@@ -94,11 +102,13 @@ final class ArtifactoryClient {
     }
 
     Optional<HttpResponse<String>> exchange(HttpRequest request, int attempt) {
-        long start = System.nanoTime();
         try {
+            throttle.acquire();
+            long start = System.nanoTime();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            LOG.atDebug().setMessage(() -> HttpLog.call(request, response.statusCode(),
-                    Duration.ofNanos(System.nanoTime() - start))).log();
+            Duration took = Duration.ofNanos(System.nanoTime() - start);
+            throttle.record(took, response.statusCode());
+            LOG.atDebug().setMessage(() -> HttpLog.call(request, response.statusCode(), took)).log();
             return Optional.of(response);
         } catch (IOException e) {
             LOG.atDebug().setMessage(() -> HttpLog.failed(request, e)).log();

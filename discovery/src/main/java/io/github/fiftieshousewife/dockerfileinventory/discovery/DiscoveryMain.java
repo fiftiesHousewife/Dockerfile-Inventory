@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Runs discovery as a pod job, configured only from the environment so the token never touches a file:
  * {@code GHE_API_URL} (a GHE Server host, {@code https://github.com/MyOrg} or {@code https://myco.ghe.com}),
- * {@code GHE_TOKEN}, {@code OUT_DIR}, and optionally {@code ORGANIZATIONS}, {@code RELEASE_INDEX}, {@code CONCURRENCY}
+ * {@code GHE_TOKEN}, {@code GHE_MAX_REQUESTS_PER_SECOND}, {@code OUT_DIR}, and optionally {@code ORGANIZATIONS}, {@code RELEASE_INDEX}, {@code GHE_CONCURRENCY}
  * and {@code TRY_REPOSITORIES} (stop once that many repositories held a Dockerfile).
  */
 public final class DiscoveryMain {
@@ -40,8 +41,9 @@ public final class DiscoveryMain {
         HttpSettings settings = HttpSettings.from(env);
         TokenSource token = TokenSource.from(env, "GHE_TOKEN");
         LOG.info("discovery: {}, token from {}, {}", api.base(), token, settings);
-        GitHub gitHub = new GitHubHttp(api, settings, token);
-        int concurrency = Integer.parseInt(env.getOrDefault("CONCURRENCY", "8"));
+        GitHub gitHub = new GitHubHttp(api, settings, token,
+                Throttle.of(Throttle.rate(env, "GHE_MAX_REQUESTS_PER_SECOND")));
+        int concurrency = Integer.parseInt(env.getOrDefault("GHE_CONCURRENCY", "8"));
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
         var discovery = new Discovery(gitHub, releases, output, concurrency,
                 organizations(env.getOrDefault("ORGANIZATIONS", ""), api), tryRepositories(env));

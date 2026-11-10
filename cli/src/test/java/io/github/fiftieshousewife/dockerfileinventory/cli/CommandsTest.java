@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class CommandsTest {
@@ -37,5 +38,27 @@ class CommandsTest {
                 () -> assertThat(Commands.concat(List.of(List.of(Setting.required("A", "a")),
                         List.of(Setting.required("B", "b"))))).extracting(Setting::name).containsExactly("A", "B"),
                 () -> assertThat(Commands.concat(List.of())).isEmpty());
+    }
+
+    @Test
+    void aSurveyGivenNoOrganisationTakesTheSettingsUrl() {
+        assertAll(
+                () -> assertThat(Commands.surveyArguments(List.of("--try"), Map.of("GHE_API_URL", "https://g/a")))
+                        .containsExactly("--try", "https://g/a"),
+                () -> assertThat(Commands.surveyArguments(List.of("https://g/b"), Map.of("GHE_API_URL",
+                        "https://g/a"))).containsExactly("https://g/b"),
+                () -> assertThat(Commands.surveyArguments(List.of("--try"), Map.of()))
+                        .containsExactly("--try"));
+    }
+
+    @Test
+    void everyCommandThatCallsAServerRequiresItsRate() {
+        assertAll(
+                () -> assertThat(Commands.DISCOVERY.settings()).contains(Setting.required("GHE_MAX_REQUESTS_PER_SECOND",
+                        Commands.GITHUB_RATE.description())),
+                () -> assertThat(Commands.LINEAGE.settings()).contains(Commands.ARTIFACTORY_RATE),
+                () -> assertThat(Commands.SURVEY.settings()).contains(Commands.GITHUB_RATE,
+                        Setting.requiredWith("ARTIFACTORY_MAX_REQUESTS_PER_SECOND", "ARTIFACTORY_URL",
+                                Commands.ARTIFACTORY_RATE.description())));
     }
 }

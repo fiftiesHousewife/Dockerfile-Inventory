@@ -10,6 +10,8 @@ import io.github.fiftieshousewife.dockerfileinventory.rules.RulesMain;
 import io.github.fiftieshousewife.dockerfileinventory.survey.SurveyMain;
 import io.github.fiftieshousewife.dockerfileinventory.validator.ValidatorMain;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 // The settings each command reads, as the README lists them; required ones are checked before the command runs.
 final class Commands {
@@ -24,8 +26,15 @@ final class Commands {
             Setting.optional("HTTP_RETRIES", "5", "attempts after a network error or a gateway's 502, 503 or 504"),
             Setting.optional("MAX_RATE_LIMIT_WAIT", "1h", "the longest wait for a rate limit to reset"));
 
-    static final List<Setting> GITHUB = List.of(
-            Setting.optional("GHE_TOKEN", "a token that can read the organisations (or GHE_TOKEN_FILE)"),
+    static final Setting GITHUB_RATE = Setting.required("GHE_MAX_REQUESTS_PER_SECOND", "the most calls to GitHub a "
+            + "second; or --load gentle (2) or normal (10)");
+    static final Setting ARTIFACTORY_RATE = Setting.required("ARTIFACTORY_MAX_REQUESTS_PER_SECOND", "the most calls "
+            + "to Artifactory a second; or --load gentle (5) or normal (20)");
+
+    static final List<Setting> GITHUB = List.of(GITHUB_RATE,
+            Setting.optional("GHE_LOAD", "gentle or normal: fills in the rate and concurrency left unset"),
+            Setting.requiredUnless("GHE_TOKEN", "GHE_TOKEN_FILE", "a token that can read the organisations (or "
+                    + "GHE_TOKEN_FILE)"),
             Setting.optional("GHE_TOKEN_FILE", "a file holding it, read again when it changes"));
 
     static final Command DISCOVERY = new Command("discovery", "finds every Dockerfile in the organisations",
@@ -34,7 +43,7 @@ final class Commands {
                     Setting.required("OUT_DIR", "the output folder; a rerun into it resumes"),
                     Setting.optional("ORGANIZATIONS", "only these organisations, comma-separated"),
                     Setting.optional("RELEASE_INDEX", "a file of owner/repo,commitSha lines: the released commits"),
-                    Setting.optional("CONCURRENCY", "8", "repositories scanned at once"),
+                    Setting.optional("GHE_CONCURRENCY", "8", "repositories scanned at once"),
                     Setting.optional("TRY_REPOSITORIES", "stop once this many repositories held a Dockerfile")),
                     GITHUB, NETWORK)),
             DiscoveryMain::run);
@@ -47,13 +56,16 @@ final class Commands {
     static final Command LINEAGE = new Command("lineage",
             "links Artifactory's images to the Dockerfiles that built them",
             concat(List.of(List.of(Setting.required("ARTIFACTORY_URL", "Artifactory's base URL"),
-                    Setting.optional("ARTIFACTORY_TOKEN", "a token that can read the Docker repositories "
-                            + "(or ARTIFACTORY_TOKEN_FILE)"),
+                    Setting.requiredUnless("ARTIFACTORY_TOKEN", "ARTIFACTORY_TOKEN_FILE", "a token that can read "
+                            + "the Docker repositories (or ARTIFACTORY_TOKEN_FILE)"),
                     Setting.optional("ARTIFACTORY_TOKEN_FILE", "a file holding it, read again when it changes"),
                     Setting.required("FACTS_DIR", "the facts stage's output folder"),
                     Setting.required("DISCOVERY_DIR", "discovery's output folder"),
                     Setting.required("OUT_DIR", "the output folder; a rerun into it resumes"),
-                    Setting.optional("CONCURRENCY", "16", "images read at once"),
+                    ARTIFACTORY_RATE,
+                    Setting.optional("ARTIFACTORY_LOAD", "gentle or normal: fills in the rate and concurrency left "
+                            + "unset"),
+                    Setting.optional("ARTIFACTORY_CONCURRENCY", "16", "images read at once"),
                     Setting.optional("LINK_THRESHOLD", "the score a weak link needs to credit an image, 0 to 1"),
                     Setting.optional("LINK_MARGIN", "how far that score must beat the runner-up's, 0 to 1")),
                     NETWORK)),
@@ -107,13 +119,23 @@ final class Commands {
     static final Command SURVEY = new Command("survey",
             "runs every stage in order: survey [--try] <organisation URL>...",
             concat(List.of(GITHUB, List.of(Setting.optional("ARTIFACTORY_URL", "Artifactory's base URL; lineage runs "
-                    + "when set"), Setting.optional("OUT_DIR", "out/<organisation>", "the output folder")), NETWORK)),
-            true, SurveyMain::run);
+                    + "when set"), Setting.requiredWith(ARTIFACTORY_RATE.name(), "ARTIFACTORY_URL",
+                    ARTIFACTORY_RATE.description()), Setting.optional("OUT_DIR", "out/<organisation>",
+                    "the output folder")), NETWORK)),
+            true, (args, env) -> SurveyMain.run(surveyArguments(args, env), env));
 
     static final List<Command> ALL = List.of(SURVEY, DISCOVERY, FACTS, LINEAGE, CATALOGUE, REPORT, RULES, VALIDATOR,
             CONVERTER);
 
     private Commands() {
+    }
+
+    // A settings file's github.url is the organisation a survey given none surveys.
+    static List<String> surveyArguments(List<String> args, Map<String, String> env) {
+        boolean named = args.stream().anyMatch(arg -> !arg.startsWith("-"));
+        String url = env.get("GHE_API_URL");
+        return named || url == null || url.isBlank() ? args
+                : Stream.concat(args.stream(), Stream.of(url)).toList();
     }
 
     static List<Setting> concat(List<List<Setting>> lists) {

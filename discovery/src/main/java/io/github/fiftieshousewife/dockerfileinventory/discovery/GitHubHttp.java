@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,9 +20,9 @@ final class GitHubHttp implements GitHub {
     private final GitHubRequests requests;
     private final String restPrefix;
 
-    GitHubHttp(GitHubApi api, HttpSettings settings, TokenSource token) {
-        this(new GitHubRequests(settings.client(), api.base(), token, settings.retries(), settings.requestTimeout(),
-                Sleeper.REAL), api.restPrefix());
+    GitHubHttp(GitHubApi api, HttpSettings settings, TokenSource token, Throttle throttle) {
+        this(new GitHubRequests(new GitHubSender(settings.client(), token, settings.retries(), Sleeper.REAL, throttle),
+                api.base(), token, settings.requestTimeout()), api.restPrefix());
     }
 
     GitHubHttp(GitHubRequests requests, String restPrefix) {

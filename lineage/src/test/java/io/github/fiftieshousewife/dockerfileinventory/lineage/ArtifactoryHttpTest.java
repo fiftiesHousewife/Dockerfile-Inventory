@@ -7,6 +7,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -141,6 +143,27 @@ class ArtifactoryHttpTest {
         return new ArtifactoryHttp(new ArtifactoryClient(HttpSettings.from(Map.of()).client(),
                 URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"), token,
                 new RetryPolicy(4, Duration.ofHours(1)), Duration.ofSeconds(10), wait -> { }), 2);
+    }
+
+    @Test
+    void eachCallWaitsItsTurnOnTheThrottle() {
+        AtomicLong clock = new AtomicLong();
+        List<Duration> waits = new ArrayList<>();
+        Throttle throttle = new Throttle(1, clock::get, wait -> {
+            waits.add(wait);
+            clock.addAndGet(wait.toNanos());
+        });
+        route("/artifactory/api/storage/docker-local/team/app/1.0",
+                exchange -> respond(exchange, 200, "storage-tag.json"));
+        ArtifactoryHttp throttled = new ArtifactoryHttp(new ArtifactoryClient(HttpSettings.from(Map.of()).client(),
+                URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"),
+                TokenSource.from(Map.of("T", "t"), "T"), new RetryPolicy(1, Duration.ofHours(1)),
+                Duration.ofSeconds(10), wait -> { }, throttle), 2);
+
+        throttled.lastPushed("docker-local", "team/app", "1.0");
+        throttled.lastPushed("docker-local", "team/app", "1.0");
+
+        assertThat(waits).containsExactly(Duration.ofSeconds(1));
     }
 
     @Test

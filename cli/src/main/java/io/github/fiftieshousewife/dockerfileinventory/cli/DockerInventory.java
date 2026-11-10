@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.cli;
 
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,18 +26,22 @@ public final class DockerInventory {
      * @param args the command and its arguments
      */
     public static void main(String... args) {
-        System.exit(launch(List.of(args), System.getenv(), System.out, System.err));
+        System.exit(launch(List.of(args), System.getenv(), System.out, System.err, Commands.ALL));
     }
 
     // The logging settings become system properties before anything logs, or Log4j starts without them.
-    static int launch(List<String> args, Map<String, String> env, PrintStream out, PrintStream err) {
+    static int launch(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
+                      List<Command> commands) {
         try {
-            Logging.of(args, env).properties().forEach(System::setProperty);
+            Flags flags = Flags.of(args);
+            Logging.of(flags.rest(), env).properties().forEach(System::setProperty);
+            Map<String, String> file = flags.settings().map(Path::of).map(SettingsFile::read).orElse(Map.of());
+            return run(Logging.withoutFlags(flags.rest()), Load.expanded(SettingsFile.merged(file, env),
+                    flags.load()), out, err, commands);
         } catch (UsageError e) {
             err.println(e.getMessage());
             return USAGE;
         }
-        return run(Logging.withoutFlags(args), env, out, err, Commands.ALL);
     }
 
     static int run(List<String> args, Map<String, String> env, PrintStream out, PrintStream err,
@@ -69,7 +74,7 @@ public final class DockerInventory {
         }
         NearMisses.warnings(env.keySet(), known(commands)).forEach(err::println);
         Optional<Setting> missing = command.settings().stream()
-                .filter(setting -> setting.required() && isBlank(env.get(setting.name()))).findFirst();
+                .filter(setting -> required(setting, env) && isBlank(env.get(setting.name()))).findFirst();
         if (missing.isPresent()) {
             err.println(command.name() + ": " + missing.get().name() + " is required: " + missing.get().description());
             return USAGE;
@@ -83,6 +88,11 @@ public final class DockerInventory {
             err.println(command.name() + " failed: " + firstLine(e));
             return FAILED;
         }
+    }
+
+    static boolean required(Setting setting, Map<String, String> env) {
+        return setting.required() || setting.requiredWith() != null && !isBlank(env.get(setting.requiredWith()))
+                || setting.requiredUnless() != null && isBlank(env.get(setting.requiredUnless()));
     }
 
     static java.util.Set<String> known(List<Command> commands) {

@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -26,7 +27,11 @@ final class GitHubRequests {
 
     GitHubRequests(HttpClient http, URI apiBase, TokenSource token, RetryPolicy retries, Duration timeout,
             Sleeper sleeper) {
-        this.sender = new GitHubSender(http, token, retries, sleeper);
+        this(new GitHubSender(http, token, retries, sleeper, Throttle.NONE), apiBase, token, timeout);
+    }
+
+    GitHubRequests(GitHubSender sender, URI apiBase, TokenSource token, Duration timeout) {
+        this.sender = sender;
         this.apiBase = withTrailingSlash(apiBase);
         this.token = token;
         this.timeout = timeout;

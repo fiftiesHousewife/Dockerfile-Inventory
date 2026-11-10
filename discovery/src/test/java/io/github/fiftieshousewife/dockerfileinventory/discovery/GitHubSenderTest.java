@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
 import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
+import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.URI;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
 class GitHubSenderTest {
@@ -97,5 +99,26 @@ class GitHubSenderTest {
                         .isThrownBy(() -> interrupted.pause(Duration.ofSeconds(1), REQUEST))
                         .withMessage("interrupted calling https://ghe.example/"),
                 () -> assertThat(Thread.interrupted()).isTrue());
+    }
+
+    @Test
+    void eachCallWaitsItsTurnOnTheThrottle() throws IOException {
+        AtomicLong clock = new AtomicLong();
+        List<Duration> waits = new ArrayList<>();
+        Throttle throttle = new Throttle(1, clock::get, wait -> {
+            waits.add(wait);
+            clock.addAndGet(wait.toNanos());
+        });
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.route("/ok", exchange -> RecordedGitHub.respondText(exchange, 200, "{}"));
+            GitHubSender sender = new GitHubSender(HttpClient.newHttpClient(), TOKEN,
+                    new RetryPolicy(1, Duration.ofHours(1)), pauses::add, throttle);
+            HttpRequest ok = HttpRequest.newBuilder(server.root().resolve("/ok")).build();
+
+            sender.send(() -> ok);
+            sender.send(() -> ok);
+        }
+
+        assertThat(waits).containsExactly(Duration.ofSeconds(1));
     }
 }
