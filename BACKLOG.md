@@ -83,6 +83,11 @@ and one line when its gate is met.
   OpenShift page and the summary show the workloads (lead sentence, a table worst first with containers and links).
   Slice 5 done 10 Nov: a Dockerfile's page lists the workloads that run it ("Runs in"). Next: linking measured on a
   survey with both lineage and workloads (the owner's run).
+- Done 10 Nov (`docs/plans/ci.md`, asked 10 Nov: maintained here, libraries and a CLI published to Central, CI first
+  then publication): GitHub Actions runs `check` (without `verifyUpToDate`) on every push and pull request,
+  `verifyUpToDate` weekly; actions pinned by commit, moved by Dependabot; the pod image removed. Next: publication,
+  the libraries and a CLI to Central (`docs/plans/libraries.md`, and a plan for the CLI); a Gradle plugin wrapping the
+  CLI later, at low priority.
 - Done 9 Nov (`docs/plans/scripts-to-java.md`, asked 8 Nov): the shell scripts replaced by Java; `scripts/` holds
   only the image's entry point. The survey takes several organisations (for `discover.sh` and `combine.sh`); the
   `tools` module holds `collectCorpus`, `collectImages`, `selectOkd`, `recordJcrFixtures`, `lineageDemo` and

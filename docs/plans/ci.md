@@ -1,7 +1,9 @@
 # Continuous integration: plan
 
-Status: planned and built 10 Nov (asked 10 Nov: "We maintain it here, and publish libraries and a cli ... CI first
-then publication"); its first runs on GitHub are the test.
+Status: done 10 Nov (asked 10 Nov: "We maintain it here, and publish libraries and a cli ... CI first then
+publication"). The first run failed on a SpotBugs finding (a nullable `Path.getFileName()` in the new build retry)
+that local runs had missed because the session's Gradle wrapper script exited 0 whatever Gradle did; fixed, and the
+second run green in about four minutes.
 
 ## Why
 
