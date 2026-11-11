@@ -83,6 +83,11 @@ and one line when its gate is met.
   OpenShift page and the summary show the workloads (lead sentence, a table worst first with containers and links).
   Slice 5 done 10 Nov: a Dockerfile's page lists the workloads that run it ("Runs in"). Next: linking measured on a
   survey with both lineage and workloads (the owner's run).
+- Now (`docs/plans/cli-publication.md`, asked 11 Nov, questions answered 11 Nov): the command on Central as
+  `io.github.fiftieshousewife:docker-inventory`, its distribution zip with every jar inside and a POM with no
+  dependencies; sources of every module it ships, a README for Javadoc. Its bundle built and verified in `check`
+  beside the three libraries' (unchanged byte for byte). Next: the owner's first release of all four, in order
+  parser, model, reader, command.
 - Done 10 Nov (`docs/plans/ci.md`, asked 10 Nov: maintained here, libraries and a CLI published to Central, CI first
   then publication): GitHub Actions runs `check` (without `verifyUpToDate`) on every push and pull request,
   `verifyUpToDate` weekly; actions pinned by commit, moved by Dependabot; the pod image removed. Next: publication,

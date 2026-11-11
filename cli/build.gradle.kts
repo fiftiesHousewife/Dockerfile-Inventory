@@ -1,7 +1,7 @@
 // The docker-inventory command: every stage, and the survey that runs them in order.
 plugins {
     id("inventory.java")
-    application
+    id("inventory.distributed")
 }
 
 dependencies {
@@ -23,7 +23,17 @@ dependencies {
     implementation(project(":converter"))
 }
 
+group = "io.github.fiftieshousewife"
 version = providers.gradleProperty("inventory.cliVersion").get()
+
+publishing.publications.named<MavenPublication>("distribution") {
+    artifactId = "docker-inventory"
+    pom {
+        name.set("docker-inventory")
+        description.set("The Dockerfile inventory pipeline as one command: finds an estate's Dockerfiles, reads " +
+            "them, links them to registry images, and reports and checks them.")
+    }
+}
 
 application {
     applicationName = "docker-inventory"

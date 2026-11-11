@@ -32,6 +32,7 @@ You need Java 21 or newer and a token that can read the organisations.
 ```bash
 ./gradlew :cli:installDist                                   # until the first release: build the command
 export PATH="$PWD/cli/build/install/docker-inventory/bin:$PATH"
+# after it: unzip io.github.fiftieshousewife:docker-inventory:<version>@zip from Maven Central (or its mirror)
 
 export GHE_TOKEN_FILE=~/secrets/ghe-token
 docker-inventory survey --try --load gentle https://github.example.com/acme

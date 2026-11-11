@@ -25,10 +25,12 @@ about the code.
 ```
 build-logic/        included build: the inventory.java convention plugin (toolchain, -Werror, tests, JaCoCo gate,
                     SpotBugs), inventory.vendored (the same for copied code, without -Werror and SpotBugs, generated
-                    code out of coverage), inventory.published (a Maven Central bundle, built and verified in check)
-                    and inventory.dependency-updates (verifyUpToDate); every module applies inventory.java, except
+                    code out of coverage), inventory.central (a Maven Central bundle, built and verified in check;
+                    releaseToCentral), on which inventory.published (a library: jar, sources, Javadoc, module
+                    metadata) and inventory.distributed (the command's distribution zip) build, and
+                    inventory.dependency-updates (verifyUpToDate); every module applies inventory.java, except
                     parser, which applies inventory.vendored; parser, dsl and reader also apply inventory.published
-                    (built for and tested on Java 21)
+                    (built for and tested on Java 21), cli inventory.distributed
 gradle/             libs.versions.toml, the one version catalogue
 parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docker 8.90.4 (Apache 2.0), packages
                     io.github.fiftieshousewife.dockerfile.parser (.tree, .internal, .internal.grammar), published
@@ -239,12 +241,16 @@ and a line in the changed file's header saying what changed. The corpus tests na
 naming the variable, list it in the stage's guide (`docs/guide/`) and in `cli`'s `Commands` or `SettingGroups`.
 Network settings belong in `http`'s `HttpSettings`.
 
-**Release a library.** Set its version in `gradle.properties` (`inventory.parserVersion`, `inventory.modelVersion`;
-semantic: a change to the public API is a major version, or a minor one before 1.0), commit, then run
-`./gradlew :parser:releaseToCentral` (or `:dsl:`) with `SIGNING_KEY`, `SIGNING_PASSWORD`, `CENTRAL_TOKEN_USER` and
-`CENTRAL_TOKEN_PASSWORD` in the environment. It refuses on a changed tree, a snapshot or an existing tag, uploads the
-signed bundle to wait in the Portal until it is published there by hand, and tags `<artifact>-v<version>`.
-`./gradlew check` already builds, verifies and zips the same bundle, unsigned, in each library's `build/`.
+**Release a library or the command.** Set its version in `gradle.properties` (`inventory.parserVersion`,
+`inventory.modelVersion`, `inventory.readerVersion`, `inventory.cliVersion`; semantic: a change to the public API is
+a major version, or a minor one before 1.0), commit, then run `./gradlew :parser:releaseToCentral` (or `:dsl:`,
+`:reader:`, `:cli:`; a library before the ones that depend on it) with `SIGNING_KEY`, `SIGNING_PASSWORD`,
+`CENTRAL_TOKEN_USER` and `CENTRAL_TOKEN_PASSWORD` in the environment. It refuses on a changed tree, a snapshot or an
+existing tag, uploads the signed bundle to wait in the Portal until it is published there by hand, and tags
+`<artifact>-v<version>`.
+`./gradlew check` already builds, verifies and zips the same bundle, unsigned, in each module's `build/`. The
+coordinates are the publication's: `io.github.fiftieshousewife:` and the `artifactId` its build file sets, never the
+module's name.
 
 **Files shared between modules** (`testdata/contracts/`, dsl's goldens) are declared as test inputs in each reading
 module's `build.gradle.kts`, so a change reruns the tests that read them.
