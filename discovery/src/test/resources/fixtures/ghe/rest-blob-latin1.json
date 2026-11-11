@@ -1,0 +1,8 @@
+{
+ "sha": "cccc333333333333333333333333333333333333",
+ "node_id": "B_3",
+ "size": 36,
+ "url": "https://ghe.example.com/api/v3/repos/payments/ledger-api/git/blobs/cccc333333333333333333333333333333333333",
+ "content": "RlJPTSBhbHBpbmUKTEFCRUwgbWFpbnRhaW5lcj0iSm9z6SIK\n",
+ "encoding": "base64"
+}

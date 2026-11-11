@@ -2,9 +2,12 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 record Pending(List<BlobRequest> blobs, List<BlobRequest> yamls, List<ChangeRequest> changes) {
 
@@ -26,6 +29,19 @@ record Pending(List<BlobRequest> blobs, List<BlobRequest> yamls, List<ChangeRequ
 
     int calls() {
         return batches(blobs.size()) + batches(yamls.size()) + batches(changes.size());
+    }
+
+    Map<String, Pending> byOrganisation() {
+        Map<String, List<BlobRequest>> blobsBy = by(blobs, BlobRequest::repository);
+        Map<String, List<BlobRequest>> yamlsBy = by(yamls, BlobRequest::repository);
+        Map<String, List<ChangeRequest>> changesBy = by(changes, ChangeRequest::repository);
+        return Stream.of(blobsBy, yamlsBy, changesBy).flatMap(m -> m.keySet().stream()).distinct()
+                .collect(Collectors.toMap(org -> org, org -> new Pending(blobsBy.getOrDefault(org, List.of()),
+                        yamlsBy.getOrDefault(org, List.of()), changesBy.getOrDefault(org, List.of()))));
+    }
+
+    private static <R> Map<String, List<R>> by(List<R> requests, Function<R, String> repository) {
+        return requests.stream().collect(Collectors.groupingBy(r -> PerOrganisation.owner(repository.apply(r))));
     }
 
     static int batches(int requests) {

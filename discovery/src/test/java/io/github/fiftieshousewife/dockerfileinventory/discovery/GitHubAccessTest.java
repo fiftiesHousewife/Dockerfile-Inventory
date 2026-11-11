@@ -6,9 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
 import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
+import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
+import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -76,11 +81,12 @@ class GitHubAccessTest {
             server.route("/api/v3/organizations", exchange -> RecordedGitHub.respond(exchange, 200,
                     exchange.getRequestURI().getQuery().contains("since=0")
                             ? "organizations-page1.json" : "organizations-page2.json"));
+            server.routeGraphql("graphql-rate-limit.json");
             GitHubApi api = GitHubApi.from(server.root() + "api/");
             Map<String, String> env = Map.of("GHE_TOKEN", "t");
 
             GitHub client = GitHubAccess.client(api, HttpSettings.from(Map.of()), Throttle.NONE,
-                    GitHubAccess.credentials(env, api, HttpSettings.from(Map.of()), Throttle.NONE), env);
+                    GitHubAccess.credentials(env, api, HttpSettings.from(Map.of()), Throttle.NONE), false);
 
             assertThat(client.organizations()).containsExactly("payments", "platform");
         }
@@ -101,8 +107,34 @@ class GitHubAccessTest {
         };
 
         GitHub client = GitHubAccess.client(API, HttpSettings.from(Map.of()), Throttle.NONE,
-                new OrganisationCredentials(Optional.of(app), Optional.empty(), Instant::now), Map.of());
+                new OrganisationCredentials(Optional.of(app), Optional.empty(), Instant::now), false);
 
         assertThat(client.organizations()).containsExactly("pay", "web");
+    }
+
+    @Test
+    void aCredentialGraphqlAnswersReadsOverGraphql() throws IOException {
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.routeGraphql("graphql-rate-limit.json");
+
+            assertThat(GitHubAccess.chosen(requests(server), "api/v3/", false, "a token"))
+                    .isInstanceOf(GitHubHttp.class);
+        }
+    }
+
+    @Test
+    void aCredentialGraphqlRefusesReadsOverRest() throws IOException {
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.route("/api/graphql", exchange -> RecordedGitHub.respond(exchange, 403, "graphql-forbidden.json"));
+
+            assertThat(GitHubAccess.chosen(requests(server), "api/v3/", false, "a token"))
+                    .isInstanceOf(GitHubRest.class);
+        }
+    }
+
+    private static GitHubRequests requests(RecordedGitHub server) {
+        return new GitHubRequests(HttpClient.newHttpClient(), URI.create(server.root() + "api"),
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"), new RetryPolicy(1, Duration.ofHours(1)),
+                Duration.ofSeconds(5), wait -> { });
     }
 }

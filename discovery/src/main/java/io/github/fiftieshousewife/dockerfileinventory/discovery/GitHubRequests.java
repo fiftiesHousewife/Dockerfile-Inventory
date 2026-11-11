@@ -66,11 +66,7 @@ final class GitHubRequests {
 
     // GraphQL reports errors in a 200 response, beside whatever data it could resolve.
     JsonNode graphql(String query, ObjectNode variables) {
-        String body = object().put("query", query).set("variables", variables).toString();
-        HttpResponse<String> response = sender.send(() -> request("graphql")
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build());
+        HttpResponse<String> response = postGraphql(object().put("query", query).set("variables", variables));
         if (response.statusCode() != 200) {
             throw failure(response);
         }
@@ -79,6 +75,22 @@ final class GitHubRequests {
             throw new GitHubException("GraphQL errors: " + result.path("errors"));
         }
         return result.path("data");
+    }
+
+    // Some tokens may not use GraphQL (a fine-grained token on a server that does not take them there): GitHub
+    // answers 401 or 403, or 200 with errors, to the smallest query any other token may ask.
+    boolean graphqlAllowed() {
+        HttpResponse<String> response = postGraphql(object().put("query", "{ rateLimit { remaining } }"));
+        return switch (response.statusCode()) {
+            case 200 -> !hasErrors(parse(response));
+            case 401, 403 -> false;
+            default -> throw failure(response);
+        };
+    }
+
+    private HttpResponse<String> postGraphql(ObjectNode body) {
+        return sender.send(() -> request("graphql").header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString())).build());
     }
 
     static boolean hasErrors(JsonNode result) {

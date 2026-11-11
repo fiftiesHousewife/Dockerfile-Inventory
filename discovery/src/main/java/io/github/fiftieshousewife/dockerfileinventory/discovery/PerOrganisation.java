@@ -32,6 +32,11 @@ final class PerOrganisation implements GitHub {
     }
 
     @Override
+    public String headCommit(Repository repository) {
+        return clients.apply(owner(repository.nameWithOwner())).headCommit(repository);
+    }
+
+    @Override
     public Optional<Tree> tree(String repository, String sha, boolean recursive) {
         return clients.apply(owner(repository)).tree(repository, sha, recursive);
     }
@@ -44,6 +49,12 @@ final class PerOrganisation implements GitHub {
     @Override
     public List<LastChange> lastChanges(List<ChangeRequest> requests) {
         return split(requests, ChangeRequest::repository, GitHub::lastChanges);
+    }
+
+    @Override
+    public int calls(Pending pending) {
+        return pending.byOrganisation().entrySet().stream()
+                .mapToInt(e -> clients.apply(e.getKey()).calls(e.getValue())).sum();
     }
 
     <R, T> List<T> split(List<R> requests, Function<R, String> repository, BiFunction<GitHub, List<R>, List<T>> call) {

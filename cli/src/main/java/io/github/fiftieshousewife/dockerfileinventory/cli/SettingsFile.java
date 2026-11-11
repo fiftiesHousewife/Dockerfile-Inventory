@@ -34,6 +34,7 @@ final class SettingsFile {
         keys.put("requestsPerSecond", prefix + "_MAX_REQUESTS_PER_SECOND");
         keys.put("concurrency", prefix + "_CONCURRENCY");
         if (prefix.equals("GHE")) {
+            keys.put("lastChanges", "GHE_LAST_CHANGES");
             keys.put("app", null);
         }
         return keys;

@@ -234,4 +234,41 @@ class GitHubRequestsTest {
         assertThat(failure.getMessage())
                 .isEqualTo("GET https://ghe.example/ returned 502: " + "x".repeat(300));
     }
+
+    @Test
+    void graphqlIsAllowedWhenTheSmallestQueryIsAnswered() {
+        server.routeGraphql("graphql-rate-limit.json");
+
+        assertAll(
+                () -> assertThat(requests.graphqlAllowed()).isTrue(),
+                () -> assertThat(server.graphqlBodies).singleElement().asString().contains("rateLimit"));
+    }
+
+    @Test
+    void graphqlIsRefusedByA403() {
+        server.route("/api/graphql", exchange -> RecordedGitHub.respond(exchange, 403, "graphql-forbidden.json"));
+
+        assertThat(requests.graphqlAllowed()).isFalse();
+    }
+
+    @Test
+    void graphqlIsRefusedByA401() {
+        server.route("/api/graphql", exchange -> RecordedGitHub.respond(exchange, 401, "graphql-forbidden.json"));
+
+        assertThat(requests.graphqlAllowed()).isFalse();
+    }
+
+    @Test
+    void graphqlIsRefusedByErrorsInAnAnswer() {
+        server.routeGraphql("graphql-forbidden-errors.json");
+
+        assertThat(requests.graphqlAllowed()).isFalse();
+    }
+
+    @Test
+    void aServerErrorIsNoAnswerAboutGraphql() {
+        server.route("/api/graphql", exchange -> RecordedGitHub.respondText(exchange, 502, "{}"));
+
+        assertThatExceptionOfType(GitHubException.class).isThrownBy(requests::graphqlAllowed);
+    }
 }

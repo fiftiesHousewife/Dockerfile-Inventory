@@ -78,6 +78,16 @@ class DiscoveryMainTest {
     }
 
     @Test
+    void lastChangesOverRestAreReadOnlyWhenAskedFor() {
+        assertAll(
+                () -> assertThat(DiscoveryMain.lastChanges(Map.of())).isFalse(),
+                () -> assertThat(DiscoveryMain.lastChanges(Map.of("GHE_LAST_CHANGES", "true"))).isTrue(),
+                () -> assertThat(DiscoveryMain.lastChanges(Map.of("GHE_LAST_CHANGES", " false "))).isFalse(),
+                () -> assertThatThrownBy(() -> DiscoveryMain.lastChanges(Map.of("GHE_LAST_CHANGES", "yes")))
+                        .hasMessage("GHE_LAST_CHANGES must be true or false, not yes"));
+    }
+
+    @Test
     void aRunRecordsWhichCredentialReadEachOrganisation() throws IOException {
         try (RecordedGitHub server = new RecordedGitHub()) {
             server.routeGraphql("repositories-page2.json");

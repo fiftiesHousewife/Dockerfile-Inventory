@@ -20,10 +20,18 @@ final class FakeGitHub implements GitHub {
     final Map<ChangeRequest, LastChange> changes = new LinkedHashMap<>();
     final List<List<ChangeRequest>> changeCalls = new CopyOnWriteArrayList<>();
     final List<String> failingChanges = new ArrayList<>();
+    final Map<String, String> heads = new LinkedHashMap<>();
+    final List<String> headCalls = new CopyOnWriteArrayList<>();
 
     FakeGitHub repository(String org, Repository repository) {
         repositoriesByOrg.computeIfAbsent(org, k -> new ArrayList<>()).add(repository);
         return this;
+    }
+
+    @Override
+    public String headCommit(Repository repository) {
+        headCalls.add(repository.nameWithOwner());
+        return heads.getOrDefault(repository.nameWithOwner(), repository.headCommit());
     }
 
     FakeGitHub tree(String repository, String commit, Tree tree) {

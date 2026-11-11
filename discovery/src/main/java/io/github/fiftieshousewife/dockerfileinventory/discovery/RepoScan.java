@@ -2,6 +2,7 @@ package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 final class RepoScan {
 
@@ -19,20 +20,22 @@ final class RepoScan {
 
     private final TreeWalk walk;
     private final ReleaseIndex releases;
+    private final Function<Repository, String> heads;
 
     RepoScan(GitHub gitHub, ReleaseIndex releases) {
-        this(new TreeWalk(gitHub), releases);
+        this(new TreeWalk(gitHub), releases, gitHub::headCommit);
     }
 
-    RepoScan(TreeWalk walk, ReleaseIndex releases) {
+    RepoScan(TreeWalk walk, ReleaseIndex releases, Function<Repository, String> heads) {
         this.walk = walk;
         this.releases = releases;
+        this.heads = heads;
     }
 
     Result scan(Repository repository) {
         Optional<String> released = releases.releasedCommit(repository.nameWithOwner());
         Scope scope = released.isPresent() ? Scope.RELEASED : Scope.DEFAULT_BRANCH;
-        String commit = released.orElse(repository.headCommit());
+        String commit = released.orElseGet(() -> heads.apply(repository));
         if (commit == null) {
             return result(repository, RepoOutcome.Status.EMPTY, scope, null, List.of(), "no commits");
         }

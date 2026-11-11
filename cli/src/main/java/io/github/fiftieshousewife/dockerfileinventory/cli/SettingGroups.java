@@ -35,7 +35,9 @@ final class SettingGroups {
             Setting.optional("GHE_APP_ID", "a GitHub App's ID: organisations where it is installed are read with it, "
                     + "the rest with the token"),
             Setting.requiredWith("GHE_APP_PRIVATE_KEY_FILE", "GHE_APP_ID", "the GitHub App's private key, as GitHub "
-                    + "gives it (PEM)"));
+                    + "gives it (PEM)"),
+            Setting.optional("GHE_LAST_CHANGES", "false", "true to read each location's last change where GraphQL "
+                    + "is refused and REST is used: a call a location"));
 
     static final List<Setting> CATALOGUED = List.of(
             Setting.required("FACTS_DIR", "the facts stage's output folder"),

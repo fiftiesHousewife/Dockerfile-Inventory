@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -52,5 +53,17 @@ class PendingTest {
     void theCallsLeftAreTheBatchesOfFiftyForTheBlobsTheYamlAndTheLastChanges() {
         assertThat(Pending.batches(0) + Pending.batches(1) + Pending.batches(50) + Pending.batches(51))
                 .isEqualTo(4);
+    }
+
+    @Test
+    void splitsByTheOrganisationOwningEachRequestWhateverItsCase() {
+        Pending pending = new Pending(List.of(new BlobRequest("Pay/api", "one"), new BlobRequest("web/site", "two")),
+                List.of(new BlobRequest("pay/api", "yaml")), List.of(new ChangeRequest("web/site", A, "Dockerfile")));
+
+        assertThat(pending.byOrganisation()).isEqualTo(Map.of(
+                "pay", new Pending(List.of(new BlobRequest("Pay/api", "one")), List.of(new BlobRequest("pay/api",
+                        "yaml")), List.of()),
+                "web", new Pending(List.of(new BlobRequest("web/site", "two")), List.of(),
+                        List.of(new ChangeRequest("web/site", A, "Dockerfile")))));
     }
 }

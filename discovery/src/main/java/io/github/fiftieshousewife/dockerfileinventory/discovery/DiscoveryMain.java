@@ -55,7 +55,7 @@ public final class DiscoveryMain {
         Throttle throttle = Throttle.of(Throttle.rate(env, "GHE_MAX_REQUESTS_PER_SECOND"));
         OrganisationCredentials credentials = GitHubAccess.credentials(env, api, settings, throttle);
         LOG.info("discovery: {}, {}", api.base(), settings);
-        GitHub gitHub = GitHubAccess.client(api, settings, throttle, credentials, env);
+        GitHub gitHub = GitHubAccess.client(api, settings, throttle, credentials, lastChanges(env));
         int concurrency = Throttle.concurrency(env, "GHE_CONCURRENCY", 8);
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
         var discovery = new Discovery(gitHub, releases, output, concurrency,
@@ -78,6 +78,14 @@ public final class DiscoveryMain {
             throw new IllegalStateException("MAX_DOCKERFILES must be a positive whole number, not " + value);
         }
         return Integer.parseInt(value.strip());
+    }
+
+    static boolean lastChanges(Map<String, String> env) {
+        String value = env.getOrDefault("GHE_LAST_CHANGES", "").strip();
+        if (!value.isEmpty() && !value.equals("true") && !value.equals("false")) {
+            throw new IllegalStateException("GHE_LAST_CHANGES must be true or false, not " + value);
+        }
+        return value.equals("true");
     }
 
     static int tryRepositories(Map<String, String> env) {

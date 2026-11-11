@@ -69,7 +69,7 @@ final class Discovery {
         Map<String, Located> byBlob = firstByBlob(manifest);
         List<Located> yaml = output.yaml();
         Pending pending = Pending.of(output, manifest, byBlob.values(), yaml);
-        goOn(firstPass(repositories.size(), manifest, byBlob.size(), pending.calls()));
+        goOn(firstPass(repositories.size(), manifest, byBlob.size(), gitHub.calls(pending)));
 
         BlobFetch.Fetched fetched = blobFetch.fetch(pending.blobs());
         BlobFetch.Fetched fetchedYaml = yamlFetch.fetch(pending.yamls());

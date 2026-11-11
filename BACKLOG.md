@@ -83,7 +83,11 @@ and one line when its gate is met.
   OpenShift page and the summary show the workloads (lead sentence, a table worst first with containers and links).
   Slice 5 done 10 Nov: a Dockerfile's page lists the workloads that run it ("Runs in"). Next: linking measured on a
   survey with both lineage and workloads (the owner's run).
-- Now (`docs/plans/cli-publication.md`, asked 11 Nov, questions answered 11 Nov): the command on Central as
+- Done 11 Nov (`docs/plans/rest-only.md`, asked 11 Nov: the owner's token cannot use GraphQL): discovery over REST
+  alone for a credential GraphQL refuses, found out per credential at the start of a run; last changes left out over
+  REST unless `GHE_LAST_CHANGES=true`. Next: the owner's first run with the token, and REST against GraphQL on the
+  same organisation, byte for byte.
+- Done 11 Nov (`docs/plans/cli-publication.md`, asked 11 Nov, questions answered 11 Nov): the command on Central as
   `io.github.fiftieshousewife:docker-inventory`, its distribution zip with every jar inside and a POM with no
   dependencies; sources of every module it ships, a README for Javadoc. Its bundle built and verified in `check`
   beside the three libraries' (unchanged byte for byte). Next: the owner's first release of all four, in order

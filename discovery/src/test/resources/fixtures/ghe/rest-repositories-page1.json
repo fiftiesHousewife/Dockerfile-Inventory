@@ -1,0 +1,6 @@
+[
+  {"id": 101, "full_name": "payments/ledger-api", "default_branch": "main", "archived": false, "fork": false,
+   "pushed_at": "2026-10-30T09:12:00Z", "size": 2048},
+  {"id": 102, "full_name": "payments/empty", "default_branch": "main", "archived": true, "fork": true,
+   "pushed_at": null, "size": 0}
+]

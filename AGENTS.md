@@ -47,8 +47,10 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
                     Discovery (the run), Scans (repositories on virtual threads), RepoScan (one repository),
                     TreeWalk (truncated trees by subtree), BlobFetch (GraphQL batches of 50), DiscoveryOutput (files)
                     ChangeFetch and GraphQlHistory: each location's last change, in batches of 50
-                    GitHub (interface) / GitHubHttp, GitHubRequests (sending, errors), GraphQlRepositories,
-                    GraphQlBlobs, RestTrees; GitHubApi (the three URL forms); RateLimit; ReleaseIndex
+                    GitHub (interface) / GitHubHttp, GitHubRequests (sending, errors, graphqlAllowed),
+                    GraphQlRepositories, GraphQlBlobs, RestTrees; GitHubRest (REST alone, for a credential GraphQL
+                    refuses: RestRepositories, RestBlobs, RestHistory); GitHubApi (the three URL forms); RateLimit;
+                    ReleaseIndex
                     GitHubAccess: a token, a GitHub App or both (AppJwt, AppCredential, AppInstallations,
                     InstallationToken, OrganisationCredentials, PerOrganisation: each organisation's own credential)
                     Selection (--repository, --repository-name-contains), FirstPass, Confirmation, RunStopped,

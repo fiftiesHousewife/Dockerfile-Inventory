@@ -13,11 +13,15 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 
 final class GitHubAccess {
 
+    private static final Logger LOG = LoggerFactory.getLogger(GitHubAccess.class);
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private GitHubAccess() {
@@ -56,12 +60,23 @@ final class GitHubAccess {
     }
 
     static GitHub client(GitHubApi api, HttpSettings settings, Throttle throttle, OrganisationCredentials credentials,
-                         Map<String, String> env) {
+                         boolean lastChanges) {
         Map<Credential, GitHub> clients = new ConcurrentHashMap<>();
-        return new PerOrganisation(org -> clients.computeIfAbsent(credentials.of(org),
-                credential -> new GitHubHttp(api, settings, credential, throttle)),
-                () -> credentials.token().map(t -> clients.computeIfAbsent(t, credential -> new GitHubHttp(api,
-                        settings, credential, throttle)).organizations()).orElseGet(credentials::installed));
+        Function<Credential, GitHub> client = credential -> clients.computeIfAbsent(credential, c -> chosen(
+                new GitHubRequests(new GitHubSender(settings.client(), c, settings.retries(), Sleeper.REAL, throttle),
+                        api.base(), c, settings.requestTimeout()), api.restPrefix(), lastChanges, c.toString()));
+        return new PerOrganisation(org -> client.apply(credentials.of(org)),
+                () -> credentials.token().map(t -> client.apply(t).organizations()).orElseGet(credentials::installed));
+    }
+
+    static GitHub chosen(GitHubRequests requests, String restPrefix, boolean lastChanges, String credential) {
+        if (requests.graphqlAllowed()) {
+            return new GitHubHttp(requests, restPrefix);
+        }
+        LOG.info("discovery: {} may not use GraphQL, so its organisations are read over REST, a call a blob{}",
+                credential, lastChanges ? " and a location"
+                        : ", without last changes (GHE_LAST_CHANGES=true reads them)");
+        return new GitHubRest(requests, restPrefix, lastChanges);
     }
 
     static String lines(Map<String, String> chosen) {

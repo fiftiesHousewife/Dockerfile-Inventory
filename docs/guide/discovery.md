@@ -12,8 +12,26 @@ export RELEASE_INDEX=/data/releases.csv            # optional: owner/repo,commit
 export GHE_MAX_REQUESTS_PER_SECOND=2              # the most calls to GitHub a second (or GHE_LOAD=gentle)
 export GHE_CONCURRENCY=8                           # optional: parallel repository scans
 export TRY_REPOSITORIES=10                         # optional: stop once this many repositories held a Dockerfile
+export GHE_LAST_CHANGES=true                       # optional, over REST only: read each location's last change
 docker-inventory discovery
 ```
+
+### A token GraphQL refuses
+
+Discovery reads blobs and last changes 50 to a GraphQL query. Some tokens may not use GraphQL (a fine-grained
+personal access token on a server that does not take them there). Discovery asks each credential once, at the start,
+with the smallest GraphQL query; one that is refused (401, 403, or an answer with errors) reads its organisations
+over REST alone, and the log says so:
+
+```
+discovery: a token may not use GraphQL, so its organisations are read over REST, a call a blob, without last changes (GHE_LAST_CHANGES=true reads them)
+```
+
+The output is the same, but REST takes a call for each blob and each location where GraphQL takes one for fifty, and
+one more for each repository the release index does not name (its default branch's head). The confirm step's
+estimate counts the calls each way. Last changes are left out over REST unless `GHE_LAST_CHANGES=true`, since they
+are a call a location; without them the Dockerfile pages show no "last changed" date. A run that mixes an App and a
+token reads each organisation the fastest way its credential allows.
 
 Each repository is scanned at the commit the release index names. A repository with no entry is scanned at
 its default branch head and flagged, so the report can show how much of the estate is not release-scoped.

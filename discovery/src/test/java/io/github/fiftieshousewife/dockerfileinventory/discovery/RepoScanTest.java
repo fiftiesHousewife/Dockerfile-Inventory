@@ -38,6 +38,26 @@ class RepoScanTest {
     }
 
     @Test
+    void asksGitHubForTheHeadCommitWhenTheListingLeftItOut() throws IOException {
+        gitHub.heads.put("pay/api", HEAD);
+        gitHub.tree("pay/api", HEAD, tree(file("Dockerfile", "d1")));
+
+        RepoScan.Result result = new RepoScan(gitHub, ReleaseIndex.empty()).scan(repo("pay/api", null));
+
+        assertThat(result.dockerfiles()).containsExactly(new Located("pay/api", HEAD, Scope.DEFAULT_BRANCH,
+                "Dockerfile", "d1"));
+    }
+
+    @Test
+    void neverAsksForTheHeadCommitOfAReleasedRepository() throws IOException {
+        gitHub.tree("pay/api", RELEASED, tree(file("Dockerfile", "d1")));
+
+        new RepoScan(gitHub, releases("pay/api," + RELEASED)).scan(repo("pay/api", null));
+
+        assertThat(gitHub.headCalls).isEmpty();
+    }
+
+    @Test
     void findsTheYamlThatCouldBeDeploymentManifestsBesideTheDockerfiles() throws IOException {
         gitHub.tree("pay/api", RELEASED, tree(file("Dockerfile", "d1"), file("deploy/api.yaml", "y1"),
                 file(".github/workflows/ci.yaml", "y2"), link("deploy/link.yaml", "y3")));
@@ -101,7 +121,7 @@ class RepoScanTest {
     void reportsATreeStillTruncatedPastTheDepthLimitButKeepsWhatItListed() {
         gitHub.tree("pay/mono", HEAD, new Tree(true, List.of(file("svc/Dockerfile", "d1"))));
 
-        RepoScan.Result result = new RepoScan(new TreeWalk(gitHub, 0), ReleaseIndex.empty())
+        RepoScan.Result result = new RepoScan(new TreeWalk(gitHub, 0), ReleaseIndex.empty(), gitHub::headCommit)
                 .scan(repo("pay/mono", HEAD));
 
         assertThat(result).satisfies(
