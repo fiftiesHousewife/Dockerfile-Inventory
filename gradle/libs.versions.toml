@@ -11,7 +11,7 @@ spotbugs-plugin = "6.5.13"
 spotbugs = "4.10.5"
 slf4j = "2.0.20"
 failsafe = "3.3.2"
-log4j = "2.25.2"
+log4j = "2.26.1"
 versions-plugin = "0.67.0"
 # Read by settings.gradle.kts, whose plugins block cannot use this catalogue.
 foojay-resolver = "1.0.0"
