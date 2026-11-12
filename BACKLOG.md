@@ -85,8 +85,9 @@ and one line when its gate is met.
   survey with both lineage and workloads (the owner's run).
 - Done 11 Nov (`docs/plans/rest-only.md`, asked 11 Nov: the owner's token cannot use GraphQL): discovery over REST
   alone for a credential GraphQL refuses, found out per credential at the start of a run; last changes left out over
-  REST unless `GHE_LAST_CHANGES=true`. Next: the owner's first run with the token, and REST against GraphQL on the
-  same organisation, byte for byte.
+  REST unless `GHE_LAST_CHANGES=true`. Done 12 Nov (`docs/plans/choose-api.md`): `--api rest` (`GHE_API`,
+  `github.api`) forces REST, and `./gradlew :discovery:githubLive` compares REST with GraphQL on github.com. Next: the
+  owner's first run with the token, and `githubLive` run with `GH_TOKEN` (this sandbox cannot reach GitHub).
 - Done 11 Nov (`docs/plans/cli-publication.md`, asked 11 Nov, questions answered 11 Nov): the command on Central as
   `io.github.fiftieshousewife:docker-inventory`, its distribution zip with every jar inside and a POM with no
   dependencies; sources of every module it ships, a README for Javadoc. Its bundle built and verified in `check`

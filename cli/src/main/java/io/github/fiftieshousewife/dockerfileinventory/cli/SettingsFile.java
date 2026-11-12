@@ -35,6 +35,7 @@ final class SettingsFile {
         keys.put("concurrency", prefix + "_CONCURRENCY");
         if (prefix.equals("GHE")) {
             keys.put("lastChanges", "GHE_LAST_CHANGES");
+            keys.put("api", "GHE_API");
             keys.put("app", null);
         }
         return keys;

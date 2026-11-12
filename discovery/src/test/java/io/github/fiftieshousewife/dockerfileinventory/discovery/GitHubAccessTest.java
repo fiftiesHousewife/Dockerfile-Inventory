@@ -23,6 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class GitHubAccessTest {
 
+    private static final ApiChoice AUTO = new ApiChoice(false, false);
     private static final GitHubApi API = GitHubApi.from("https://github.com/acme");
 
     private static OrganisationCredentials credentials(Map<String, String> env) {
@@ -86,7 +87,7 @@ class GitHubAccessTest {
             Map<String, String> env = Map.of("GHE_TOKEN", "t");
 
             GitHub client = GitHubAccess.client(api, HttpSettings.from(Map.of()), Throttle.NONE,
-                    GitHubAccess.credentials(env, api, HttpSettings.from(Map.of()), Throttle.NONE), false);
+                    GitHubAccess.credentials(env, api, HttpSettings.from(Map.of()), Throttle.NONE), AUTO);
 
             assertThat(client.organizations()).containsExactly("payments", "platform");
         }
@@ -107,7 +108,7 @@ class GitHubAccessTest {
         };
 
         GitHub client = GitHubAccess.client(API, HttpSettings.from(Map.of()), Throttle.NONE,
-                new OrganisationCredentials(Optional.of(app), Optional.empty(), Instant::now), false);
+                new OrganisationCredentials(Optional.of(app), Optional.empty(), Instant::now), AUTO);
 
         assertThat(client.organizations()).containsExactly("pay", "web");
     }
@@ -117,7 +118,7 @@ class GitHubAccessTest {
         try (RecordedGitHub server = new RecordedGitHub()) {
             server.routeGraphql("graphql-rate-limit.json");
 
-            assertThat(GitHubAccess.chosen(requests(server), "api/v3/", false, "a token"))
+            assertThat(GitHubAccess.chosen(requests(server), "api/v3/", AUTO, "a token"))
                     .isInstanceOf(GitHubHttp.class);
         }
     }
@@ -127,8 +128,21 @@ class GitHubAccessTest {
         try (RecordedGitHub server = new RecordedGitHub()) {
             server.route("/api/graphql", exchange -> RecordedGitHub.respond(exchange, 403, "graphql-forbidden.json"));
 
-            assertThat(GitHubAccess.chosen(requests(server), "api/v3/", false, "a token"))
+            assertThat(GitHubAccess.chosen(requests(server), "api/v3/", AUTO, "a token"))
                     .isInstanceOf(GitHubRest.class);
+        }
+    }
+
+    @Test
+    void restChosenFromTheCommandLineAsksGraphqlNothing() throws IOException {
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.routeGraphql("graphql-rate-limit.json");
+
+            GitHub chosen = GitHubAccess.chosen(requests(server), "api/v3/", new ApiChoice(true, false), "a token");
+
+            assertAll(
+                    () -> assertThat(chosen).isInstanceOf(GitHubRest.class),
+                    () -> assertThat(server.requests).isEmpty());
         }
     }
 

@@ -60,23 +60,23 @@ final class GitHubAccess {
     }
 
     static GitHub client(GitHubApi api, HttpSettings settings, Throttle throttle, OrganisationCredentials credentials,
-                         boolean lastChanges) {
+                         ApiChoice choice) {
         Map<Credential, GitHub> clients = new ConcurrentHashMap<>();
         Function<Credential, GitHub> client = credential -> clients.computeIfAbsent(credential, c -> chosen(
                 new GitHubRequests(new GitHubSender(settings.client(), c, settings.retries(), Sleeper.REAL, throttle),
-                        api.base(), c, settings.requestTimeout()), api.restPrefix(), lastChanges, c.toString()));
+                        api.base(), c, settings.requestTimeout()), api.restPrefix(), choice, c.toString()));
         return new PerOrganisation(org -> client.apply(credentials.of(org)),
                 () -> credentials.token().map(t -> client.apply(t).organizations()).orElseGet(credentials::installed));
     }
 
-    static GitHub chosen(GitHubRequests requests, String restPrefix, boolean lastChanges, String credential) {
-        if (requests.graphqlAllowed()) {
+    static GitHub chosen(GitHubRequests requests, String restPrefix, ApiChoice choice, String credential) {
+        if (!choice.restOnly() && requests.graphqlAllowed()) {
             return new GitHubHttp(requests, restPrefix);
         }
-        LOG.info("discovery: {} may not use GraphQL, so its organisations are read over REST, a call a blob{}",
-                credential, lastChanges ? " and a location"
-                        : ", without last changes (GHE_LAST_CHANGES=true reads them)");
-        return new GitHubRest(requests, restPrefix, lastChanges);
+        LOG.info("discovery: {} {}, so its organisations are read over REST, a call a blob{}", credential,
+                choice.restOnly() ? "is asked to use REST (GHE_API=rest)" : "may not use GraphQL",
+                choice.lastChanges() ? " and a location" : ", without last changes (GHE_LAST_CHANGES=true reads them)");
+        return new GitHubRest(requests, restPrefix, choice.lastChanges());
     }
 
     static String lines(Map<String, String> chosen) {

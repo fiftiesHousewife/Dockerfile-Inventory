@@ -11,9 +11,10 @@ record Flags(List<String> rest, Optional<String> settings, Optional<String> load
 
     static final Map<String, String> VALUES = Map.of("--settings", "a YAML file", "--load", "gentle or normal",
             "--repository", "owner/name", "--repository-name-contains", "some text", "--max-dockerfiles",
-            "a positive whole number");
+            "a positive whole number", "--api", "auto or rest");
     static final Map<String, String> SETTINGS = Map.of("--repository", "REPOSITORIES",
-            "--repository-name-contains", "REPOSITORY_NAME_CONTAINS", "--max-dockerfiles", "MAX_DOCKERFILES");
+            "--repository-name-contains", "REPOSITORY_NAME_CONTAINS", "--max-dockerfiles", "MAX_DOCKERFILES",
+            "--api", "GHE_API");
 
     Flags {
         rest = List.copyOf(rest);

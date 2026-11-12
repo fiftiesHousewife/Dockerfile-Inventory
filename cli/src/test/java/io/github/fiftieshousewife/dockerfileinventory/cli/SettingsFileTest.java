@@ -37,11 +37,18 @@ class SettingsFileTest {
     }
 
     @Test
+    void theApiIsChosenInTheGithubSection() {
+        assertThat(SettingsFile.parse("github:\n  api: rest\n", "s.yaml"))
+                .containsExactlyEntriesOf(Map.of("GHE_API", "rest"));
+    }
+
+    @Test
     void anUnknownKeyIsRefusedByNameWithTheKeysThereAre() {
         assertThatThrownBy(() -> SettingsFile.parse("github:\n  uri: x\n", "s.yaml"))
                 .isInstanceOf(UsageError.class)
                 .hasMessage("s.yaml: github.uri is not a setting (github.url, github.urls, github.tokenFile, "
-                        + "github.load, github.requestsPerSecond, github.concurrency, github.lastChanges, github.app)");
+                        + "github.load, github.requestsPerSecond, github.concurrency, github.lastChanges, github.api, "
+                        + "github.app)");
     }
 
     @Test

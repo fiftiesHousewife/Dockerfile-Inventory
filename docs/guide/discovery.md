@@ -13,6 +13,7 @@ export GHE_MAX_REQUESTS_PER_SECOND=2              # the most calls to GitHub a s
 export GHE_CONCURRENCY=8                           # optional: parallel repository scans
 export TRY_REPOSITORIES=10                         # optional: stop once this many repositories held a Dockerfile
 export GHE_LAST_CHANGES=true                       # optional, over REST only: read each location's last change
+export GHE_API=rest                                # optional: REST alone, whatever the credential (or --api rest)
 docker-inventory discovery
 ```
 
@@ -32,6 +33,12 @@ one more for each repository the release index does not name (its default branch
 estimate counts the calls each way. Last changes are left out over REST unless `GHE_LAST_CHANGES=true`, since they
 are a call a location; without them the Dockerfile pages show no "last changed" date. A run that mixes an App and a
 token reads each organisation the fastest way its credential allows.
+
+`--api rest` (`GHE_API=rest`, `github.api: rest`) reads every organisation over REST without asking, to try the REST
+path with a token GraphQL accepts; the default, `auto`, asks. To check that both give the same output, run
+`GH_TOKEN=$(gh auth token) ./gradlew :discovery:githubLive`: it discovers one public repository on github.com
+(`LIVE_REPOSITORY`, by default `sclorg/postgresql-container`) over GraphQL and over REST, with last changes, and fails
+naming any file that differs.
 
 Each repository is scanned at the commit the release index names. A repository with no entry is scanned at
 its default branch head and flagged, so the report can show how much of the estate is not release-scoped.

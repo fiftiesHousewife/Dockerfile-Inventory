@@ -5,8 +5,9 @@ Status: planned 11 Nov; questions answered 11 Nov; done 11 Nov, tests 1-8: `GitH
 only outside the release index (`GitHub.headCommit`), the confirm step's calls counted each way (`GitHub.calls`),
 `GHE_LAST_CHANGES` (`github.lastChanges`). Test 9 dropped: the report never counts last changes towards
 "unmaintained" (that view reads the registry and archived repositories), so a run without them only leaves the
-Dockerfile pages' "last changed" blank. Test 10, the measurement, waits on the owner's run: this sandbox cannot reach
-GitHub, so the REST fixtures are written in GitHub's documented shapes, as the GraphQL ones are.
+Dockerfile pages' "last changed" blank. Test 10, the measurement, is `./gradlew :discovery:githubLive`
+(`choose-api.md`) and waits on the owner's run: this sandbox cannot reach GitHub, so the REST fixtures are written in
+GitHub's documented shapes, as the GraphQL ones are.
 
 ## Why
 

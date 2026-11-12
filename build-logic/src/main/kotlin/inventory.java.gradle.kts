@@ -43,14 +43,16 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.named<Test>("test") {
     useJUnitPlatform {
-        excludeTags("roundtrip", "image-roundtrip", "validate")
+        excludeTags("roundtrip", "image-roundtrip", "validate", "github-live")
     }
     finalizedBy(tasks.named("jacocoTestReport"))
 }
 
-// The bulk checks: a real estate converted and validated, real images built and compared. Outside check, as they need an
-// estate on disk, Docker and the network; each skips with its reason when its input is missing.
-mapOf("roundTrip" to "roundtrip", "imageRoundTrip" to "image-roundtrip", "validate" to "validate").forEach { (name, tag) ->
+// The bulk checks: a real estate converted and validated, real images built and compared, discovery run on github.com.
+// Outside check, as they need an estate on disk, Docker and the network; each skips with its reason when its input is
+// missing.
+mapOf("roundTrip" to "roundtrip", "imageRoundTrip" to "image-roundtrip", "validate" to "validate",
+        "githubLive" to "github-live").forEach { (name, tag) ->
     tasks.register<Test>(name) {
         description = "Runs the tests tagged $tag"
         group = "verification"

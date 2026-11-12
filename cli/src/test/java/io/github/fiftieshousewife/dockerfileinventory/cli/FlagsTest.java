@@ -42,4 +42,10 @@ class FlagsTest {
         assertThatThrownBy(() -> Flags.of(List.of("survey", "--max-dockerfiles", "lots")))
                 .isInstanceOf(UsageError.class).hasMessage("--max-dockerfiles is a positive whole number, not lots");
     }
+
+    @Test
+    void theApiBecomesItsSetting() {
+        assertThat(Flags.of(List.of("discovery", "--api", "rest")).environment())
+                .containsExactlyEntriesOf(Map.of("GHE_API", "rest"));
+    }
 }

@@ -36,6 +36,8 @@ final class SettingGroups {
                     + "the rest with the token"),
             Setting.requiredWith("GHE_APP_PRIVATE_KEY_FILE", "GHE_APP_ID", "the GitHub App's private key, as GitHub "
                     + "gives it (PEM)"),
+            Setting.optional("GHE_API", "auto", "auto (GraphQL where the credential may use it) or rest (REST "
+                    + "alone; also --api)"),
             Setting.optional("GHE_LAST_CHANGES", "false", "true to read each location's last change where GraphQL "
                     + "is refused and REST is used: a call a location"));
 

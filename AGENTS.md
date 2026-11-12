@@ -51,8 +51,9 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
                     GraphQlRepositories, GraphQlBlobs, RestTrees; GitHubRest (REST alone, for a credential GraphQL
                     refuses: RestRepositories, RestBlobs, RestHistory); GitHubApi (the three URL forms); RateLimit;
                     ReleaseIndex
-                    GitHubAccess: a token, a GitHub App or both (AppJwt, AppCredential, AppInstallations,
-                    InstallationToken, OrganisationCredentials, PerOrganisation: each organisation's own credential)
+                    ApiChoice (GHE_API, GHE_LAST_CHANGES); GitHubAccess: a token, a GitHub App or both (AppJwt,
+                    AppCredential, AppInstallations, InstallationToken, OrganisationCredentials, PerOrganisation:
+                    each organisation's own credential)
                     Selection (--repository, --repository-name-contains), FirstPass, Confirmation, RunStopped,
                     SelectionNotFound: the question between the tree walks and the fetches
                     DockerfilePaths: what counts as a Dockerfile (not source, templates, images, grammars, symlinks,
@@ -165,13 +166,15 @@ guides in `docs/guide/` list their settings.
 ./gradlew roundTrip                               # tag roundtrip: every Dockerfile of a discovery output converted
 ./gradlew imageRoundTrip                          # tag image-roundtrip: chosen Dockerfiles built twice (Docker)
 ./gradlew validate                                # tag validate: the validator's counts on a real estate
+./gradlew :discovery:githubLive                   # tag github-live: discovery over REST and GraphQL compared (GH_TOKEN)
 ```
 
 GitHub Actions runs `./gradlew check -x verifyUpToDate` on every push and pull request
 (`.github/workflows/check.yml`, its reports kept when it fails) and `verifyUpToDate` weekly (`up-to-date.yml`).
 
-Bulk checks are JUnit tests tagged `roundtrip`, `image-roundtrip` or `validate`, never scripts: `test` and `check`
-leave them out, and each skips with its reason when its input (an estate on disk, Docker) is missing. Their
+Bulk checks are JUnit tests tagged `roundtrip`, `image-roundtrip`, `validate` or `github-live`, never scripts:
+`test` and `check` leave them out, and each skips with its reason when its input (an estate on disk, Docker, a
+token) is missing. Their
 expectations are in `converter/src/test/resources/estate/` and `validator/src/test/resources/estate/`.
 
 Inside Claude Code's sandbox use `./gradlew-claude` (gitignored; copy it from another checkout if missing): the
