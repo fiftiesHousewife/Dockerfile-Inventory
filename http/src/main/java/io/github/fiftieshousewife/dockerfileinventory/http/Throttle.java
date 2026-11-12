@@ -15,17 +15,11 @@ public final class Throttle {
     /** No limit: for tests and tools that call a fake. */
     public static final Throttle NONE = new Throttle(Double.POSITIVE_INFINITY, System::nanoTime, Sleeper.REAL);
 
-    static final long BETWEEN_CHANGES = Duration.ofSeconds(10).toNanos();
-    static final double FLOOR = 1.0 / 16;
-
-    private final double setting;
     private final LongSupplier nanos;
     private final Sleeper sleeper;
     private final Object lock = new Object();
-    private final Latencies latencies = new Latencies();
-    private double rate;
+    private final Slowdown slowdown;
     private long next = Long.MIN_VALUE;
-    private long changed = Long.MIN_VALUE;
     private long calls;
 
     /**
@@ -39,8 +33,7 @@ public final class Throttle {
         if (!(requestsPerSecond > 0)) {
             throw new IllegalArgumentException("requests per second must be above 0, not " + requestsPerSecond);
         }
-        this.setting = requestsPerSecond;
-        this.rate = requestsPerSecond;
+        this.slowdown = new Slowdown(requestsPerSecond);
         this.nanos = nanos;
         this.sleeper = sleeper;
     }
@@ -113,7 +106,7 @@ public final class Throttle {
         synchronized (lock) {
             long now = nanos.getAsLong();
             long slot = next == Long.MIN_VALUE ? now : Math.max(now, next);
-            next = slot + (long) (1e9 / rate);
+            next = slot + (long) (1e9 / slowdown.rate());
             return Duration.ofNanos(slot - now);
         }
     }
@@ -127,30 +120,13 @@ public final class Throttle {
     public void record(Duration took, int status) {
         synchronized (lock) {
             calls++;
-            long now = nanos.getAsLong();
-            latencies.add(now, took);
-            if (changed != Long.MIN_VALUE && now - changed < BETWEEN_CHANGES) {
-                return;
-            }
-            double changedTo = target(status);
-            if (changedTo != rate) {
-                rate = changedTo;
-                changed = now;
-            }
+            slowdown.record(nanos.getAsLong(), took, status);
         }
-    }
-
-    double target(int status) {
-        if (status == 429 || status == 503 || latencies.slowerThan(2)) {
-            return Math.max(setting * FLOOR, rate / 2);
-        }
-        boolean prompt = latencies.known() && !latencies.slowerThan(1.5);
-        return rate < setting && prompt ? Math.min(setting, rate * 2) : rate;
     }
 
     double rate() {
         synchronized (lock) {
-            return rate;
+            return slowdown.rate();
         }
     }
 

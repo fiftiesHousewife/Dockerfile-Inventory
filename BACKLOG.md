@@ -91,8 +91,10 @@ and one line when its gate is met.
 - Done 12 Nov (`docs/plans/discovery-progress.md`, asked 12 Nov: a three-minute try over REST logged nothing): a
   progress line every 30 seconds (phase, done of total, Dockerfiles found, calls, time in), quiet while the run asks
   whether to go on; a wait for GitHub of 30 seconds or more logged when it starts.
-- Next (asked 12 Nov, answered: Failsafe, after the progress slice): `http`'s `Throttle` spacing and `RetryPolicy`
-  onto Failsafe, keeping only the slow-down-when-the-server-does logic ours; `Throttle` is over 150 lines until then.
+- Done 12 Nov (`docs/plans/failsafe-retries.md`, asked 12 Nov: "surely there is a library solution"): the retry
+  loops of `GitHubSender` and `ArtifactoryClient` on Failsafe (`http`'s `Retries`), `RetryPolicy` keeping which
+  answers to retry and how long to wait; `Throttle`'s spacing stays ours (Failsafe's `RateLimiter` cannot change its
+  rate), its slowing down split into `Slowdown`. Next: `githubLive` and the `sclorg` try run again by the owner.
 - Done 11 Nov (`docs/plans/cli-publication.md`, asked 11 Nov, questions answered 11 Nov): the command on Central as
   `io.github.fiftieshousewife:docker-inventory`, its distribution zip with every jar inside and a POM with no
   dependencies; sources of every module it ships, a README for Javadoc. Its bundle built and verified in `check`

@@ -2,3 +2,7 @@
 plugins {
     id("inventory.java")
 }
+
+dependencies {
+    implementation(libs.failsafe)
+}

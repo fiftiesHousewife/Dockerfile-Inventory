@@ -40,9 +40,10 @@ parser/             the Dockerfile parser: a fork of OpenRewrite's rewrite-docke
                     NOTICE, and a note in each changed file's header
 http/               corporate networks, shared by discovery and lineage: HttpSettings (every setting from the
                     environment, with defaults; the HttpClient), ProxySettings (HTTPS_PROXY, HTTP_PROXY, NO_PROXY),
-                    TrustBundle (a corporate CA), RetryPolicy (backoff, rate-limit waits, RateLimitWaitTooLong),
+                    TrustBundle (a corporate CA), RetryPolicy (which answers to retry, how long to wait,
+                    RateLimitWaitTooLong) and Retries (the retrying itself, on Failsafe),
                     Credential, TokenSource (NAME or NAME_FILE, re-read when the file changes), Throttle (a run's
-                    calls a second, slowing with the server; Latencies), HttpLog (the debug lines)
+                    calls a second; Slowdown and Latencies: slowing with the server), HttpLog (the debug lines)
 discovery/          stage 0: organisations -> repositories -> trees at the released commit -> Dockerfile blobs
                     Discovery (the run), Scans (repositories on virtual threads), RepoScan (one repository),
                     TreeWalk (truncated trees by subtree), BlobFetch (GraphQL batches of 50), DiscoveryOutput (files)

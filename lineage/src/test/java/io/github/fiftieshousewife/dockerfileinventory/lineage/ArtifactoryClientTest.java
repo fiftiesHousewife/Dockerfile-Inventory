@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
-import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -64,38 +63,17 @@ class ArtifactoryClientTest {
     }
 
     @Test
-    void anUnreachableServerWithAttemptsLeftIsNoAnswerYetAfterAPause() throws IOException {
-        List<Duration> pauses = new ArrayList<>();
-        HttpRequest closed = HttpRequest.newBuilder(closedPort()).build();
-
-        assertAll(() -> assertThat(client(2, pauses::add).exchange(closed, 1)).isEmpty(),
-                () -> assertThat(pauses).hasSize(1));
-    }
-
-    @Test
-    void anUnreachableServerOnTheLastAttemptFailsNamingTheUrl() throws IOException {
-        HttpRequest closed = HttpRequest.newBuilder(closedPort()).build();
+    void anUnreachableServerIsTriedAgainThenFailsNamingTheUrl() throws IOException {
+        URI closed = closedPort();
 
         assertThatExceptionOfType(ArtifactoryException.class)
-                .isThrownBy(() -> client(1, wait -> { }).exchange(closed, 1))
-                .withMessage("GET " + closed.uri() + " failed");
+                .isThrownBy(() -> client(2).send(() -> HttpRequest.newBuilder(closed).build()))
+                .withMessage("GET " + closed + " failed");
     }
 
-    @Test
-    void aPauseThatIsInterruptedFailsNamingTheUrl() {
-        ArtifactoryClient interrupted = client(1, wait -> {
-            throw new InterruptedException();
-        });
-
-        assertAll(() -> assertThatExceptionOfType(ArtifactoryException.class)
-                        .isThrownBy(() -> interrupted.pause(Duration.ofSeconds(1), HttpRequest.newBuilder(URL).build()))
-                        .withMessage("interrupted calling " + URL),
-                () -> assertThat(Thread.interrupted()).isTrue());
-    }
-
-    private static ArtifactoryClient client(int attempts, Sleeper sleeper) {
+    private static ArtifactoryClient client(int attempts) {
         return new ArtifactoryClient(HttpClient.newHttpClient(), URL, TokenSource.from(Map.of("T", "t"), "T"),
-                new RetryPolicy(attempts, Duration.ofHours(1)), Duration.ofSeconds(5), sleeper);
+                new RetryPolicy(attempts, Duration.ofHours(1), Duration.ZERO), Duration.ofSeconds(5));
     }
 
     private static URI closedPort() throws IOException {

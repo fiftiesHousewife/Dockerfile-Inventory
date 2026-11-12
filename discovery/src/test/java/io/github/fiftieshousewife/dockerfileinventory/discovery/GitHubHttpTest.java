@@ -72,7 +72,8 @@ class GitHubHttpTest {
     @Test
     void githubDotComHasRestAtTheRootAndGraphqlBesideIt() {
         GitHubHttp dotCom = new GitHubHttp(new GitHubRequests(HttpClient.newHttpClient(), server.root(),
-                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"), new RetryPolicy(1, Duration.ofHours(1)),
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"),
+                new RetryPolicy(1, Duration.ofHours(1), Duration.ZERO),
                 Duration.ofSeconds(10), wait -> { }), "");
         server.routeFixture("/repos/payments/ledger-api/git/trees/abc", "tree.json");
 

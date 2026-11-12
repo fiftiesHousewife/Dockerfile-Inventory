@@ -10,6 +10,7 @@ jspecify = "1.0.1"
 spotbugs-plugin = "6.5.13"
 spotbugs = "4.10.5"
 slf4j = "2.0.20"
+failsafe = "3.3.2"
 log4j = "2.25.2"
 versions-plugin = "0.67.0"
 # Read by settings.gradle.kts, whose plugins block cannot use this catalogue.
@@ -20,6 +21,7 @@ lombok = "1.18.48"
 antlr = "4.13.2"
 
 [libraries]
+failsafe = { module = "dev.failsafe:failsafe", version.ref = "failsafe" }
 javapoet = { module = "com.palantir.javapoet:javapoet", version.ref = "javapoet" }
 commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commons-compress" }
 # Parsing (Phase 1). Core rewrite modules only, so the core BOM, not the recipe BOM. Pin exactly: the

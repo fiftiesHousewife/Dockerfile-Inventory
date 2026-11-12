@@ -1,7 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpSettings;
-import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.net.URI;
@@ -35,7 +34,7 @@ final class ArtifactoryHttp implements Artifactory {
 
     ArtifactoryHttp(URI base, HttpSettings settings, TokenSource token, Throttle throttle) {
         this(new ArtifactoryClient(settings.client(), base, token, settings.retries(), settings.requestTimeout(),
-                Sleeper.REAL, throttle), PAGE_SIZE);
+                throttle), PAGE_SIZE);
     }
 
     ArtifactoryHttp(ArtifactoryClient client, int pageSize) {

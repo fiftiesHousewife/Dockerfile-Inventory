@@ -84,74 +84,12 @@ class ThrottleTest {
     }
 
     @Test
-    void aMinuteTwiceAsSlowAsTheRunsFirstCallsHalvesTheRate() {
-        Throttle throttle = throttle(10);
-        calls(throttle, 20, 100);
-        later(Duration.ofMinutes(2));
-
-        calls(throttle, 5, 250);
-
-        assertThat(throttle.rate()).isEqualTo(5);
-    }
-
-    @Test
-    void aRateLimitedOrUnavailableAnswerHalvesTheRate() {
-        Throttle limited = throttle(10);
-        Throttle unavailable = throttle(10);
-
-        limited.record(Duration.ofMillis(10), 429);
-        unavailable.record(Duration.ofMillis(10), 503);
-
-        assertAll(
-                () -> assertThat(limited.rate()).isEqualTo(5),
-                () -> assertThat(unavailable.rate()).isEqualTo(5));
-    }
-
-    @Test
-    void theRateChangesAtMostOnceInTenSeconds() {
+    void aRateLimitedAnswerSlowsTheCalls() {
         Throttle throttle = throttle(10);
 
         throttle.record(Duration.ofMillis(10), 429);
-        later(Duration.ofSeconds(5));
-        throttle.record(Duration.ofMillis(10), 429);
 
         assertThat(throttle.rate()).isEqualTo(5);
-    }
-
-    @Test
-    void theRateNeverFallsBelowASixteenthOfTheSetting() {
-        Throttle throttle = throttle(16);
-
-        IntStream.range(0, 10).forEach(i -> {
-            throttle.record(Duration.ofMillis(10), 503);
-            later(Duration.ofSeconds(11));
-        });
-
-        assertThat(throttle.rate()).isEqualTo(1);
-    }
-
-    @Test
-    void oncePromptAgainTheRateDoublesBackToTheSettingAndNoFurther() {
-        Throttle throttle = throttle(10);
-        calls(throttle, 20, 100);
-        throttle.record(Duration.ofMillis(100), 429);
-        later(Duration.ofMinutes(2));
-
-        IntStream.range(0, 3).forEach(i -> {
-            calls(throttle, 3, 110);
-            later(Duration.ofSeconds(11));
-        });
-
-        assertThat(throttle.rate()).isEqualTo(10);
-    }
-
-    @Test
-    void theTargetHalvesOnARateLimitAndKeepsTheRateOtherwise() {
-        Throttle throttle = throttle(10);
-
-        assertAll(
-                () -> assertThat(throttle.target(429)).isEqualTo(5),
-                () -> assertThat(throttle.target(200)).isEqualTo(10));
     }
 
     @Test

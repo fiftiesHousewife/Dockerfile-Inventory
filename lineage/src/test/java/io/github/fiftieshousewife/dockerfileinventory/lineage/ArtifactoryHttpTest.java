@@ -152,7 +152,7 @@ class ArtifactoryHttpTest {
     private ArtifactoryHttp artifactory(TokenSource token) {
         return new ArtifactoryHttp(new ArtifactoryClient(HttpSettings.from(Map.of()).client(),
                 URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"), token,
-                new RetryPolicy(4, Duration.ofHours(1)), Duration.ofSeconds(10), wait -> { }), 2);
+                new RetryPolicy(4, Duration.ofHours(1), Duration.ZERO), Duration.ofSeconds(10)), 2);
     }
 
     @Test
@@ -167,8 +167,8 @@ class ArtifactoryHttpTest {
                 exchange -> respond(exchange, 200, "storage-tag.json"));
         ArtifactoryHttp throttled = new ArtifactoryHttp(new ArtifactoryClient(HttpSettings.from(Map.of()).client(),
                 URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/artifactory/"),
-                TokenSource.from(Map.of("T", "t"), "T"), new RetryPolicy(1, Duration.ofHours(1)),
-                Duration.ofSeconds(10), wait -> { }, throttle), 2);
+                TokenSource.from(Map.of("T", "t"), "T"), new RetryPolicy(1, Duration.ofHours(1), Duration.ZERO),
+                Duration.ofSeconds(10), throttle), 2);
 
         throttled.lastPushed("docker-local", "team/app", "1.0");
         throttled.lastPushed("docker-local", "team/app", "1.0");

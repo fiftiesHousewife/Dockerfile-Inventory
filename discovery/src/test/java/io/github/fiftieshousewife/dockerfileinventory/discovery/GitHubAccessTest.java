@@ -148,7 +148,8 @@ class GitHubAccessTest {
 
     private static GitHubRequests requests(RecordedGitHub server) {
         return new GitHubRequests(HttpClient.newHttpClient(), URI.create(server.root() + "api"),
-                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"), new RetryPolicy(1, Duration.ofHours(1)),
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"),
+                new RetryPolicy(1, Duration.ofHours(1), Duration.ZERO),
                 Duration.ofSeconds(5), wait -> { });
     }
 }

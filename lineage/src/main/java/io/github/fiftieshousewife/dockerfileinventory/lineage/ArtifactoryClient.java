@@ -1,8 +1,8 @@
 package io.github.fiftieshousewife.dockerfileinventory.lineage;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.HttpLog;
+import io.github.fiftieshousewife.dockerfileinventory.http.Retries;
 import io.github.fiftieshousewife.dockerfileinventory.http.RetryPolicy;
-import io.github.fiftieshousewife.dockerfileinventory.http.Sleeper;
 import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import io.github.fiftieshousewife.dockerfileinventory.http.TokenSource;
 import java.io.IOException;
@@ -11,8 +11,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,23 +29,20 @@ final class ArtifactoryClient {
     private final TokenSource token;
     private final RetryPolicy retries;
     private final Duration timeout;
-    private final Sleeper sleeper;
     private final Throttle throttle;
 
-    ArtifactoryClient(HttpClient http, URI base, TokenSource token, RetryPolicy retries, Duration timeout,
-            Sleeper sleeper) {
-        this(http, base, token, retries, timeout, sleeper, Throttle.NONE);
+    ArtifactoryClient(HttpClient http, URI base, TokenSource token, RetryPolicy retries, Duration timeout) {
+        this(http, base, token, retries, timeout, Throttle.NONE);
     }
 
     // The client follows redirects: Artifactory can redirect blob downloads to its file store.
     ArtifactoryClient(HttpClient http, URI base, TokenSource token, RetryPolicy retries, Duration timeout,
-            Sleeper sleeper, Throttle throttle) {
+            Throttle throttle) {
         this.http = http;
         this.base = withTrailingSlash(base);
         this.token = token;
         this.retries = retries;
         this.timeout = timeout;
-        this.sleeper = sleeper;
         this.throttle = throttle;
     }
 
@@ -78,54 +76,39 @@ final class ArtifactoryClient {
     }
 
     HttpResponse<String> send(Supplier<HttpRequest> request) {
-        boolean refreshed = false;
-        for (int attempt = 1; ; attempt++) {
-            HttpRequest built = request.get();
-            Optional<HttpResponse<String>> answered = exchange(built, attempt);
-            if (answered.isEmpty()) {
-                continue;
-            }
-            HttpResponse<String> response = answered.get();
-            if (response.statusCode() == 401 && !refreshed && token.refresh()) {
-                refreshed = true;
-                continue;
-            }
-            Optional<Duration> wait = retries.afterResponse(response.statusCode(), response.headers(), attempt,
-                    Instant.now());
-            if (wait.isEmpty()) {
-                return response;
-            }
-            pause(wait.get(), built);
+        AtomicReference<HttpRequest> last = new AtomicReference<>();
+        AtomicBoolean refreshed = new AtomicBoolean();
+        try {
+            return Retries.send(retries, () -> {
+                HttpResponse<String> response = exchange(built(request, last));
+                return response.statusCode() == 401 && !refreshed.getAndSet(true) && token.refresh()
+                        ? exchange(built(request, last)) : response;
+            }, wait -> LOG.atDebug().setMessage(() -> HttpLog.waiting(last.get(), wait)).log());
+        } catch (IOException e) {
+            throw new ArtifactoryException("GET " + last.get().uri() + " failed", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ArtifactoryException("interrupted calling " + last.get().uri(), e);
         }
     }
 
-    Optional<HttpResponse<String>> exchange(HttpRequest request, int attempt) {
+    private static HttpRequest built(Supplier<HttpRequest> request, AtomicReference<HttpRequest> last) {
+        last.set(request.get());
+        return last.get();
+    }
+
+    HttpResponse<String> exchange(HttpRequest request) throws IOException, InterruptedException {
+        throttle.acquire();
+        long start = System.nanoTime();
         try {
-            throttle.acquire();
-            long start = System.nanoTime();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             Duration took = Duration.ofNanos(System.nanoTime() - start);
             throttle.record(took, response.statusCode());
             LOG.atDebug().setMessage(() -> HttpLog.call(request, response.statusCode(), took)).log();
-            return Optional.of(response);
+            return response;
         } catch (IOException e) {
             LOG.atDebug().setMessage(() -> HttpLog.failed(request, e)).log();
-            pause(retries.afterError(e, attempt)
-                    .orElseThrow(() -> new ArtifactoryException("GET " + request.uri() + " failed", e)), request);
-            return Optional.empty();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ArtifactoryException("interrupted calling " + request.uri(), e);
-        }
-    }
-
-    void pause(Duration wait, HttpRequest request) {
-        LOG.atDebug().setMessage(() -> HttpLog.waiting(request, wait)).log();
-        try {
-            sleeper.sleep(wait);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ArtifactoryException("interrupted calling " + request.uri(), e);
+            throw e;
         }
     }
 }

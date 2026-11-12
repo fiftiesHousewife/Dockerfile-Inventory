@@ -35,46 +35,49 @@ class GitHubSenderTest {
     }
 
     private GitHubSender sender(int attempts, Sleeper sleeper) {
-        return new GitHubSender(HttpClient.newHttpClient(), TOKEN, new RetryPolicy(attempts, Duration.ofHours(1)),
-                sleeper);
+        return new GitHubSender(HttpClient.newHttpClient(), TOKEN, new RetryPolicy(attempts, Duration.ofHours(1),
+                Duration.ZERO), sleeper);
     }
 
     @Test
-    void anUnreachableServerWithAttemptsLeftIsNoAnswerYetAfterAPause() throws IOException {
-        HttpRequest closed = HttpRequest.newBuilder(closedServer()).build();
-
-        assertAll(() -> assertThat(sender(2, pauses::add).exchange(closed, 1)).isEmpty(),
-                () -> assertThat(pauses).hasSize(1));
-    }
-
-    @Test
-    void anUnreachableServerOnTheLastAttemptFailsNamingTheRequest() throws IOException {
+    void anUnreachableServerIsTriedAgainThenFailsNamingTheRequest() throws IOException {
         HttpRequest closed = HttpRequest.newBuilder(closedServer()).build();
 
         assertThatExceptionOfType(GitHubException.class)
-                .isThrownBy(() -> sender(1, pauses::add).exchange(closed, 1))
+                .isThrownBy(() -> sender(2, pauses::add).send(() -> closed))
                 .withMessage("GET " + closed.uri() + " failed");
     }
 
     @Test
-    void aResponseToRetryIsNotFinishedAndPausesFirst() {
-        boolean finished = sender(3, pauses::add).finished(CannedResponse.of(502, ""), REQUEST, 1);
+    void aGatewayErrorIsTriedAgain() throws IOException {
+        AtomicLong calls = new AtomicLong();
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.route("/flaky", exchange -> RecordedGitHub.respondText(exchange,
+                    calls.incrementAndGet() == 1 ? 502 : 200, "{}"));
+            HttpRequest flaky = HttpRequest.newBuilder(server.root().resolve("/flaky")).build();
 
-        assertAll(() -> assertThat(finished).isFalse(), () -> assertThat(pauses).hasSize(1));
+            assertThat(sender(3, pauses::add).send(() -> flaky).statusCode()).isEqualTo(200);
+        }
     }
 
     @Test
-    void anAnswerIsFinishedAndPausesOnlyToPaceARateLimitRunningLow() {
-        Map<String, List<String>> low = Map.of("x-ratelimit-limit", List.of("5000"),
-                "x-ratelimit-remaining", List.of("1"),
-                "x-ratelimit-reset", List.of(String.valueOf(Instant.now().plusSeconds(100).getEpochSecond())));
-        GitHubSender sender = sender(3, pauses::add);
+    void anAnswerPausesOnlyToPaceARateLimitRunningLow() throws IOException {
+        try (RecordedGitHub server = new RecordedGitHub()) {
+            server.route("/plain", exchange -> RecordedGitHub.respondText(exchange, 200, "{}"));
+            server.route("/low", exchange -> {
+                exchange.getResponseHeaders().add("x-ratelimit-limit", "5000");
+                exchange.getResponseHeaders().add("x-ratelimit-remaining", "1");
+                exchange.getResponseHeaders().add("x-ratelimit-reset",
+                        String.valueOf(Instant.now().plusSeconds(100).getEpochSecond()));
+                RecordedGitHub.respondText(exchange, 200, "{}");
+            });
+            GitHubSender sender = sender(3, pauses::add);
 
-        boolean plain = sender.finished(CannedResponse.of(200, "{}"), REQUEST, 1);
-        boolean paced = sender.finished(CannedResponse.of(200, "{}", low), REQUEST, 1);
+            sender.send(() -> HttpRequest.newBuilder(server.root().resolve("/plain")).build());
+            sender.send(() -> HttpRequest.newBuilder(server.root().resolve("/low")).build());
+        }
 
-        assertAll(() -> assertThat(List.of(plain, paced)).containsExactly(true, true),
-                () -> assertThat(pauses).hasSize(1));
+        assertThat(pauses).hasSize(1);
     }
 
     @Test
@@ -112,7 +115,7 @@ class GitHubSenderTest {
         try (RecordedGitHub server = new RecordedGitHub()) {
             server.route("/ok", exchange -> RecordedGitHub.respondText(exchange, 200, "{}"));
             GitHubSender sender = new GitHubSender(HttpClient.newHttpClient(), TOKEN,
-                    new RetryPolicy(1, Duration.ofHours(1)), pauses::add, throttle);
+                    new RetryPolicy(1, Duration.ofHours(1), Duration.ZERO), pauses::add, throttle);
             HttpRequest ok = HttpRequest.newBuilder(server.root().resolve("/ok")).build();
 
             sender.send(() -> ok);

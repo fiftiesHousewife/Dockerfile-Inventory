@@ -16,7 +16,7 @@ class AppInstallationsTest {
     private static AppInstallations installations(RecordedGitHub server) {
         return new AppInstallations(new GitHubRequests(HttpClient.newHttpClient(), server.root(),
                 new AppCredential("1234", AppJwtTest.KEYS.getPrivate(), Instant::now),
-                new RetryPolicy(1, Duration.ofHours(1)), Duration.ofSeconds(10), wait -> { }), "");
+                new RetryPolicy(1, Duration.ofHours(1), Duration.ZERO), Duration.ofSeconds(10), wait -> { }), "");
     }
 
     @Test

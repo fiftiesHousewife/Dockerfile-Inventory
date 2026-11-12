@@ -48,7 +48,7 @@ class GitHubRequestsTest {
 
     private GitHubRequests requests(int attempts, TokenSource token) {
         return new GitHubRequests(HttpClient.newHttpClient(), URI.create(server.root() + "api"), token,
-                new RetryPolicy(attempts, Duration.ofHours(1)), Duration.ofSeconds(10), wait -> { });
+                new RetryPolicy(attempts, Duration.ofHours(1), Duration.ZERO), Duration.ofSeconds(10), wait -> { });
     }
 
     @Test
@@ -103,7 +103,8 @@ class GitHubRequestsTest {
     void withLittleOfTheRateLimitLeftEachCallPausesToSpreadTheRestOverTheTimeToReset() {
         List<Duration> pauses = new ArrayList<>();
         GitHubRequests paced = new GitHubRequests(HttpClient.newHttpClient(), URI.create(server.root() + "api"),
-                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"), new RetryPolicy(1, Duration.ofHours(1)),
+                TokenSource.from(Map.of("GHE_TOKEN", "t0ken"), "GHE_TOKEN"),
+                new RetryPolicy(1, Duration.ofHours(1), Duration.ZERO),
                 Duration.ofSeconds(10), pauses::add);
         server.route("/api/" + TREE, exchange -> {
             exchange.getResponseHeaders().add("X-RateLimit-Limit", "5000");
