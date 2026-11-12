@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
@@ -31,7 +32,12 @@ class GitHubLiveTest {
         DiscoveryMain.run(settings(token, repository, "auto", out.resolve("graphql")));
         DiscoveryMain.run(settings(token, repository, "rest", out.resolve("rest")));
 
-        assertThat(contents(out.resolve("rest"))).isEqualTo(contents(out.resolve("graphql")));
+        Map<String, String> graphql = contents(out.resolve("graphql"));
+        assertAll(
+                () -> assertThat(graphql.get("manifest.jsonl")).as("Dockerfiles found over GraphQL").isNotBlank(),
+                () -> assertThat(graphql.get("changes.jsonl")).as("last changes read over GraphQL")
+                        .contains("\"changedIn\":\""),
+                () -> assertThat(contents(out.resolve("rest"))).isEqualTo(graphql));
     }
 
     private static Map<String, String> settings(String token, String repository, String api, Path out) {
