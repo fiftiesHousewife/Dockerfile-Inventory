@@ -1,8 +1,9 @@
 # Choosing discovery's API from the command line: plan
 
 Status: planned 12 Nov; questions answered 12 Nov; done 12 Nov, tests 1-4: `ApiChoice` (`GHE_API`, with
-`GHE_LAST_CHANGES` moved in), `--api`, `github.api`. Test 5, `GitHubLiveTest`, written and skipping without
-`GH_TOKEN`; its first run waits on the owner, as this sandbox cannot reach GitHub.
+`GHE_LAST_CHANGES` moved in), `--api`, `github.api`. Test 5, `GitHubLiveTest`, run by the owner 12 Nov on
+`sclorg/postgresql-container`: 21 Dockerfiles, 21 last changes and 3 YAML files each way, the outputs the same
+(GraphQL about 10 s, REST about 17 s).
 
 ## Why
 

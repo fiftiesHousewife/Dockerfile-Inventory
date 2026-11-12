@@ -6,8 +6,9 @@ only outside the release index (`GitHub.headCommit`), the confirm step's calls c
 `GHE_LAST_CHANGES` (`github.lastChanges`). Test 9 dropped: the report never counts last changes towards
 "unmaintained" (that view reads the registry and archived repositories), so a run without them only leaves the
 Dockerfile pages' "last changed" blank. Test 10, the measurement, is `./gradlew :discovery:githubLive`
-(`choose-api.md`) and waits on the owner's run: this sandbox cannot reach GitHub, so the REST fixtures are written in
-GitHub's documented shapes, as the GraphQL ones are.
+(`choose-api.md`), run by the owner 12 Nov: the same output over REST and GraphQL on `sclorg/postgresql-container`
+(21 Dockerfiles, 21 last changes, 3 YAML files). The REST fixtures are written in GitHub's documented shapes, as the
+GraphQL ones are, since this sandbox cannot reach GitHub.
 
 ## Why
 
