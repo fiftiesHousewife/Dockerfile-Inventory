@@ -54,6 +54,7 @@ discovery/          stage 0: organisations -> repositories -> trees at the relea
                     ApiChoice (GHE_API, GHE_LAST_CHANGES); GitHubAccess: a token, a GitHub App or both (AppJwt,
                     AppCredential, AppInstallations, InstallationToken, OrganisationCredentials, PerOrganisation:
                     each organisation's own credential)
+                    Progress and ProgressLog (a line every 30 seconds), GitHubSender (a long wait logged)
                     Selection (--repository, --repository-name-contains), FirstPass, Confirmation, RunStopped,
                     SelectionNotFound: the question between the tree walks and the fetches
                     DockerfilePaths: what counts as a Dockerfile (not source, templates, images, grammars, symlinks,

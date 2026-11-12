@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import java.time.Instant;
 import java.util.List;
 
 final class ChangeFetch {
@@ -13,15 +14,27 @@ final class ChangeFetch {
 
     private final GitHub gitHub;
     private final DiscoveryOutput output;
+    private final Progress progress;
 
     ChangeFetch(GitHub gitHub, DiscoveryOutput output) {
+        this(gitHub, output, new Progress(() -> 0L, Instant::now));
+    }
+
+    ChangeFetch(GitHub gitHub, DiscoveryOutput output, Progress progress) {
         this.gitHub = gitHub;
         this.output = output;
+        this.progress = progress;
     }
 
     Fetched fetch(List<ChangeRequest> requests) {
-        return BlobFetch.batches(requests, BlobFetch.BATCH).stream().map(this::fetchBatch)
+        return BlobFetch.batches(requests, BlobFetch.BATCH).stream().map(this::fetchCounted)
                 .reduce(new Fetched(0, 0), Fetched::plus);
+    }
+
+    private Fetched fetchCounted(List<ChangeRequest> batch) {
+        Fetched fetched = fetchBatch(batch);
+        progress.done(batch.size(), 0);
+        return fetched;
     }
 
     Fetched fetchBatch(List<ChangeRequest> batch) {

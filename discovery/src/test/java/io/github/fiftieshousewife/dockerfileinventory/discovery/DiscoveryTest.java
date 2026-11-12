@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -199,7 +200,18 @@ class DiscoveryTest {
 
     private Discovery discovery(Selection selection, int maxDockerfiles, Confirmation confirmation) {
         return new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4, List.of(), 0, selection,
-                maxDockerfiles, confirmation);
+                maxDockerfiles, confirmation, new Progress(() -> 0L, Instant::now));
+    }
+
+    @Test
+    void theProgressEndsOnTheLastChangesWithEveryDockerfileFound() {
+        Progress progress = new Progress(() -> 0L, () -> Instant.EPOCH);
+
+        new Discovery(gitHub, ReleaseIndex.empty(), new DiscoveryOutput(out), 4, List.of(), 0, Selection.ALL, 0,
+                Confirmation.ALWAYS, progress).run();
+
+        assertThat(progress.line())
+                .isEqualTo("discovery: reading last changes, 3 of 3, 3 Dockerfiles found, 0 calls, 0s in");
     }
 
     @Test

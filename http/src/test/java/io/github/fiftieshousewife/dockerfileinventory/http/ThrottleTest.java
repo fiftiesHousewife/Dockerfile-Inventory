@@ -34,6 +34,14 @@ class ThrottleTest {
     }
 
     @Test
+    void eachRecordedCallIsCounted() {
+        Throttle throttle = throttle(10);
+        calls(throttle, 3, 10);
+
+        assertThat(throttle.calls()).isEqualTo(3);
+    }
+
+    @Test
     void callsAreSpacedAtTheRate() throws InterruptedException {
         Throttle throttle = throttle(2);
 

@@ -121,4 +121,17 @@ class GitHubSenderTest {
 
         assertThat(waits).containsExactly(Duration.ofSeconds(1));
     }
+
+    @Test
+    void aWaitOfHalfAMinuteOrMoreIsTold() {
+        assertAll(
+                () -> assertThat(GitHubSender.told(Duration.ofSeconds(29))).isFalse(),
+                () -> assertThat(GitHubSender.told(Duration.ofSeconds(30))).isTrue());
+    }
+
+    @Test
+    void aToldWaitSaysHowLongAndUntilWhen() {
+        assertThat(GitHubSender.waiting(Duration.ofMinutes(41), Instant.parse("2026-11-12T07:34:12.5Z")))
+                .isEqualTo("discovery: waiting 41m 0s for GitHub, until 2026-11-12T08:15:12Z");
+    }
 }

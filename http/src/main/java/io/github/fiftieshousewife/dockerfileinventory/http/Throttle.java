@@ -26,6 +26,7 @@ public final class Throttle {
     private double rate;
     private long next = Long.MIN_VALUE;
     private long changed = Long.MIN_VALUE;
+    private long calls;
 
     /**
      * A throttle at the given rate.
@@ -125,6 +126,7 @@ public final class Throttle {
      */
     public void record(Duration took, int status) {
         synchronized (lock) {
+            calls++;
             long now = nanos.getAsLong();
             latencies.add(now, took);
             if (changed != Long.MIN_VALUE && now - changed < BETWEEN_CHANGES) {
@@ -149,6 +151,17 @@ public final class Throttle {
     double rate() {
         synchronized (lock) {
             return rate;
+        }
+    }
+
+    /**
+     * Counts the calls recorded, for a run's progress.
+     *
+     * @return how many calls have been recorded
+     */
+    public long calls() {
+        synchronized (lock) {
+            return calls;
         }
     }
 }

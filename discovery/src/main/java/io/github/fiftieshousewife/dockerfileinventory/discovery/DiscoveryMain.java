@@ -5,6 +5,8 @@ import io.github.fiftieshousewife.dockerfileinventory.http.Throttle;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -59,12 +61,15 @@ public final class DiscoveryMain {
                 ApiChoice.from(env));
         int concurrency = Throttle.concurrency(env, "GHE_CONCURRENCY", 8);
         var output = new DiscoveryOutput(Path.of(required(env, "OUT_DIR")));
+        Progress progress = new Progress(throttle::calls, Instant::now);
         var discovery = new Discovery(gitHub, releases, output, concurrency,
                 organizations(env.getOrDefault("ORGANIZATIONS", ""), api), tryRepositories(env), Selection.from(env),
-                maxDockerfiles(env), confirmation);
+                maxDockerfiles(env), confirmation, progress);
+        ProgressLog progressLog = new ProgressLog(progress, Duration.ofSeconds(30), LOG::info);
         try {
             LOG.info("discovery: {}", discovery.run());
         } finally {
+            progressLog.close();
             credentials.chosen().forEach((org, how) -> LOG.info("discovery: {} read with {}", org, how));
             Files.writeString(output.dir().resolve("credentials.jsonl"), GitHubAccess.lines(credentials.chosen()));
         }

@@ -88,6 +88,11 @@ and one line when its gate is met.
   REST unless `GHE_LAST_CHANGES=true`. Done 12 Nov (`docs/plans/choose-api.md`): `--api rest` (`GHE_API`,
   `github.api`) forces REST, and `./gradlew :discovery:githubLive` compares REST with GraphQL on github.com. Measured 12
   Nov: the same output both ways on `sclorg/postgresql-container`. Next: the owner's first run with the work token.
+- Done 12 Nov (`docs/plans/discovery-progress.md`, asked 12 Nov: a three-minute try over REST logged nothing): a
+  progress line every 30 seconds (phase, done of total, Dockerfiles found, calls, time in), quiet while the run asks
+  whether to go on; a wait for GitHub of 30 seconds or more logged when it starts.
+- Next (asked 12 Nov, answered: Failsafe, after the progress slice): `http`'s `Throttle` spacing and `RetryPolicy`
+  onto Failsafe, keeping only the slow-down-when-the-server-does logic ours; `Throttle` is over 150 lines until then.
 - Done 11 Nov (`docs/plans/cli-publication.md`, asked 11 Nov, questions answered 11 Nov): the command on Central as
   `io.github.fiftieshousewife:docker-inventory`, its distribution zip with every jar inside and a POM with no
   dependencies; sources of every module it ships, a README for Javadoc. Its bundle built and verified in `check`

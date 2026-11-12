@@ -44,7 +44,12 @@ Each repository is scanned at the commit the release index names. A repository w
 its default branch head and flagged, so the report can show how much of the estate is not release-scoped.
 Interrupted runs resume: finished repositories and fetched Dockerfiles are skipped, and failed repositories
 are retried. GitHub's rate limits are respected: when GitHub asks to slow down, or the hourly allowance runs out,
-discovery waits as long as GitHub says and carries on.
+discovery waits as long as GitHub says and carries on, saying so in the log when the wait is 30 seconds or more.
+Every 30 seconds the log says how far the run has got:
+
+```
+discovery: fetching Dockerfiles, 250 of 342, 342 Dockerfiles found, 410 calls, 2m 30s in
+```
 
 A file counts as a Dockerfile when it is named `Dockerfile` or `Containerfile`, or carries either as a prefix or
 suffix (`Dockerfile.rhel9`, `app.Dockerfile`), in any directory. Not counted: files named like Dockerfiles that hold

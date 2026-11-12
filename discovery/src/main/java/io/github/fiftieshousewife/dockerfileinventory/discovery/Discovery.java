@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ final class Discovery {
     private final Selection selection;
     private final int maxDockerfiles;
     private final Confirmation confirmation;
+    private final Progress progress;
 
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency) {
         this(gitHub, releases, output, concurrency, List.of());
@@ -40,22 +42,23 @@ final class Discovery {
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
               List<String> organizations, int tryRepositories) {
         this(gitHub, releases, output, concurrency, organizations, tryRepositories, Selection.ALL, 0,
-                Confirmation.ALWAYS);
+                Confirmation.ALWAYS, new Progress(() -> 0L, Instant::now));
     }
 
     Discovery(GitHub gitHub, ReleaseIndex releases, DiscoveryOutput output, int concurrency,
               List<String> organizations, int tryRepositories, Selection selection, int maxDockerfiles,
-              Confirmation confirmation) {
+              Confirmation confirmation, Progress progress) {
         this.gitHub = gitHub;
+        this.progress = progress;
         this.selection = selection;
         this.maxDockerfiles = maxDockerfiles;
         this.confirmation = confirmation;
         this.concurrency = concurrency;
         this.tryRepositories = tryRepositories;
-        this.scans = new Scans(new RepoScan(gitHub, releases), output, concurrency);
-        this.blobFetch = new BlobFetch(gitHub, output);
-        this.yamlFetch = new BlobFetch(gitHub, output, output::storeYaml);
-        this.changeFetch = new ChangeFetch(gitHub, output);
+        this.scans = new Scans(new RepoScan(gitHub, releases), output, concurrency, progress);
+        this.blobFetch = new BlobFetch(gitHub, output, output::storeBlob, progress);
+        this.yamlFetch = new BlobFetch(gitHub, output, output::storeYaml, progress);
+        this.changeFetch = new ChangeFetch(gitHub, output, progress);
         this.output = output;
         this.organizations = List.copyOf(organizations);
     }
@@ -63,16 +66,21 @@ final class Discovery {
     Summary run() {
         List<Repository> repositories = selection.of(repositories());
         List<Repository> todo = unfinished(repositories, output.finishedRepositories());
+        progress.start(Progress.Phase.SCANNING, todo.size());
         List<RepoScan.Result> results = tryRepositories > 0 ? scanUntilEnough(todo) : scans.scanAll(todo);
         int failed = failed(results);
         List<Located> manifest = output.manifest();
         Map<String, Located> byBlob = firstByBlob(manifest);
         List<Located> yaml = output.yaml();
         Pending pending = Pending.of(output, manifest, byBlob.values(), yaml);
+        progress.start(Progress.Phase.ASKING, 0);
         goOn(firstPass(repositories.size(), manifest, byBlob.size(), gitHub.calls(pending)));
 
+        progress.start(Progress.Phase.FETCHING, pending.blobs().size());
         BlobFetch.Fetched fetched = blobFetch.fetch(pending.blobs());
+        progress.start(Progress.Phase.YAML, pending.yamls().size());
         BlobFetch.Fetched fetchedYaml = yamlFetch.fetch(pending.yamls());
+        progress.start(Progress.Phase.CHANGES, pending.changes().size());
         ChangeFetch.Fetched lastChanges = changeFetch.fetch(pending.changes());
         return new Summary(repositories.size(), repositories.size() - todo.size(), results.size() - failed, failed,
                 manifest.size(), byBlob.size(), fetched.stored(), fetched.problems(), lastChanges.recorded(),
@@ -113,7 +121,13 @@ final class Discovery {
 
     List<Repository> repositories() {
         List<String> scanned = organizations.isEmpty() ? gitHub.organizations() : organizations;
-        return scanned.stream().flatMap(org -> gitHub.repositories(org).stream()).toList();
+        progress.start(Progress.Phase.LISTING, scanned.size());
+        return scanned.stream().flatMap(org -> listed(gitHub.repositories(org)).stream()).toList();
+    }
+
+    private List<Repository> listed(List<Repository> repositories) {
+        progress.done(1, 0);
+        return repositories;
     }
 
     static List<Repository> unfinished(List<Repository> repositories, Set<String> finished) {

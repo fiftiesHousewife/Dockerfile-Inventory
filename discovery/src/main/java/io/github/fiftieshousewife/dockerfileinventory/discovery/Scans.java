@@ -1,6 +1,7 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
 import io.github.fiftieshousewife.dockerfileinventory.http.RateLimitWaitTooLong;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -13,9 +14,15 @@ final class Scans {
     private final RepoScan scan;
     private final DiscoveryOutput output;
     private final Semaphore permits;
+    private final Progress progress;
 
     Scans(RepoScan scan, DiscoveryOutput output, int concurrency) {
+        this(scan, output, concurrency, new Progress(() -> 0L, Instant::now));
+    }
+
+    Scans(RepoScan scan, DiscoveryOutput output, int concurrency, Progress progress) {
         this.scan = scan;
+        this.progress = progress;
         this.output = output;
         this.permits = new Semaphore(concurrency);
     }
@@ -36,6 +43,7 @@ final class Scans {
         try {
             RepoScan.Result result = scanOrFail(repository);
             output.record(result);
+            progress.done(1, result.outcome().dockerfiles());
             return result;
         } finally {
             permits.release();

@@ -1,5 +1,6 @@
 package io.github.fiftieshousewife.dockerfileinventory.discovery;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,13 +23,15 @@ final class BlobFetch {
     private final GitHub gitHub;
     private final DiscoveryOutput output;
     private final BiConsumer<String, String> store;
+    private final Progress progress;
 
     BlobFetch(GitHub gitHub, DiscoveryOutput output) {
-        this(gitHub, output, output::storeBlob);
+        this(gitHub, output, output::storeBlob, new Progress(() -> 0L, Instant::now));
     }
 
-    BlobFetch(GitHub gitHub, DiscoveryOutput output, BiConsumer<String, String> store) {
+    BlobFetch(GitHub gitHub, DiscoveryOutput output, BiConsumer<String, String> store, Progress progress) {
         this.gitHub = gitHub;
+        this.progress = progress;
         this.output = output;
         this.store = store;
     }
@@ -46,6 +49,7 @@ final class BlobFetch {
     Fetched fetchBatch(List<BlobRequest> batch) {
         Map<String, BlobText> texts = gitHub.blobs(batch).stream()
                 .collect(Collectors.toMap(BlobText::sha, Function.identity(), (a, b) -> a));
+        progress.done(batch.size(), 0);
         return batch.stream().map(request -> keep(request, texts.get(request.sha())))
                 .reduce(new Fetched(0, 0), Fetched::plus);
     }

@@ -12,12 +12,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 final class GitHubSender {
+
+    private static final Duration TOLD = Duration.ofSeconds(30);
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSender.class);
 
@@ -100,6 +103,9 @@ final class GitHubSender {
     }
 
     void pause(Duration wait, HttpRequest request) {
+        if (told(wait)) {
+            LOG.info(waiting(wait, Instant.now()));
+        }
         LOG.atDebug().setMessage(() -> HttpLog.waiting(request, wait)).log();
         try {
             sleeper.sleep(wait);
@@ -107,5 +113,14 @@ final class GitHubSender {
             Thread.currentThread().interrupt();
             throw new GitHubException("interrupted calling " + request.uri(), e);
         }
+    }
+
+    static boolean told(Duration wait) {
+        return wait.compareTo(TOLD) >= 0;
+    }
+
+    static String waiting(Duration wait, Instant now) {
+        return "discovery: waiting " + Progress.elapsed(wait) + " for GitHub, until "
+                + now.plus(wait).truncatedTo(ChronoUnit.SECONDS);
     }
 }
